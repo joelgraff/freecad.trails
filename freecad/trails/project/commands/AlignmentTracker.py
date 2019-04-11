@@ -61,7 +61,7 @@ class AlignmentTracker(Tracker):
             self.sep.removeChild(self.wire)
 
         c = Part.makeWire(self.points)
-
+  
         c = c.toShape()
 
         buf = c.writeInventor(2, 0.01)
