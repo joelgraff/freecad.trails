@@ -1,0 +1,1439 @@
+[
+    {
+        "meta": {
+            "id": "IL 2",
+            "units": "english",
+            "st_eq": [
+                [
+                    "148292.43",
+                    "0"
+                ]
+            ],
+            "location": [],
+            "limits": [
+                113050.0,
+                20742.76
+            ],
+            "bearing": [
+                87.0,
+                38.0,
+                53.2538
+            ],
+            "quadrant": "NE"
+        },
+        "geometry": [
+            {
+                "PC_station": "114383.75",
+                "bearing": [
+                    87.0,
+                    38.0,
+                    53.2538
+                ],
+                "quadrant": "NE",
+                "direction": "L",
+                "radius": "1008.7",
+                "central_angle": [
+                    48.0,
+                    48.0,
+                    34.0
+                ]
+            },
+            {
+                "PC_station": "115243.04",
+                "bearing": [],
+                "quadrant": "NE",
+                "direction": "L",
+                "radius": "2000",
+                "central_angle": [
+                    8.0,
+                    55.0,
+                    27.0
+                ]
+            },
+            {
+                "PC_station": "116456.78",
+                "bearing": [
+                    29.0,
+                    54.0,
+                    52.3658
+                ],
+                "quadrant": "NE",
+                "direction": "L",
+                "radius": "3800",
+                "central_angle": [
+                    40.0,
+                    40.0,
+                    25.0
+                ]
+            },
+            {
+                "PC_station": "119410.29",
+                "bearing": [
+                    10.0,
+                    45.0,
+                    33.0
+                ],
+                "quadrant": "NW",
+                "direction": "R",
+                "radius": "2300",
+                "central_angle": [
+                    10.0,
+                    6.0,
+                    26.0
+                ]
+            },
+            {
+                "PC_station": "120017.7",
+                "bearing": [
+                    0.0,
+                    39.0,
+                    6.8375
+                ],
+                "quadrant": "NW",
+                "direction": "R",
+                "radius": "4000",
+                "central_angle": [
+                    6.0,
+                    49.0,
+                    16.0
+                ]
+            },
+            {
+                "PC_station": "120493.91",
+                "bearing": [],
+                "quadrant": "NW",
+                "direction": "R",
+                "radius": "2000",
+                "central_angle": [
+                    2.0,
+                    51.0,
+                    53.0
+                ]
+            },
+            {
+                "PC_station": "121385.05",
+                "bearing": [
+                    24.0,
+                    25.0,
+                    55.6296
+                ],
+                "quadrant": "NE",
+                "direction": "L",
+                "radius": "1585.53",
+                "central_angle": [
+                    29.0,
+                    20.0,
+                    28.0
+                ]
+            },
+            {
+                "PC_station": "122536.31",
+                "bearing": [
+                    4.0,
+                    54.0,
+                    32.4702
+                ],
+                "quadrant": "NW",
+                "direction": "R",
+                "radius": "3600",
+                "central_angle": [
+                    17.0,
+                    53.0,
+                    3.0
+                ]
+            },
+            {
+                "PC_station": "124488.52",
+                "bearing": [
+                    12.0,
+                    58.0,
+                    30.3747
+                ],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "6000",
+                "central_angle": [
+                    13.0,
+                    53.0,
+                    58.0
+                ]
+            },
+            {
+                "PC_station": "125944.07",
+                "bearing": [],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "3500",
+                "central_angle": [
+                    9.0,
+                    20.0,
+                    51.0
+                ]
+            },
+            {
+                "PC_station": "129512.97",
+                "bearing": [
+                    36.0,
+                    13.0,
+                    19.8817
+                ],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "4000",
+                "central_angle": [
+                    4.0,
+                    58.0,
+                    58.0
+                ]
+            },
+            {
+                "PC_station": "129952.83",
+                "bearing": [
+                    41.0,
+                    12.0,
+                    18.045
+                ],
+                "quadrant": "NE",
+                "direction": "L",
+                "radius": "10000",
+                "central_angle": [
+                    2.0,
+                    51.0,
+                    52.0
+                ]
+            },
+            {
+                "PC_station": "131070.39",
+                "bearing": [
+                    38.0,
+                    20.0,
+                    25.7454
+                ],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "2000",
+                "central_angle": [
+                    19.0,
+                    52.0,
+                    59.0
+                ]
+            },
+            {
+                "PC_station": "132520.88",
+                "bearing": [
+                    58.0,
+                    13.0,
+                    24.8898
+                ],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "3814.39",
+                "central_angle": [
+                    14.0,
+                    5.0,
+                    57.0
+                ]
+            },
+            {
+                "PC_station": "133459.51",
+                "bearing": [],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "2257.87",
+                "central_angle": [
+                    34.0,
+                    33.0,
+                    42.0
+                ]
+            },
+            {
+                "PC_station": "135030.2",
+                "bearing": [
+                    73.0,
+                    6.0,
+                    56.345
+                ],
+                "quadrant": "SE",
+                "direction": "L",
+                "radius": "2815",
+                "central_angle": [
+                    37.0,
+                    50.0,
+                    9.0
+                ]
+            },
+            {
+                "PC_station": "138885.55",
+                "bearing": [
+                    69.0,
+                    2.0,
+                    54.5005
+                ],
+                "quadrant": "NE",
+                "direction": "L",
+                "radius": "1520",
+                "central_angle": [
+                    36.0,
+                    50.0,
+                    28.0
+                ]
+            },
+            {
+                "PC_station": "140062.91",
+                "bearing": [
+                    32.0,
+                    12.0,
+                    26.4411
+                ],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "2100",
+                "central_angle": [
+                    11.0,
+                    28.0,
+                    22.0
+                ]
+            },
+            {
+                "PC_station": "142178.09",
+                "bearing": [
+                    43.0,
+                    40.0,
+                    48.2096
+                ],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "2500",
+                "central_angle": [
+                    39.0,
+                    59.0,
+                    0.0
+                ]
+            },
+            {
+                "PC_station": "144158.68",
+                "bearing": [
+                    83.0,
+                    39.0,
+                    47.9179
+                ],
+                "quadrant": "NE",
+                "direction": "L",
+                "radius": "3375",
+                "central_angle": [
+                    19.0,
+                    31.0,
+                    20.0
+                ]
+            },
+            {
+                "PC_station": "146689.32",
+                "bearing": [
+                    64.0,
+                    8.0,
+                    27.9815
+                ],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "2293.84",
+                "central_angle": [
+                    16.0,
+                    32.0,
+                    54.0
+                ]
+            },
+            {
+                "PC_station": "2335.46",
+                "bearing": [
+                    80.0,
+                    41.0,
+                    21.8891
+                ],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "6000",
+                "central_angle": [
+                    7.0,
+                    25.0,
+                    36.0
+                ]
+            },
+            {
+                "PC_station": "3539.45",
+                "bearing": [
+                    88.0,
+                    6.0,
+                    57.6943
+                ],
+                "quadrant": "NE",
+                "direction": "L",
+                "radius": "1800",
+                "central_angle": [
+                    10.0,
+                    11.0,
+                    1.0
+                ]
+            },
+            {
+                "PC_station": "3973.19",
+                "bearing": [
+                    77.0,
+                    55.0,
+                    56.8855
+                ],
+                "quadrant": "NE",
+                "direction": "L",
+                "radius": "1800",
+                "central_angle": [
+                    15.0,
+                    26.0,
+                    54.0
+                ]
+            },
+            {
+                "PC_station": "4458.51",
+                "bearing": [],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "20000",
+                "central_angle": [
+                    1.0,
+                    27.0,
+                    7.0
+                ]
+            },
+            {
+                "PC_station": "5783.34",
+                "bearing": [
+                    63.0,
+                    56.0,
+                    10.2388
+                ],
+                "quadrant": "NE",
+                "direction": "L",
+                "radius": "2883.78",
+                "central_angle": [
+                    13.0,
+                    30.0,
+                    49.0
+                ]
+            },
+            {
+                "PC_station": "6868.92",
+                "bearing": [
+                    50.0,
+                    25.0,
+                    20.8796
+                ],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "3375",
+                "central_angle": [
+                    34.0,
+                    24.0,
+                    43.0
+                ]
+            },
+            {
+                "PC_station": "10325.67",
+                "bearing": [
+                    84.0,
+                    50.0,
+                    3.7483
+                ],
+                "quadrant": "NE",
+                "direction": "L",
+                "radius": "3687.8",
+                "central_angle": [
+                    17.0,
+                    55.0,
+                    7.0
+                ]
+            },
+            {
+                "PC_station": "12214.42",
+                "bearing": [
+                    66.0,
+                    54.0,
+                    57.1901
+                ],
+                "quadrant": "NE",
+                "direction": "L",
+                "radius": "3400",
+                "central_angle": [
+                    33.0,
+                    13.0,
+                    38.0
+                ]
+            },
+            {
+                "PC_station": "14795.06",
+                "bearing": [
+                    33.0,
+                    41.0,
+                    19.0469
+                ],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "4656.43",
+                "central_angle": [
+                    4.0,
+                    34.0,
+                    58.0
+                ]
+            },
+            {
+                "PC_station": "15453.37",
+                "bearing": [
+                    38.0,
+                    16.0,
+                    17.3733
+                ],
+                "quadrant": "NE",
+                "direction": "L",
+                "radius": "2855.9299",
+                "central_angle": [
+                    11.0,
+                    40.0,
+                    12.0
+                ]
+            },
+            {
+                "PC_station": "16349.07",
+                "bearing": [
+                    26.0,
+                    36.0,
+                    5.08754
+                ],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "4000",
+                "central_angle": [
+                    18.0,
+                    43.0,
+                    14.0
+                ]
+            },
+            {
+                "PC_station": "17656.01",
+                "bearing": [],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "7200",
+                "central_angle": [
+                    8.0,
+                    33.0,
+                    30.0
+                ]
+            },
+            {
+                "PC_station": "18991.96",
+                "bearing": [
+                    53.0,
+                    52.0,
+                    49.5475
+                ],
+                "quadrant": "NE",
+                "direction": "L",
+                "radius": "4149.52",
+                "central_angle": [
+                    11.0,
+                    30.0,
+                    23.0
+                ]
+            },
+            {
+                "PC_station": "20119.36",
+                "bearing": [
+                    42.0,
+                    22.0,
+                    26.789
+                ],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "950",
+                "central_angle": [
+                    24.0,
+                    16.0,
+                    10.0
+                ]
+            }
+        ]
+    },
+    {
+        "meta": {
+            "id": "Union St",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "40000",
+                "113214.23",
+                "IL 2"
+            ],
+            "limits": [
+                40000.0,
+                40430.0
+            ],
+            "bearing": [
+                2.0,
+                27.0,
+                39.2519
+            ],
+            "quadrant": "NW"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "IL 72",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "126433.69",
+                "113214.23",
+                "IL 2"
+            ],
+            "limits": [
+                126433.69,
+                127158.0702
+            ],
+            "bearing": [
+                2.0,
+                27.0,
+                39.2519
+            ],
+            "quadrant": "SE"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Chestnut St",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "42000",
+                "113653.6592",
+                "IL 2"
+            ],
+            "limits": [
+                41785.66,
+                42413.327900000004
+            ],
+            "bearing": [
+                2.0,
+                36.0,
+                16.488
+            ],
+            "quadrant": "NW"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Market St",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "44000",
+                "114094.9939",
+                "IL 2"
+            ],
+            "limits": [
+                43803.25,
+                44402.5119
+            ],
+            "bearing": [
+                2.0,
+                42.0,
+                56.6138
+            ],
+            "quadrant": "NW"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Peru St",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "46000",
+                "114530.1275",
+                "IL 2"
+            ],
+            "limits": [
+                45792.11,
+                46000.0016
+            ],
+            "bearing": [
+                3.0,
+                17.0,
+                1.3843
+            ],
+            "quadrant": "NW"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "E 3rd St",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "47014.35",
+                "115950.62",
+                "IL 2"
+            ],
+            "limits": [
+                46549.82,
+                47014.3529
+            ],
+            "bearing": [
+                86.0,
+                39.0,
+                11.7755
+            ],
+            "quadrant": "NE"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Kysor Dr",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "48014.2",
+                "115974.23",
+                "IL 2"
+            ],
+            "limits": [
+                48014.2,
+                49014.7875
+            ],
+            "bearing": [
+                87.0,
+                34.0,
+                37.4977
+            ],
+            "quadrant": "NE"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Luther Dr",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "51000",
+                "116708.83",
+                "IL 2"
+            ],
+            "limits": [
+                50432.84,
+                51000.0032
+            ],
+            "bearing": [
+                57.0,
+                42.0,
+                13.2578
+            ],
+            "quadrant": "SE"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Old State Rd",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "52000",
+                "118014.32",
+                "IL 2"
+            ],
+            "limits": [
+                51472.43,
+                51999.9977
+            ],
+            "bearing": [
+                89.0,
+                37.0,
+                42.7519
+            ],
+            "quadrant": "NE"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Ashelford Dr",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "53000",
+                "118841.45",
+                "IL 2"
+            ],
+            "limits": [
+                53000.0,
+                53902.6417
+            ],
+            "bearing": [
+                84.0,
+                13.0,
+                8.6304
+            ],
+            "quadrant": "NE"
+        },
+        "geometry": [
+            {
+                "PC_station": "53027.11",
+                "bearing": [
+                    84.0,
+                    13.0,
+                    8.6304
+                ],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "150",
+                "central_angle": [
+                    38.0,
+                    11.0,
+                    50.0
+                ]
+            }
+        ]
+    },
+    {
+        "meta": {
+            "id": "River Dr S",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "54000",
+                "119786.59",
+                "IL 2"
+            ],
+            "limits": [
+                54000.0,
+                54402.1318
+            ],
+            "bearing": [
+                89.0,
+                4.0,
+                33.1304
+            ],
+            "quadrant": "NE"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Mobile Home Access Road",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "1000",
+                "54148",
+                "River Dr S"
+            ],
+            "limits": [
+                1000.0,
+                1721.76
+            ],
+            "bearing": [
+                0.0,
+                55.0,
+                26.8696
+            ],
+            "quadrant": "NW"
+        },
+        "geometry": [
+            {
+                "PC_station": "1039",
+                "bearing": [
+                    0.0,
+                    55.0,
+                    26.8696
+                ],
+                "quadrant": "NW",
+                "direction": "L",
+                "radius": "30",
+                "central_angle": [
+                    90.0,
+                    0.0,
+                    0.0
+                ]
+            },
+            {
+                "PC_station": "1130.87",
+                "bearing": [
+                    89.0,
+                    4.0,
+                    33.1304
+                ],
+                "quadrant": "SW",
+                "direction": "R",
+                "radius": "30",
+                "central_angle": [
+                    90.0,
+                    16.0,
+                    20.0
+                ]
+            },
+            {
+                "PC_station": "1356.48",
+                "bearing": [
+                    0.0,
+                    39.0,
+                    6.8375
+                ],
+                "quadrant": "NW",
+                "direction": "R",
+                "radius": "30",
+                "central_angle": [
+                    86.0,
+                    18.0,
+                    38.0
+                ]
+            },
+            {
+                "PC_station": "1451.62",
+                "bearing": [
+                    86.0,
+                    18.0,
+                    14.9532
+                ],
+                "quadrant": "NE",
+                "direction": "R",
+                "radius": "25",
+                "central_angle": [
+                    92.0,
+                    46.0,
+                    18.0
+                ]
+            },
+            {
+                "PC_station": "1665.55",
+                "bearing": [
+                    0.0,
+                    55.0,
+                    26.8696
+                ],
+                "quadrant": "SE",
+                "direction": "R",
+                "radius": "200",
+                "central_angle": [
+                    7.0,
+                    35.0,
+                    34.0
+                ]
+            }
+        ]
+    },
+    {
+        "meta": {
+            "id": "River Dr N Connector",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "55000",
+                "120946.6",
+                "IL 2"
+            ],
+            "limits": [
+                55000.0,
+                55171.92
+            ],
+            "bearing": [
+                68.0,
+                29.0,
+                22.4801
+            ],
+            "quadrant": "SE"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "River Dr N",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "4998.07",
+                "55171.92",
+                "River Dr N Connector"
+            ],
+            "limits": [
+                4687.89,
+                5240.0028999999995
+            ],
+            "bearing": [
+                2.0,
+                10.0,
+                48.6664
+            ],
+            "quadrant": "NW"
+        },
+        "geometry": [
+            {
+                "PC_station": "4908.74",
+                "bearing": [
+                    2.0,
+                    10.0,
+                    48.6664
+                ],
+                "quadrant": "NW",
+                "direction": "L",
+                "radius": "948.97",
+                "central_angle": [
+                    6.0,
+                    2.0,
+                    16.0
+                ]
+            }
+        ]
+    },
+    {
+        "meta": {
+            "id": "Lake Louise Entrance",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "55000",
+                "120946.6",
+                "IL 2"
+            ],
+            "limits": [
+                55000.0,
+                55132.9
+            ],
+            "bearing": [
+                68.0,
+                29.0,
+                22.4801
+            ],
+            "quadrant": "NW"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Kennedy Hill Rd",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "60003.34",
+                "126049.05",
+                "IL 2"
+            ],
+            "limits": [
+                60003.34,
+                61480.48390000001
+            ],
+            "bearing": [
+                31.0,
+                48.0,
+                31.7332
+            ],
+            "quadrant": "NW"
+        },
+        "geometry": [
+            {
+                "PC_station": "60077.37",
+                "bearing": [
+                    31.0,
+                    48.0,
+                    31.7332
+                ],
+                "quadrant": "NW",
+                "direction": "R",
+                "radius": "800",
+                "central_angle": [
+                    36.0,
+                    30.0,
+                    38.0
+                ]
+            }
+        ]
+    },
+    {
+        "meta": {
+            "id": "Frontage Rd Connector",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "60040",
+                "137115.5597",
+                "IL 2"
+            ],
+            "limits": [
+                60040.0,
+                60184.48
+            ],
+            "bearing": [
+                20.0,
+                57.0,
+                5.4994
+            ],
+            "quadrant": "SE"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Meridian Rd",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "62000",
+                "148292.43",
+                "IL 2"
+            ],
+            "limits": [
+                62000.0,
+                63312.4904
+            ],
+            "bearing": [
+                1.0,
+                54.0,
+                39.7115
+            ],
+            "quadrant": "NW"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Gold River Ave N",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "63000",
+                "2541.35",
+                "IL 2"
+            ],
+            "limits": [
+                62700.0,
+                62908.4648
+            ],
+            "bearing": [
+                0.0,
+                25.0,
+                5.5524
+            ],
+            "quadrant": "NE"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Gold River Ave S",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "63000",
+                "2541.35",
+                "IL 2"
+            ],
+            "limits": [
+                62700.0,
+                63000.0
+            ],
+            "bearing": [
+                0.0,
+                25.0,
+                5.5524
+            ],
+            "quadrant": "NE"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Blue Lake Ave",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "64000",
+                "2969.26",
+                "IL 2"
+            ],
+            "limits": [
+                64000.0,
+                64300.0
+            ],
+            "bearing": [
+                0.0,
+                20.0,
+                48.9969
+            ],
+            "quadrant": "NW"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Willow Run",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "65000",
+                "3436.72",
+                "IL 2"
+            ],
+            "limits": [
+                64800.0,
+                65000.0
+            ],
+            "bearing": [
+                2.0,
+                8.0,
+                40.9273
+            ],
+            "quadrant": "NW"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Antler Trail",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "66000",
+                "3700",
+                "IL 2"
+            ],
+            "limits": [
+                66000.0,
+                66200.0
+            ],
+            "bearing": [
+                22.0,
+                41.0,
+                10.5415
+            ],
+            "quadrant": "NE"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Silver Creek Rd S",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "67000",
+                "4091.07",
+                "IL 2"
+            ],
+            "limits": [
+                66585.01,
+                67026.9981
+            ],
+            "bearing": [
+                7.0,
+                0.0,
+                18.6346
+            ],
+            "quadrant": "NW"
+        },
+        "geometry": []
+    },
+    {
+        "meta": {
+            "id": "Silver Creek Rd N",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "68000",
+                "6141.58",
+                "IL 2"
+            ],
+            "limits": [
+                67762.37,
+                68000.00069999999
+            ],
+            "bearing": [
+                28.0,
+                25.0,
+                4.9434
+            ],
+            "quadrant": "NW"
+        },
+        "geometry": [
+            {
+                "PC_station": "67861.76",
+                "bearing": [
+                    28.0,
+                    25.0,
+                    4.9434
+                ],
+                "quadrant": "NW",
+                "direction": "R",
+                "radius": "1500",
+                "central_angle": [
+                    3.0,
+                    15.0,
+                    38.0
+                ]
+            }
+        ]
+    },
+    {
+        "meta": {
+            "id": "Prairie Rd S",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "30000",
+                "8117.55",
+                "IL 2"
+            ],
+            "limits": [
+                29700.0,
+                30000.0
+            ],
+            "bearing": [
+                18.0,
+                35.0,
+                52.5704
+            ],
+            "quadrant": "NW"
+        },
+        "geometry": [
+            {
+                "PC_station": "29765.75",
+                "bearing": [
+                    18.0,
+                    35.0,
+                    52.5704
+                ],
+                "quadrant": "NW",
+                "direction": "L",
+                "radius": "4000",
+                "central_angle": [
+                    2.0,
+                    52.0,
+                    1.0
+                ]
+            }
+        ]
+    },
+    {
+        "meta": {
+            "id": "Prairie Rd N",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "163911.98",
+                "8117.55",
+                "IL 2"
+            ],
+            "limits": [
+                163911.98,
+                164630.597
+            ],
+            "bearing": [
+                6.0,
+                22.0,
+                48.0355
+            ],
+            "quadrant": "NW"
+        },
+        "geometry": [
+            {
+                "PC_station": "164027.63",
+                "bearing": [
+                    6.0,
+                    22.0,
+                    48.0355
+                ],
+                "quadrant": "NW",
+                "direction": "R",
+                "radius": "1600",
+                "central_angle": [
+                    5.0,
+                    27.0,
+                    54.0
+                ]
+            }
+        ]
+    },
+    {
+        "meta": {
+            "id": "CEL_201+44.09",
+            "units": "english",
+            "st_eq": [],
+            "location": [
+                "40000",
+                "20144.09",
+                "IL 2"
+            ],
+            "limits": [
+                40000.0,
+                40444.55
+            ],
+            "bearing": [
+                45.0,
+                24.0,
+                38.8436
+            ],
+            "quadrant": "NW"
+        },
+        "geometry": [
+            {
+                "PC_station": "40085.46",
+                "bearing": [
+                    45.0,
+                    24.0,
+                    38.8436
+                ],
+                "quadrant": "NW",
+                "direction": "R",
+                "radius": "50",
+                "central_angle": [
+                    128.0,
+                    46.0,
+                    5.0
+                ]
+            },
+            {
+                "PC_station": "40263.82",
+                "bearing": [
+                    83.0,
+                    21.0,
+                    25.8871
+                ],
+                "quadrant": "NE",
+                "direction": "L",
+                "radius": "85",
+                "central_angle": [
+                    29.0,
+                    46.0,
+                    29.0
+                ]
+            },
+            {
+                "PC_station": "40338.69",
+                "bearing": [
+                    53.0,
+                    34.0,
+                    57.1944
+                ],
+                "quadrant": "NE",
+                "direction": "L",
+                "radius": "35",
+                "central_angle": [
+                    68.0,
+                    49.0,
+                    8.0
+                ]
+            }
+        ]
+    }
+]

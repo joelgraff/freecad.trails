@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<LandXML xmlns="http://www.landxml.org/schema/LandXML-1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.landxml.org/schema/LandXML-1.2 http://www.landxml.org/schema/LandXML-1.2/LandXML-1.2.xsd" version="1.2" date="2002-07-25" time="10:48:45" readOnly="false" language="English">
+    <Project name='Sugar Grove Road'/>
+    <Units>
+        <Imperial areaUnit='squareFoot' linearUnit='foot' volumeUnit='cubicFeet' temperatureUnit='fahrenheit' pressureUnit='inchHG' diameterUnit='foot' widthUnit='foot' heightUnit='foot' velocityUnit='milesPerHour' flowUnit='cubicFeetSecond' angularUnit='decimal degrees' directionUnit='decimal degrees' latLongAngularUnit='decimal degrees' elevationUnit='feet'/>
+    </Units>
+    <Application name='FreeCAD' manufacturer='The FreeCAD Project' version='0.18-dev' manufacturerURL='www.freecadweb.org'/>
+    <Alignments>
+        <Alignment name='Sugar Grove Road' length='4731.987549' staStart = '50000.00' desc='Alignment for Sugar Grove Road' state='existing'>
+            <CoordGeom name='Sugar Grove Road' desc='Alignment for Sugar Grove Road' state='existing'>
+                <Curve rot='ccw' length='506.1552' dirStart='180.5808' dirEnd='137.29639' staStart='53847.6272' radius='670.000'>
+                    <PI>
+                        2437.9704 -2356.3977 0.0
+                    </PI>
+                </Curve>
+                <Curve rot='cw' length='1069.9542' dirStart='89.0825' dirEnd='180.5808' staStart='52051.2697' radius='670.000'>
+                    <PI>
+                        2455.0000 -676.4840 0.0
+                    </PI>
+                </Curve>             
+                <Curve rot='ccw' length='588.3817' dirStart='139.3986' dirEnd='89.0825' staStart='50615.3209' radius='670.0000'>
+                    <PI>
+                        605.2372 -706.1075 0.0
+                    </PI>
+                </Curve>
+            </CoordGeom>
+        </Alignment>
+        <Alignment name='Penrose Road West' length='751.2066' staStart = '1000.00' desc='Alignment for Penrose Road West' state='existing'>
+            <StaEquation staAhead='1000.00' staBack='50909.00' desc='Sugar Grove Road'/>
+            <CoordGeom name='Penrose Road West' desc='Alignment for Penrose Road West' state='existing'>
+                <Curve rot='cw' length='77.4569' dirStart='244.6403' dirEnd='270.00' staStart='1114.7237' radius='175'>
+                    <PI>
+                        493.6296 -707.5417 0.0
+                    </PI>
+                </Curve>
+            </CoordGeom>
+        </Alignment>
+        <Alignment name='Penrose Road East' length='734.1455' staStart = '2000.00' desc='Alignment for Penrose Road West' state='existing'>
+            <StaEquation staAhead='20734.1455' staBack='50909.00' desc='Sugar Grove Road'/>
+            <CoordGeom name='Penrose Road West' desc='Alignment for Penrose Road West' state='existing'>
+                <Curve rot='cw' length='137.5287' dirStart='244.6403' dirEnd='270.00' staStart='1114.7237' radius='175'>
+                    <PI>
+                        2470.7258 -662.4901 0.0
+                    </PI>
+                </Curve>
+            </CoordGeom>
+        </Alignment>
+    </Alignments>
+</LandXML>
