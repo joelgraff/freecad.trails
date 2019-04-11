@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #***********************************************************************
 #*                                                                     *
-#* Copyright (c) 2018 Joel Graff <monograff76@gmail.com>               *
+#* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
 #*                                                                     *
 #* This program is free software; you can redistribute it and/or modify*
 #* it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -20,47 +20,50 @@
 #* USA                                                                 *
 #*                                                                     *
 #***********************************************************************
-
 """
-Constant class definition
+Command to being alignment importing
 """
+import os
+import FreeCADGui as Gui
 
-__title__ = "Const.py"
-__author__ = "Joel Graff"
-__url__ = "https://www.freecadweb.org"
+from freecad.trails.project.tasks.alignment.import_alignment_task 
+    import ImportAlignmentTask
 
-class MetaConst(type):
+class ImportAlignmentCmd():
     """
-    Metaclass to enforce constant-like behaviors
+    Initiates the ImportAlignmentTask class for 2D horizontal and vertical curves
     """
+    def __init__(self):
+        """
+        Constructor
+        """
+        self.alignment_data = None
 
-    def __getattr__(cls, key):
+    def GetResources(self):
         """
-        Default getter
-        """
-        return cls[key]
-
-    def __setattr__(cls, key, value):
-        """
-        Default setter
-        """
-        raise TypeError
-
-class Const(object, metaclass=MetaConst):
-    """
-    Const class for subclassing
-    """
-
-    def __getattr__(self, name):
-        """
-        Default getter
+        Icon resources.
         """
 
-        return self[name]
+        icon_path = os.path.dirname(os.path.abspath(__file__))
 
-    def __setattr__(self, name, value):
+        icon_path += "../../../icons/new_alignment.svg"
+
+        return {'Pixmap'  : icon_path,
+                'Accel'   : 'Ctrl+Shift+A',
+                'MenuText': 'Import Alignment',
+                'ToolTip' : 
+                    'Import a horizontal or vertical alignment from CSV',
+                'CmdType' : 'ForEdit'}
+
+    def Activated(self):
         """
-        Default setter
+        Command activation method
         """
 
-        raise TypeError
+        panel = ImportAlignmentTask()
+        Gui.Control.showDialog(panel)
+        panel.setup()
+
+        return
+
+Gui.addCommand('ImportAlignmentCmd', ImportAlignmentCmd())

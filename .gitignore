@@ -102,3 +102,4 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+freecad/trails/__pycache__/__init__.cpython-36.pyc

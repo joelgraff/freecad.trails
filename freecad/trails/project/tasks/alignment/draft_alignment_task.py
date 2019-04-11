@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #***********************************************************************
 #*                                                                     *
-#* Copyright (c) 2018 Joel Graff <monograff76@gmail.com>               *
+#* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
 #*                                                                     *
 #* This program is free software; you can redistribute it and/or modify*
 #* it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -22,45 +22,20 @@
 #***********************************************************************
 
 """
-Constant class definition
+Task to draft an alignment
 """
 
-__title__ = "Const.py"
+__title__ = "draft_alignment_task.py"
 __author__ = "Joel Graff"
 __url__ = "https://www.freecadweb.org"
 
-class MetaConst(type):
+class DraftAlignmentTask:
     """
-    Metaclass to enforce constant-like behaviors
+    Task to manage drafting horizontal alignments
     """
-
-    def __getattr__(cls, key):
+    def __init__(self):
         """
-        Default getter
-        """
-        return cls[key]
-
-    def __setattr__(cls, key, value):
-        """
-        Default setter
-        """
-        raise TypeError
-
-class Const(object, metaclass=MetaConst):
-    """
-    Const class for subclassing
-    """
-
-    def __getattr__(self, name):
-        """
-        Default getter
+        Constructor
         """
 
-        return self[name]
-
-    def __setattr__(self, name, value):
-        """
-        Default setter
-        """
-
-        raise TypeError
+        pass

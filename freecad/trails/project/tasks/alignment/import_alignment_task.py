@@ -26,17 +26,19 @@ Task to import alignments from various file formats
 
 import os
 
-from PySide import QtGui, QtCore
+import PySide.QtGui as QtGui
+import PySide.QtCore as QtCore
 
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from Corridor.Alignment import AlignmentGroup, HorizontalAlignment
+from freecad.trails.corridor.alignment \
+    import alignment_group, horizontal_alignment
 
-from Project.Tasks.alignment import ImportXmlSubtask
-from Project.Tasks.alignment import ImportCsvSubtask
+from freecad.trails.project.tasks.alignment \
+    import import_xml_subtask #, ImportCsvSubtask
 
-import Project.Tasks.alignment as Alignment
+import freecad.trails.project.tasks.alignment as alignment
 
 class ImportAlignmentTask:
     """
@@ -44,7 +46,7 @@ class ImportAlignmentTask:
     """
     def __init__(self):
 
-        self.path_base = os.path.dirname(Alignment.__file__) + '/'
+        self.path_base = os.path.dirname(alignment.__file__) + '/'
         self.ui = self.path_base + 'import_alignment_task_panel.ui'
         self.form = None
         self.subtask = None
@@ -66,11 +68,13 @@ class ImportAlignmentTask:
 
         errors = []
 
-        AlignmentGroup.create()
+        alignment_group.create()
 
         for key, value in data['Alignments'].items():
 
-            result = HorizontalAlignment.create(value, value['meta']['ID'] + ' Horiz')
+            result = horizontal_alignment.create(
+                value, value['meta']['ID'] + ' Horiz'
+            )
 
             if result.errors:
                 errors += result.errors
@@ -93,27 +97,9 @@ class ImportAlignmentTask:
         return True
 
     def clicked(self, index):
-        pass
-
-    def open(self):
-        pass
-
-    def needsFullSpace(self):
-        return False
-
-    def isAllowedAlterSelection(self):
-        return True
-
-    def isAllowedAlterView(self):
-        return True
-
-    def isAllowedAlterDocument(self):
-        return True
-
-    def getStandardButtons(self):
-        return int(QtGui.QDialogButtonBox.Ok)
-
-    def helpRequested(self):
+        """
+        Clicked callback
+        """
         pass
 
     def choose_file(self):
@@ -176,10 +162,10 @@ class ImportAlignmentTask:
         self.form.layout().addWidget(subpanel)
 
         if 'xml' in extension:
-            self.subtask = ImportXmlSubtask.create(subpanel, file_path)
+            self.subtask = import_xml_subtask.create(subpanel, file_path)
 
-        elif '.csv' in extension:
-            self.subtask = ImportCsvSubtask.create(subpanel, file_path)
+        #elif '.csv' in extension:
+        #    self.subtask = ImportCsvSubtask.create(subpanel, file_path)
 
     def setup(self):
         """

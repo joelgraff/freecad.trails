@@ -19,10 +19,12 @@
 #* USA                                                                 *
 #*                                                                     *
 #***********************************************************************
+"""
+GUI Initialization module
+"""
 
 import os
 import FreeCADGui as Gui
-import FreeCAD as App
 from freecad.trails import ICONPATH
 
 
@@ -69,6 +71,9 @@ class TrailsWorkbench(Gui.Workbench):
         }
 
     def GetClassName(self):
+        """
+        Return the workbench classname.
+        """
         return 'Gui::PythonWorkbench'
 
     def Initialize(self):
@@ -80,7 +85,7 @@ class TrailsWorkbench(Gui.Workbench):
 
             if _v['gui'] & self.toolbar:
                 self.appendToolbar(_k, _v['cmd'])
-            
+
             if _v['gui'] & self.menu:
                 self.appendMenu(_k, _v['cmd'])
 
