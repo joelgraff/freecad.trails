@@ -32,9 +32,9 @@ from xml.etree import ElementTree as etree
 
 import FreeCAD as App
 
-from freecad.trails.project.support import units
-from freecad.trails.project.xml import landxml
-from freecad.trails.project.xml.key_maps import KeyMaps as Maps
+from ..support import units
+from . import landxml
+from .key_maps import KeyMaps as Maps
 
 class AlignmentExporter(object):
     """

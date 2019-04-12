@@ -33,7 +33,7 @@ import math
 
 import FreeCAD as App
 
-from freecad.trails.project.support.const import Const
+from .const import Const
 
 class Constants(Const):
     """

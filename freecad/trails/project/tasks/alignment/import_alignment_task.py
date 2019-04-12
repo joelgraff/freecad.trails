@@ -32,13 +32,11 @@ import PySide.QtCore as QtCore
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from freecad.trails.corridor.alignment \
-    import alignment_group, horizontal_alignment
+import import_xml_subtask #, ImportCsvSubtask
 
-from freecad.trails.project.tasks.alignment \
-    import import_xml_subtask #, ImportCsvSubtask
+from .... import resources
+from ....corridor.alignment import alignment_group, horizontal_alignment
 
-import freecad.trails.project.tasks.alignment as alignment
 
 class ImportAlignmentTask:
     """
@@ -46,8 +44,9 @@ class ImportAlignmentTask:
     """
     def __init__(self):
 
-        self.path_base = os.path.dirname(alignment.__file__) + '/'
-        self.ui = self.path_base + 'import_alignment_task_panel.ui'
+        self.ui_path = os.path.dirname(resources.__file__) + 'ui/'
+        self.ui = self.ui_path + '/ui/import_alignment_task_panel.ui'
+
         self.form = None
         self.subtask = None
 
@@ -148,7 +147,7 @@ class ImportAlignmentTask:
         if 'csv' in extension:
             filename = 'import_alignment_task_csv_subpanel.ui'
 
-        subpanel = Gui.PySideUic.loadUi(self.path_base + filename, None)
+        subpanel = Gui.PySideUic.loadUi(self.ui_path + filename, None)
 
         #ensure any existing subpanels are removed
         itm_count = self.form.layout().count()

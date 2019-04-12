@@ -25,14 +25,15 @@
 Subtask to populate the XML dialog when an XML file is chosen for import
 """
 
-from freecad.trails.project.xml.alignment_importer import AlignmentImporter
-from freecad.trails.project.support import widget_model, units
+from ...xml.alignment_importer import AlignmentImporter
+from ...support import widget_model, units
 
 def create(panel, filepath):
     """
     Class factory method
     """
     return ImportXmlSubtask(panel, filepath)
+
 
 class ImportXmlSubtask:
     """

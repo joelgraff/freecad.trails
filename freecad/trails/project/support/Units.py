@@ -30,7 +30,7 @@ __author__ = "Joel Graff"
 __url__ = "https://www.freecadweb.org"
 
 import FreeCAD as App
-from freecad.trails.project.support.const import Const
+from .const import Const
 
 def get_doc_units():
     """
@@ -73,9 +73,10 @@ class UnitNames(Const):
     """
     metric_units = ['mm', 'cm', 'dm', 'm', 'km',
                     'millimeter', 'millimeters', 'centimeter', 'centimeters',
-                    'decimeter', 'decimeters', 'meter', 'meters', 'kilometer', 'kilometers',
-                    'millimetre', 'millimetres', 'centimetre', 'centimetres',
-                    'decimetre', 'decimetres', 'metre', 'metres', 'kilometre', 'kilometres'
+                    'decimeter', 'decimeters', 'meter', 'meters',
+                    'kilometer', 'kilometers', 'millimetre', 'millimetres',
+                    'centimetre', 'centimetres', 'decimetre', 'decimetres',
+                    'metre', 'metres', 'kilometre', 'kilometres'
                    ]
 
 @staticmethod

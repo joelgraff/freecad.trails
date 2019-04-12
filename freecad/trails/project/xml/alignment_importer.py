@@ -1,26 +1,25 @@
 # -*- coding: utf-8 -*-
-# **************************************************************************
-# *                                                                        *
-# *  Copyright (c) 20XX Joel Graff <monograff76@gmail.com>                         *
-# *                                                                        *
-# *  This program is free software; you can redistribute it and/or modify  *
-# *  it under the terms of the GNU Lesser General Public License (LGPL)    *
-# *  as published by the Free Software Foundation; either version 2 of     *
-# *  the License, or (at your option) any later version.                   *
-# *  for detail see the LICENCE text file.                                 *
-# *                                                                        *
-# *  This program is distributed in the hope that it will be useful,       *
-# *  but WITHOUT ANY WARRANTY; without even the implied warranty of        *
-# *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
-# *  GNU Library General Public License for more details.                  *
-# *                                                                        *
-# *  You should have received a copy of the GNU Library General Public     *
-# *  License along with this program; if not, write to the Free Software   *
-# *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
-# *  USA                                                                   *
-# *                                                                        *
-# **************************************************************************
-
+#***********************************************************************
+#*                                                                     *
+#*  Copyright (c) 20XX Joel Graff <monograff76@gmail.com>              *
+#*                                                                     *
+#* This program is free software; you can redistribute it and/or modify*
+#* it under the terms of the GNU Lesser General Public License (LGPL)  *
+#* as published by the Free Software Foundation; either version 2 of   *
+#* the License, or (at your option) any later version.                 *
+#* for detail see the LICENCE text file.                               *
+#*                                                                     *
+#* This program is distributed in the hope that it will be useful,     *
+#* but WITHOUT ANY WARRANTY; without even the implied warranty of      *
+#* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the       *
+#* GNU Library General Public License for more details.                *
+#*                                                                     *
+#* You should have received a copy of the GNU Library General Public   *
+#* License along with this program; if not, write to the Free Software *
+#* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307*
+#* USA                                                                 *
+#*                                                                     *
+#***********************************************************************
 """
 Importer for Alignments in LandXML files
 """
@@ -29,11 +28,10 @@ import math
 
 from xml.etree import ElementTree as etree
 
-import FreeCAD as App
+from ..support import Units, Utils
+from . import LandXml
+from .key_maps import KeyMaps as maps
 
-from Project.Support import Units, Utils
-from Project.XML import LandXml
-from Project.XML.KeyMaps import KeyMaps as maps
 
 class AlignmentImporter(object):
     """
@@ -46,7 +44,7 @@ class AlignmentImporter(object):
 
     def _validate_units(self, units):
         """
-        Validate the units of the alignment, ensuring it matches the document
+        Validate the alignment units, ensuring they match the document
         """
 
         if units is None:
@@ -56,9 +54,11 @@ class AlignmentImporter(object):
         xml_units = units[0].attrib['linearUnit']
 
         if xml_units != Units.get_doc_units()[1]:
+
             self.errors.append(
-                'Document units of ' + Units.get_doc_units()[1] + ' expected, units of ' +
-                xml_units + 'found')
+                'Document units of ' + Units.get_doc_units()[1] 
+                + ' expected, units of ' + xml_units + 'found')
+
             return ''
 
         return xml_units
@@ -66,7 +66,7 @@ class AlignmentImporter(object):
     @staticmethod
     def _get_alignment_name(alignment, alignment_keys):
         """
-        Return a valid alignment name, if not defiend or otherwise duplicate
+        Return valid alignment name if not defined, otherwise duplicate
         """
 
         align_name = alignment.attrib.get('name')
@@ -88,24 +88,25 @@ class AlignmentImporter(object):
 
     def _parse_data(self, align_name, tags, attrib):
         """
-        Build a dictionary keyed to the internal attribute names from the XML
+        Build dictionary keyed to the internal attribute names from XML
         """
         result = {}
 
         #test to ensure all required tags are in the imrpoted XML data
-        missing_tags = set(tags[0]).difference(
-                            set(list(attrib.keys()))
-                        )
+        missing_tags = set(
+            tags[0]).difference(set(list(attrib.keys())))
 
-        #report error and skip the alignment if required tags are missing
+        #report error and skip alignment if required tags are missing
         if missing_tags:
+
             self.errors.append(
                 'The required XML tags were not found in alignment %s:\n%s'
                 % (align_name, missing_tags)
             )
+
             return None
 
-        #merge the required / optional tag dictionaries and iterate the items
+        #merge the required / optional tag lists and iterate them
         for _tag in tags[0] + tags[1]:
 
             attr_val = LandXml.convert_token(_tag, attrib.get(_tag))
@@ -156,7 +157,9 @@ class AlignmentImporter(object):
         returning it as a dictionary keyed to the alignment name
         """
 
-        result = self._parse_data(align_name, maps.XML_ATTRIBS['Alignment'], alignment.attrib)
+        result = self._parse_data(
+            align_name, maps.XML_ATTRIBS['Alignment'], alignment.attrib
+            )
 
         _start = LandXml.get_child_as_vector(alignment, 'Start')
 
@@ -169,7 +172,8 @@ class AlignmentImporter(object):
 
     def _parse_station_data(self, align_name, alignment):
         """
-        Parse the alignment data to get station equations and return a list of equation dictionaries
+        Parse the alignment data to get station equations and 
+        return a list of equation dictionaries
         """
 
         equations = LandXml.get_children(alignment, 'StaEquation')
@@ -198,7 +202,8 @@ class AlignmentImporter(object):
 
         for curve in geometry:
 
-            #add the curve / line start / center / end coordinates, skipping if any are missing
+            #add the curve / line start / center / end coordinates,
+            #skipping if any are missing
             _points = []
 
             for _tag in ['Start', 'End', 'Center', 'PI']:
@@ -211,6 +216,7 @@ class AlignmentImporter(object):
 
                     #report missing coordinates
                     if not (curve_type == 'line' and _tag in ['Center', 'PI']):
+
                         self.errors.append(
                             'Missing %s %s coordinate in alignment %s'
                             % (curve_type, _tag, align_name)
@@ -218,8 +224,10 @@ class AlignmentImporter(object):
 
                 _points.append(_pt)
 
-            coords = {'Type': curve_type, 'Start': _points[0], 'End': _points[1],
-                      'Center': _points[2], 'PI': _points[3]}
+            coords = {
+                'Type': curve_type, 'Start': _points[0], 'End': _points[1],
+                'Center': _points[2], 'PI': _points[3]
+                }
 
             result.append({
                 **coords,
@@ -230,8 +238,8 @@ class AlignmentImporter(object):
 
     def _parse_coord_geo_data(self, align_name, alignment):
         """
-        Parse the alignment coorinate geometry data to get curve information and
-        return as a dictionary
+        Parse the alignment coorinate geometry data to get curve 
+        information and return as a dictionary
         """
 
         coord_geo = LandXml.get_child(alignment, 'CoordGeom')
@@ -267,19 +275,22 @@ class AlignmentImporter(object):
                         % (node_tag, _tag, align_name)
                     )
 
-            coords = {'Type': node_tag, 'Start': points[0], 'End': points[1],
-                      'Center': points[2], 'PI': points[3]}
+            coords = {
+                'Type': node_tag, 'Start': points[0], 'End': points[1],
+                'Center': points[2], 'PI': points[3]
+                }
 
-            result.append({**coords,
+            result.append({
+                **coords,
                 **self._parse_data(align_name, maps.XML_ATTRIBS[node_tag], geo_node.attrib)
-               })
+            })
 
-        print ('\n<---- Import result ---->\n', result)
         return result
 
     def import_file(self, filepath):
         """
-        Import a LandXML and build the Python dictionary fronm the appropriate elements
+        Import a LandXML and build the Python dictionary fronm the
+        appropriate elements
         """
 
         #get element tree and key nodes for parsing
@@ -315,13 +326,17 @@ class AlignmentImporter(object):
 
         for alignment in alignments:
 
-            align_name = self._get_alignment_name(alignment, list(result.keys()))
+            align_name = self._get_alignment_name(
+                alignment, list(result.keys())
+                )
 
             result['Alignments'][align_name] = {}
             align_dict = result['Alignments'][align_name]
 
             align_dict['meta'] = self._parse_meta_data(align_name, alignment)
             align_dict['station'] = self._parse_station_data(align_name, alignment)
-            align_dict['geometry'] = self._parse_coord_geo_data(align_name, alignment)
+            align_dict['geometry'] = self._parse_coord_geo_data(
+                align_name, alignment
+                )
 
         return result

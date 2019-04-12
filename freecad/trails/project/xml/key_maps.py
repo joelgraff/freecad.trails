@@ -24,42 +24,40 @@
 Key maps for LandXML elements and the internal dictionary keys
 """
 
-from freecad.trails.project.support.const import Const
+from ..support.const import Const
 
 class KeyMaps(Const):
     """
     LandXML tag to local dictionary key mappings
     """
-    XML_DEFAULT = {
-
-    }
 
     #lists of tags for different units of measurements / geometry types
     XML_TAGS = {
         'length':
-            ['radius', 'radiusStart', 'radiusEnd', 'chord', 'external', 'midOrd', 'tangent',
-             'length'],
+            ['radius', 'radiusStart', 'radiusEnd', 'chord', 'external',
+             'midOrd', 'tangent', 'length'],
 
         'angle':
             ['delta', 'dir', 'dirStart', 'dirEnd'],
 
         'coordinate':
             ['Start', 'End', 'Center', 'PI']
-
     }
 
-    #lists of tags for different Python data types.  These are the datatypes that
-    #they represent in XML, not in the dictionary
+    #lists of tags for different Python data types.
+    #These are the datatypes that they represent in XML
     #(e.g. 'rot' = 'ccw' / 'cw' in XML, but -1.0 / 1.0 in dictionary)
     XML_TYPES = {
         'float':
-            ['chord', 'constant', 'delta', 'dir', 'dirEnd', 'dirStart', 'external',
-             'length', 'midOrd', 'radius', 'radiusEnd', 'radiusStart', 'staBack',
-             'staIncrement', 'staInternal', 'staStart', 'tangent'],
+            ['chord', 'constant', 'delta', 'dir', 'dirEnd', 'dirStart',
+             'external', 'length', 'midOrd', 'radius', 'radiusEnd',
+             'radiusStart', 'staBack', 'staIncrement', 'staInternal',
+             'staStart', 'tangent'],
 
         'string':
-            ['crvType', 'desc', 'name', 'note', 'manufacturer', 'manufacturerURL', 'oID',
-             'rot', 'spiType', 'state', 'timeStamp', 'version']
+            ['crvType', 'desc', 'name', 'note', 'manufacturer',
+             'manufacturerURL', 'oID', 'rot', 'spiType', 'state', 'timeStamp',
+             'version']
     }
 
     #map of LandXML tags to internal Python dictionary
@@ -76,7 +74,8 @@ class KeyMaps(Const):
         'version': 'Version'
     }
 
-    #attributes for each LandXML Tag.  Attribute names are divided into two lists.
+    #attributes for each LandXML Tag.
+    #Attribute names are divided into two lists.
     #The first list is required attributes, the second is optional
     XML_ATTRIBS = {
         'Alignment': [

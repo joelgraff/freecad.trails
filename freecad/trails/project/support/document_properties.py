@@ -112,7 +112,8 @@ class DocumentPreferences():
             """
 
             DocumentProperty._set_string(
-                'Document', 'AddThumbnailLogo', DocumentProperty._set_bool_string(value)
+                'Document', 'AddThumbnailLogo',
+                DocumentProperty._set_bool_string(value)
             )
 
         @staticmethod
@@ -140,7 +141,9 @@ class TemplateLibrary():
             Return the template library filepath value
             """
 
-            return DocumentProperty._get_string('Mod/Transportation', 'TemplateLibPath')
+            return DocumentProperty._get_string(
+                'Mod/Transportation', 'TemplateLibPath'
+                )
 
         @staticmethod
         def set_value(value):
@@ -148,7 +151,9 @@ class TemplateLibrary():
             Get the template library filepath value
             """
 
-            DocumentProperty._set_string('Mod/Transportation', 'TemplateLibPath', value)
+            DocumentProperty._set_string(
+                'Mod/Transportation', 'TemplateLibPath', value
+                )
 
 class Policy():
     """
@@ -166,7 +171,9 @@ class Policy():
             Return the minimum tangent length value
             """
 
-            return DocumentProperty._get_float('Mod/Transportation', 'MinimumTangentLength', 500.0)
+            return DocumentProperty._get_float(
+                'Mod/Transportation', 'MinimumTangentLength', 500.0
+                )
 
         @staticmethod
         def set_value(value):
@@ -174,4 +181,6 @@ class Policy():
             Set the minimum tangent length value
             """
 
-            DocumentProperty._set_float('Mod/Trasnportation', 'MinimumTangentLength', value)
+            DocumentProperty._set_float(
+                'Mod/Trasnportation', 'MinimumTangentLength', value
+                )

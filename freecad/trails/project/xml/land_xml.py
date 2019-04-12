@@ -33,8 +33,8 @@ from xml.dom import minidom
 
 import FreeCAD as App
 
-from Project.Support import Units, Utils
-from Project.XML.KeyMaps import KeyMaps
+from ..support import utils
+from .key_maps import KeyMaps
 
 XML_VERSION = 'v1.2'
 XML_NAMESPACE = {XML_VERSION: 'http://www.landxml.org/schema/LandXML-1.2'}
@@ -60,13 +60,13 @@ def convert_token(tag, value):
         return value
 
     if _typ == 'int':
-        return Utils.to_int(value)
+        return utils.to_int(value)
 
     if _typ == 'float':
-        return Utils.to_float(value)
+        return utils.to_float(value)
 
     if _typ == 'vector':
-        coords = Utils.to_float(value.split(' '))
+        coords = utils.to_float(value.split(' '))
 
         if coords:
             return App.Vector(coords)
@@ -155,7 +155,7 @@ def get_child_as_vector(node, node_name, delimiter=' '):
     #validate values as floating point
     try:
         vec_list = [float(_v) for _v in vec_list]
-    except:
+    except ValueError:
         return None
 
     _len = len(vec_list)
@@ -200,7 +200,7 @@ def build_vector(coords):
     if not coords:
         return None
 
-    float_coords = Utils.to_float(coords)
+    float_coords = utils.to_float(coords)
 
     if not all(float_coords):
         return None
