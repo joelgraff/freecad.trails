@@ -31,7 +31,9 @@ class ImportAlignmentModel(QtCore.QAbstractTableModel):
     """
     Data model for aligment import tasks
     """
-    default_flags = QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+    default_flags = QtCore.Qt.ItemIsEditable \
+                    | QtCore.Qt.ItemIsEnabled \
+                    | QtCore.Qt.ItemIsSelectable
 
     def __init__(self, nam, headers, data, parent=None):
 
@@ -103,7 +105,9 @@ class ImportAlignmentModel(QtCore.QAbstractTableModel):
         if not self.headers:
             return None
 
-        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+        if orientation == QtCore.Qt.Horizontal \
+            and role == QtCore.Qt.DisplayRole:
+
             return self.headers[col]
 
         return None

@@ -70,7 +70,8 @@ class ImportAlignmentViewDelegate(QtGui.QStyledItemDelegate):
         """
 
         if index.row() > 0:
-            return super(ImportAlignmentViewDelegate, self).createEditor(parent, option, index)
+            return super(ImportAlignmentViewDelegate, self) \
+                .createEditor(parent, option, index)
 
         self.combo_box = QtGui.QComboBox(parent)
 
@@ -89,7 +90,8 @@ class ImportAlignmentViewDelegate(QtGui.QStyledItemDelegate):
 
         self._is_editing = True
 
-        value = index.data(QtCore.Qt.EditRole) or index.data(QtCore.Qt.DisplayRole)
+        value = index.data(QtCore.Qt.EditRole) \
+                or index.data(QtCore.Qt.DisplayRole)
 
         editor_class = editor.metaObject().className()
 

@@ -1,38 +1,37 @@
 # -*- coding: utf-8 -*-
-# **************************************************************************
-# *                                                                        *
-# *  Copyright (c) 2019 Joel Graff <monograff76@gmail.com>                 *
-# *                                                                        *
-# *  This program is free software; you can redistribute it and/or modify  *
-# *  it under the terms of the GNU Lesser General Public License (LGPL)    *
-# *  as published by the Free Software Foundation; either version 2 of     *
-# *  the License, or (at your option) any later version.                   *
-# *  for detail see the LICENCE text file.                                 *
-# *                                                                        *
-# *  This program is distributed in the hope that it will be useful,       *
-# *  but WITHOUT ANY WARRANTY; without even the implied warranty of        *
-# *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
-# *  GNU Library General Public License for more details.                  *
-# *                                                                        *
-# *  You should have received a copy of the GNU Library General Public     *
-# *  License along with this program; if not, write to the Free Software   *
-# *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
-# *  USA                                                                   *
-# *                                                                        *
-# **************************************************************************
-
+#***********************************************************************
+#*                                                                     *
+#* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
+#*                                                                     *
+#* This program is free software; you can redistribute it and/or modify*
+#* it under the terms of the GNU Lesser General Public License (LGPL)  *
+#* as published by the Free Software Foundation; either version 2 of   *
+#* the License, or (at your option) any later version.                 *
+#* for detail see the LICENCE text file.                               *
+#*                                                                     *
+#* This program is distributed in the hope that it will be useful,     *
+#* but WITHOUT ANY WARRANTY; without even the implied warranty of      *
+#* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the       *
+#* GNU Library General Public License for more details.                *
+#*                                                                     *
+#* You should have received a copy of the GNU Library General Public   *
+#* License along with this program; if not, write to the Free Software *
+#* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307*
+#* USA                                                                 *
+#*                                                                     *
+#***********************************************************************
 """
 Arc generation tools
 """
 
 import math
-import FreeCAD as App
-import Draft
 import numpy
 
-from Project.Support import Units, Utils
-from Geometry import Support
-from Project.Support.Utils import Const, Constants as C
+import FreeCAD as App
+
+from ..project.support import units, utils
+from . import support
+from ..project.support.utils import Const, Constants as C
 
 def _create_geo_func():
 
@@ -42,37 +41,41 @@ def _create_geo_func():
     for _i in range(0, 6):
         _fn.append([lambda _x: 0.0]*7)
 
-    #Vector order - Radius Start, Radius End, Tangent Start, Tangent End, Middle, Chord, UP
+    #Vector order: Radius Start, Radius End, Tangent Start, Tangent End,
+    #Middle, Chord, UP
     _fn.append([lambda _x: _x]*7)
 
     _fn[1][0] = lambda _x: _x
     _fn[3][2] = _fn[1][0]
 
-    _fn[5][0] = lambda _x: (2 * _x) - math.pi
+    _fn[5][0] = lambda _x: _x*2 - math.pi
     _fn[4][3] = _fn[5][0]
 
-    _fn[5][1] = lambda _x: math.pi - (2 * _x)
+    _fn[5][1] = lambda _x: math.pi - _x*2
     _fn[4][2] = _fn[5][1]
 
     _fn[3][0] = lambda _x: _x - C.HALF_PI
     _fn[2][1] = lambda _x: C.HALF_PI - _x
 
-    _fn[4][0] = lambda _x: 2 * _x
+    _fn[4][0] = lambda _x: _x*2
     _fn[4][1] = _fn[4][0]
     _fn[5][2] = _fn[4][0]
     _fn[5][3] = _fn[4][0]
 
-    _fn[6][0] = lambda _x, _delta, _rot: _x + _rot * C.HALF_PI
-    _fn[6][1] = lambda _x, _delta, _rot: _x + _rot * (-_delta + C.HALF_PI)
+    _fn[6][0] = lambda _x, _delta, _rot: _x + _rot*C.HALF_PI
+    _fn[6][1] = lambda _x, _delta, _rot: _x + _rot*(-_delta+C.HALF_PI)
     _fn[6][2] = lambda _x, _delta, _rot: _x
-    _fn[6][3] = lambda _x, _delta, _rot: _x - _rot * _delta
-    _fn[6][4] = lambda _x, _delta, _rot: _x + _rot * (C.HALF_PI - (_delta / 2.0))
-    _fn[6][5] = lambda _x, _delta, _rot: _x - _rot * (_delta / 2.0)
+    _fn[6][3] = lambda _x, _delta, _rot: _x - _rot*_delta
+    _fn[6][4] = lambda _x, _delta, _rot: _x + _rot*(C.HALF_PI - _delta/2.0)
+    _fn[6][5] = lambda _x, _delta, _rot: _x - _rot*(_delta/2.0)
 
     return _fn
 
-class _GEO(Const):
 
+class _GEO(Const):
+    '''
+    Create the geometry functions for arc processing
+    '''
     FUNC = _create_geo_func()
 
 def get_scalar_matrix(vecs):
@@ -82,12 +85,12 @@ def get_scalar_matrix(vecs):
     """
     #ensure list is a list of lists (not vectors)
     #and create the matrix
-    mat_list = [list(_v) if _v else [0,0,0] for _v in vecs]
+    mat_list = [list(_v) if _v else [0, 0, 0] for _v in vecs]
     rot_list = [0.0]*7
 
     #get rotation direction for vector bearings
     for _i in range(0, 6):
-        rot_list[_i] = Support.get_rotation(C.UP, vecs[_i])
+        rot_list[_i] = support.get_rotation(C.UP, vecs[_i])
 
     mat_list.append(list(C.UP))
 
@@ -112,7 +115,9 @@ def get_scalar_matrix(vecs):
 
             _angle = None
 
-            if not (any([math.isnan(_v) for _v in [_denom, _n]]) or _denom == 0.0):
+            if not (any([math.isnan(_v) for _v in [_denom, _n]])
+                    or _denom == 0.0):
+
                 _angle = math.acos(_n / _denom)
 
             #compute the arc central angle for all but the last row
@@ -143,16 +148,16 @@ def get_bearings(arc, mat, delta, rot):
     for _i in range(0, 6):
         bearings.append(_GEO.FUNC[6][_i](mat.A[6][_i], delta, rot))
 
-    _b = [_v % C.TWO_PI for _v in bearings[0:6] if Utils.to_float(_v)]
+    _b = [_v % C.TWO_PI for _v in bearings[0:6] if utils.to_float(_v)]
 
     if _b:
 
         #check to ensure all tangent start bearing values are identical
-        if not Support.within_tolerance(_b):
+        if not support.within_tolerance(_b):
             return None
 
         #default to calculated if different from supplied bearing
-        if not Support.within_tolerance(_b[0], bearing_in):
+        if not support.within_tolerance(_b[0], bearing_in):
             bearing_in = _b[0]
 
     if not bearing_in:
@@ -160,7 +165,7 @@ def get_bearings(arc, mat, delta, rot):
 
     _b_out = bearing_in + (delta * rot)
 
-    if not Support.within_tolerance(_b_out, bearing_out):
+    if not support.within_tolerance(_b_out, bearing_out):
         bearing_out = _b_out
 
     _row = mat.A[6]
@@ -169,16 +174,16 @@ def get_bearings(arc, mat, delta, rot):
     _tan = [bearing_in, bearing_out]
     _int = [_row[4], _row[5]]
 
-    if not Utils.to_float(_rad[0]):
+    if not utils.to_float(_rad[0]):
         _rad[0] = bearing_in - rot * (C.HALF_PI)
 
-    if not Utils.to_float(_rad[1]):
+    if not utils.to_float(_rad[1]):
         _rad[1] = _rad[0] + rot * delta
 
-    if not Utils.to_float(_int[0]):
+    if not utils.to_float(_int[0]):
         _int[0] = _rad[0] + rot * (delta / 2.0)
 
-    if not Utils.to_float(_int[1]):
+    if not utils.to_float(_int[1]):
         _int[1] = _rad[0] + rot * ((math.pi + delta) / 2.0)
 
     mat_bearings = {
@@ -187,7 +192,10 @@ def get_bearings(arc, mat, delta, rot):
         'Internal': _int
     }
 
-    return {'BearingIn': bearing_in, 'BearingOut': bearing_out, 'Bearings': mat_bearings}
+    return {
+        'BearingIn': bearing_in, 'BearingOut': bearing_out,
+        'Bearings': mat_bearings
+        }
 
 def get_lengths(arc, mat):
     """
@@ -211,18 +219,21 @@ def get_lengths(arc, mat):
             continue
 
         #if both were calculated and they aren't the same, quit
-        if all(_s) and not Support.within_tolerance(_s):
+        if all(_s) and not support.within_tolerance(_s):
             return None
 
-        if _s[0] and Support.within_tolerance(_s[0], params[_i]):
+        if _s[0] and support.within_tolerance(_s[0], params[_i]):
             continue
 
         params[_i] = _s[0]
 
-    #test middle and chord, if no user-defined value or out-of-tolerance, use calculated
+    #test middle and chord.
+    #If no user-defined value or out-of-tolerance, use calculated
     for _i in range(4, 6):
 
-        if lengths[_i] and Support.within_tolerance(lengths[_i], params[_i - 2]):
+        if lengths[_i] \
+           and support.within_tolerance(lengths[_i], params[_i - 2]):
+
             continue
 
         params[_i - 2] = lengths[_i]
@@ -247,7 +258,7 @@ def get_delta(arc, mat):
     #find the first occurence of the delta value
     for _i in range(1, 6):
         for _j in range(0, _i):
-            if Utils.to_float(mat.A[_i][_j]):
+            if utils.to_float(mat.A[_i][_j]):
                 delta = mat.A[_i][_j]
                 break
 
@@ -260,13 +271,13 @@ def get_rotation(arc, vecs):
     """
     Determine the dirction of rotation
     """
-    v1 = [_v for _v in vecs[0:3] if _v and _v != App.Vector()]
-    v2 = [_v for _v in vecs[3:] if _v and _v != App.Vector()]
+    _v1 = [_v for _v in vecs[0:3] if _v and _v != App.Vector()]
+    _v2 = [_v for _v in vecs[3:] if _v and _v != App.Vector()]
 
-    if not (v1 and v2):
+    if not (_v1 and _v2):
         return {'Direction': arc.get('Direction')}
 
-    return {'Direction': Support.get_rotation(v1[0], v2[1])}
+    return {'Direction': support.get_rotation(_v1[0], _v2[1])}
 
 def get_missing_parameters(arc, new_arc):
     """
@@ -300,7 +311,8 @@ def get_missing_parameters(arc, new_arc):
     if not new_arc.get('Chord'):
         new_arc['Chord'] = 2.0 * radius * math.sin(half_delta)
 
-    #quality-check - ensure everything is defined and default to existing where within tolerance
+    #quality-check - ensure everything is defined and default to
+    #existing where within tolerance
     _keys = ['Chord', 'MiddleOrdinate', 'Tangent', 'Length', 'External']
 
     existing_vals = [arc.get(_k) for _k in _keys]
@@ -313,7 +325,7 @@ def get_missing_parameters(arc, new_arc):
         vals[_v] = existing_vals[_i]
 
         #if values are close enough, then keep existing
-        if Support.within_tolerance(vals[_v], new_vals[_i]):
+        if support.within_tolerance(vals[_v], new_vals[_i]):
             continue
 
         #out of tolerance or existing is None - use the calculated value
@@ -329,7 +341,7 @@ def get_coordinates(arc, points):
     vectors = {}
 
     for _k, _v in arc['Bearings'].items():
-        vectors[_k] = [Support.vector_from_angle(_x) for _x in _v]
+        vectors[_k] = [support.vector_from_angle(_x) for _x in _v]
 
     _start = points[0]
     _end = points[1]
@@ -366,7 +378,9 @@ def get_coordinates(arc, points):
     return {'Start': _start, 'Center': _center, 'End': _end, 'PI': _pi}
 
 def get_parameters(arc):
-
+    """
+    Given a minimum of existing parameters, return a fully-described arc
+    """
     #Vector order:
     #Radius in / out, Tangent in / out, Middle, and Chord
     points = [arc.get('Start'), arc.get('End'),
@@ -378,12 +392,12 @@ def get_parameters(arc):
     if point_count == 0:
         points[0] = App.Vector()
 
-    vecs = [Support.safe_sub(arc.get('Start'), arc.get('Center'), True),
-            Support.safe_sub(arc.get('End'), arc.get('Center'), True),
-            Support.safe_sub(arc.get('PI'), arc.get('Start'), True),
-            Support.safe_sub(arc.get('End'), arc.get('PI'), True),
-            Support.safe_sub(arc.get('PI'), arc.get('Center'), True),
-            Support.safe_sub(arc.get('End'), arc.get('Start'), True)
+    vecs = [support.safe_sub(arc.get('Start'), arc.get('Center'), True),
+            support.safe_sub(arc.get('End'), arc.get('Center'), True),
+            support.safe_sub(arc.get('PI'), arc.get('Start'), True),
+            support.safe_sub(arc.get('End'), arc.get('PI'), True),
+            support.safe_sub(arc.get('PI'), arc.get('Center'), True),
+            support.safe_sub(arc.get('End'), arc.get('Start'), True)
            ]
 
     result = {'Type': 'arc'}
@@ -392,7 +406,9 @@ def get_parameters(arc):
     _p = get_lengths(arc, mat)
 
     if not _p:
-        print('Invalid curve definition: cannot determine radius / tangent lengths')
+        print("""
+        Invalid curve definition: cannot determine radius / tangent lengths
+        """)
         return None
 
     result.update(_p)
@@ -453,7 +469,7 @@ def convert_units(arc, to_document=False):
     result = {}
 
     angle_fn = math.radians
-    scale_factor = Units.scale_factor()
+    scale_factor = units.scale_factor()
 
     if to_document:
         angle_fn = math.degrees
@@ -477,8 +493,9 @@ def convert_units(arc, to_document=False):
 
 def parameter_test(excludes=None):
     """
+    Testing routine
     """
-    scale_factor = 1.0 / Units.scale_factor()
+    scale_factor = 1.0 / units.scale_factor()
 
     radius = 670.00
     delta = 50.3161
@@ -496,16 +513,29 @@ def parameter_test(excludes=None):
         'MiddleOrd': radius * (1 - math.cos(half_delta)),
         'BearingIn': 139.3986,
         'BearingOut': 89.0825,
-        'Start': App.Vector(122056.0603640062, -142398.20717496306, 0.0).multiply(scale_factor),
-        'Center': App.Vector(277108.1622932797, -9495.910944558627, 0.0).multiply(scale_factor),
-        'End': App.Vector(280378.2141876281, -213685.7280672748, 0.0).multiply(scale_factor),
-        'PI': App.Vector(184476.32163324804, -215221.57431973785, 0.0).multiply(scale_factor)
+
+        'Start': App.Vector(
+            122056.0603640062, -142398.20717496306, 0.0
+            ).multiply(scale_factor),
+
+        'Center': App.Vector(
+            277108.1622932797, -9495.910944558627, 0.0
+            ).multiply(scale_factor),
+
+        'End': App.Vector(
+            280378.2141876281, -213685.7280672748, 0.0
+            ).multiply(scale_factor),
+
+        'PI': App.Vector(
+            184476.32163324804, -215221.57431973785, 0.0
+            ).multiply(scale_factor)
     }
 
-    #convert the arc to system units before processing, and back to document units on return
+    #convert the arc to system units before processing
+    #and back to document units on return
 
     comp = {'Type': 'arc',
-            'Radius': 670.0, 
+            'Radius': 670.0,
             'Tangent': 314.67910063712156,
             'Chord': 569.6563702820052,
             'Delta': 50.31609999999997,
@@ -541,7 +571,9 @@ def parameter_test(excludes=None):
     return arc
 
 def run_test(arc, comp, excludes):
-
+    """
+    Testing routine
+    """
     import copy
     dct = copy.deepcopy(arc)
 
@@ -563,7 +595,7 @@ def run_test(arc, comp, excludes):
             _x = _v.Length
             _w = _w.Length
 
-        if not Support.within_tolerance(_x, _w):
+        if not support.within_tolerance(_x, _w):
             print('Mismatch on %s: %f (%f)' % (_k, _w, _x))
 
     return result
@@ -571,14 +603,24 @@ def run_test(arc, comp, excludes):
 #############
 #test output:
 #############
-#Radius vectors:  [Vector (-508.7011218152017, -436.03115561156324, 0.0), Vector (10.728516713741602, -669.914098171641, 0.0)] 
+#Radius vectors:  [Vector (-508.7011218152017, -436.03115561156324, 0.0),
+#Vector (10.728516713741602, -669.914098171641, 0.0)]
 
-#Tangent vectors:  [Vector (204.79088342927093, -238.92180821776492, -0.0), Vector (314.63875509967215, 5.038865657687206, 0.0)] 
+#Tangent vectors:  [Vector (204.79088342927093, -238.92180821776492, -0.0),
+#Vector (314.63875509967215, 5.038865657687206, 0.0)]
 
 #Middle vector:  Vector (-303.9102383859307, -674.9529638293282, 0.0)
 #bearings:  [2.4329645426705673, 1.5547829309078485]
 
-#{'Direction': -1.0, 'Delta': 50.3161, 'Radius': 670.0, 'Length': 588.3816798810216, 'Tangent': 314.67910063712156, 'Chord': 569.6563702820052, 'External': 70.21816809491217, 'MiddleOrd': 63.55717091445238, 'BearingIn': 139.3986, 'BearingOut': 89.0825, 'Start': Vector (400.44639227036157, -467.1857190779628, 0.0), 'Center': Vector (909.1475140855633, -31.154563466399697, 0.0), 'End': Vector (919.8760307993049, -701.0686616380407, 0.0), 'PI': Vector (605.2372756996326, -706.1075272957279, 0.0)}
+#{'Direction': -1.0, 'Delta': 50.3161, 'Radius': 670.0, 'Length':
+#588.3816798810216, 'Tangent': 314.67910063712156, 'Chord': 569.6563702820052,
+# 'External': 70.21816809491217, 'MiddleOrd': 63.55717091445238, 'BearingIn':
+# 139.3986, 'BearingOut': 89.0825, 'Start': Vector (400.44639227036157,
+# -467.1857190779628, 0.0), 'Center': Vector (909.1475140855633,
+# -31.154563466399697, 0.0), 'End': Vector (919.8760307993049,
+# -701.0686616380407, 0.0), 'PI': Vector (605.2372756996326,
+# -706.1075272957279,
+# 0.0)}
 
 def get_points(arc_dict, interval, interval_type='Segment'):
     """
@@ -614,10 +656,11 @@ def get_points(arc_dict, interval, interval_type='Segment'):
 
     result = [start_coord]
 
-    #define the incremental angle for segment calculations, defaulting to 'Segment'
+    #define the incremental angle for segment calculations,
+    #defaulting to 'Segment'
     _delta = angle / interval
 
-    _ratio = (interval * Units.scale_factor()) / radius
+    _ratio = (interval * units.scale_factor()) / radius
 
     if interval_type == 'Interval':
         _delta = _ratio
@@ -625,8 +668,12 @@ def get_points(arc_dict, interval, interval_type='Segment'):
     elif interval_type == 'Tolerance':
         _delta = 2.0 * math.acos(1 - _ratio)
 
-    #pre-calculate the segment deltas, increasing from zero to the central angle
-    segment_deltas = [float(_i + 1) * _delta for _i in range(0, int(angle / _delta) + 1)]
+    #pre-calculate the segment deltas,
+    #increasing from zero to the central angle
+    segment_deltas = [
+        float(_i + 1) * _delta for _i in range(0, int(angle / _delta) + 1)
+    ]
+
     segment_deltas[-1] = angle
 
     for delta in segment_deltas:

@@ -25,21 +25,29 @@
 Line generation tools
 """
 
-from Geometry import Support
+from . import Support
 
 def get_parameters(line):
     """
     Return a fully-defined line
     """
 
-    _coord_truth = [not line.get('Start') is None, not line.get('End') is None]
-    _param_truth = [not line.get('BearingIn') is None, not line.get('Length') is None]
+    _coord_truth = [
+        not line.get('Start') is None,
+        not line.get('End') is None
+    ]
+    _param_truth = [
+        not line.get('BearingIn') is None,
+        not line.get('Length') is None
+    ]
 
     #both coordinates defined
     _case_one = all(_coord_truth)
 
     #only one coordinate defined, plus both length and bearing
-    _case_two = any(_coord_truth) and not all(_coord_truth) and all(_param_truth)
+    _case_two = any(_coord_truth) \
+                and not all(_coord_truth) \
+                and all(_param_truth)
 
     if _case_one:
 
@@ -62,7 +70,9 @@ def get_parameters(line):
 
     elif _case_two:
 
-        _vec = Support.vector_from_angle(line['BearingIn']).multiply(line['Length'])
+        _vec = Support.vector_from_angle(
+            line['BearingIn']
+            ).multiply(line['Length'])
 
         if line.get('Start'):
             line['End'] = line['Start'].add(_vec)

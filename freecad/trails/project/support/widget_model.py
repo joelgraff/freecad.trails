@@ -31,7 +31,8 @@ def create(data, headers=None, parent=None):
     """
     Creation method for widget models.
 
-    Model is a dictionary or nested list providing the data set in a tabular format
+    Model is a dictionary or nested list providing the data set in a
+    tabular format
     """
 
     model = WidgetModel(parent)
@@ -122,7 +123,9 @@ class WidgetModel(QtCore.QAbstractTableModel):
         if not self.headers:
             return None
 
-        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+        if orientation == QtCore.Qt.Horizontal \
+            and role == QtCore.Qt.DisplayRole:
+
             return self.headers[col]
 
         return None

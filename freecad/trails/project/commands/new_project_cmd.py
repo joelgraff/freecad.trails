@@ -30,8 +30,8 @@ import FreeCADGui as Gui
 
 from PySide import QtGui, QtCore
 
-from freecad.trails.project.support import DocumentProperties
-from freecad.trails import resources, corridor
+from ..support import document_properties
+from ... import resources, corridor
 
 class NewProject():
     """
@@ -90,8 +90,9 @@ class NewProject():
 
         template_path = os.path.dirname(corridor.__file__)
 
-        DocumentProperties.TemplateLibrary.Path.set_value(template_path
-                                                          + '/Templates')
+        document_properties.TemplateLibrary.Path.set_value(
+            template_path + '/Templates'
+            )
 
     def _create_document(self):
 
@@ -130,7 +131,9 @@ class NewProject():
         #create default groups
         App.ActiveDocument.addObject('App::DocumentObjectGroup', 'Templates')
         App.ActiveDocument.addObject('App::DocumentObjectGroup', 'Alignments')
-        App.ActiveDocument.addObject('App::DocumentObjectGroup', 'Element Lofts')
+        App.ActiveDocument.addObject(
+            'App::DocumentObjectGroup', 'Element Lofts'
+        )
 
         #create observers to handle tasks when document-level events occur
         #Observer.create(App.ActiveDocument)

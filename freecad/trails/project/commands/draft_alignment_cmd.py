@@ -60,7 +60,8 @@ class DraftAlignmentCmd(DraftTools.Line):
         Icon resources.
         """
 
-        icon_path = os.path.dirname(resources.__file__) + '/icons/new_alignment.svg'
+        icon_path = os.path.dirname(resources.__file__) \
+            + '/icons/new_alignment.svg'
 
         return {'Pixmap'  : icon_path,
                 'Accel'   : 'Ctrl+Shift+D',
@@ -120,7 +121,9 @@ class DraftAlignmentCmd(DraftTools.Line):
                 if not (self.node or self.support):
 
                     DraftTools.getSupport(arg)
-                    self.point, ctrl_point, info = DraftTools.getPoint(self, arg, noTracker=True)
+
+                    self.point, ctrl_point, info = \
+                        DraftTools.getPoint(self, arg, noTracker=True)
 
                 if self.point:
 

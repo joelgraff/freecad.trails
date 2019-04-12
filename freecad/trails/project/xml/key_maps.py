@@ -96,12 +96,14 @@ class KeyMaps(Const):
         ],
         'Curve': [
             ['rot'],
-            ['chord', 'crvType', 'delta', 'desc', 'dirEnd', 'dirStart', 'external', 'length',
-             'midOrd', 'name', 'radius', 'staStart', 'state', 'tangent', 'oID', 'note']
+            ['chord', 'crvType', 'delta', 'desc', 'dirEnd', 'dirStart',
+             'external', 'length', 'midOrd', 'name', 'radius', 'staStart',
+             'state', 'tangent', 'oID', 'note']
         ],
         'Line': [
             [],
-            ['desc', 'dir', 'length', 'name', 'staStart', 'state', 'oID', 'note']
+            ['desc', 'dir', 'length', 'name', 'staStart', 'state', 'oID',
+             'note']
         ],
         'Project': [
             ['name'],
@@ -109,8 +111,9 @@ class KeyMaps(Const):
         ],
         'Spiral': [
             ['length', 'radiusEnd', 'radiusStart', 'rot', 'spiType'],
-            ['chord', 'constant', 'desc', 'dirEnd', 'dirStart', 'external', 'length', 'midOrd',
-             'name', 'note', 'oID', 'radius', 'staStart', 'state', 'tangent']
+            ['chord', 'constant', 'desc', 'dirEnd', 'dirStart', 'external',
+             'length', 'midOrd', 'name', 'note', 'oID', 'radius', 'staStart',
+             'state', 'tangent']
         ],
         'StaEquation': [
             ['staAhead', 'staInternal'],

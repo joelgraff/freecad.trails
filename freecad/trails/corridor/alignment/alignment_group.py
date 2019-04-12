@@ -32,9 +32,8 @@ __url__ = "https://www.freecadweb.org"
 import FreeCAD as App
 
 from freecad.trails.project.support import Properties, Units
-from freecad.trails.project.ProjectObserver import ProjectObserver
-from freecad.trails.project.XML.AlignmentExporter \
-    import AlignmentExporter
+from ...project.project_observer import ProjectObserver
+from ...project.xml.alignment_exporter import AlignmentExporter
 
 def get():
     """
@@ -54,7 +53,9 @@ def create():
     if obj:
         return obj.Proxy
 
-    obj = App.ActiveDocument.addObject("App::DocumentObjectGroupPython", 'Alignments')
+    obj = App.ActiveDocument.addObject(
+        "App::DocumentObjectGroupPython", 'Alignments'
+        )
 
     fpo = _AlignmentGroup(obj)
     _ViewProviderAlignmentGroup(obj.ViewObject)
@@ -72,12 +73,14 @@ class _AlignmentGroup():
         Properties.add(obj, 'String', 'ID', 'Alignment group name', '',
                        is_read_only=True)
 
-        Properties.add(obj, 'String', 'Description', 'Alignment group description', '',
-                       is_read_only=True)
+        Properties.add(obj, 'String', 'Description',
+                       'Alignment group description', '', is_read_only=True)
 
         Properties.add(obj, 'FileIncluded', 'Xml_Path', '', '', is_hidden=True)
 
-        ProjectObserver.get(App.ActiveDocument).register('StartSaveDocument', self.write_xml)
+        ProjectObserver.get(App.ActiveDocument).register(
+            'StartSaveDocument', self.write_xml
+            )
 
 
     def onDocumentRestored(self, obj):
@@ -85,7 +88,9 @@ class _AlignmentGroup():
         Restore object references on reload
         """
 
-        ProjectObserver.get(App.ActiveDocument).register('StartSaveDocument', self.write_xml)
+        ProjectObserver.get(App.ActiveDocument).register(
+            'StartSaveDocument', self.write_xml
+            )
 
     def write_xml(self):
         """
@@ -101,7 +106,9 @@ class _AlignmentGroup():
 
         exporter = AlignmentExporter()
 
-        template_path = App.getUserAppDataDir() + 'Mod/freecad-transportation-wb/Resources/data/'
+        template_path = App.getUserAppDataDir() \
+                        + 'Mod/freecad-transportation-wb/Resources/data/'
+
         template_file = 'landXML-' + Units.get_doc_units()[1] + '.xml'
 
         xml_path = App.ActiveDocument.TransientDir + '/alignment.xml'

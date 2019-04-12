@@ -26,12 +26,13 @@ Command to being alignment importing
 import os
 import FreeCADGui as Gui
 
-from freecad.trails.project.tasks.alignment.import_alignment_task 
-    import ImportAlignmentTask
+from ..tasks.alignment.import_alignment_task import ImportAlignmentTask
+
 
 class ImportAlignmentCmd():
     """
-    Initiates the ImportAlignmentTask class for 2D horizontal and vertical curves
+    Initiates the ImportAlignmentTask class
+    for 2D horizontal and vertical curves
     """
     def __init__(self):
         """
@@ -51,7 +52,7 @@ class ImportAlignmentCmd():
         return {'Pixmap'  : icon_path,
                 'Accel'   : 'Ctrl+Shift+A',
                 'MenuText': 'Import Alignment',
-                'ToolTip' : 
+                'ToolTip' :
                     'Import a horizontal or vertical alignment from CSV',
                 'CmdType' : 'ForEdit'}
 

@@ -109,6 +109,6 @@ class AlignmentTracker(Tracker):
                 self.sep.addChild(self.wire)
 
             else:
-                App.Console.PrintWarning(
-                    'AlignmentTracker.recompute() failed to read Inventor string\n'
-                )
+                App.Console.PrintWarning("""
+                    AlignmentTracker.recompute() failed to read Inventor string\n
+                """)

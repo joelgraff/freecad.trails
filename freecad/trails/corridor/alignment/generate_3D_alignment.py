@@ -66,7 +66,9 @@ class Generate3dAlignment():
         return {'Pixmap'  : icon_path,
                 'Accel'   : "Ctrl+Alt+G",
                 'MenuText': "Generate 3D Alignment",
-                'ToolTip' : "Generate the 3D Alignment from an Alignment group",
+                'ToolTip' :
+                    "Generate the 3D Alignment from an Alignment group",
+
                 'CmdType' : "ForEdit"}
 
     def validate_selection(self):
@@ -128,7 +130,9 @@ class Generate3dAlignment():
             point_count += 1
 
         #vertial curve as equidistant points at the step interval...
-        vt_pts = edges[1].discretize(Number=point_count, First=0.00, Last=hz_len)
+        vt_pts = edges[1].discretize(
+            Number=point_count, First=0.00, Last=hz_len
+        )
 
         end_point = vt_pts[point_count - 1]
 
