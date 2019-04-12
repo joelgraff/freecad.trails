@@ -50,7 +50,10 @@ class AlignmentExporter(object):
         Write the project and application data to the file
         """
 
-        self._write_tree_data(data, landxml.get_child(node, 'Project'), Maps.XML_ATTRIBS['Project'])
+        self._write_tree_data(
+            data, landxml.get_child(node, 'Project'),
+            Maps.XML_ATTRIBS['Project']
+            )
 
         node = landxml.get_child(node, 'Application')
 
@@ -106,7 +109,9 @@ class AlignmentExporter(object):
         """
 
         for sta_eq in data:
-            self._write_tree_data(sta_eq, parent, Maps.XML_ATTRIBS['StaEquation'])
+            self._write_tree_data(
+                sta_eq, parent, Maps.XML_ATTRIBS['StaEquation']
+            )
 
     def _write_coordinates(self, data, parent):
         """
@@ -138,12 +143,16 @@ class AlignmentExporter(object):
         _align_node = landxml.add_child(parent, 'Alignment')
 
         #write the alignment attributes
-        self._write_tree_data(data['meta'], _align_node, Maps.XML_ATTRIBS['Alignment'])
+        self._write_tree_data(
+            data['meta'], _align_node, Maps.XML_ATTRIBS['Alignment']
+        )
 
         _coord_geo_node = landxml.add_child(_align_node, 'CoordGeom')
 
         #write the geo coordinate attributes
-        self._write_tree_data(data['meta'], _coord_geo_node, Maps.XML_ATTRIBS['CoordGeom'])
+        self._write_tree_data(
+            data['meta'], _coord_geo_node, Maps.XML_ATTRIBS['CoordGeom']
+        )
 
         #write the station equation data
         self.write_station_data(data['station'], _align_node)

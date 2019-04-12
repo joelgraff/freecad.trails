@@ -33,7 +33,7 @@ from PySide import QtGui, QtCore
 from ..support import document_properties
 from ... import resources, corridor
 
-class NewProject():
+class NewProjectCmd():
     """
     Command to creatae a new Trails project
     """
@@ -138,4 +138,4 @@ class NewProject():
         #create observers to handle tasks when document-level events occur
         #Observer.create(App.ActiveDocument)
 
-Gui.addCommand('NewProject', NewProject())
+Gui.addCommand('NewProjectCmd', NewProjectCmd())

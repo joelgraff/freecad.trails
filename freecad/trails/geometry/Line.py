@@ -1,31 +1,31 @@
 # -*- coding: utf-8 -*-
-# **************************************************************************
-# *                                                                        *
-# *  Copyright (c) 2019 Joel Graff <monograff76@gmail.com>                 *
-# *                                                                        *
-# *  This program is free software; you can redistribute it and/or modify  *
-# *  it under the terms of the GNU Lesser General Public License (LGPL)    *
-# *  as published by the Free Software Foundation; either version 2 of     *
-# *  the License, or (at your option) any later version.                   *
-# *  for detail see the LICENCE text file.                                 *
-# *                                                                        *
-# *  This program is distributed in the hope that it will be useful,       *
-# *  but WITHOUT ANY WARRANTY; without even the implied warranty of        *
-# *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
-# *  GNU Library General Public License for more details.                  *
-# *                                                                        *
-# *  You should have received a copy of the GNU Library General Public     *
-# *  License along with this program; if not, write to the Free Software   *
-# *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
-# *  USA                                                                   *
-# *                                                                        *
-# **************************************************************************
+#***********************************************************************
+#*                                                                     *
+#* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
+#*                                                                     *
+#* This program is free software; you can redistribute it and/or modify*
+#* it under the terms of the GNU Lesser General Public License (LGPL)  *
+#* as published by the Free Software Foundation; either version 2 of   *
+#* the License, or (at your option) any later version.                 *
+#* for detail see the LICENCE text file.                               *
+#*                                                                     *
+#* This program is distributed in the hope that it will be useful,     *
+#* but WITHOUT ANY WARRANTY; without even the implied warranty of      *
+#* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the       *
+#* GNU Library General Public License for more details.                *
+#*                                                                     *
+#* You should have received a copy of the GNU Library General Public   *
+#* License along with this program; if not, write to the Free Software *
+#* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307*
+#* USA                                                                 *
+#*                                                                     *
+#***********************************************************************
 
 """
 Line generation tools
 """
 
-from . import Support
+from . import support
 
 def get_parameters(line):
     """
@@ -52,25 +52,25 @@ def get_parameters(line):
     if _case_one:
 
         line_vec = line['End'].sub(line['Start'])
-        _bearing = Support.get_bearing(line_vec)
+        _bearing = support.get_bearing(line_vec)
         _length = line_vec.Length
 
         #test for missing parameters, preserving the existing ones
         if line.get('BearingIn'):
-            if Support.within_tolerance(line['BearingIn'], _bearing):
+            if support.within_tolerance(line['BearingIn'], _bearing):
                 _bearing = line['BearingIn']
 
         line['BearingIn'] = line['BearingOut'] = _bearing
 
         if line.get('Length'):
-            if Support.within_tolerance(line['Length'], _length):
+            if support.within_tolerance(line['Length'], _length):
                 _length = line['Length']
 
         line['Length'] = _length
 
     elif _case_two:
 
-        _vec = Support.vector_from_angle(
+        _vec = support.vector_from_angle(
             line['BearingIn']
             ).multiply(line['Length'])
 

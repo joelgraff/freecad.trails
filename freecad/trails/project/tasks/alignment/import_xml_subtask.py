@@ -43,6 +43,7 @@ class ImportXmlSubtask:
 
         self.panel = panel
 
+        print(filepath)
         self.parser = AlignmentImporter()
         self.data = self.parser.import_file(filepath)
 

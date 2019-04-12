@@ -21,42 +21,42 @@
 #*                                                                     *
 #***********************************************************************
 """
-Importer for Alignments in land_xml files
+Importer for Alignments in landxml files
 """
 
 import math
 
 from xml.etree import ElementTree as etree
 
-from ..support import Units, Utils
-from . import land_xml
+from ..support import units, utils
+from . import landxml
 from .key_maps import KeyMaps as maps
 
 
 class AlignmentImporter(object):
     """
-    land_xml parsing class for alignments
+    landxml parsing class for alignments
     """
 
     def __init__(self):
 
         self.errors = []
 
-    def _validate_units(self, units):
+    def _validate_units(self, _units):
         """
         Validate the alignment units, ensuring they match the document
         """
 
-        if units is None:
+        if _units is None:
             print('Missing units')
             return ''
 
-        xml_units = units[0].attrib['linearUnit']
+        xml_units = _units[0].attrib['linearUnit']
 
-        if xml_units != Units.get_doc_units()[1]:
+        if xml_units != units.get_doc_units()[1]:
 
             self.errors.append(
-                'Document units of ' + Units.get_doc_units()[1]
+                'Document units of ' + units.get_doc_units()[1]
                 + ' expected, units of ' + xml_units + 'found')
 
             return ''
@@ -109,7 +109,7 @@ class AlignmentImporter(object):
         #merge the required / optional tag lists and iterate them
         for _tag in tags[0] + tags[1]:
 
-            attr_val = land_xml.convert_token(_tag, attrib.get(_tag))
+            attr_val = landxml.convert_token(_tag, attrib.get(_tag))
 
             if attr_val is None:
 
@@ -121,17 +121,17 @@ class AlignmentImporter(object):
 
             #test for angles and convert to radians
             elif _tag in maps.XML_TAGS['angle']:
-                attr_val = Utils.to_float(attrib.get(_tag))
+                attr_val = utils.to_float(attrib.get(_tag))
 
                 if attr_val:
                     attr_val = math.radians(attr_val)
 
             #test for lengths to convert to mm
             elif _tag in maps.XML_TAGS['length']:
-                attr_val = Utils.to_float(attrib.get(_tag))
+                attr_val = utils.to_float(attrib.get(_tag))
 
                 if attr_val:
-                    attr_val = attr_val * Units.scale_factor()
+                    attr_val = attr_val * units.scale_factor()
 
             #convert rotation from string to number
             elif _tag == 'rot':
@@ -145,7 +145,7 @@ class AlignmentImporter(object):
                     attr_val = -1.0
 
             if not attr_val:
-                attr_val = land_xml.get_tag_default(_tag)
+                attr_val = landxml.get_tag_default(_tag)
 
             result[maps.XML_MAP[_tag]] = attr_val
 
@@ -162,7 +162,7 @@ class AlignmentImporter(object):
             align_name, maps.XML_ATTRIBS['Alignment'], alignment.attrib
             )
 
-        _start = land_xml.get_child_as_vector(alignment, 'Start')
+        _start = landxml.get_child_as_vector(alignment, 'Start')
 
         if _start:
             _start.multiply()
@@ -177,7 +177,7 @@ class AlignmentImporter(object):
         return a list of equation dictionaries
         """
 
-        equations = land_xml.get_children(alignment, 'StaEquation')
+        equations = landxml.get_children(alignment, 'StaEquation')
 
         print(equations)
         result = []
@@ -212,10 +212,10 @@ class AlignmentImporter(object):
 
             for _tag in ['Start', 'End', 'Center', 'PI']:
 
-                _pt = land_xml.get_child_as_vector(curve, _tag)
+                _pt = landxml.get_child_as_vector(curve, _tag)
 
                 if _pt:
-                    _pt.multiply(Units.scale_factor())
+                    _pt.multiply(units.scale_factor())
                 else:
 
                     #report missing coordinates
@@ -248,7 +248,7 @@ class AlignmentImporter(object):
         information and return as a dictionary
         """
 
-        coord_geo = land_xml.get_child(alignment, 'CoordGeom')
+        coord_geo = landxml.get_child(alignment, 'CoordGeom')
 
         if not coord_geo:
             print('Missing coordinate geometry for ', align_name)
@@ -267,12 +267,12 @@ class AlignmentImporter(object):
 
             for _tag in ['Start', 'End', 'Center', 'PI']:
 
-                _pt = land_xml.get_child_as_vector(geo_node, _tag)
+                _pt = landxml.get_child_as_vector(geo_node, _tag)
 
                 points.append(None)
 
                 if _pt:
-                    points[-1] = (_pt.multiply(Units.scale_factor()))
+                    points[-1] = (_pt.multiply(units.scale_factor()))
                     continue
 
                 if not (node_tag == 'Line' and _tag in ['Center', 'PI']):
@@ -297,7 +297,7 @@ class AlignmentImporter(object):
 
     def import_file(self, filepath):
         """
-        Import a land_xml and build the Python dictionary fronm the
+        Import a landxml and build the Python dictionary fronm the
         appropriate elements
         """
 
@@ -305,16 +305,23 @@ class AlignmentImporter(object):
         doc = etree.parse(filepath)
         root = doc.getroot()
 
-        project = land_xml.get_child(root, 'Project')
-        units = land_xml.get_child(root, 'Units')
-        alignments = land_xml.get_child(root, 'Alignments')
+        print('\nnode:\n')
+        print(landxml.dump_node(root))
+
+        project = landxml.get_child(root, 'Project')
+        units_ = landxml.get_child(root, 'units')
+        alignments = landxml.get_child(root, 'Alignments')
+
+        print(project)
+        print(units_)
+        print(alignments)
 
         #aport if key nodes are missing
-        if not units:
+        if not units_:
             self.errors.append('Missing project units')
             return None
 
-        unit_name = self._validate_units(units)
+        unit_name = self._validate_units(units_)
 
         if not unit_name:
             self.errors.append('Invalid project units')

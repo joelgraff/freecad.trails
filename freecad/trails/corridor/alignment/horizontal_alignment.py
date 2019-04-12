@@ -27,9 +27,9 @@ Class for managing 2D Horizontal Alignments
 import FreeCAD as App
 import Draft
 
-from freecad.trails.project.support import Properties, Units, Utils
-from freecad.trails.geometry import Arc, Line, Support
-from freecad.trails.corridor.alignment import alignment_group
+from ...project.support import properties, units, utils
+from ...geometry import arc, line, support
+from . import alignment_group
 
 _CLASS_NAME = 'HorizontalAlignment'
 _TYPE = 'Part::Part2DObjectPython'
@@ -103,18 +103,18 @@ class _HorizontalAlignment(Draft._Wire):
         #add class properties
 
         #metadata
-        Properties.add(obj, 'String', 'ID', 'ID of alignment', '')
-        Properties.add(obj, 'String', 'oID', 'Object ID', '')
+        properties.add(obj, 'String', 'ID', 'ID of alignment', '')
+        properties.add(obj, 'String', 'oID', 'Object ID', '')
 
-        Properties.add(
+        properties.add(
             obj, 'Length', 'Length', 'Alignment length', 0.0, is_read_only=True
         )
 
-        Properties.add(
+        properties.add(
             obj, 'String', 'Description', 'Alignment description', ''
         )
 
-        Properties.add(
+        properties.add(
             obj, 'Length', 'Start Station',
             'Starting station of the alignment', 0.0
         )
@@ -123,9 +123,9 @@ class _HorizontalAlignment(Draft._Wire):
             'App::PropertyEnumeration', 'Status', 'Base', 'Alignment status'
         ).Status = ['existing', 'proposed', 'abandoned', 'destroyed']
 
-        Properties.add(obj, 'VectorList', 'Station Equations',
+        properties.add(obj, 'VectorList', 'Station Equations',
                        'Station equation along the alignment', [])
-        Properties.add(
+        properties.add(
             obj, 'Vector', 'Datum', 'Datum value as Northing / Easting',
             App.Vector(0.0, 0.0, 0.0)
         )
@@ -133,13 +133,13 @@ class _HorizontalAlignment(Draft._Wire):
 
 
         #geometry
-        Properties.add(
+        properties.add(
             obj, 'VectorList', 'PIs', """
             Discretization of Points of Intersection (PIs) as a list of
             vectors""", []
             )
 
-        Properties.add(
+        properties.add(
             obj, 'Link', 'Parent Alignment',
             'Links to parent alignment object', None
         )
@@ -155,7 +155,7 @@ class _HorizontalAlignment(Draft._Wire):
             'App::PropertyEnumeration', 'Method', 'Segment', subdivision_desc
         ).Method = ['Tolerance', 'Interval', 'Segment']
 
-        Properties.add(obj, 'Float', 'Segment.Seg_Value',
+        properties.add(obj, 'Float', 'Segment.Seg_Value',
                        'Set the curve segments to control accuracy', 1.0)
 
         delattr(self, 'no_execute')
@@ -195,10 +195,10 @@ class _HorizontalAlignment(Draft._Wire):
         for _i, _geo in enumerate(self.geometry['geometry']):
 
             if _geo['Type'] == 'Curve':
-                _geo = Arc.get_parameters(_geo)
+                _geo = arc.get_parameters(_geo)
 
-            elif _geo['Type'] == 'Line':
-                _geo = Line.get_parameters(_geo)
+            elif _geo['Type'] == 'line':
+                _geo = line.get_parameters(_geo)
 
             else:
                 self.errors.append('Undefined geometry: ' + _geo)
@@ -239,11 +239,11 @@ class _HorizontalAlignment(Draft._Wire):
 
             _coord = _geo['Start']
 
-            if not Support.within_tolerance(_coord.Length, _prev_coord.Length):
+            if not support.within_tolerance(_coord.Length, _prev_coord.Length):
 
                 #build the line using the provided parameters and add it
                 _geo_list.append(
-                    Line.get_parameters({'Start': App.Vector(_prev_coord),
+                    line.get_parameters({'Start': App.Vector(_prev_coord),
                                          'End': App.Vector(_coord),
                                          'BearingIn': _geo['BearingIn'],
                                          'BearingOut': _geo['BearingOut'],
@@ -319,8 +319,8 @@ class _HorizontalAlignment(Draft._Wire):
             delta = _geo_station - _datum['StartStation']
 
             #cutoff if error is below tolerance
-            if not Support.within_tolerance(delta):
-                delta *= Units.scale_factor()
+            if not support.within_tolerance(delta):
+                delta *= units.scale_factor()
             else:
                 delta = 0.0
 
@@ -329,7 +329,7 @@ class _HorizontalAlignment(Draft._Wire):
 
                 #calcualte the start based on station delta
                 _datum['Start'] = _datum['Start'].sub(
-                    Support.vector_from_angle(
+                    support.vector_from_angle(
                         _geo['BearingIn']).multiply(delta)
                 )
 
@@ -347,7 +347,7 @@ class _HorizontalAlignment(Draft._Wire):
         if _geo_truth[1]:
 
             #scale the length to the document units
-            delta = _geo_start.sub(_datum['Start']).Length/Units.scale_factor()
+            delta = _geo_start.sub(_datum['Start']).Length/units.scale_factor()
 
             _datum['StartStation'] -= delta
 
@@ -381,15 +381,15 @@ class _HorizontalAlignment(Draft._Wire):
 
             #calculate the difference between the vector length
             #and station distance in document units
-            _delta = (_vector.Length - _sta_len) / Units.scale_factor()
+            _delta = (_vector.Length - _sta_len) / units.scale_factor()
 
             #if the stationing / coordinates are out of tolerance,
             #the error is with the coordinate vector or station
-            if not Support.within_tolerance(_delta):
-                bearing_angle = Support.get_bearing(_vector)
+            if not support.within_tolerance(_delta):
+                bearing_angle = support.get_bearing(_vector)
 
                 #fix station if coordinate vector bearings match
-                if Support.within_tolerance(bearing_angle, _geo['BearingIn']):
+                if support.within_tolerance(bearing_angle, _geo['BearingIn']):
 
                     _geo['InternalStation'] = (
                         _prev_geo['InternalStation'][1] \
@@ -398,12 +398,12 @@ class _HorizontalAlignment(Draft._Wire):
 
                     _geo['StartStation'] = _prev_geo['StartStation'] + \
                                            _prev_geo['Length'] / \
-                                           Units.scale_factor() + \
-                                           _vector.Length/Units.scale_factor()
+                                           units.scale_factor() + \
+                                           _vector.Length/units.scale_factor()
 
                 #otherwise, fix the coordinate
                 else:
-                    _bearing_vector = Support.vector_from_angle(
+                    _bearing_vector = support.vector_from_angle(
                         _geo['BearingIn']
                     ).multiply(_sta_len)
 
@@ -440,7 +440,7 @@ class _HorizontalAlignment(Draft._Wire):
                 )
                 return False
 
-            if not Support.within_tolerance(_b, prev_bearing):
+            if not support.within_tolerance(_b, prev_bearing):
                 self.errors.append(
                     'Bearing mismatch ({0:.4f}, {1:.4f}) at curve {2}'\
                         .format(prev_bearing, _b, _geo)
@@ -485,14 +485,14 @@ class _HorizontalAlignment(Draft._Wire):
 
                 delta = geo_coord.sub(prev_coord).Length
 
-                if not Support.within_tolerance(delta):
-                    geo_station += delta / Units.scale_factor()
+                if not support.within_tolerance(delta):
+                    geo_station += delta / units.scale_factor()
 
                 _geo['StartStation'] = geo_station
 
             prev_coord = _geo['End']
             prev_station = _geo['StartStation'] \
-                + _geo['Length']/Units.scale_factor()
+                + _geo['Length']/units.scale_factor()
 
             int_sta = self._get_internal_station(geo_station)
 
@@ -523,7 +523,7 @@ class _HorizontalAlignment(Draft._Wire):
         #add final distance to position
         position += station - start_sta
 
-        return position * Units.scale_factor()
+        return position * units.scale_factor()
 
     def assign_meta_data(self):
         """
@@ -565,7 +565,7 @@ class _HorizontalAlignment(Draft._Wire):
         _meta = self.geometry['meta']
 
         _eqn_list = []
-        _start_sta = Utils.to_float(_meta.get('StartStation'))
+        _start_sta = utils.to_float(_meta.get('StartStation'))
 
         if _start_sta:
             _eqn_list.append(App.Vector(0.0, _start_sta, 0.0))
@@ -618,7 +618,7 @@ class _HorizontalAlignment(Draft._Wire):
                 continue
 
             if curve['Type'] == 'arc':
-                points.append(Arc.get_points(curve, interval, interval_type))
+                points.append(arc.get_points(curve, interval, interval_type))
 
             #if curve['Type'] == 'line':
             #    points.append([curve['Start'], curve['End']])
@@ -647,8 +647,8 @@ class _HorizontalAlignment(Draft._Wire):
             self.geometry['meta']['Length'] - last_curve['InternalStation'][1]
             )
 
-        if not Support.within_tolerance(last_tangent):
-            _vec = Support.vector_from_angle(last_curve['BearingOut'])\
+        if not support.within_tolerance(last_tangent):
+            _vec = support.vector_from_angle(last_curve['BearingOut'])\
                 .multiply(last_tangent)
 
             last_point = result[-1]

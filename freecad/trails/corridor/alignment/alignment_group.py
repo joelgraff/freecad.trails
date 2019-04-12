@@ -31,7 +31,7 @@ __url__ = "https://www.freecadweb.org"
 
 import FreeCAD as App
 
-from freecad.trails.project.support import Properties, Units
+from freecad.trails.project.support import properties, units
 from ...project.project_observer import ProjectObserver
 from ...project.xml.alignment_exporter import AlignmentExporter
 
@@ -70,13 +70,13 @@ class _AlignmentGroup():
         self.Type = "AlignmentGroup"
         self.Object = obj
 
-        Properties.add(obj, 'String', 'ID', 'Alignment group name', '',
+        properties.add(obj, 'String', 'ID', 'Alignment group name', '',
                        is_read_only=True)
 
-        Properties.add(obj, 'String', 'Description',
+        properties.add(obj, 'String', 'Description',
                        'Alignment group description', '', is_read_only=True)
 
-        Properties.add(obj, 'FileIncluded', 'Xml_Path', '', '', is_hidden=True)
+        properties.add(obj, 'FileIncluded', 'Xml_Path', '', '', is_hidden=True)
 
         ProjectObserver.get(App.ActiveDocument).register(
             'StartSaveDocument', self.write_xml
@@ -109,7 +109,7 @@ class _AlignmentGroup():
         template_path = App.getUserAppDataDir() \
                         + 'Mod/freecad-transportation-wb/Resources/data/'
 
-        template_file = 'landXML-' + Units.get_doc_units()[1] + '.xml'
+        template_file = 'landXML-' + units.get_doc_units()[1] + '.xml'
 
         xml_path = App.ActiveDocument.TransientDir + '/alignment.xml'
 

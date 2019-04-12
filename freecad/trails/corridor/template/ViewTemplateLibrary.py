@@ -20,14 +20,15 @@
 # *  USA                                                                   *
 # *                                                                        *
 # **************************************************************************
+"""
+Manages template library UI
+"""
 
-import Draft
-import Part
 import os
-import time
+
 import FreeCAD as App
 import FreeCADGui as Gui
-from Corridor.template import TemplateLibrary, SketchTemplate
+from . import TemplateLibrary, SketchTemplate
 
 class ViewTemplateLibrary():
     """
@@ -54,20 +55,28 @@ class ViewTemplateLibrary():
 
     def _validate_tree(self):
         """
-        Validate the tree of the active document, ensuring there is a templates folder
+        Validate the tree of the active document, ensuring there is a
+        templates folder
         """
 
-        result = App.ActiveDocument.findObjects('App::DocumentObjectGroup', 'Templates')
+        result = App.ActiveDocument.findObjects(
+            'App::DocumentObjectGroup', 'Templates'
+        )
 
         if not result:
-            result = [App.ActiveDocument.addObject('App::DocumentObjectGroup', 'Templates')]
+            result = [
+                App.ActiveDocument.addObject(
+                    'App::DocumentObjectGroup', 'Templates'
+                )
+            ]
 
         return result[0]
 
     def _library_call_back(self, path):
         """
         Library Callback
-        Merge the selected template into the project and add it to the templates group
+        Merge the selected template into the project and add it to the
+        templates group
         """
 
         #create a snapshot of the tree root where new objects will be merged
@@ -101,7 +110,9 @@ class ViewTemplateLibrary():
             App.ActiveDocument.removeObject(obj_name)
 
     def Activated(self):
-
+        """
+        Activation callback
+        """
         TemplateLibrary.show(self._library_call_back)
 
 

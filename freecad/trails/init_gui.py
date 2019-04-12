@@ -25,8 +25,12 @@ GUI Initialization module
 
 import os
 import FreeCADGui as Gui
-from freecad.trails import ICONPATH
+from . import ICONPATH
 
+from .project.commands \
+    import new_project_cmd, import_alignment_cmd
+
+from .corridor.template import ViewTemplateLibrary
 
 class TrailsWorkbench(Gui.Workbench):
     """
@@ -48,26 +52,28 @@ class TrailsWorkbench(Gui.Workbench):
 
             'Transportation': {
                 'gui': self.menu + self.toolbar,
-                'cmd': ['NewProject']
+                'cmd': ['NewProjectCmd']
             },
 
             'Alignment': {
                 'gui': self.menu + self.toolbar + self.context,
                 'cmd': ['ImportAlignmentCmd',
-                        'GenerateVerticalAlignment',
-                        'Generate3dAlignment'
+                        #'GenerateVerticalAlignment',
+                        #'Generate3dAlignment'
                        ]
             },
 
             'Element Template': {
                 'gui': self.menu + self.toolbar + self.context,
-                'cmd': ['GenerateElementLoft', 'ViewTemplateLibrary']
+                'cmd': ['ViewTemplateLibrary',
+                        #'GenerateElementLoft',
+                       ]
             },
 
-            'Element Loft': {
-                'gui': self.menu + self.toolbar + self.context,
-                'cmd': ['EditIntervals']
-            },
+            #'Element Loft': {
+            #'gui': self.menu + self.toolbar + self.context,
+            #'cmd': ['EditIntervals']
+            #},
         }
 
     def GetClassName(self):

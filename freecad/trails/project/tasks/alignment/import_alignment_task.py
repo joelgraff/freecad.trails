@@ -32,7 +32,7 @@ import PySide.QtCore as QtCore
 import FreeCAD as App
 import FreeCADGui as Gui
 
-import import_xml_subtask #, ImportCsvSubtask
+from . import import_xml_subtask #, ImportCsvSubtask
 
 from .... import resources
 from ....corridor.alignment import alignment_group, horizontal_alignment
@@ -44,8 +44,8 @@ class ImportAlignmentTask:
     """
     def __init__(self):
 
-        self.ui_path = os.path.dirname(resources.__file__) + 'ui/'
-        self.ui = self.ui_path + '/ui/import_alignment_task_panel.ui'
+        self.ui_path = resources.__path__[0] + '/ui/'
+        self.ui = self.ui_path + 'import_alignment_task_panel.ui'
 
         self.form = None
         self.subtask = None
@@ -107,8 +107,7 @@ class ImportAlignmentTask:
         that the user chooses
         """
 
-        open_path = App.getUserAppDataDir() + \
-                    'Mod/freecad-transportation-wb/Resources/data/alignment/'
+        open_path = resources.__path__[0] + '/data/alignment/'
 
         filters = self.form.tr(
             'All files (*.*);; CSV files (*.csv);; LandXML files (*.xml)'
