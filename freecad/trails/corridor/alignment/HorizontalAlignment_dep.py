@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # **************************************************************************
 # *                                                                        *
-# *  Copyright (c) 20XX AUTHOR_NAME <AUTHOR_EMAIL>                         *
+# *  Copyright (c) 2019 AUTHOR_NAME <AUTHOR_EMAIL>                         *
 # *                                                                        *
 # *  This program is free software; you can redistribute it and/or modify  *
 # *  it under the terms of the GNU Lesser General Public License (LGPL)    *
