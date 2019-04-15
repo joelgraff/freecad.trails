@@ -31,10 +31,10 @@ __url__ = "https://www.freecadweb.org"
 
 import FreeCAD as App
 
-from ...project.support import properties, units
-from ...project.project_observer import ProjectObserver
-from ...project.xml.alignment_exporter import AlignmentExporter
-from ... import resources
+from ..project.support import properties, units
+from ..project.project_observer import ProjectObserver
+from ..project.xml.alignment_exporter import AlignmentExporter
+from .. import resources
 
 def get():
     """
