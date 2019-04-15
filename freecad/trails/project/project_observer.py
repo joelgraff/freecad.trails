@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #***********************************************************************
 #*                                                                     *
-#* Copyright (c) 2018 Joel Graff <monograff76@gmail.com>               *
+#* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
 #*                                                                     *
 #* This program is free software; you can redistribute it and/or modify*
 #* it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -20,47 +20,63 @@
 #* USA                                                                 *
 #*                                                                     *
 #***********************************************************************
-
 """
-Constant class definition
+Observer class to manage document level events
 """
+import FreeCAD as App
 
-__title__ = "Const.py"
-__author__ = "Joel Graff"
-__url__ = "https://www.freecadweb.org"
 
-class MetaConst(type):
+class ProjectObserver(object):
     """
-    Metaclass to enforce constant-like behaviors
+    Observer class to manage serializing XML to FCStd file
     """
+    docs = {}
 
-    def __getattr__(cls, key):
+    @staticmethod
+    def get(doc):
         """
-        Default getter
-        """
-        return cls[key]
-
-    def __setattr__(cls, key, value):
-        """
-        Default setter
-        """
-        raise TypeError
-
-class Const(object, metaclass=MetaConst):
-    """
-    Const class for subclassing
-    """
-
-    def __getattr__(self, name):
-        """
-        Default getter
+        Factory method to create an observer attached to doc
+        If already created, return it
         """
 
-        return self[name]
+        if not doc in ProjectObserver.docs:
 
-    def __setattr__(self, name, value):
+            ProjectObserver.docs[doc] = ProjectObserver(doc)
+            App.addDocumentObserver(ProjectObserver.docs[doc])
+
+        return ProjectObserver.docs[doc]
+
+    def __init__(self, doc):
         """
-        Default setter
+        Constructor
+        """
+        self.doc = doc
+        self.targets = {'StartSaveDocument': []}
+
+    def register(self, event_name, callback):
+        """
+        Registration for target objects to be updated for specific tasks
         """
 
-        raise TypeError
+        self.targets[event_name].append(callback)
+
+    def slotStartSaveDocument(self, doc, file):
+        """
+        Administrative work to do before saving a document
+        """
+
+        if not doc == self.doc:
+            return
+
+        for _cb in self.targets['StartSaveDocument']:
+            _cb()
+
+    def slotDeletedDocument(self, doc):
+        """
+        Remove observer when document is destroyed
+        """
+        if not doc == self.doc:
+            return
+
+        print('removing observer')
+        App.removeDocumentObserver(self)

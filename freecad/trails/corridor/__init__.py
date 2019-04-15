@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
 """
-Corridor Design Tools
+Trails Corridor Design Tools
 """
-
-version=0

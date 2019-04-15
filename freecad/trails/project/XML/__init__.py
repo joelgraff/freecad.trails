@@ -1,1 +1,3 @@
-# -*- coding: utf-8 -*-
+"""
+XML / LandXML Utilities and support modules
+"""

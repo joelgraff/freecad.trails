@@ -27,10 +27,10 @@ Useful math functions and constants
 import math
 import FreeCAD as App
 
-from Project.Support import Utils
-from Project.Support.Utils import Constants as C
+from ..project.support import utils
+from ..project.support.utils import Constants as C
 
-def safe_sub(lhs, rhs, return_None=False):
+def safe_sub(lhs, rhs, return_none=False):
     """
     Safely subtract two vectors.
     Returns an empty vector or None if either vector is None
@@ -38,7 +38,7 @@ def safe_sub(lhs, rhs, return_None=False):
 
     if not lhs or not rhs:
 
-        if return_None:
+        if return_none:
             return None
 
         return App.Vector()
@@ -59,7 +59,7 @@ def safe_radians(value):
 
     return math.radians(value)
 
-def get_rotation(in_vector, out_vector = None):
+def get_rotation(in_vector, out_vector=None):
     """
     Returns the rotation as a signed integer:
     1 = cw, -1 = ccw, 0 = fail
@@ -126,10 +126,12 @@ def within_tolerance(lhs, rhs=None):
     """
     Determine if two values are within a pre-defined tolerance
 
-    lhs / rhs - values to compare.  
-    If rhs is none, lhs mat be an array, or a single value to compare directly with tolerance
+    lhs / rhs - values to compare
+    If rhs is none, lhs may be a list of values to compare
+    or a single value to compare with tolerance
 
-    Array comparisons check every value against every other, and error if any checks fail
+    List comparisons check every value against every other
+    and errors if any checks fail
     """
 
     if lhs is None:
@@ -158,7 +160,7 @@ def vector_ortho(vector):
     """
     Returns the orthogonal of a 2D vector as (-y, x)
     """
-    
+
     vec_list = vector
 
     if not isinstance(vector, list):
@@ -179,7 +181,7 @@ def vector_from_angle(angle):
     Returns a vector form a given angle in radians
     """
 
-    _angle = Utils.to_float(angle)
+    _angle = utils.to_float(angle)
 
     if not _angle:
         return None
