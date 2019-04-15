@@ -35,7 +35,7 @@ import FreeCADGui as Gui
 from . import import_xml_subtask #, ImportCsvSubtask
 
 from .... import resources
-from ....corridor.alignment import alignment_group, horizontal_alignment
+from ....alignment import alignment_group, horizontal_alignment
 
 
 class ImportAlignmentTask:
