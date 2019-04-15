@@ -309,7 +309,7 @@ class AlignmentImporter(object):
         print(landxml.dump_node(root))
 
         project = landxml.get_child(root, 'Project')
-        units_ = landxml.get_child(root, 'units')
+        units_ = landxml.get_child(root, 'Units')
         alignments = landxml.get_child(root, 'Alignments')
 
         print(project)

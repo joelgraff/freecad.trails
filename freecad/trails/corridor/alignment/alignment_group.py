@@ -31,9 +31,10 @@ __url__ = "https://www.freecadweb.org"
 
 import FreeCAD as App
 
-from freecad.trails.project.support import properties, units
+from ...project.support import properties, units
 from ...project.project_observer import ProjectObserver
 from ...project.xml.alignment_exporter import AlignmentExporter
+from ... import resources
 
 def get():
     """
@@ -106,14 +107,12 @@ class _AlignmentGroup():
 
         exporter = AlignmentExporter()
 
-        template_path = App.getUserAppDataDir() \
-                        + 'Mod/freecad-transportation-wb/Resources/data/'
+        template_path = resources.__path__[0] + '/data/'
 
         template_file = 'landXML-' + units.get_doc_units()[1] + '.xml'
 
         xml_path = App.ActiveDocument.TransientDir + '/alignment.xml'
 
-        print('writing xml...')
         exporter.write(_list, template_path + template_file, xml_path)
 
         self.Object.Xml_Path = xml_path
