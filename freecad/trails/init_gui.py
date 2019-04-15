@@ -28,7 +28,7 @@ import FreeCADGui as Gui
 from . import ICONPATH
 
 from .project.commands \
-    import new_project_cmd, import_alignment_cmd
+    import new_project_cmd, import_alignment_cmd, draft_alignment_cmd
 
 from .corridor.template import ViewTemplateLibrary
 
@@ -58,6 +58,7 @@ class TrailsWorkbench(Gui.Workbench):
             'Alignment': {
                 'gui': self.menu + self.toolbar + self.context,
                 'cmd': ['ImportAlignmentCmd',
+                        'DraftAlignmentCmd',
                         #'GenerateVerticalAlignment',
                         #'Generate3dAlignment'
                        ]
