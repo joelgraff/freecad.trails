@@ -27,8 +27,8 @@ Class for managing 2D Horizontal Alignments
 import FreeCAD as App
 import Draft
 
-from ...project.support import properties, units, utils
-from ...geometry import arc, line, support
+from ..project.support import properties, units, utils
+from ..geometry import arc, line, support
 from . import alignment_group
 
 _CLASS_NAME = 'HorizontalAlignment'
