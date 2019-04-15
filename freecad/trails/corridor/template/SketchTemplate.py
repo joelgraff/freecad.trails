@@ -1,20 +1,21 @@
 
 
-#http://free-cad.sourceforge.net/SrcDocu/dc/d77/classSketcher_1_1SketchObjectPy.html
+#http://free-cad.sourceforge.net/SrcDocu/dc/d77/
+# classSketcher_1_1SketchObjectPy.html
 #https://forum.freecadweb.org/viewtopic.php?t=6121
 #https://forum.freecadweb.org/viewtopic.php?t=12829
-import FreeCAD as App
-from Project.Support import Properties
 
-if App.Gui:
-    import FreeCADGui as Gui
+import FreeCAD as App
+from ...project.support import properties
 
 def create(sketch_object, template_name):
     """
     Constructor method foor creating a new sketch template
     """
 
-    obj = App.ActiveDocument.addObject("Sketcher::SketchObjectPython", template_name)
+    obj = App.ActiveDocument.addObject(
+        "Sketcher::SketchObjectPython", template_name
+    )
 
     _o = _Sketch(obj)
 
@@ -35,7 +36,10 @@ class _Sketch(object):
 
         _ViewProvider(obj.ViewObject)
 
-        Properties.add(obj, 'LinkList', 'Lofts', 'List of dependent lofts', is_read_only=True, default_value=[])
+        properties.add(
+            obj, 'LinkList', 'Lofts', 'List of dependent lofts',
+            is_read_only=True, default_value=[]
+        )
 
         self.Object = obj
 

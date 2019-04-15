@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
 
 # C extensions
 *.so
@@ -102,3 +103,4 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+freecad/trails/__pycache__/__init__.cpython-36.pyc

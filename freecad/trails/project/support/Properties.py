@@ -1,37 +1,38 @@
 # -*- coding: utf-8 -*-
-# **************************************************************************
-# *                                                                        *
-# *  Copyright (c) 2018 Joel Graff <monograff76@gmail.com>                 *
-# *                                                                        *
-# *  This program is free software; you can redistribute it and/or modify  *
-# *  it under the terms of the GNU Lesser General Public License (LGPL)    *
-# *  as published by the Free Software Foundation; either version 2 of     *
-# *  the License, or (at your option) any later version.                   *
-# *  for detail see the LICENCE text file.                                 *
-# *                                                                        *
-# *  This program is distributed in the hope that it will be useful,       *
-# *  but WITHOUT ANY WARRANTY; without even the implied warranty of        *
-# *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
-# *  GNU Library General Public License for more details.                  *
-# *                                                                        *
-# *  You should have received a copy of the GNU Library General Public     *
-# *  License along with this program; if not, write to the Free Software   *
-# *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
-# *  USA                                                                   *
-# *                                                                        *
-# **************************************************************************
+#***********************************************************************
+#*                                                                     *
+#* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
+#*                                                                     *
+#* This program is free software; you can redistribute it and/or modify*
+#* it under the terms of the GNU Lesser General Public License (LGPL)  *
+#* as published by the Free Software Foundation; either version 2 of   *
+#* the License, or (at your option) any later version.                 *
+#* for detail see the LICENCE text file.                               *
+#*                                                                     *
+#* This program is distributed in the hope that it will be useful,     *
+#* but WITHOUT ANY WARRANTY; without even the implied warranty of      *
+#* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the       *
+#* GNU Library General Public License for more details.                *
+#*                                                                     *
+#* You should have received a copy of the GNU Library General Public   *
+#* License along with this program; if not, write to the Free Software *
+#* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307*
+#* USA                                                                 *
+#*                                                                     *
+#***********************************************************************
 
 """
 Helper functions for scripted object properties
 """
 
-__title__ = "Properties.py"
+__title__ = "properties.py"
 __author__ = "Joel Graff"
 __url__ = "https://www.freecadweb.org"
 
 import FreeCAD as App
 
-def add(obj, p_type, name, desc, default_value=None, is_read_only=False, is_hidden=False):
+def add(obj, p_type, name, desc,
+        default_value=None, is_read_only=False, is_hidden=False):
 
     """
     Build FPO properties
