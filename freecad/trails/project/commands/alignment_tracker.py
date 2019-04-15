@@ -59,15 +59,16 @@ class AlignmentTracker(Tracker):
         """
         Recompute geometry based on current points
         """
+        if not self.points:
+            return
+
         if len(self.points) <= 1:
             return
 
         if self.wire:
             self.sep.removeChild(self.wire)
 
-        wire = Part.makeWire(self.points)
-
-        wire = wire.toShape()
+        wire = Part.makePolygon(self.points)
 
         buf = wire.writeInventor(2, 0.01)
 

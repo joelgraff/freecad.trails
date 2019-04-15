@@ -25,17 +25,17 @@ Command to draft a new alignment
 """
 
 import os
+
 import FreeCADGui as Gui
-
-from freecad.trails.project.tasks.alignment.draft_alignment_task \
-    import DraftAlignmentTask
-
-from freecad.trails import resources
-from freecad.trails.project.commands.alignment_tracker import AlignmentTracker
 
 import Draft
 import DraftTools
 from DraftGui import translate, todo
+
+from ..tasks.alignment.draft_alignment_task import DraftAlignmentTask
+
+from ... import resources
+from .alignment_tracker import AlignmentTracker
 
 
 class DraftAlignmentCmd(DraftTools.Line):
@@ -48,8 +48,13 @@ class DraftAlignmentCmd(DraftTools.Line):
         Constructor
         """
 
+        super(DraftAlignmentCmd, self).__init__(self)
+        
         self.alignment_tracker = None
         self.point = None
+        self.obj = None
+        self.node = None
+        self.planetrack = None
 
         DraftTools.Line.Activated(
             self, name=translate('Transportation', 'Alignment')
@@ -162,7 +167,11 @@ class DraftAlignmentCmd(DraftTools.Line):
 
             return
 
+        print(type(self.obj.Shape))
+        res = self.update_shape(self.node)
+        print(type(res))
         self.obj.Shape = self.update_shape(self.node)
+
         print(
             translate(
                 'Transportation',
@@ -175,7 +184,7 @@ class DraftAlignmentCmd(DraftTools.Line):
         Generates the shape to be rendered during the creation process
         """
 
-        return Draft.makeWire(points)
+        return Draft.makeWire(points).Shape
 
     def finish(self, closed=False, cont=False):
         """
@@ -193,23 +202,24 @@ class DraftAlignmentCmd(DraftTools.Line):
 
         #remove temporary object
         if self.obj:
-            old = self.obj.name
+            old = self.obj.Name
             todo.delay(self.doc.removeObject, old)
 
-        if len(self.node) > 1:
-            try:
-                rot, sup, pts, fil = self.getStrings()
-                Gui.addModule('Draft')
-                self.commit(
-                    translate('Transportation', 'Create Test'),
-                    ['points = ' + pts,
-                     'fn = Draft.makeWire(points)',
-                     'Draft.autogroup(fn)'
-                    ]
-                )
+        if self.node:
+            if len(self.node) > 1:
+                try:
+                    rot, sup, pts, fil = self.getStrings()
+                    Gui.addModule('Draft')
+                    self.commit(
+                        translate('Transportation', 'Create Test'),
+                        ['points = ' + pts,
+                        'fn = Draft.makeWire(points)',
+                        'Draft.autogroup(fn)'
+                        ]
+                    )
 
-            except:
-                print('Draft: error delatying commit')
+                except:
+                    print('Draft: error delatying commit')
 
         DraftTools.Creator.finish(self)
 
