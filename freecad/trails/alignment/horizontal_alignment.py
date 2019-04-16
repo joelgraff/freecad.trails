@@ -130,6 +130,9 @@ class _HorizontalAlignment(Draft._Wire):
             App.Vector(0.0, 0.0, 0.0)
         )
 
+        properties.add(
+            obj, 'FloatList', 'Hashes', 'Coordiante hashes', []
+        )
 
 
         #geometry
@@ -173,6 +176,8 @@ class _HorizontalAlignment(Draft._Wire):
         """
 
         self.Object = obj
+
+        self.data = self.Object.InList[0].Proxy.get_alignment_data(obj.ID)
 
     def get_geometry(self):
         """
@@ -609,6 +614,7 @@ class _HorizontalAlignment(Draft._Wire):
         geometry = self.geometry['geometry']
         points = [[self.geometry['meta']['Start']]]
         last_curve = None
+        hashes = {}
 
         #discretize each arc in the geometry list,
         #store each point set as a sublist in the main points list
@@ -617,13 +623,22 @@ class _HorizontalAlignment(Draft._Wire):
             if not curve:
                 continue
 
+            curve_hash = hash(tuple(curve['Start']) + tuple(curve['End']))
+
             if curve['Type'] == 'arc':
-                points.append(arc.get_points(curve, interval, interval_type))
+                _pts, _hsh = arc.get_points(curve, interval, interval_type)
+                points.append(_pts)
+                hashes = {**hashes, 
+                          **dict.fromkeys(set(_hsh), curve_hash)}
+
+            print(hashes)
 
             #if curve['Type'] == 'line':
             #    points.append([curve['Start'], curve['End']])
 
             last_curve = curve
+
+        #self.Object.Hashes = hashes
 
         #store the last point of the first geometry for the next iteration
         _prev = points[0][-1]

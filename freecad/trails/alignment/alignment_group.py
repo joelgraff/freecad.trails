@@ -34,6 +34,7 @@ import FreeCAD as App
 from ..project.support import properties, units
 from ..project.project_observer import ProjectObserver
 from ..project.xml.alignment_exporter import AlignmentExporter
+from ..project.xml.alignment_importer import AlignmentImporter
 from .. import resources
 
 def get():
@@ -70,6 +71,8 @@ class _AlignmentGroup():
         obj.Proxy = self
         self.Type = "AlignmentGroup"
         self.Object = obj
+        self.data = None
+        self.importer = AlignmentImporter()
 
         properties.add(obj, 'String', 'ID', 'Alignment group name', '',
                        is_read_only=True)
@@ -89,9 +92,31 @@ class _AlignmentGroup():
         Restore object references on reload
         """
 
+        self.Object = obj
+
         ProjectObserver.get(App.ActiveDocument).register(
             'StartSaveDocument', self.write_xml
             )
+
+        print('Restoring alignment data...')
+        self.data = AlignmentImporter().import_file(obj.Xml_Path)
+
+    def get_alignment_data(self, id):
+        """
+        Return a reference to the XML data
+        """
+
+        _aligns = self.data.get('Alignments')
+
+        if _aligns is None:
+            print('No Alignment Group data found')
+            return None
+
+        if _aligns[id] is None:
+            print('No alignment data found for ', id)
+            return None
+
+        return _aligns[id]
 
     def write_xml(self):
         """
@@ -116,6 +141,8 @@ class _AlignmentGroup():
         exporter.write(_list, template_path + template_file, xml_path)
 
         self.Object.Xml_Path = xml_path
+
+        self.data = self.importer.import_file(xml_path)
 
     def __getstate__(self):
         return self.Type
