@@ -183,7 +183,7 @@ def get_float_list(text, delimiter=' '):
     values = text.replace('\n', '')
     return list(filter(None, values.split(delimiter)))
 
-def get_vector_string(vector, delimiter=' ', precision=8):
+def get_vector_string(vector, delimiter=' ', precision=6):
     """
     Return a string of vector or list elements
     """

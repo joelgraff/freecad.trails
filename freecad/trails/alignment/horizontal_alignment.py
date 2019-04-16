@@ -91,6 +91,8 @@ class _HorizontalAlignment(Draft._Wire):
         self.Object = obj
         self.errors = []
 
+        self.curve_edges = None
+
         self.geometry = []
         self.meta = {}
 
@@ -178,6 +180,48 @@ class _HorizontalAlignment(Draft._Wire):
         self.Object = obj
 
         self.data = self.Object.InList[0].Proxy.get_alignment_data(obj.ID)
+
+        self.build_curve_edge_dict()
+
+    def build_curve_edge_dict(self):
+        """
+        Build the dictionary which correlates edges to their corresponding
+        curves for quick lookup when curve editing
+        """
+
+        curve_dict = {}
+        curves = self.data['geometry']
+
+        #iterate the curves, creating the dictionary which
+        #creates a list of wire edges corresponding to each curve
+        #keyed to the curve start / end coordinate hash
+        for curve in curves:
+
+            start_coord = curve['Start']
+            end_coord = curve['End']
+            edge_list = []
+
+            #iterate edge list, add edges that fall within curve limits
+            for edge in self.Object.Shape.Edges:
+
+                print("Current: ", edge.Vertexes[0].Point, edge.Vertexes[1].Point)
+                print("Start: ", start_coord)
+                print("end: ", end_coord)
+                if not edge_list:
+                    if start_coord != edge.Vertexes[0].Point:
+                        continue
+
+                edge_list.append(edge)
+
+                if end_coord == edge.Vertexes[1].Point:
+                    break
+
+            curve_hash = hash(tuple(start_coord) + tuple(end_coord))
+            curve_dict[curve_hash] = edge_list
+        
+        self.curve_edges = curve_dict
+
+        print('\n<<<<<----CURVE EDGE DICTIONARY:---->>>>>>\n', self.curve_edges)
 
     def get_geometry(self):
         """
