@@ -104,10 +104,19 @@ class DraftAlignmentCmd(DraftTools.Line):
         #trap mouse movement
         if arg['Type'] == 'SoLocation2Event':
 
-            self.point, ctrl_point, info = \
-                DraftTools.getPoint(self, arg, noTracker=False)
+            p = Gui.ActiveDocument.ActiveView.getCursorPos()
+            point = Gui.ActiveDocument.ActiveView.getPoint(p)
+            info = Gui.ActiveDocument.ActiveView.getObjectInfo(p)
 
-            self.alignment_tracker.update(self.node + [self.point])
+            print('\ncursorpos: ', p)
+            print('\npoint: ', point)
+            print('ninfo: ', info)
+
+            if info:
+                if info['Component']:
+                    print('selected ', info['Component'])
+                    Gui.Selection.addSelection(Gui.ActiveDocument.Sugar_Grove_Road_Horiz, ['Edge11'])
+        #    self.alignment_tracker.update(self.node + [self.point])
 
             DraftTools.redraw3DView()
 

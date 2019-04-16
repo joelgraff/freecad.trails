@@ -676,6 +676,8 @@ def get_points(arc_dict, interval, interval_type='Segment'):
 
     segment_deltas[-1] = angle
 
+    hashes = []
+
     for delta in segment_deltas:
 
         _dfw = App.Vector(_forward).multiply(math.sin(delta))
@@ -683,4 +685,8 @@ def get_points(arc_dict, interval, interval_type='Segment'):
 
         result.append(start_coord.add(_dfw.add(_drt).multiply(radius)))
 
-    return result
+        #store the hash of the starting and ending coordinates
+        #aka - the segment hash
+        hashes.append(hash(tuple(result[-2]) + tuple(result[-1])))
+
+    return result, hashes
