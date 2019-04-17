@@ -212,7 +212,7 @@ class _HorizontalAlignment(Draft._Wire):
                         continue
 
                 #still here?  then we're within the geometry
-                edge_dict[_i] = edge
+                edge_dict['Edge' + str(_i + 1)] = edge
 
                 #if this edge fits the end, we're done
                 if support.within_tolerance(curve_pts[1], edge_pts[1]):
@@ -224,6 +224,13 @@ class _HorizontalAlignment(Draft._Wire):
             curve_dict[curve_hash] = edge_dict
 
         self.curve_edges = curve_dict
+
+    def get_edges(self):
+        """
+        Return the dictionary of curve edges
+        """
+
+        return self.curve_edges
 
     def get_geometry(self):
         """
