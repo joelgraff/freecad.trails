@@ -134,27 +134,55 @@ def within_tolerance(lhs, rhs=None):
     and errors if any checks fail
     """
 
-    if lhs is None:
+    #item list eliminates none types
+    item_list = [_v for _v in [lhs, rhs] if _v]
+
+    if not item_list:
+        print('Unable to perform tolerance check.  Parameters undefined')
         return False
 
-    if isinstance(lhs, list):
+    #abort if any of the data types are not valid
+    if not all([
+            isinstance(_i, (App.Vector, list, float, int)) for _i in item_list
+        ]):
 
-        for _i in range(0, len(lhs) - 1):
+        print('Invalid data type(s) for tolerance check')
+        return False
 
-            rhs = lhs[_i:]
+    items = []
 
-            for _val in rhs:
+    #convert all items of valid type to lists
+    for item in item_list:
 
-                if not abs(lhs[_i] - _val) < C.TOLERANCE:
-                    return False
+        result = item
 
-    elif rhs is None:
-        return abs(lhs) < C.TOLERANCE
+        if isinstance(item, App.Vector):
+            result = list(item)
 
-    else:
-        return abs(lhs-rhs) < C.TOLERANCE
+        elif not isinstance(item, list):
+            result = [item]
 
-    return True
+        items.append(result)
+
+    #default to left-hand side value
+    _delta = items[0]
+
+    #at this point, either both items are defined or at least one is.
+    if len(items) == 2:
+
+        #abort if lists aren't the same length
+        if len(items[0]) != len(items[1]):
+            print('tolerance comparison length mismatch')
+            return False
+
+        #perform element-wise difference and save truth list
+        _delta = [
+            abs(_i[0] - _i[1]) for _i in zip(items[0], items[1])
+        ]
+
+    _truth = [abs(_i) <= C.TOLERANCE for _i in _delta]
+
+    return all(_truth)
 
 def vector_ortho(vector):
     """
