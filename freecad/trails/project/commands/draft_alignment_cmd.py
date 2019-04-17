@@ -26,6 +26,7 @@ Command to draft a new alignment
 
 import os
 
+import FreeCAD as App
 import FreeCADGui as Gui
 
 import Draft
@@ -55,10 +56,36 @@ class DraftAlignmentCmd(DraftTools.Line):
         self.obj = None
         self.node = None
         self.planetrack = None
+        self.alignment = None
+        self.temp_group = None
+        self.is_activated = False
 
         DraftTools.Line.Activated(
             self, name=translate('Transportation', 'Alignment')
         )
+
+    def IsActive(self):
+        """
+        Activation condition requires one alignment be selected
+        """
+
+        if self.is_activated:
+            return False
+
+        if not App.ActiveDocument:
+            return False
+
+        selected = Gui.Selection.getSelection()
+
+        if not selected:
+            return False
+
+        if not selected[0].Proxy.Type == 'HorizontalAlignment':
+            return False
+
+        self.alignment = selected[0]
+
+        return True
 
     def GetResources(self):
         """
@@ -79,16 +106,46 @@ class DraftAlignmentCmd(DraftTools.Line):
         Command activation method
         """
 
-        DraftTools.Line.Activated(
-            self, name=translate('Transportation', 'Alignment')
-        )
+        if self.is_activated:
+            return
 
-        if self.doc:
+        self.is_activated = True
+
+        #DraftTools.Line.Activated(
+        #    self, name=translate('Transportation', 'Alignment')
+        #)
+
+        self.temp_group = \
+            App.ActiveDocument.addObject('App::DocumentObjectGroup', 'Temp')
+
+        wire = Draft.makeWire(self.alignment.Points)
+
+        self.temp_group.addObject(wire)
+
+        if not self.alignment_tracker:
             self.alignment_tracker = AlignmentTracker()
 
-        #panel = DraftAlignmentTask()
-        #Gui.Control.showDialog(panel)
+        self.alignment.ViewObject.LineColor = (0.5, 0.5, 0.5)
+        self.alignment.ViewObject.DrawStyle = u'Dashed'
+
+        panel = DraftAlignmentTask(self.clean_up)
+
+        Gui.Control.showDialog(panel)
         #panel.setup()
+
+    def select_curve_edges(self, edge_name):
+        """
+        Given an edge name, find the curve to which it belongs
+        and the adjacent edges
+        """
+
+        curve_dict = self.alignment.Proxy.get_edges()
+
+        for _k, _v in curve_dict.items():
+
+            if _v.get(edge_name):
+
+                Gui.Selection.addSelection(self.alignment, list(_v.keys()))
 
     def action(self, arg):
         """
@@ -108,14 +165,10 @@ class DraftAlignmentCmd(DraftTools.Line):
             point = Gui.ActiveDocument.ActiveView.getPoint(p)
             info = Gui.ActiveDocument.ActiveView.getObjectInfo(p)
 
-            print('\ncursorpos: ', p)
-            print('\npoint: ', point)
-            print('ninfo: ', info)
-
             if info:
-                if info['Component']:
-                    print('selected ', info['Component'])
-                    Gui.Selection.addSelection(Gui.ActiveDocument.Sugar_Grove_Road_Horiz, ['Edge11'])
+                if 'Edge' in info['Component']:
+                    self.select_curve_edges(info['Component'])
+
         #    self.alignment_tracker.update(self.node + [self.point])
 
             DraftTools.redraw3DView()
@@ -169,17 +222,17 @@ class DraftAlignmentCmd(DraftTools.Line):
 
             self.alignment_tracker.on()
 
-            if self.planetrack:
-                self.planetrack.set(self.node[0])
+            #if self.planetrack:
+            #    self.planetrack.set(self.node[0])
 
-            print(translate('Transportation', 'Pick next  point:\n'))
+            #print(translate('Transportation', 'Pick next  point:\n'))
 
             return
 
         print(type(self.obj.Shape))
-        res = self.update_shape(self.node)
+        #res = self.update_shape(self.node)
         print(type(res))
-        self.obj.Shape = self.update_shape(self.node)
+        #self.obj.Shape = self.update_shape(self.node)
 
         print(
             translate(
@@ -193,7 +246,17 @@ class DraftAlignmentCmd(DraftTools.Line):
         Generates the shape to be rendered during the creation process
         """
 
-        return Draft.makeWire(points).Shape
+        #return Draft.makeWire(points).Shape
+
+    def clean_up(self):
+        """
+        Callback to finish the command
+        """
+
+        print('cleanup!')
+        self.finish()
+
+        return True
 
     def finish(self, closed=False, cont=False):
         """
@@ -210,30 +273,43 @@ class DraftAlignmentCmd(DraftTools.Line):
             Gui.Control.closeDialog()
 
         #remove temporary object
-        if self.obj:
-            old = self.obj.Name
-            todo.delay(self.doc.removeObject, old)
+        #if self.obj:
+        #    old = self.obj.Name
+        #    todo.delay(App.ActiveDocument.removeObject, old)
 
-        if self.node:
-            if len(self.node) > 1:
-                try:
-                    rot, sup, pts, fil = self.getStrings()
-                    Gui.addModule('Draft')
-                    self.commit(
-                        translate('Transportation', 'Create Test'),
-                        ['points = ' + pts,
-                        'fn = Draft.makeWire(points)',
-                        'Draft.autogroup(fn)'
-                        ]
-                    )
+        #if self.node:
+        #    if len(self.node) > 1:
+        #        try:
+        #            rot, sup, pts, fil = self.getStrings()
+        #            Gui.addModule('Draft')
+        #            self.commit(
+        #                translate('Transportation', 'Create Test'),
+        #                ['points = ' + pts,
+        #                'fn = Draft.makeWire(points)',
+        #                'Draft.autogroup(fn)'
+        #                ]
+        #            )
 
-                except:
-                    print('Draft: error delatying commit')
+        #        except:
+        #            print('Draft: error delatying commit')
 
         DraftTools.Creator.finish(self)
 
-        if self.ui:
-            if self.ui.continueMode:
-                self.Activated()
+        #if self.ui:
+        #    if self.ui.continueMode:
+        #        self.Activated()
+
+        if self.alignment:
+            self.alignment.ViewObject.LineColor = (0.0, 0.0, 0.0)
+            self.alignment.ViewObject.DrawStyle = u'Solid'
+
+        if self.temp_group:
+            if self.temp_group.OutList:
+                for _geo in self.temp_group.OutList:
+                    self.temp_group.removeObject(_geo)
+
+            App.ActiveDocument.removeObject(self.temp_group.Name)
+
+        self.is_activated = False
 
 Gui.addCommand('DraftAlignmentCmd', DraftAlignmentCmd())

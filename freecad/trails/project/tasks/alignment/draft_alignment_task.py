@@ -25,6 +25,8 @@
 Task to draft an alignment
 """
 
+from .... import resources
+
 __title__ = "draft_alignment_task.py"
 __author__ = "Joel Graff"
 __url__ = "https://www.freecadweb.org"
@@ -33,9 +35,26 @@ class DraftAlignmentTask:
     """
     Task to manage drafting horizontal alignments
     """
-    def __init__(self):
+    def __init__(self, cb):
         """
         Constructor
         """
 
-        pass
+        self.ui_path = resources.__path__[0] + '/ui/'
+        self.ui = self.ui_path + 'import_alignment_task_panel.ui'
+
+        self.form = None
+        self.subtask = None
+        self.cb = cb
+
+    def accept(self):
+        """
+        Accept the task parameters
+        """
+        return self.cb()
+
+    def reject(self):
+        """
+        Reject the task
+        """
+        return self.cb()
