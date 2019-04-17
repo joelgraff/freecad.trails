@@ -201,9 +201,8 @@ class _HorizontalAlignment(Draft._Wire):
             edge_dict = {}
 
             #iterate edge list, add edges that fall within curve limits
-            for _i in range(0, len(curve_edges)):
+            for _i, edge in enumerate(curve_edges):
 
-                edge = curve_edges[_i]
                 edge_pts = [edge.Vertexes[0].Point, edge.Vertexes[1].Point]
 
                 #empty list means we haven't found the start yet
@@ -677,7 +676,7 @@ class _HorizontalAlignment(Draft._Wire):
             if curve['Type'] == 'arc':
                 _pts, _hsh = arc.get_points(curve, interval, interval_type)
                 points.append(_pts)
-                hashes = {**hashes, 
+                hashes = {**hashes,
                           **dict.fromkeys(set(_hsh), curve_hash)}
 
             #if curve['Type'] == 'line':

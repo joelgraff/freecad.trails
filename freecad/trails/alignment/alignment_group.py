@@ -101,7 +101,7 @@ class _AlignmentGroup():
         print('Restoring alignment data...')
         self.data = AlignmentImporter().import_file(obj.Xml_Path)
 
-    def get_alignment_data(self, id):
+    def get_alignment_data(self, _id):
         """
         Return a reference to the XML data
         """
@@ -112,11 +112,11 @@ class _AlignmentGroup():
             print('No Alignment Group data found')
             return None
 
-        if _aligns[id] is None:
+        if _aligns[_id] is None:
             print('No alignment data found for ', id)
             return None
 
-        return _aligns[id]
+        return _aligns[_id]
 
     def write_xml(self):
         """

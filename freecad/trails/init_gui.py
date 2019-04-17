@@ -71,22 +71,23 @@ class TrailsWorkbench(Gui.Workbench):
                         #'GenerateElementLoft',
                        ]
             },
+            #'Element Loft': {
+            #'gui': self.menu + self.toolbar + self.context,
+            #'cmd': ['EditIntervals']
+            #},
         }
 
         if not self.dev:
             return
 
         #development commands
-        self.command.ui = {**self.command.ui,
+        self.command.ui = {
+            **self.command.ui,
             **{
                 'Test': {
                     'gui': self.menu,
                     'cmd': ['Command']
                 }
-                #'Element Loft': {
-                #'gui': self.menu + self.toolbar + self.context,
-                #'cmd': ['EditIntervals']
-                #},
             }
         }
 

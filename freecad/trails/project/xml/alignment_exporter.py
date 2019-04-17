@@ -96,8 +96,6 @@ class AlignmentExporter(object):
                 else:
                     value = ''
 
-            result = str(value)
-
             landxml.set_attribute(node, _tag, value)
 
     def write_station_data(self, data, parent):

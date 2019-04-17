@@ -120,8 +120,8 @@ def distance_bearing_to_coordinates(distance, bearing):
 
 def coordinates_to_distance_bearing(prev_coord, next_coord):
     """
-    Given two coordinates in (x,y,z) format, calculate the distance between them
-    and the bearing from prev to next
+    Given two coordinates in (x,y,z) format, calculate the distance
+    between them and the bearing from prev to next
     """
 
     distance = (next_coord-prev_coord).Length
