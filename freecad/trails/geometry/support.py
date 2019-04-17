@@ -138,7 +138,6 @@ def within_tolerance(lhs, rhs=None):
     item_list = [_v for _v in [lhs, rhs] if _v]
 
     if not item_list:
-        print('Unable to perform tolerance check.  Parameters undefined')
         return False
 
     #abort if any of the data types are not valid
@@ -146,7 +145,6 @@ def within_tolerance(lhs, rhs=None):
             isinstance(_i, (App.Vector, list, float, int)) for _i in item_list
         ]):
 
-        print('Invalid data type(s) for tolerance check')
         return False
 
     items = []
@@ -172,7 +170,6 @@ def within_tolerance(lhs, rhs=None):
 
         #abort if lists aren't the same length
         if len(items[0]) != len(items[1]):
-            print('tolerance comparison length mismatch')
             return False
 
         #perform element-wise difference and save truth list
