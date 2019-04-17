@@ -33,11 +33,21 @@ from xml.dom import minidom
 
 import FreeCAD as App
 
-from ..support import utils
+from ..support import utils, const
 from .key_maps import KeyMaps
 
-XML_VERSION = 'v1.2'
-XML_NAMESPACE = {XML_VERSION: 'http://www.landxml.org/schema/LandXML-1.2'}
+class C(const.Const):
+    """
+    Useful math constants
+    """
+
+    VERSION = 'v1.2'        #LandXML schema version
+
+    NAMESPACE = {           #LandXML schema namespace
+        VERSION: 'http://www.landxml.org/schema/LandXML-1.2'
+    }
+
+    PRECISION = '{:.9f}'    #Attribute precision for floats
 
 def convert_token(tag, value):
     """
@@ -91,7 +101,7 @@ def write_to_file(node, target, pretty_print=True):
     Write the node to the target file, prettyprinting if desrired
     """
 
-    etree.register_namespace(XML_VERSION, XML_NAMESPACE[XML_VERSION])
+    etree.register_namespace(C.VERSION, C.NAMESPACE[C.VERSION])
 
     _xml = minidom.parseString(
         etree.tostring(node, encoding='utf-8').decode('utf-8')
@@ -99,8 +109,8 @@ def write_to_file(node, target, pretty_print=True):
 
     if pretty_print:
         _xml = _xml.toprettyxml(indent='  ', encoding='utf-8').decode('utf-8')
-        _xml = re.sub(XML_VERSION + ':', '', _xml)
-        _xml = re.sub('xmlns:' + XML_VERSION, 'xmlns', _xml)
+        _xml = re.sub(C.VERSION + ':', '', _xml)
+        _xml = re.sub('xmlns:' + C.VERSION, 'xmlns', _xml)
 
     with open(target, 'w', encoding='UTF-8') as _file:
         _file.write(_xml)
@@ -114,6 +124,18 @@ def dump_node(node):
     dom_string = minidom.parseString(tree_string)
 
     return dom_string.toprettyxml(indent="\t")
+
+def set_attribute(node, tag, value):
+    """
+    Sets the value of the specified attribute
+    """
+
+    result = value
+
+    if isinstance(value, float):
+        result = C.PRECISION.format(value)
+
+    node.set(tag, result)
 
 def set_text(node, text):
     """
@@ -139,7 +161,7 @@ def get_child(node, node_name):
     """
     Return the first child matching node_name in node
     """
-    child = node.find(XML_VERSION + ":" + node_name, XML_NAMESPACE)
+    child = node.find(C.VERSION + ":" + node_name, C.NAMESPACE)
 
     return child
 
@@ -158,6 +180,7 @@ def get_child_as_vector(node, node_name, delimiter=' '):
     #validate values as floating point
     try:
         vec_list = [float(_v) for _v in vec_list]
+
     except ValueError:
         return None
 
@@ -173,7 +196,7 @@ def get_children(node, node_name):
     """
     Return all children mathcing node_name in node
     """
-    return node.findall(XML_VERSION + ':' + node_name, XML_NAMESPACE)
+    return node.findall(C.VERSION + ':' + node_name, C.NAMESPACE)
 
 def get_float_list(text, delimiter=' '):
     """
@@ -183,14 +206,12 @@ def get_float_list(text, delimiter=' '):
     values = text.replace('\n', '')
     return list(filter(None, values.split(delimiter)))
 
-def get_vector_string(vector, delimiter=' ', precision=8):
+def get_vector_string(vector, delimiter=' '):
     """
     Return a string of vector or list elements
     """
 
-    _format_str = '{:.' + str(precision) + 'f}'
-
-    result = [_format_str.format(_v) for _v in vector]
+    result = [C.PRECISION.format(_v) for _v in vector]
 
     return delimiter.join(result)
 

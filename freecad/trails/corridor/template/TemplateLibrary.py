@@ -596,7 +596,7 @@ class ConfigDialog(QtGui.QDialog):
             .GetString('destination', '')
 
         if not librarypath:
-            librarypath = resources.__path__ + '/data/template_library/'
+            librarypath = resources.__path__[0] + '/data/template_library/'
 
         self.lineEdit_3.setText(librarypath)
 
@@ -722,7 +722,7 @@ def show(call_back):
                 "Transportation Template Library",
                 "Location of library", None, ENCODING
             ),
-            resources.__path__ + '/data/template_library/'
+            resources.__path__[0] + '/data/template_library/'
         )
 
         library_path = dialog
