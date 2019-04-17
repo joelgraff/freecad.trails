@@ -44,6 +44,7 @@ class TrailsWorkbench(Gui.Workbench):
 
     def __init__(self):
 
+        self.dev = False
         self.menu = 1
         self.toolbar = 2
         self.context = 4
@@ -70,15 +71,23 @@ class TrailsWorkbench(Gui.Workbench):
                         #'GenerateElementLoft',
                        ]
             },
+        }
 
-            'Test': {
-                'gui': self.menu,
-                'cmd': ['Command']
+        if not self.dev:
+            return
+
+        #development commands
+        self.command.ui = {**self.command.ui,
+            **{
+                'Test': {
+                    'gui': self.menu,
+                    'cmd': ['Command']
+                }
+                #'Element Loft': {
+                #'gui': self.menu + self.toolbar + self.context,
+                #'cmd': ['EditIntervals']
+                #},
             }
-            #'Element Loft': {
-            #'gui': self.menu + self.toolbar + self.context,
-            #'cmd': ['EditIntervals']
-            #},
         }
 
     def GetClassName(self):
