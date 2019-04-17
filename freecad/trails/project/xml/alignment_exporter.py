@@ -98,10 +98,7 @@ class AlignmentExporter(object):
 
             result = str(value)
 
-            if isinstance(value, float):
-                result = '{:.8f}'.format(value)
-
-            node.set(_tag, result)
+            landxml.set_attribute(node, _tag, value)
 
     def write_station_data(self, data, parent):
         """
