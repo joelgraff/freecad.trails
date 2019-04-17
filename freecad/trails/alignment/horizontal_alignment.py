@@ -93,7 +93,7 @@ class _HorizontalAlignment(Draft._Wire):
 
         self.curve_edges = None
 
-        self.geometry = []
+        self.data = []
         self.meta = {}
 
         obj.Label = label
@@ -192,36 +192,39 @@ class _HorizontalAlignment(Draft._Wire):
         curve_dict = {}
         curves = self.data['geometry']
 
-        #iterate the curves, creating the dictionary which
-        #creates a list of wire edges corresponding to each curve
-        #keyed to the curve start / end coordinate hash
+        #iterate the curves, creating the dictionary for each curve
+        #that lists it's wire edges keyed by it's Edge index
         for curve in curves:
 
-            start_coord = curve['Start']
-            end_coord = curve['End']
-            edge_list = []
+            curve_edges = self.Object.Shape.Edges
+            curve_pts = [curve['Start'], curve['End']]
+            edge_dict = {}
 
             #iterate edge list, add edges that fall within curve limits
-            for edge in self.Object.Shape.Edges:
+            for _i in range(0, len(curve_edges)):
 
-                print("Current: ", edge.Vertexes[0].Point, edge.Vertexes[1].Point)
-                print("Start: ", start_coord)
-                print("end: ", end_coord)
-                if not edge_list:
-                    if start_coord != edge.Vertexes[0].Point:
+                edge = curve_edges[_i]
+                edge_pts = [edge.Vertexes[0].Point, edge.Vertexes[1].Point]
+
+                #empty list means we haven't found the start yet
+                if not edge_dict:
+
+                    if not support.within_tolerance(curve_pts[0], edge_pts[0]):
                         continue
 
-                edge_list.append(edge)
+                #still here?  then we're within the geometry
+                edge_dict[_i] = edge
 
-                if end_coord == edge.Vertexes[1].Point:
+                #if this edge fits the end, we're done
+                if support.within_tolerance(curve_pts[1], edge_pts[1]):
                     break
 
-            curve_hash = hash(tuple(start_coord) + tuple(end_coord))
-            curve_dict[curve_hash] = edge_list
-        
-        self.curve_edges = curve_dict
+            #calculate a unique hash based on the curve start and end points
+            #and save the edge list to it
+            curve_hash = hash(tuple(curve_pts[0]) + tuple(curve_pts[1]))
+            curve_dict[curve_hash] = edge_dict
 
-        print('\n<<<<<----CURVE EDGE DICTIONARY:---->>>>>>\n', self.curve_edges)
+        self.curve_edges = curve_dict
 
     def get_geometry(self):
         """
@@ -229,19 +232,19 @@ class _HorizontalAlignment(Draft._Wire):
         reflecting any changes to the data
         """
 
-        return self.geometry
+        return self.data
 
     def set_geometry(self, geometry):
         """
         Assign geometry to the alignment object
         """
 
-        self.geometry = geometry
+        self.data = geometry
 
         self.assign_meta_data()
         self.assign_station_data()
 
-        for _i, _geo in enumerate(self.geometry['geometry']):
+        for _i, _geo in enumerate(self.data['geometry']):
 
             if _geo['Type'] == 'Curve':
                 _geo = arc.get_parameters(_geo)
@@ -253,7 +256,7 @@ class _HorizontalAlignment(Draft._Wire):
                 self.errors.append('Undefined geometry: ' + _geo)
                 continue
 
-            self.geometry['geometry'][_i] = _geo
+            self.data['geometry'][_i] = _geo
 
         self.validate_datum()
 
@@ -269,6 +272,8 @@ class _HorizontalAlignment(Draft._Wire):
         #call once more to catch geometry added by validate_alignment()
         self.validate_stationing()
 
+        self.build_curve_edge_dict()
+
         return True
 
     def validate_alignment(self):
@@ -278,10 +283,10 @@ class _HorizontalAlignment(Draft._Wire):
         must be filled by a completely defined line
         """
 
-        _prev_coord = self.geometry['meta']['Start']
+        _prev_coord = self.data['meta']['Start']
         _geo_list = []
 
-        for _geo in self.geometry['geometry']:
+        for _geo in self.data['geometry']:
 
             if not _geo:
                 continue
@@ -302,7 +307,7 @@ class _HorizontalAlignment(Draft._Wire):
             _geo_list.append(_geo)
             _prev_coord = _geo['End']
 
-        self.geometry['geometry'] = _geo_list
+        self.data['geometry'] = _geo_list
 
     def validate_datum(self):
         """
@@ -310,8 +315,8 @@ class _HorizontalAlignment(Draft._Wire):
         for station and coordinate where none is suplpied and it
         cannot be inferred fromt the starting geometry
         """
-        _datum = self.geometry['meta']
-        _geo = self.geometry['geometry'][0]
+        _datum = self.data['meta']
+        _geo = self.data['geometry'][0]
 
         if not _geo or not _datum:
             print('Unable to validate alignment datum')
@@ -409,8 +414,8 @@ class _HorizontalAlignment(Draft._Wire):
         #calculate distance bewteen curve start and end using
         #internal station and coordinate vectors
 
-        _datum = self.geometry['meta']
-        _geo_data = self.geometry['geometry']
+        _datum = self.data['meta']
+        _geo_data = self.data['geometry']
 
         _prev_geo = {'End': _datum['Start'], 'InternalStation': (0.0, 0.0),
                      'StartStation': _datum['StartStation'], 'Length': 0.0
@@ -465,7 +470,7 @@ class _HorizontalAlignment(Draft._Wire):
         Validate the bearings between geometry, ensuring they are equal
         """
 
-        geo_data = self.geometry['geometry']
+        geo_data = self.data['geometry']
 
         if len(geo_data) < 2:
             return True
@@ -508,14 +513,14 @@ class _HorizontalAlignment(Draft._Wire):
         and end of the curve
         """
 
-        prev_station = self.geometry['meta'].get('StartStation')
-        prev_coord = self.geometry['meta'].get('Start')
+        prev_station = self.data['meta'].get('StartStation')
+        prev_coord = self.data['meta'].get('Start')
 
         if not prev_coord or not prev_station:
             print('Unable to validate alignment stationing')
             return
 
-        for _geo in self.geometry['geometry']:
+        for _geo in self.data['geometry']:
 
             if not _geo:
                 continue
@@ -583,7 +588,7 @@ class _HorizontalAlignment(Draft._Wire):
 
         obj = self.Object
 
-        meta = self.geometry['meta']
+        meta = self.data['meta']
 
         if meta.get('ID'):
             obj.ID = meta['ID']
@@ -610,8 +615,8 @@ class _HorizontalAlignment(Draft._Wire):
 
         obj = self.Object
 
-        _eqs = self.geometry['station']
-        _meta = self.geometry['meta']
+        _eqs = self.data['station']
+        _meta = self.data['meta']
 
         _eqn_list = []
         _start_sta = utils.to_float(_meta.get('StartStation'))
@@ -655,8 +660,8 @@ class _HorizontalAlignment(Draft._Wire):
 
         interval = self.Object.Seg_Value
         interval_type = self.Object.Method
-        geometry = self.geometry['geometry']
-        points = [[self.geometry['meta']['Start']]]
+        geometry = self.data['geometry']
+        points = [[self.data['meta']['Start']]]
         last_curve = None
         hashes = {}
 
@@ -674,8 +679,6 @@ class _HorizontalAlignment(Draft._Wire):
                 points.append(_pts)
                 hashes = {**hashes, 
                           **dict.fromkeys(set(_hsh), curve_hash)}
-
-            print(hashes)
 
             #if curve['Type'] == 'line':
             #    points.append([curve['Start'], curve['End']])
@@ -703,7 +706,7 @@ class _HorizontalAlignment(Draft._Wire):
             _prev = item[-1]
 
         last_tangent = abs(
-            self.geometry['meta']['Length'] - last_curve['InternalStation'][1]
+            self.data['meta']['Length'] - last_curve['InternalStation'][1]
             )
 
         if not support.within_tolerance(last_tangent):
@@ -714,7 +717,6 @@ class _HorizontalAlignment(Draft._Wire):
 
             result.append(last_point.add(_vec))
 
-        #print('\n<><><><><>\n', result)
         return result
 
     def onChanged(self, obj, prop):
