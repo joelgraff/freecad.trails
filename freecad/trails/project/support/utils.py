@@ -33,6 +33,7 @@ import math
 
 import FreeCAD as App
 
+from Draft import _Wire, _ViewProviderWire
 from .const import Const
 
 class Constants(Const):
@@ -45,6 +46,26 @@ class Constants(Const):
     ONE_RADIAN = 180 / math.pi      # one radian in degrees
     TOLERANCE = 0.000001            # tolerance for differences in measurements
     UP = App.Vector(0.0, 1.0, 0.0)  # Up vector
+
+def make_wire(points, wire_name=None, closed=False, support=None):
+    """
+    Reduced version of Draft.makeWire()
+    """
+
+    if not wire_name:
+        wire_name = 'Wire'
+
+    obj = App.ActiveDocument.addObject("Part::Part2DObjectPython", wire_name)
+
+    _Wire(obj)
+
+    obj.Points = points
+    obj.Closed = closed
+    obj.Support = support
+
+    _ViewProviderWire(obj.ViewObject)
+
+    return obj
 
 def to_float(value):
     """
