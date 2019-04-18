@@ -232,8 +232,13 @@ class AlignmentImporter(object):
                         % (node_tag, _tag, align_name)
                     )
 
+            hash_value = None
+
+            if len(points) >= 2 and all(points):
+                hash_value = hash(tuple(points[0]) + tuple(points[1]))
+
             coords = {
-                'Hash': hash(tuple(points[0]) + tuple(points[1])),
+                'Hash': hash_value,
                 'Type': node_tag, 'Start': points[0], 'End': points[1],
                 'Center': points[2], 'PI': points[3]
                 }
