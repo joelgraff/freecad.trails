@@ -193,51 +193,6 @@ class AlignmentImporter(object):
 
         return result
 
-    def _parse_geo_data(self, align_name, geometry, curve_type):
-        """
-        Parse curve data and return as a dictionary
-        """
-
-        result = []
-
-        for curve in geometry:
-
-            #add the curve / line start / center / end coordinates,
-            #skipping if any are missing
-            _points = []
-
-            for _tag in ['Start', 'End', 'Center', 'PI']:
-
-                _pt = landxml.get_child_as_vector(curve, _tag)
-
-                if _pt:
-                    _pt.multiply(units.scale_factor())
-                else:
-
-                    #report missing coordinates
-                    if not (curve_type == 'line' and _tag in ['Center', 'PI']):
-
-                        self.errors.append(
-                            'Missing %s %s coordinate in alignment %s'
-                            % (curve_type, _tag, align_name)
-                        )
-
-                _points.append(_pt)
-
-            coords = {
-                'Type': curve_type, 'Start': _points[0], 'End': _points[1],
-                'Center': _points[2], 'PI': _points[3]
-                }
-
-            result.append({
-                **coords,
-                **self._parse_data(
-                    align_name, maps.XML_ATTRIBS[curve_type], curve.attrib
-                    )
-            })
-
-        return result
-
     def _parse_coord_geo_data(self, align_name, alignment):
         """
         Parse the alignment coorinate geometry data to get curve
@@ -278,6 +233,7 @@ class AlignmentImporter(object):
                     )
 
             coords = {
+                'Hash': hash(tuple(points[0]) + tuple(points[1])),
                 'Type': node_tag, 'Start': points[0], 'End': points[1],
                 'Center': points[2], 'PI': points[3]
                 }
