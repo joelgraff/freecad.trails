@@ -128,7 +128,7 @@ class _AlignmentGroup():
         #iterate the list of children, acquiring their data sets
         #and creating a total data set for alignments.
         for _obj in self.Object.OutList:
-            _list.append(_obj.Proxy.get_geometry())
+            _list.append(_obj.Proxy.get_data())
 
         exporter = AlignmentExporter()
 
