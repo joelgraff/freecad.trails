@@ -220,8 +220,7 @@ class _HorizontalAlignment(Draft._Wire):
 
             #calculate a unique hash based on the curve start and end points
             #and save the edge list to it
-            curve_hash = hash(tuple(curve_pts[0]) + tuple(curve_pts[1]))
-            curve_dict[curve_hash] = edge_dict
+            curve_dict[curve['Hash']] = edge_dict
 
         self.curve_edges = curve_dict
 
@@ -232,13 +231,28 @@ class _HorizontalAlignment(Draft._Wire):
 
         return self.curve_edges
 
-    def get_geometry(self):
+    def get_data(self):
         """
-        Return the geometry dictionary of the alignment,
-        reflecting any changes to the data
+        Return the complete dataset for the alignment
         """
 
         return self.data
+
+    def get_geometry(self, curve_hash=None):
+        """
+        Return the geometry of the curve matching the specified hash
+        value.  If no match, return all of the geometry
+        """
+
+        if not curve_hash:
+            return self.data['geometry']
+
+        for _geo in self.data['geometry']:
+
+            if _geo['Hash'] == curve_hash:
+                return _geo
+
+        return None
 
     def set_geometry(self, geometry):
         """
