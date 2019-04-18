@@ -179,12 +179,9 @@ class AlignmentImporter(object):
 
         equations = landxml.get_children(alignment, 'StaEquation')
 
-        print(equations)
         result = []
 
         for equation in equations:
-
-            print(equation.attrib)
 
             _dict = self._parse_data(
                 align_name, maps.XML_ATTRIBS['StaEquation'], equation.attrib
@@ -192,7 +189,6 @@ class AlignmentImporter(object):
 
             _dict['Alignment'] = align_name
 
-            print('\n<--- dict --->\n', _dict)
             result.append(_dict)
 
         return result
@@ -305,16 +301,9 @@ class AlignmentImporter(object):
         doc = etree.parse(filepath)
         root = doc.getroot()
 
-        print('\nnode:\n')
-        print(landxml.dump_node(root))
-
         project = landxml.get_child(root, 'Project')
         units_ = landxml.get_child(root, 'Units')
         alignments = landxml.get_child(root, 'Alignments')
-
-        print(project)
-        print(units_)
-        print(alignments)
 
         #aport if key nodes are missing
         if not units_:

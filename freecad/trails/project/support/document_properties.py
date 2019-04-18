@@ -141,9 +141,14 @@ class TemplateLibrary():
             Return the template library filepath value
             """
 
-            return DocumentProperty._get_string(
+            result = DocumentProperty._get_string(
                 'Mod/Transportation', 'TemplateLibPath'
                 )
+
+            if result is None:
+                result = ''
+
+            return result
 
         @staticmethod
         def set_value(value):

@@ -45,6 +45,7 @@ import FreeCAD as App
 import FreeCADGui as Gui
 
 from ...project.support import document_properties
+from ... import resources
 
 #encoding error trap
 ENCODING = None
@@ -594,6 +595,9 @@ class ConfigDialog(QtGui.QDialog):
         librarypath = App.ParamGet('User parameter:Plugins/parts_library') \
             .GetString('destination', '')
 
+        if not librarypath:
+            librarypath = resources.__path__[0] + '/data/template_library/'
+
         self.lineEdit_3.setText(librarypath)
 
     def retranslateUi(self):
@@ -710,36 +714,41 @@ def show(call_back):
 
     library_path = document_properties.TemplateLibrary.Path.get_value()
 
-    if not library_path:
+    if not os.path.isdir(library_path):
 
         dialog = QtGui.QFileDialog.getExistingDirectory(
             None,
             QtGui.QApplication.translate(
                 "Transportation Template Library",
                 "Location of library", None, ENCODING
-            )
+            ),
+            resources.__path__[0] + '/data/template_library/'
         )
 
-        document_properties.TemplateLibrary.Path.set_value(dialog)
+        library_path = dialog
 
-    if QtCore.QDir(library_path).exists():
-        _m = Gui.getMainWindow()
-        _w = _m.findChild(QtGui.QDockWidget, "TransportationTemplateLibrary")
-        if _w:
-            if hasattr(_w, "isVisible"):
-                if _w.isVisible():
-                    _w.hide()
-                else:
-                    _w.show()
+    if not os.path.isdir(library_path):
+        print("Library path ", library_path, "not found.")
+        return
+
+    document_properties.TemplateLibrary.Path.set_value(library_path)
+
+    _m = Gui.getMainWindow()
+    _w = _m.findChild(QtGui.QDockWidget, "TransportationTemplateLibrary")
+
+    if _w:
+        if hasattr(_w, "isVisible"):
+            if _w.isVisible():
+                _w.hide()
             else:
-                # something went wrong with our widget... Recreate it
-                del _w
-                _m.addDockWidget(
-                    QtCore.Qt.RightDockWidgetArea, ExpDockWidget(call_back)
-                )
+                _w.show()
         else:
+            # something went wrong with our widget... Recreate it
+            del _w
             _m.addDockWidget(
                 QtCore.Qt.RightDockWidgetArea, ExpDockWidget(call_back)
             )
     else:
-        print("Library path ", library_path, "not found.")
+        _m.addDockWidget(
+            QtCore.Qt.RightDockWidgetArea, ExpDockWidget(call_back)
+        )
