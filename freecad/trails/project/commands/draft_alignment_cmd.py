@@ -38,6 +38,7 @@ from DraftGui import translate
 from ..tasks.alignment.draft_alignment_task import DraftAlignmentTask
 from ...project.support import utils
 from ... import resources
+from ...geometry import arc
 from .alignment_tracker import AlignmentTracker
 
 
@@ -62,6 +63,7 @@ class DraftAlignmentCmd(DraftTools.DraftTool):
         self.edges = None
         self.curve_hash = None
         self.selectable_objects = None
+        self.active_curve = None
 
     def IsActive(self):
         """
@@ -118,7 +120,7 @@ class DraftAlignmentCmd(DraftTools.DraftTool):
 
         #make all other visible geometry unselectable
         view_objects = [
-            _v.ViewObject for _v in App.ActiveDocument.findObjects() 
+            _v.ViewObject for _v in App.ActiveDocument.findObjects()
             if hasattr(_v, 'ViewObject')
         ]
 
@@ -164,8 +166,6 @@ class DraftAlignmentCmd(DraftTools.DraftTool):
         and the adjacent edges
         """
 
-        Gui.Selection.clearSelection()
-
         for _k, _v in self.edges.items():
 
             #skip tangent selection
@@ -182,12 +182,18 @@ class DraftAlignmentCmd(DraftTools.DraftTool):
 
         return None
 
-    def show_control_geometry(self):
+    def show_control_geometry(self, curve_hash=None):
         """
         Given an edge name, draw the control geometry around the curve
         """
 
-        control_geo = self.get_control_geometry()
+        if not curve_hash:
+            curve_hash = self.curve_hash
+
+        if not curve_hash:
+            return
+
+        control_geo = self.get_control_geometry(curve_hash)
 
         if control_geo:
 
@@ -196,7 +202,7 @@ class DraftAlignmentCmd(DraftTools.DraftTool):
 
             return
 
-        curve = self.alignment.Proxy.get_geometry(self.curve_hash)
+        curve = self.alignment.Proxy.get_geometry(curve_hash)
 
         if not curve:
             return
@@ -210,7 +216,7 @@ class DraftAlignmentCmd(DraftTools.DraftTool):
 
         for _k, _v in wires.items():
 
-            _wire = utils.make_wire(_v, wire_name=_k + str(self.curve_hash))
+            _wire = utils.make_wire(_v, wire_name=_k + str(curve_hash))
 
             _wire.ViewObject.DrawStyle = 'Dashed'
             _wire.ViewObject.LineColor = (0.8, 0.8, 0.1)
@@ -218,35 +224,33 @@ class DraftAlignmentCmd(DraftTools.DraftTool):
 
             self.temp_group.addObject(_wire)
 
-    def get_control_geometry(self):
+    def get_control_geometry(self, curve_hash=None):
         """
         Return a list of control geometry names
         """
 
-        if not self.curve_hash:
+        if not curve_hash:
+            curve_hash = self.curve_hash
+
+        if not curve_hash:
             return None
 
-        hash_str = str(self.curve_hash)
+        hash_str = str(curve_hash)
 
         return [_v.Name for _v in self.temp_group.Group if hash_str in _v.Name]
 
-    def activate_control_geometry(self):
-        """
-        Set the view attributes to indicate selected curve is in edit mode
-        """
-
-        for _nam in self.get_control_geometry():
-
-            vobj = App.ActiveDocument.getObject(_nam).ViewObject
-            vobj.DrawStyle = u'Solid'
-            vobj.LineColor = (0.0, 0.0, 1.0)
-
-    def hide_control_geometry(self):
+    def hide_control_geometry(self, curve_hash=None):
         """
         Hide defined geometry so we don't have to recreate it later
         """
 
-        control_geo = self.get_control_geometry()
+        if not curve_hash:
+            curve_hash = self.curve_hash
+
+        if not curve_hash:
+            return
+
+        control_geo = self.get_control_geometry(curve_hash)
 
         for _geo in control_geo:
             App.ActiveDocument.getObject(_geo).ViewObject.Visibility = False
@@ -257,9 +261,44 @@ class DraftAlignmentCmd(DraftTools.DraftTool):
         """
 
         for _nam in self.get_control_geometry():
-
-            print('deleting ', _nam)
             App.ActiveDocument.removeObject(_nam)
+
+    def show_curve(self, curve_hash):
+        """
+        Show a curve in place of the wire alignment
+        """
+
+        curve_name = 'curve_' + str(curve_hash)
+
+        geo = App.ActiveDocument.getObject(curve_name)
+
+        if geo:
+            geo.ViewObject.Visibility = True
+            return
+
+        curve = self.alignment.Proxy.get_geometry(curve_hash)
+
+        if not curve:
+            return
+
+        points, hashes = arc.get_points(curve, 100, layer=0.2)
+
+        geo = utils.make_wire(points, curve_name).ViewObject
+
+        geo.LineColor = (1.0, 1.0, 1.0)
+
+    def hide_curve(self, curve_hash):
+        """
+        Hide an existing curve wire
+        """
+        curve_name = 'curve_' + str(curve_hash)
+
+        geo = App.ActiveDocument.getObject(curve_name)
+
+        if not geo:
+            return None
+
+        geo.ViewObject.Visibility = False
 
     def action(self, arg):
         """
@@ -276,22 +315,55 @@ class DraftAlignmentCmd(DraftTools.DraftTool):
         if arg['Type'] == 'SoLocation2Event':
 
             _p = Gui.ActiveDocument.ActiveView.getCursorPos()
-            #point = Gui.ActiveDocument.ActiveView.getPoint(p)
             info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
 
             curve_hash = None
 
+            #test to see which curve is under the cursor
             if info:
                 if info['Object'] == self.alignment_draft.Name:
                     curve_hash = self.select_curve_edges(info['Component'])
 
-            if curve_hash:
+            #matching hashes?  nothing to do for mouseover
+            if self.curve_hash == curve_hash:
+                return
 
-                if self.curve_hash != curve_hash:
-                    self.curve_hash = curve_hash
-                    self.show_control_geometry()
+            #hashes do not match.  Deselect last selected curve
+            if Gui.Selection.getSelection():
+                Gui.Selection.clearSelection()
+
+            if self.active_curve != self.curve_hash:
+                self.hide_control_geometry()
+
+            #if self.active_curve != curve_hash:
+            if curve_hash:
+                self.show_control_geometry(curve_hash)
+
+            self.curve_hash = curve_hash
+            #if this is a new curve, hide the prev geometry if not active
+#            if self.curve_hash:
+
+        #trap button clicks
+        elif arg['Type'] == 'SoMouseButtonEvent':
+
+            _p = Gui.ActiveDocument.ActiveView.getCursorPos()
+            info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
+
+            curve_hash = None
+
+            if self.active_curve:
+                self.hide_control_geometry(self.active_curve)
+                self.hide_curve(self.active_curve)
+
+            if info:
+                if info['Object'] == self.alignment_draft.Name:
+                    curve_hash = info['Component']
+                    self.show_curve(self.curve_hash)
+                    self.active_curve = self.curve_hash
 
             else:
+
+                self.active_curve = None
 
                 if Gui.Selection.getSelection():
                     Gui.Selection.clearSelection()
@@ -302,36 +374,11 @@ class DraftAlignmentCmd(DraftTools.DraftTool):
 
         #    self.alignment_tracker.update(self.node + [self.point])
 
-            App.ActiveDocument.recompute()
-            DraftTools.redraw3DView()
-
+        else:
             return
 
-        #trap button clicks
-        if arg['Type'] == 'SoMouseButtonEvent':
-
-            if (arg['State'] == 'DOWN') and (arg['Button'] == 'BUTTON1'):
-
-                if arg['Position'] == self.pos:
-                    self.finish(False, cont=True)
-                    return
-
-                #first point
-                if not (self.node or self.support):
-
-                    DraftTools.getSupport(arg)
-
-                    self.point, ctrl_point, info = \
-                        DraftTools.getPoint(self, arg, noTracker=True)
-
-                if self.point:
-
-                    self.ui.redraw()
-                    self.node.append(self.point)
-                    self.draw_update(self.point)
-
-                    #if not self.isWire and len(self.node) == 2:
-                    #    self.finish(False, cont=True)
+        App.ActiveDocument.recompute()
+        DraftTools.redraw3DView()
 
     def undo_last(self):
         """
