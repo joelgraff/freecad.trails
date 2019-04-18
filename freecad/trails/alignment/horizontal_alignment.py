@@ -196,6 +196,9 @@ class _HorizontalAlignment(Draft._Wire):
         #that lists it's wire edges keyed by it's Edge index
         for curve in curves:
 
+            if curve['Type'] == 'line':
+                continue
+
             curve_edges = self.Object.Shape.Edges
             curve_pts = [curve['Start'], curve['End']]
             edge_dict = {}
@@ -220,6 +223,7 @@ class _HorizontalAlignment(Draft._Wire):
 
             #calculate a unique hash based on the curve start and end points
             #and save the edge list to it
+
             curve_dict[curve['Hash']] = edge_dict
 
         self.curve_edges = curve_dict
