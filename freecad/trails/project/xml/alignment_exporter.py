@@ -70,10 +70,11 @@ class AlignmentExporter(object):
             #find the xml tag for the current dictionary key
             _key = Maps.XML_MAP.get(_tag)
 
-            _value = None
+            #skip keys with no XML tag equivalent
+            if not _key:
+                continue
 
-            if _key:
-                value = data.get(_key)
+            value = data.get(_key)
 
             #assign default if no value in the dictionary
             if value is None:
