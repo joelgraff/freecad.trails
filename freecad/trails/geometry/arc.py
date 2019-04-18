@@ -622,7 +622,7 @@ def run_test(arc, comp, excludes):
 # -706.1075272957279,
 # 0.0)}
 
-def get_points(arc_dict, interval, interval_type='Segment'):
+def get_points(arc_dict, interval, interval_type='Segment', layer=0.0):
     """
     Discretize an arc into the specified segments.
     Resulting list of coordinates omits provided starting point and
@@ -641,6 +641,8 @@ def get_points(arc_dict, interval, interval_type='Segment'):
         'Segment'   - subdivide into n equal segments
         'Interval'  - subdivide into fixed length segments
         'Tolerance' - limit error between segment and curve
+
+    layer       - the z coordinate to apply to all points
 
     Points are returned references to start_coord
     """
@@ -683,7 +685,10 @@ def get_points(arc_dict, interval, interval_type='Segment'):
         _dfw = App.Vector(_forward).multiply(math.sin(delta))
         _drt = App.Vector(_right).multiply(direction * (1 - math.cos(delta)))
 
-        result.append(start_coord.add(_dfw.add(_drt).multiply(radius)))
+        _point = start_coord.add(_dfw.add(_drt).multiply(radius))
+        _point.z = layer
+
+        result.append(_point)
 
         #store the hash of the starting and ending coordinates
         #aka - the segment hash
