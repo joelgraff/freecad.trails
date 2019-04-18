@@ -772,7 +772,7 @@ class _HorizontalAlignment(Draft._Wire):
         if not points:
             return
 
-        self.Object.Points = self.discretize_geometry()
+        self.Object.Points = points
 
         super(_HorizontalAlignment, self).execute(obj)
         #self.Object.Placement.Base = self.Object.Placement.Base.add
