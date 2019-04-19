@@ -256,6 +256,36 @@ class AlignmentImporter(object):
         """
         Import a landxml and build the Python dictionary fronm the
         appropriate elements
+
+        Returns a dictionary of the following structure:
+
+        {
+            Project: {
+                ID: <name>
+            },
+
+            Alignments: {
+
+                <alignment name>: {
+
+                    meta: {
+                        <tag/attribute>: value
+                    },
+
+                    station: [
+                        {
+                            <tag/attribute>: value
+                        }
+                    ],
+
+                    geometry: [
+                        {
+                            <tag/attribute>: value
+                        }
+                    ]
+                }
+            }
+        }
         """
 
         #get element tree and key nodes for parsing
@@ -295,8 +325,8 @@ class AlignmentImporter(object):
                 alignment, list(result.keys())
                 )
 
-            result['Alignments'][align_name] = {}
-            align_dict = result['Alignments'][align_name]
+            align_dict = {}
+            result['Alignments'][align_name] = align_dict
 
             align_dict['meta'] = self._parse_meta_data(align_name, alignment)
 
