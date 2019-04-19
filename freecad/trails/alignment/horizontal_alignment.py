@@ -24,6 +24,8 @@
 """
 Class for managing 2D Horizontal Alignments
 """
+from copy import deepcopy
+
 import FreeCAD as App
 import Draft
 
@@ -39,13 +41,11 @@ __author__ = 'Joel Graff'
 __url__ = "https://www.freecadweb.org"
 
 
-def create(geometry, object_name=''):
+def create(geometry, object_name='', no_visual=False):
     """
     Class construction method
     object_name - Optional. Name of new object.  Defaults to class name.
-    parent - Optional.  Reference to existing DocumentObjectGroup.
-             Defaults to ActiveDocument
-    data - a list of the curve data in tuple('label', 'value') format
+    no_visual - If true, generates the object without a ViewProvider.
     """
 
     if not geometry:
@@ -65,7 +65,8 @@ def create(geometry, object_name=''):
     result = _HorizontalAlignment(_obj, _name)
     result.set_geometry(geometry)
 
-    Draft._ViewProviderWire(_obj.ViewObject)
+    if not no_visual:
+        Draft._ViewProviderWire(_obj.ViewObject)
 
     App.ActiveDocument.recompute()
     return result
@@ -241,6 +242,13 @@ class _HorizontalAlignment(Draft._Wire):
         """
 
         return self.data
+
+    def get_data_copy(self):
+        """
+        Returns a deep copy of the alignment dataset
+        """
+
+        return deepcopy(self.data)
 
     def get_geometry(self, curve_hash=None):
         """
