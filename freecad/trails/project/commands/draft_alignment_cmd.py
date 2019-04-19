@@ -451,32 +451,7 @@ class DraftAlignmentCmd(DraftTools.DraftTool):
         if not Draft.getParam('UiMode', 1):
             Gui.Control.closeDialog()
 
-        #remove temporary object
-        #if self.obj:
-        #    old = self.obj.Name
-        #    todo.delay(App.ActiveDocument.removeObject, old)
-
-        #if self.node:
-        #    if len(self.node) > 1:
-        #        try:
-        #            rot, sup, pts, fil = self.getStrings()
-        #            Gui.addModule('Draft')
-        #            self.commit(
-        #                translate('Transportation', 'Create Test'),
-        #                ['points = ' + pts,
-        #                'fn = Draft.makeWire(points)',
-        #                'Draft.autogroup(fn)'
-        #                ]
-        #            )
-
-        #        except:
-        #            print('Draft: error delatying commit')
-
         DraftTools.Creator.finish(self)
-
-        #if self.ui:
-        #    if self.ui.continueMode:
-        #        self.Activated()
 
         if self.alignment:
             self.alignment.ViewObject.LineColor = (0.0, 0.0, 0.0)
