@@ -30,10 +30,12 @@ __author__ = "Joel Graff"
 __url__ = "https://www.freecadweb.org"
 
 import math
+import uuid
 
 import FreeCAD as App
-
+import DraftGui
 from Draft import _Wire, _ViewProviderWire
+
 from .const import Const
 
 class Constants(Const):
@@ -46,6 +48,20 @@ class Constants(Const):
     ONE_RADIAN = 180 / math.pi      # one radian in degrees
     TOLERANCE = 0.000001            # tolerance for differences in measurements
     UP = App.Vector(0.0, 1.0, 0.0)  # Up vector
+
+def get_uuid():
+    """
+    Returns a random UUID as a string
+    """
+
+    return str(uuid.uuid4())
+
+def translate(text, context = 'trails'):
+    """
+    Translate convenience fn for the DraftGui.translate() convenience fn
+    """
+
+    DraftGui.translate(context, text)
 
 def make_wire(points, wire_name=None, closed=False, support=None):
     """
