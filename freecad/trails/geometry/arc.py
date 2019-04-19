@@ -152,8 +152,10 @@ def get_bearings(arc, mat, delta, rot):
 
     if _b:
 
+        _deltas = [abs(_i - _j) for _i in _b for _j in _b]
+
         #check to ensure all tangent start bearing values are identical
-        if not support.within_tolerance(_b):
+        if not support.within_tolerance(_deltas):
             return None
 
         #default to calculated if different from supplied bearing
@@ -214,12 +216,13 @@ def get_lengths(arc, mat):
         #get two consecutive elements, saving only if they're valid
         _s = [_v for _v in lengths[_i*2:(_i+1)*2] if _v]
 
+        support.within_tolerance(_s[0], _s[1])
         #skip the rest if not defined, we'll use the user values
         if not _s:
             continue
 
         #if both were calculated and they aren't the same, quit
-        if all(_s) and not support.within_tolerance(_s):
+        if all(_s) and not support.within_tolerance(_s[0], _s[1]):
             return None
 
         if _s[0] and support.within_tolerance(_s[0], params[_i]):
