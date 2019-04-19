@@ -229,6 +229,14 @@ class _HorizontalAlignment(Draft._Wire):
 
         self.curve_edges = curve_dict
 
+    def get_pi_coords(self):
+        """
+        Return the coordinates of the alignment Points of Intersection(PIs)
+        as a list of vectors
+        """
+
+        return [_v['PI'] for _v in self.data['geometry'] if _v.get('PI')]
+
     def get_edges(self):
         """
         Return the dictionary of curve edges
@@ -279,13 +287,13 @@ class _HorizontalAlignment(Draft._Wire):
         for _i, _geo in enumerate(self.data['geometry']):
 
             if _geo['Type'] == 'Curve':
-                _geo = arc.get_parameters(_geo)
+                  _geo = arc.get_parameters(_geo)
 
-            elif _geo['Type'] == 'line':
+            elif _geo['Type'] == 'Line':
                 _geo = line.get_parameters(_geo)
 
             else:
-                self.errors.append('Undefined geometry: ' + _geo)
+                self.errors.append('Undefined geometry: ' + str(_geo))
                 continue
 
             self.data['geometry'][_i] = _geo
