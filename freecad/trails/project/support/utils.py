@@ -48,6 +48,7 @@ class Constants(Const):
     ONE_RADIAN = 180 / math.pi      # one radian in degrees
     TOLERANCE = 0.000001            # tolerance for differences in measurements
     UP = App.Vector(0.0, 1.0, 0.0)  # Up vector
+    Z_DEPTH = [0.0, 0.05, 0.1]      # Z values to provide rendering layers
 
 def get_uuid():
     """
@@ -63,7 +64,7 @@ def translate(text, context = 'trails'):
 
     DraftGui.translate(context, text)
 
-def make_wire(points, wire_name=None, closed=False, support=None):
+def make_wire(points, wire_name=None, closed=False, support=None, depth=0.0):
     """
     Reduced version of Draft.makeWire()
     """
@@ -74,6 +75,11 @@ def make_wire(points, wire_name=None, closed=False, support=None):
     obj = App.ActiveDocument.addObject("Part::Part2DObjectPython", wire_name)
 
     _Wire(obj)
+
+    #set point z-depth to create fake rendering order
+    if depth:
+        for point in points:
+            point.z = depth
 
     obj.Points = points
     obj.Closed = closed
