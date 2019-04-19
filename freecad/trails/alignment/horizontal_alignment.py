@@ -235,7 +235,11 @@ class _HorizontalAlignment(Draft._Wire):
         as a list of vectors
         """
 
-        return [_v['PI'] for _v in self.data['geometry'] if _v.get('PI')]
+        result = [self.data['meta']['Start']]
+        result += [_v['PI'] for _v in self.data['geometry'] if _v.get('PI')]
+        result.append(self.Object.Shape.Vertexes[-1].Point)
+
+        return result
 
     def get_edges(self):
         """
@@ -287,7 +291,7 @@ class _HorizontalAlignment(Draft._Wire):
         for _i, _geo in enumerate(self.data['geometry']):
 
             if _geo['Type'] == 'Curve':
-                  _geo = arc.get_parameters(_geo)
+                _geo = arc.get_parameters(_geo)
 
             elif _geo['Type'] == 'Line':
                 _geo = line.get_parameters(_geo)
