@@ -42,42 +42,42 @@ def create(coord, tracker_type):
     nam = 'Tracker' + '_' + tracker_type + '_' \
           + str(hash((coord[0], coord[1], coord[2])))
 
-    print('tracker ', nam)
-    _et = EditTracker(coord, nam, tracker_type)
-    _et.raiseTracker()
-    _et.on()
+    return EditTracker(pos=coord, node_name=nam, tracker_type=tracker_type)
 
-    return _et
 
 class EditTracker(Tracker):
     """
     A custom edit tracker
     """
 
-    def __init__(self, pos=App.Vector(0, 0, 0), name="None", inactive=False,
-                 tracker_type=None):
+    #def __init__(self, pos=App.Vector(0, 0, 0), name="None", inactive=False,
+    #             idx=0, marker=None, objcol=None):
+    def __init__(self, pos, node_name, tracker_type):
 
         self.pos = pos
-        self.name = name
+        self.name = node_name
         self.tracker_type = tracker_type
 
-        #until here
+        self.inactive = False
+
         self.color = coin.SoBaseColor()
-        self.marker = coin.SoMarkerSet() # this is the marker symbol
-        self.marker.markerIndex = Gui.getMarkerIndex("circle", 9)
-        self.coords = coin.SoCoordinate3() # this is the coordinate
+
+        self.marker = coin.SoMarkerSet()
+        self.marker.markerIndex = Gui.getMarkerIndex("circle_line", 11)
+
+        self.coords = coin.SoCoordinate3()
         self.coords.point.setValue((pos.x, pos.y, pos.z))
 
         selnode = None
 
-        if inactive:
+        if self.inactive:
             selnode = coin.SoSeparator()
 
         else:
             selnode = coin.SoType.fromName("SoFCSelection").createInstance()
             selnode.documentName.setValue(App.ActiveDocument.Name)
-            selnode.objectName.setValue(name)
-            selnode.subElementName.setValue(name)
+            selnode.objectName.setValue(node_name)
+            selnode.subElementName.setValue(node_name)
 
         node = coin.SoAnnotation()
 
@@ -87,7 +87,7 @@ class EditTracker(Tracker):
 
         node.addChild(selnode)
 
-        ontop = not inactive
+        ontop = not self.inactive
 
         Tracker.__init__(
             self, children=[node], ontop=ontop, name="EditTracker")

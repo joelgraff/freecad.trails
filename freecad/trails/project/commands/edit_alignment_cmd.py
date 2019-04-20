@@ -137,19 +137,14 @@ class EditAlignmentCmd(DraftTool):
         pi_points = self.alignment.get_pi_coords()
 
         #create PI wire geometry
-        self.pi_wire = utils.make_wire(
-            pi_points, utils.get_uuid(), depth=C.Z_DEPTH[1]
-        )
+        #self.pi_wire = utils.make_wire(
+        #    pi_points, utils.get_uuid(), depth=C.Z_DEPTH[1]
+        #)
 
-        self.pi_wire.ViewObject.LineColor = (0.0, 0.0, 1.0, 0.0)
+        #self.pi_wire.ViewObject.LineColor = (0.0, 0.0, 1.0, 0.0)
 
-        self.tmp_group.addObject(self.pi_wire)
+        #self.tmp_group.addObject(self.pi_wire)
         self.tmp_group.addObject(self.alignment.Object)
-
-        #create edit trackers for the PI geometry
-        for point in pi_points:
-            _et = edit_tracker.create(point, 'pi')
-            self.trackers[_et.name] = _et
 
         #get all objects with ViewObject.Selectable = True and
         #make them unselectable
@@ -165,6 +160,12 @@ class EditAlignmentCmd(DraftTool):
 
         #if not self.alignment_tracker:
         #    self.alignment_tracker = AlignmentTracker()
+
+
+        #create edit trackers for the PI geometry
+        for point in pi_points:
+            _et = edit_tracker.create(point, 'PI')
+            self.trackers[_et.name] = _et
 
         panel = DraftAlignmentTask(self.clean_up)
 
@@ -197,7 +198,8 @@ class EditAlignmentCmd(DraftTool):
                     _et = self.trackers.get(obj_name)
                     
                     if _et:
-                        _et.color.rgb = (0.0, 1.0, 0.0)
+                        print('color change')
+                        _et.color.rgb = (1.0, 1.0, 0.0)
                         _active = self.trackers.get('active')
 
                         if _active:
