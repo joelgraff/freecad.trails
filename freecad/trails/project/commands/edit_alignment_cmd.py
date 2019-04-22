@@ -74,6 +74,9 @@ class EditAlignmentCmd(DraftTool):
         self.is_activated = False
         self.event_cb = None
         self.trackers = {}
+        self.active_tracker = None
+        self.selected_trackers = []
+
         self.pi_wire = None
 
     def IsActive(self):
@@ -204,32 +207,34 @@ class EditAlignmentCmd(DraftTool):
             _p = Gui.ActiveDocument.ActiveView.getCursorPos()
             info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
 
-            _active = self.trackers.get('active')
+            _active = self.active_tracker
+
+            _key, _it = self.get_current_tracker(info)
+
             _current = None
-
-            if info:
-                obj_name = info['Component']
-
-                if 'Tracker' in obj_name:
-                    _current = self.trackers.get(obj_name)
+            
+            if _it:
+                _current = self.trackers[_key]
 
             #if we haven't moved off the previous tracker, we're done
             if _current == _active:
                 return
 
-            self.trackers['active'] = None
-
             #_current is not None if a valid tracker was detected
             if _current:
                 _current.set_style(self.STYLES.HIGHLIGHT)
-                self.trackers['active'] = _current
+                self.active_tracker = _current
+
+            else:
+                self.active_tracker = None
 
             if _active:
+                _style = self.STYLES.ENABLED
 
-                if _active == self.trackers.get('selected'):
-                    _active.set_style(self.STYLES.SELECTED)
-                else:
-                    _active.set_style(self.STYLES.ENABLED)
+                if _active in self.selected_trackers:
+                    _style = self.STYLES.SELECTED
+
+                _active.set_style(_style)
 
         #trap button clicks
         elif arg['Type'] == 'SoMouseButtonEvent':
@@ -237,29 +242,54 @@ class EditAlignmentCmd(DraftTool):
             _p = Gui.ActiveDocument.ActiveView.getCursorPos()
             info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
 
-            _selected = self.trackers.get('selected')
-            _current = None
+            multi_select = arg['AltDown']
 
-            if info:
-                obj_name = info['Component']
+            _key, _it = self.get_current_tracker(info)
 
-                if 'Tracker' in obj_name:
-                    _current = self.trackers.get(obj_name)
+            #empty the arry and reset the trackers
+            if self.selected_trackers:
 
-            if _current == _selected:
-                return
+                for _tracker in self.selected_trackers:
+                    _tracker.set_style(self.STYLES.ENABLED)
 
-            self.trackers['_selected'] = None
+                self.selected_trackers = []
 
-            if _current:
-                _current.set_style(self.STYLES.SELECTED)
-                self.trackers['selected'] = _current
+            #current defined?  add it to the selection.
+            if _it:
 
-            if _selected:
-                _selected.set_style(self.STYLES.ENABLED)
+                while True:
+
+                    _current = self.trackers[_key]
+                    _current.set_style(self.STYLES.SELECTED)
+
+                    self.selected_trackers.append(_current)
+
+                    if not multi_select:
+                        break
+
+                    try:
+                        _key = next(_it)
+                    except StopIteration:
+                        break
 
         App.ActiveDocument.recompute()
         DraftTools.redraw3DView()
+
+    def get_current_tracker(self, info):
+        """
+        Update tracker selection styles and states
+        """
+
+        if info:
+            obj_name = info['Component']
+
+            _it = iter(self.trackers)
+
+            if 'Tracker' in obj_name:
+                val = next(_x for _x in _it if _x == obj_name)
+                return val, _it
+
+        return None, None
 
     def set_style(self, vobj, style):
         """
@@ -357,8 +387,9 @@ class EditAlignmentCmd(DraftTool):
         #shut down trackers
         if self.trackers:
 
-            for _k, _v in self.trackers.items():
-                _v.finalize()
+            for _g in self.trackers:
+                for _v in self.trackers[_g]:
+                    _v.finalize()
 
             self.trackers.clear()
 
