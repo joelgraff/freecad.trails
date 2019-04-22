@@ -21,12 +21,25 @@
 # *                                                                        *
 # **************************************************************************
 
+import WorkingPlane
+
+from PySide import QtCore, QtGui
+
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from DraftTrackers import editTracker
+import Draft
+import DraftGeomUtils
+import DraftVecUtils
 
-class Command():
+from DraftTrackers import editTracker
+from DraftTools import Modifier
+from DraftTools import selectObject, getPoint, redraw3DView
+
+#from .edit_tracker import editTracker
+#plane = WorkingPlane.plane()
+
+class Command(Modifier):
     """
     Command Description
     """
@@ -47,7 +60,8 @@ class Command():
         Command activation method
         """
 
-        self.tracker = editTracker(pos=App.Vector(), name='test')
-        return
+        Modifier.Activated(self, 'Command')
+
+        self.tracker = editTracker(App.Vector(), 'test', 0)
 
 Gui.addCommand('Command', Command())

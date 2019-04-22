@@ -161,7 +161,7 @@ class EditAlignmentCmd(DraftTool):
 
         #create edit trackers for the PI geometry
         for point in pi_points:
-            _et = edit_tracker.create(point, 'PI')
+            _et = edit_tracker.create(point, self.pi_wire.Name, 'PI')
             self.trackers["_et.name"] = _et
 
         panel = DraftAlignmentTask(self.clean_up)

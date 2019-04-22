@@ -28,7 +28,8 @@ import FreeCADGui as Gui
 from . import ICONPATH
 
 from .project.commands \
-    import new_project_cmd, import_alignment_cmd, edit_alignment_cmd, test_cmd
+    import new_project_cmd, import_alignment_cmd, edit_alignment_cmd, \
+    test_cmd, test_cmd_2
 
 from .corridor.template import ViewTemplateLibrary
 
@@ -75,10 +76,10 @@ class TrailsWorkbench(Gui.Workbench):
             #'gui': self.menu + self.toolbar + self.context,
             #'cmd': ['EditIntervals']
             #},
-            'Test': {
-                'gui': self.menu,
-                'cmd': ['Command']
-            }
+            #'Test': {
+            #    'gui': self.menu,
+            #    'cmd': ['Command', 'Command2']
+            #}
         }
 
         if not self.dev:
