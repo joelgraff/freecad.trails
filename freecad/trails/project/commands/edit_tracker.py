@@ -28,7 +28,7 @@ from pivy import coin
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from DraftTrackers import Tracker, editTracker
+from DraftTrackers import Tracker
 
 from ..support.utils import Constants as C
 
@@ -93,23 +93,23 @@ class EditTracker(Tracker):
 
         self.on()
 
-    #def updateListIdx(self,listIdx):
-        #selnode.subElementName.setValue("EditNode"+str(listIdx))
-
-    def getValue(self):
-        print('getvalue')
-
     def set(self, pos):
-        print('set')
+        """
+        Set method
+        """
         self.coords.point.setValue((pos.x,pos.y,pos.z))
 
     def get(self):
-        print('get')
-        p = self.coords.point.getValues()[0]
-        return App.Vector(p[0],p[1],p[2])
+        """
+        Get method
+        """
+        _pt = self.coords.point.getValues()[0]
+        return App.Vector(_pt)
 
     def move(self, delta):
-        print('move')
+        """
+        Move method
+        """
         self.set(self.get().add(delta))
 
     def set_style(self, style):

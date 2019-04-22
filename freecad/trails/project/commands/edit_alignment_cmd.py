@@ -30,14 +30,13 @@ import FreeCADGui as Gui
 import Draft
 import DraftTools
 from DraftTools import DraftTool, Creator
-from DraftGui import translate
 
 from ..support import utils, const
 from ..support.utils import Constants as C
 from ... import resources
 from ...alignment import horizontal_alignment as hz_align
 from ..tasks.alignment.draft_alignment_task import DraftAlignmentTask
-from . import edit_tracker
+from . import edit_tracker, wire_tracker
 
 #from .edit_tracker import EditTracker
 
@@ -77,6 +76,11 @@ class EditAlignmentCmd(DraftTool):
         self.active_tracker = None
         self.selected_trackers = []
 
+        self.button_states = {
+            'Button1': False,
+            'Button2': False,
+            'Button3': False
+        }
         self.pi_wire = None
 
     def IsActive(self):
@@ -131,10 +135,10 @@ class EditAlignmentCmd(DraftTool):
         #get all objects with LineColor and set them all to gray
         self.view_objects['line_colors'] = \
             [
-             (_v.ViewObject, _v.ViewObject.LineColor)
-             for _v in App.ActiveDocument.findObjects()
-             if hasattr(_v, 'ViewObject')
-             if hasattr(_v.ViewObject, 'LineColor')
+                (_v.ViewObject, _v.ViewObject.LineColor)
+                for _v in App.ActiveDocument.findObjects()
+                if hasattr(_v, 'ViewObject')
+                if hasattr(_v.ViewObject, 'LineColor')
             ]
 
         for _v in self.view_objects['line_colors']:
@@ -188,6 +192,9 @@ class EditAlignmentCmd(DraftTool):
         self.is_activated = True
 
         App.ActiveDocument.recompute()
+
+        self.wire_tracker = wire_tracker.WireTracker(self.pi_wire.Shape)
+
         DraftTools.redraw3DView()
 
     def action(self, arg):
@@ -195,6 +202,7 @@ class EditAlignmentCmd(DraftTool):
         Event handling for alignment drawing
         """
 
+        print(arg)
         #trap the escape key to quit
         if arg['Type'] == 'SoKeyboardEvent':
             if arg['Key'] == 'ESCAPE':
@@ -212,7 +220,7 @@ class EditAlignmentCmd(DraftTool):
             _key, _it = self.get_current_tracker(info)
 
             _current = None
-            
+
             if _it:
                 _current = self.trackers[_key]
 
@@ -238,6 +246,8 @@ class EditAlignmentCmd(DraftTool):
 
         #trap button clicks
         elif arg['Type'] == 'SoMouseButtonEvent':
+
+            self.get_button_states(arg)
 
             _p = Gui.ActiveDocument.ActiveView.getCursorPos()
             info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
@@ -275,6 +285,14 @@ class EditAlignmentCmd(DraftTool):
         App.ActiveDocument.recompute()
         DraftTools.redraw3DView()
 
+    def set_button_states(self, arg):
+        """
+        Set the mouse button state dict
+        """
+
+        for _btn in self.button_states:
+            self.button_states[_btn] = arg[_btn] == 'DOWN'
+
     def get_current_tracker(self, info):
         """
         Update tracker selection styles and states
@@ -298,52 +316,6 @@ class EditAlignmentCmd(DraftTool):
 
         vobj.LineColor = style[0]
         vobj.DrawStyle = style[1]
-
-    def undo_last(self):
-        """
-        Undo the last segment
-        """
-
-        #if len(self.node) > 1:
-
-        #    self.node.pop()
-        #    self.alignment_tracker.update(self.node)
-        #    self.obj.Shape = self.update_shape(self.node)
-        #    print(translate('Transporation', 'Undo last point'))
-
-    def draw_update(self, point):
-        """
-        Update the geometry as it has been defined
-        """
-
-        if len(self.node) == 1:
-
-            #self.alignment_tracker.on()
-
-            #if self.planetrack:
-            #    self.planetrack.set(self.node[0])
-
-            #print(translate('Transportation', 'Pick next  point:\n'))
-
-            return
-
-        #res = self.update_shape(self.node)
-        #print(type(res))
-        #self.obj.Shape = self.update_shape(self.node)
-
-        print(
-            translate(
-                'Transportation',
-                'Pick next point, finish (Shift+f), or close (o):'
-            ) + '\n'
-        )
-
-    def update_shape(self, points):
-        """
-        Generates the shape to be rendered during the creation process
-        """
-
-        #return Draft.makeWire(points).Shape
 
     def clean_up(self):
         """
@@ -382,16 +354,18 @@ class EditAlignmentCmd(DraftTool):
 
         #remove the callback for action
         if self.call:
-            self.view.removeEventCallback("SoEvent",self.call)
+            self.view.removeEventCallback("SoEvent", self.call)
 
         #shut down trackers
         if self.trackers:
 
-            for _g in self.trackers:
-                for _v in self.trackers[_g]:
-                    _v.finalize()
+            for _v in self.trackers.values():
+                _v.finalize()
 
             self.trackers.clear()
+
+        self.selected_trackers = []
+        self.active_tracker = None
 
         Creator.finish(self)
 
