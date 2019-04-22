@@ -51,8 +51,6 @@ class EditTracker(Tracker):
     A custom edit tracker
     """
 
-    #def __init__(self, pos=App.Vector(0, 0, 0), name="None", inactive=False,
-    #             idx=0, marker=None, objcol=None):
     def __init__(self, pos, object_name, node_name, tracker_type):
 
         self.pos = pos
@@ -100,6 +98,7 @@ class EditTracker(Tracker):
 
     def getValue(self):
         print('getvalue')
+
     def set(self, pos):
         print('set')
         self.coords.point.setValue((pos.x,pos.y,pos.z))
@@ -113,19 +112,13 @@ class EditTracker(Tracker):
         print('move')
         self.set(self.get().add(delta))
 
-    def set_selected(self, is_selected = True):
+    def set_style(self, style):
         """
-        Set the marker selection state
+        Set the marker style based on the passed tuple
         """
+        self.color.rgb = style[0]
 
-        rgb = (0.0, 1.0, 0.0)
-
-        if not is_selected:
-            rgb = (1.0, 1.0, 1.0)
-
-        self.color.rgb = rgb
-
-    def set_marker(self, is_open = True):
+    def set_marker(self, is_open=True):
         """
         Set the marker style to either an open or closed circle
         """

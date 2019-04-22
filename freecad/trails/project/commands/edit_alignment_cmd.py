@@ -32,7 +32,7 @@ import DraftTools
 from DraftTools import DraftTool, Creator
 from DraftGui import translate
 
-from ..support import utils
+from ..support import utils, const
 from ..support.utils import Constants as C
 from ... import resources
 from ...alignment import horizontal_alignment as hz_align
@@ -46,6 +46,17 @@ class EditAlignmentCmd(DraftTool):
     Initiates and manages drawing activities for alignment creation
     """
 
+    class STYLES(const.Const):
+        """
+        Internal constants used to define ViewObject styles
+        """
+
+        DISABLED =  [(0.4, 0.4, 0.4), 'Solid']
+        ENABLED =   [(0.8, 0.8, 0.8), 'Solid']
+        HIGHLIGHT = [(0.0, 1.0, 0.0), 'Solid']
+        PI =        [(0.0, 0.0, 1.0), 'Solid']
+        SELECTED =  [(1.0, 0.8, 0.0), 'Solid']
+
     def __init__(self):
         """
         Constructor
@@ -57,6 +68,7 @@ class EditAlignmentCmd(DraftTool):
             'selectables': [],
             'line_colors': []
         }
+
         self.tmp_group = None
         self.alignment = None
         self.is_activated = False
@@ -123,7 +135,7 @@ class EditAlignmentCmd(DraftTool):
             ]
 
         for _v in self.view_objects['line_colors']:
-            _v[0].LineColor = (0.5, 0.5, 0.5, 0.0)
+            self.set_style(_v[0], self.STYLES.DISABLED)
 
         #create temporary group
         self.tmp_group = self.doc.addObject('App::DocumentObjectGroup', 'Temp')
@@ -142,7 +154,7 @@ class EditAlignmentCmd(DraftTool):
             pi_points, utils.get_uuid(), depth=C.Z_DEPTH[1]
         )
 
-        self.pi_wire.ViewObject.LineColor = (0.0, 0.0, 1.0, 0.0)
+        self.set_style(self.pi_wire.ViewObject, self.STYLES.PI)
 
         self.tmp_group.addObject(self.pi_wire)
         self.tmp_group.addObject(self.alignment.Object)
@@ -162,7 +174,8 @@ class EditAlignmentCmd(DraftTool):
         #create edit trackers for the PI geometry
         for point in pi_points:
             _et = edit_tracker.create(point, self.pi_wire.Name, 'PI')
-            self.trackers["_et.name"] = _et
+            _et.set_style(self.STYLES.ENABLED)
+            self.trackers[_et.name] = _et
 
         panel = DraftAlignmentTask(self.clean_up)
 
@@ -178,7 +191,6 @@ class EditAlignmentCmd(DraftTool):
         """
         Event handling for alignment drawing
         """
-        return
 
         #trap the escape key to quit
         if arg['Type'] == 'SoKeyboardEvent':
@@ -191,6 +203,7 @@ class EditAlignmentCmd(DraftTool):
 
             _p = Gui.ActiveDocument.ActiveView.getCursorPos()
             info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
+
             _active = self.trackers.get('active')
             _current = None
 
@@ -204,21 +217,26 @@ class EditAlignmentCmd(DraftTool):
             if _current == _active:
                 return
 
-            self.trackers['active'] = None        
+            self.trackers['active'] = None
 
             #_current is not None if a valid tracker was detected
             if _current:
-                #_current.set_selected()
+                _current.set_style(self.STYLES.HIGHLIGHT)
                 self.trackers['active'] = _current
 
-            #if _active:
-                #_active.set_selected(False)
+            if _active:
+
+                if _active == self.trackers.get('selected'):
+                    _active.set_style(self.STYLES.SELECTED)
+                else:
+                    _active.set_style(self.STYLES.ENABLED)
 
         #trap button clicks
         elif arg['Type'] == 'SoMouseButtonEvent':
-            return
+
             _p = Gui.ActiveDocument.ActiveView.getCursorPos()
             info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
+
             _selected = self.trackers.get('selected')
             _current = None
 
@@ -233,15 +251,23 @@ class EditAlignmentCmd(DraftTool):
 
             self.trackers['_selected'] = None
 
-            if _selected:
-                #_selected.set_selected()
+            if _current:
+                _current.set_style(self.STYLES.SELECTED)
                 self.trackers['selected'] = _current
 
-            #if _selected:
-                #_selected.set_selected(False)
+            if _selected:
+                _selected.set_style(self.STYLES.ENABLED)
 
         App.ActiveDocument.recompute()
         DraftTools.redraw3DView()
+
+    def set_style(self, vobj, style):
+        """
+        Set the view object style based on the passed style tuple
+        """
+
+        vobj.LineColor = style[0]
+        vobj.DrawStyle = style[1]
 
     def undo_last(self):
         """
