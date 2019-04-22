@@ -75,6 +75,10 @@ class TrailsWorkbench(Gui.Workbench):
             #'gui': self.menu + self.toolbar + self.context,
             #'cmd': ['EditIntervals']
             #},
+            'Test': {
+                'gui': self.menu,
+                'cmd': ['Command']
+            }
         }
 
         if not self.dev:

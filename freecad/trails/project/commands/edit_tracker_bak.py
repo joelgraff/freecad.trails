@@ -27,8 +27,8 @@ from pivy import coin
 
 import FreeCAD as App
 import FreeCADGui as Gui
-import DraftTrackers
-from DraftTrackers import Tracker #, editTracker
+
+from DraftTrackers import Tracker, editTracker
 
 from ..support.utils import Constants as C
 
@@ -43,44 +43,96 @@ def create(coord, tracker_type):
           + str(hash((coord[0], coord[1], coord[2])))
 
     #return editTracker(pos=coord, name=nam)
-    return DraftTrackers.editTracker(pos=coord, name=nam)
+    return EditTracker(pos=coord, node_name=nam, tracker_type=tracker_type)
 
 
-class editTracker(Tracker):
-    "A node edit tracker"
-    def __init__(self,pos=App.Vector(0,0,0),name="None",idx=0,objcol=None,\
-            marker=Gui.getMarkerIndex("quad", 9),inactive=False):
-        color = coin.SoBaseColor()
-        if objcol:
-            color.rgb = objcol[:3]
-        else:
-            color.rgb = Gui.draftToolBar.getDefaultColor("snap")
-        self.marker = coin.SoMarkerSet() # this is the marker symbol
-        self.marker.markerIndex = marker
-        self.coords = coin.SoCoordinate3() # this is the coordinate
-        self.coords.point.setValue((pos.x,pos.y,pos.z))
-        if inactive:
+class EditTracker(Tracker):
+    """
+    A custom edit tracker
+    """
+
+    #def __init__(self, pos=App.Vector(0, 0, 0), name="None", inactive=False,
+    #             idx=0, marker=None, objcol=None):
+    def __init__(self, pos, node_name, tracker_type):
+
+        self.pos = pos
+        self.name = node_name
+        self.tracker_type = tracker_type
+
+        self.inactive = False
+
+        self.color = coin.SoBaseColor()
+
+        self.marker = coin.SoMarkerSet()
+        self.set_marker(False)
+
+        self.coords = coin.SoCoordinate3()
+        self.coords.point.setValue((pos.x, pos.y, pos.z))
+
+        selnode = None
+
+        if self.inactive:
             selnode = coin.SoSeparator()
+
         else:
             selnode = coin.SoType.fromName("SoFCSelection").createInstance()
             selnode.documentName.setValue(App.ActiveDocument.Name)
-            selnode.objectName.setValue(name)
-            selnode.subElementName.setValue("EditNode"+str(idx))
+            selnode.objectName.setValue(node_name)
+            selnode.subElementName.setValue(node_name)
+
         node = coin.SoAnnotation()
+
         selnode.addChild(self.coords)
-        selnode.addChild(color)
+        selnode.addChild(self.color)
         selnode.addChild(self.marker)
+
         node.addChild(selnode)
-        ontop = not inactive
-        Tracker.__init__(self,children=[node],ontop=ontop,name="editTracker")
+
+        ontop = not self.inactive
+
+        Tracker.__init__(
+            self, children=[node], ontop=ontop, name="EditTracker")
+
         self.on()
 
-    def set(self,pos):
+    #def updateListIdx(self,listIdx):
+        #selnode.subElementName.setValue("EditNode"+str(listIdx))
+
+    def getValue(self):
+        print('getvalue')
+    def set(self, pos):
+        print('set')
         self.coords.point.setValue((pos.x,pos.y,pos.z))
 
     def get(self):
+        print('get')
         p = self.coords.point.getValues()[0]
         return App.Vector(p[0],p[1],p[2])
 
-    def move(self,delta):
+    def move(self, delta):
+        print('move')
         self.set(self.get().add(delta))
+
+    def set_selected(self, is_selected = True):
+        """
+        Set the marker selection state
+        """
+
+        rgb = (0.0, 1.0, 0.0)
+
+        if not is_selected:
+            rgb = (1.0, 1.0, 1.0)
+
+        self.color.rgb = rgb
+
+    def set_marker(self, is_open = True):
+        """
+        Set the marker style to either an open or closed circle
+        """
+
+        marker_type = 'CIRCLE'
+
+        if is_open:
+            marker_type = 'circle'
+
+        self.marker.markerIndex = Gui.getMarkerIndex(marker_type, 11)

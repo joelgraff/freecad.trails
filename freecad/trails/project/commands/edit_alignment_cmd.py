@@ -28,7 +28,8 @@ import FreeCAD as App
 import FreeCADGui as Gui
 
 import Draft
-from DraftTools import DraftTool, Creator, redraw3DView
+import DraftTools
+from DraftTools import DraftTool, Creator
 from DraftGui import translate
 
 from ..support import utils
@@ -137,13 +138,13 @@ class EditAlignmentCmd(DraftTool):
         pi_points = self.alignment.get_pi_coords()
 
         #create PI wire geometry
-        #self.pi_wire = utils.make_wire(
-        #    pi_points, utils.get_uuid(), depth=C.Z_DEPTH[1]
-        #)
+        self.pi_wire = utils.make_wire(
+            pi_points, utils.get_uuid(), depth=C.Z_DEPTH[1]
+        )
 
-        #self.pi_wire.ViewObject.LineColor = (0.0, 0.0, 1.0, 0.0)
+        self.pi_wire.ViewObject.LineColor = (0.0, 0.0, 1.0, 0.0)
 
-        #self.tmp_group.addObject(self.pi_wire)
+        self.tmp_group.addObject(self.pi_wire)
         self.tmp_group.addObject(self.alignment.Object)
 
         #get all objects with ViewObject.Selectable = True and
@@ -158,14 +159,10 @@ class EditAlignmentCmd(DraftTool):
         for vobj in self.view_objects['selectables']:
             vobj.Selectable = False
 
-        #if not self.alignment_tracker:
-        #    self.alignment_tracker = AlignmentTracker()
-
-
         #create edit trackers for the PI geometry
         for point in pi_points:
             _et = edit_tracker.create(point, 'PI')
-            self.trackers[_et.name] = _et
+            self.trackers["_et.name"] = _et
 
         panel = DraftAlignmentTask(self.clean_up)
 
@@ -174,10 +171,14 @@ class EditAlignmentCmd(DraftTool):
 
         self.is_activated = True
 
+        App.ActiveDocument.recompute()
+        DraftTools.redraw3DView()
+
     def action(self, arg):
         """
         Event handling for alignment drawing
         """
+        return
 
         #trap the escape key to quit
         if arg['Type'] == 'SoKeyboardEvent':
@@ -190,34 +191,57 @@ class EditAlignmentCmd(DraftTool):
 
             _p = Gui.ActiveDocument.ActiveView.getCursorPos()
             info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
+            _active = self.trackers.get('active')
+            _current = None
 
             if info:
                 obj_name = info['Component']
-                print(obj_name)
-                if 'Tracker' in obj_name:
-                    _et = self.trackers.get(obj_name)
-                    
-                    if _et:
-                        print('color change')
-                        _et.color.rgb = (1.0, 1.0, 0.0)
-                        _active = self.trackers.get('active')
 
-                        if _active:
-                            _active.color.rgb = (1.0, 1.0, 1.0)
-                            self.trackers['active'] = _et
+                if 'Tracker' in obj_name:
+                    _current = self.trackers.get(obj_name)
+
+            #if we haven't moved off the previous tracker, we're done
+            if _current == _active:
+                return
+
+            self.trackers['active'] = None        
+
+            #_current is not None if a valid tracker was detected
+            if _current:
+                #_current.set_selected()
+                self.trackers['active'] = _current
+
+            #if _active:
+                #_active.set_selected(False)
 
         #trap button clicks
         elif arg['Type'] == 'SoMouseButtonEvent':
-
-            if Gui.Selection.getSelection():
-                print(Gui.Selection.getSelectionEx()[0].SubObjects)
-        #    self.alignment_tracker.update(self.node + [self.point])
-
-        else:
             return
+            _p = Gui.ActiveDocument.ActiveView.getCursorPos()
+            info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
+            _selected = self.trackers.get('selected')
+            _current = None
+
+            if info:
+                obj_name = info['Component']
+
+                if 'Tracker' in obj_name:
+                    _current = self.trackers.get(obj_name)
+
+            if _current == _selected:
+                return
+
+            self.trackers['_selected'] = None
+
+            if _selected:
+                #_selected.set_selected()
+                self.trackers['selected'] = _current
+
+            #if _selected:
+                #_selected.set_selected(False)
 
         App.ActiveDocument.recompute()
-        redraw3DView()
+        DraftTools.redraw3DView()
 
     def undo_last(self):
         """
