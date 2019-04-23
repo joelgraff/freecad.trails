@@ -28,6 +28,7 @@ from pivy import coin
 import FreeCAD as App
 import FreeCADGui as Gui
 
+import DraftVecUtils
 from DraftTrackers import Tracker
 
 from ..support.utils import Constants as C
@@ -57,20 +58,19 @@ class DragTracker(Tracker):
         self.line.numVertices.setValue(len(points))
 
         self.coords = coin.SoCoordinate3()
-
         self.transform = coin.SoTransform()
-
+        self.transform.translation.setValue([0.0, 0.0, 0.0])
         self.update(points)
 
         Tracker.__init__(
-            self, children=[self.coords, self.line, self.transform], name="DragTracker"
+            self, False, None, None, [self.transform, self.coords, self.line], name="DragTracker"
         )
 
         self.node = self.switch.getChild(0)
         self.draw_style = self.node.getChild(0)
         self.color = self.node.getChild(1)
 
-        self.color.rgb = (0.0, 0.0, 0.0)
+        self.color.rgb = (1.0, 0.0, 0.0)
 
         self.on()
 
@@ -93,9 +93,8 @@ class DragTracker(Tracker):
         """
 
         vec = placement.Base
-        vec_str = str(vec.x) + ' ' + str(vec.y) + ' ' + str(vec.z)
-        self.transform.center.setValue(tuple([10000, 10000, 0]))
-        self.transform.translation.setValue(tuple(vec))
+
+        self.transform.translation.setValue(vec.x, vec.y, vec.z)
 
     def set_style(self, style):
         """

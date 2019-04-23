@@ -26,19 +26,17 @@ Command to edit an alignment
 
 import FreeCAD as App
 import FreeCADGui as Gui
-
+from pivy import coin
 import Draft
 import DraftTools
 from DraftTools import DraftTool, Creator
-
+from DraftTrackers import Tracker
 from ..support import utils, const
 from ..support.utils import Constants as C
 from ... import resources
 from ...alignment import horizontal_alignment as hz_align
 from ..tasks.alignment.draft_alignment_task import DraftAlignmentTask
 from . import edit_tracker, drag_tracker
-
-#from .edit_tracker import EditTracker
 
 class EditAlignmentCmd(DraftTool):
     """
@@ -76,6 +74,7 @@ class EditAlignmentCmd(DraftTool):
         self.active_tracker = None
         self.selected_trackers = []
         self.drag_tracker = None
+        self.radius_tracker = None
 
         self.button_states = {
             'BUTTON1': False,
@@ -213,12 +212,15 @@ class EditAlignmentCmd(DraftTool):
             self.get_button_states(arg)
 
             _p = Gui.ActiveDocument.ActiveView.getCursorPos()
+            _pt = self.view.getPoint(_p)
             info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
 
             if not self.button_states['BUTTON1']:
-                self.handle_tracker_mouseover(info)
+                self.handle_mouseover_tracker(info)
             else:
-                self.handle_tracker_drag(Gui.ActiveDocument.ActiveView.getPoint(_p))
+                self.handle_drag_tracker(
+                    Gui.ActiveDocument.ActiveView.getPoint(_p)
+                )
 
         #trap button clicks
         elif arg['Type'] == 'SoMouseButtonEvent':
@@ -259,10 +261,10 @@ class EditAlignmentCmd(DraftTool):
                     except StopIteration:
                         break
 
-        App.ActiveDocument.recompute()
+        #App.ActiveDocument.recompute()
         DraftTools.redraw3DView()
 
-    def handle_tracker_drag(self, point):
+    def handle_drag_tracker(self, point):
         """
         Handle dragging activity when button is pressed
         """
@@ -278,7 +280,8 @@ class EditAlignmentCmd(DraftTool):
 
         self.drag_tracker.set_placement(pl)
 
-    def handle_tracker_mouseover(self, info):
+
+    def handle_mouseover_tracker(self, info):
         """
         Handle mouseover activity when button is not pressed
         """
