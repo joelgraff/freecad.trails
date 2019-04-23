@@ -53,7 +53,7 @@ class EditTracker(Tracker):
 
     def __init__(self, pos, object_name, node_name, tracker_type):
 
-        self.pos = pos
+        self.position = pos
         self.name = node_name
         self.tracker_type = tracker_type
 
@@ -97,6 +97,7 @@ class EditTracker(Tracker):
         """
         Set method
         """
+        self.position = pos
         self.coords.point.setValue((pos.x,pos.y,pos.z))
 
     def get(self):

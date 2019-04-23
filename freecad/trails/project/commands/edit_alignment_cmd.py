@@ -36,7 +36,7 @@ from ..support.utils import Constants as C
 from ... import resources
 from ...alignment import horizontal_alignment as hz_align
 from ..tasks.alignment.draft_alignment_task import DraftAlignmentTask
-from . import edit_tracker, wire_tracker
+from . import edit_tracker, drag_tracker
 
 #from .edit_tracker import EditTracker
 
@@ -75,11 +75,12 @@ class EditAlignmentCmd(DraftTool):
         self.trackers = {}
         self.active_tracker = None
         self.selected_trackers = []
+        self.drag_tracker = None
 
         self.button_states = {
-            'Button1': False,
-            'Button2': False,
-            'Button3': False
+            'BUTTON1': False,
+            'BUTTON2': False,
+            'BUTTON3': False
         }
         self.pi_wire = None
 
@@ -192,9 +193,6 @@ class EditAlignmentCmd(DraftTool):
         self.is_activated = True
 
         App.ActiveDocument.recompute()
-
-        self.wire_tracker = wire_tracker.WireTracker(self.pi_wire.Shape)
-
         DraftTools.redraw3DView()
 
     def action(self, arg):
@@ -202,7 +200,7 @@ class EditAlignmentCmd(DraftTool):
         Event handling for alignment drawing
         """
 
-        print(arg)
+        #print(arg)
         #trap the escape key to quit
         if arg['Type'] == 'SoKeyboardEvent':
             if arg['Key'] == 'ESCAPE':
@@ -212,37 +210,15 @@ class EditAlignmentCmd(DraftTool):
         #trap mouse movement
         if arg['Type'] == 'SoLocation2Event':
 
+            self.get_button_states(arg)
+
             _p = Gui.ActiveDocument.ActiveView.getCursorPos()
             info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
 
-            _active = self.active_tracker
-
-            _key, _it = self.get_current_tracker(info)
-
-            _current = None
-
-            if _it:
-                _current = self.trackers[_key]
-
-            #if we haven't moved off the previous tracker, we're done
-            if _current == _active:
-                return
-
-            #_current is not None if a valid tracker was detected
-            if _current:
-                _current.set_style(self.STYLES.HIGHLIGHT)
-                self.active_tracker = _current
-
+            if not self.button_states['BUTTON1']:
+                self.handle_tracker_mouseover(info)
             else:
-                self.active_tracker = None
-
-            if _active:
-                _style = self.STYLES.ENABLED
-
-                if _active in self.selected_trackers:
-                    _style = self.STYLES.SELECTED
-
-                _active.set_style(_style)
+                self.handle_tracker_drag(Gui.ActiveDocument.ActiveView.getPoint(_p))
 
         #trap button clicks
         elif arg['Type'] == 'SoMouseButtonEvent':
@@ -272,6 +248,7 @@ class EditAlignmentCmd(DraftTool):
                     _current = self.trackers[_key]
                     _current.set_style(self.STYLES.SELECTED)
 
+                    self.active_tracker = _current
                     self.selected_trackers.append(_current)
 
                     if not multi_select:
@@ -285,13 +262,68 @@ class EditAlignmentCmd(DraftTool):
         App.ActiveDocument.recompute()
         DraftTools.redraw3DView()
 
-    def set_button_states(self, arg):
+    def handle_tracker_drag(self, point):
+        """
+        Handle dragging activity when button is pressed
+        """
+
+        if not self.active_tracker:
+            return
+
+        if self.drag_tracker is None:
+            self.drag_tracker = drag_tracker.create(self.pi_wire.Points)
+
+        pl = App.Placement()
+        pl.Base = point.sub(self.active_tracker.position)
+
+        self.drag_tracker.set_placement(pl)
+
+    def handle_tracker_mouseover(self, info):
+        """
+        Handle mouseover activity when button is not pressed
+        """
+
+        _active = self.active_tracker
+
+        _key, _it = self.get_current_tracker(info)
+
+        _current = None
+
+        if _it:
+            _current = self.trackers[_key]
+
+        #if we haven't moved off the previous tracker, we're done
+        if _current == _active:
+            return
+
+        #_current is not None if a valid tracker was detected
+        if _current:
+            _current.set_style(self.STYLES.HIGHLIGHT)
+            self.active_tracker = _current
+
+        else:
+            self.active_tracker = None
+
+        if _active:
+            _style = self.STYLES.ENABLED
+
+            if _active in self.selected_trackers:
+                _style = self.STYLES.SELECTED
+
+            _active.set_style(_style)
+
+    def get_button_states(self, arg):
         """
         Set the mouse button state dict
         """
 
-        for _btn in self.button_states:
-            self.button_states[_btn] = arg[_btn] == 'DOWN'
+        button = arg.get('Button')
+
+        #no button presses, no state to update
+        if not button:
+            return
+
+        self.button_states[button] = arg['State'] == 'DOWN'
 
     def get_current_tracker(self, info):
         """
