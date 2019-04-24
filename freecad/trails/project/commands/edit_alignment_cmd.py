@@ -116,12 +116,6 @@ class EditAlignmentCmd(DraftTool):
                 'ToolTip' : 'Draft a horizontal alignment',
                 'CmdType' : 'ForEdit'}
 
-    def test__cb(self, arg):
-
-        event = arg.getEvent()
-
-        print(dir(event))
-
     def Activated(self):
         """
         Command activation method
@@ -134,6 +128,9 @@ class EditAlignmentCmd(DraftTool):
 
         self.doc = App.ActiveDocument
         self.view = Gui.ActiveDocument.ActiveView
+
+        #set up callback for SoEvents
+        self.event_cb = self.view.addEventCallback("SoEvent", self.action)
 
         #disable selection entirely
         self.view.getSceneGraph().getField("selectionRole").setValue(0)
@@ -163,30 +160,11 @@ class EditAlignmentCmd(DraftTool):
         pi_points = self.alignment.get_pi_coords()
 
         #create PI wire tracker geometry
-        self.wire_tracker = WireTracker(pi_points)
+        self.wire_tracker = WireTracker(
+            self.doc, 'Sugar_Grove_Rd_Horiz', pi_points
+        )
 
-        #self.set_style(self.pi_wire.ViewObject, self.STYLES.PI)
-
-        #self.tmp_group.addObject(self.pi_wire)
         self.tmp_group.addObject(self.alignment.Object)
-
-        #get all objects with ViewObject.Selectable = True and
-        #make them unselectable
-        #self.view_objects['selectables'] = \
-        #    [_v.ViewObject for _v in App.ActiveDocument.findObjects()
-        #     if hasattr(_v, 'ViewObject')
-        #     if hasattr(_v.ViewObject, 'Selectable')
-        #     if _v.ViewObject.Selectable
-        #    ]
-
-        #for vobj in self.view_objects['selectables']:
-        #    vobj.Selectable = False
-
-        #create edit trackers for the PI geometry
-        #for point in pi_points:
-        #    _et = edit_tracker.create(point, self.pi_wire.Name, 'PI')
-        #    _et.set_style(self.STYLES.ENABLED)
-        #    self.trackers[_et.name] = _et
 
         panel = DraftAlignmentTask(self.clean_up)
 
@@ -203,9 +181,6 @@ class EditAlignmentCmd(DraftTool):
         Event handling for alignment drawing
         """
 
-        print(arg)
-
-        return
         #trap the escape key to quit
         if arg['Type'] == 'SoKeyboardEvent':
             if arg['Key'] == 'ESCAPE':
@@ -214,10 +189,15 @@ class EditAlignmentCmd(DraftTool):
 
         #trap mouse movement
         if arg['Type'] == 'SoLocation2Event':
-            return
+            
             _p = self.view.getCursorPos()
             _pt = self.view.getPoint(_p)
             info = self.view.getObjectInfo(_p)
+
+            if info:
+                print(info)
+
+            return
 
             if not self.button_states['BUTTON1']:
                 self.handle_mouseover_tracker(info)

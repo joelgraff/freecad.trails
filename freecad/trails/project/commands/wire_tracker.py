@@ -31,7 +31,7 @@ from DraftTrackers import Tracker
 from .edit_tracker import EditTracker
 from ..support.utils import Constants as C
 
-def create(points):
+def create(object_name, points):
     """
     Factory method for edit tracker
     """
@@ -39,7 +39,7 @@ def create(points):
     for point in points:
         point[2] = C.Z_DEPTH[2]
 
-    return WireTracker(points)
+    return WireTracker(object_name, points)
 
 
 class WireTracker(Tracker):
@@ -63,12 +63,14 @@ class WireTracker(Tracker):
         }
     ]
 
-    def __init__(self, points):
+    def __init__(self, doc, object_name, points):
         """
         Constructor
         """
 
+        self.doc = doc
         self.edit_trackers = []
+        self.object_name = object_name
 
         self.line = coin.SoLineSet()
         self.line.numVertices.setValue(len(points))
@@ -112,15 +114,17 @@ class WireTracker(Tracker):
         self.finalize_edit_trackers()
 
         for _i, _pt in enumerate(points):
+
             _pt.z = C.Z_DEPTH[2]
 
-            self.edit_trackers.append(
-                EditTracker(
-                    _pt, 'Node' + str(_i), self.transform, self.style[0]
-                )
+            _et = EditTracker(
+                self.doc, self.object_name, 'Node' + str(_i), self.transform
             )
 
-            self.coords.point.set1Value(_i, list(_pt))
+            _et.set_style(self.style[0])
+            _et.update(_pt)
+
+            self.edit_trackers.append(_et)
 
     def update_placement(self, placement):
         """
