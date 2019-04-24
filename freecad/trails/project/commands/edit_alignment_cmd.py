@@ -36,7 +36,7 @@ from ..support.utils import Constants as C
 from ... import resources
 from ...alignment import horizontal_alignment as hz_align
 from ..tasks.alignment.draft_alignment_task import DraftAlignmentTask
-from . import edit_tracker, drag_tracker
+from .wire_tracker import WireTracker
 
 class EditAlignmentCmd(DraftTool):
     """
@@ -81,7 +81,6 @@ class EditAlignmentCmd(DraftTool):
             'BUTTON2': False,
             'BUTTON3': False
         }
-        self.pi_wire = None
 
     def IsActive(self):
         """
@@ -117,6 +116,12 @@ class EditAlignmentCmd(DraftTool):
                 'ToolTip' : 'Draft a horizontal alignment',
                 'CmdType' : 'ForEdit'}
 
+    def test__cb(self, arg):
+
+        event = arg.getEvent()
+
+        print(dir(event))
+
     def Activated(self):
         """
         Command activation method
@@ -125,18 +130,19 @@ class EditAlignmentCmd(DraftTool):
         if self.is_activated:
             return
 
-        if self.doc is None:
-            self.doc = App.ActiveDocument
-
         DraftTool.Activated(self, name=utils.translate('Alignment'))
 
-        self.event_cb = self.view.addEventCallback("SoEvent", self.action)
+        self.doc = App.ActiveDocument
+        self.view = Gui.ActiveDocument.ActiveView
+
+        #disable selection entirely
+        self.view.getSceneGraph().getField("selectionRole").setValue(0)
 
         #get all objects with LineColor and set them all to gray
         self.view_objects['line_colors'] = \
             [
                 (_v.ViewObject, _v.ViewObject.LineColor)
-                for _v in App.ActiveDocument.findObjects()
+                for _v in self.doc.findObjects()
                 if hasattr(_v, 'ViewObject')
                 if hasattr(_v.ViewObject, 'LineColor')
             ]
@@ -156,33 +162,31 @@ class EditAlignmentCmd(DraftTool):
 
         pi_points = self.alignment.get_pi_coords()
 
-        #create PI wire geometry
-        self.pi_wire = utils.make_wire(
-            pi_points, utils.get_uuid(), depth=C.Z_DEPTH[1]
-        )
+        #create PI wire tracker geometry
+        self.wire_tracker = WireTracker(pi_points)
 
-        self.set_style(self.pi_wire.ViewObject, self.STYLES.PI)
+        #self.set_style(self.pi_wire.ViewObject, self.STYLES.PI)
 
-        self.tmp_group.addObject(self.pi_wire)
+        #self.tmp_group.addObject(self.pi_wire)
         self.tmp_group.addObject(self.alignment.Object)
 
         #get all objects with ViewObject.Selectable = True and
         #make them unselectable
-        self.view_objects['selectables'] = \
-            [_v.ViewObject for _v in App.ActiveDocument.findObjects()
-             if hasattr(_v, 'ViewObject')
-             if hasattr(_v.ViewObject, 'Selectable')
-             if _v.ViewObject.Selectable
-            ]
+        #self.view_objects['selectables'] = \
+        #    [_v.ViewObject for _v in App.ActiveDocument.findObjects()
+        #     if hasattr(_v, 'ViewObject')
+        #     if hasattr(_v.ViewObject, 'Selectable')
+        #     if _v.ViewObject.Selectable
+        #    ]
 
-        for vobj in self.view_objects['selectables']:
-            vobj.Selectable = False
+        #for vobj in self.view_objects['selectables']:
+        #    vobj.Selectable = False
 
         #create edit trackers for the PI geometry
-        for point in pi_points:
-            _et = edit_tracker.create(point, self.pi_wire.Name, 'PI')
-            _et.set_style(self.STYLES.ENABLED)
-            self.trackers[_et.name] = _et
+        #for point in pi_points:
+        #    _et = edit_tracker.create(point, self.pi_wire.Name, 'PI')
+        #    _et.set_style(self.STYLES.ENABLED)
+        #    self.trackers[_et.name] = _et
 
         panel = DraftAlignmentTask(self.clean_up)
 
@@ -191,7 +195,7 @@ class EditAlignmentCmd(DraftTool):
 
         self.is_activated = True
 
-        App.ActiveDocument.recompute()
+        self.doc.recompute()
         DraftTools.redraw3DView()
 
     def action(self, arg):
@@ -199,7 +203,9 @@ class EditAlignmentCmd(DraftTool):
         Event handling for alignment drawing
         """
 
-        #print(arg)
+        print(arg)
+
+        return
         #trap the escape key to quit
         if arg['Type'] == 'SoKeyboardEvent':
             if arg['Key'] == 'ESCAPE':
@@ -208,18 +214,16 @@ class EditAlignmentCmd(DraftTool):
 
         #trap mouse movement
         if arg['Type'] == 'SoLocation2Event':
-
-            self.get_button_states(arg)
-
-            _p = Gui.ActiveDocument.ActiveView.getCursorPos()
+            return
+            _p = self.view.getCursorPos()
             _pt = self.view.getPoint(_p)
-            info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
+            info = self.view.getObjectInfo(_p)
 
             if not self.button_states['BUTTON1']:
                 self.handle_mouseover_tracker(info)
             else:
                 self.handle_drag_tracker(
-                    Gui.ActiveDocument.ActiveView.getPoint(_p)
+                    self.view.getPoint(_p)
                 )
 
         #trap button clicks
@@ -227,8 +231,8 @@ class EditAlignmentCmd(DraftTool):
 
             self.get_button_states(arg)
 
-            _p = Gui.ActiveDocument.ActiveView.getCursorPos()
-            info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
+            _p = self.view.getCursorPos()
+            info = self.view.getObjectInfo(_p)
 
             multi_select = arg['AltDown']
 
@@ -245,6 +249,10 @@ class EditAlignmentCmd(DraftTool):
             #current defined?  add it to the selection.
             if _it:
 
+                #Clear the button states so dragging won't work unles
+                for _v in self.button_states.values():
+                    _v = False
+
                 while True:
 
                     _current = self.trackers[_key]
@@ -258,10 +266,13 @@ class EditAlignmentCmd(DraftTool):
 
                     try:
                         _key = next(_it)
+
                     except StopIteration:
                         break
 
-        #App.ActiveDocument.recompute()
+                
+
+        self.doc.recompute()
         DraftTools.redraw3DView()
 
     def handle_drag_tracker(self, point):
@@ -272,8 +283,8 @@ class EditAlignmentCmd(DraftTool):
         if not self.active_tracker:
             return
 
-        if self.drag_tracker is None:
-            self.drag_tracker = drag_tracker.create(self.pi_wire.Points)
+        #if self.drag_tracker is None:
+           # self.drag_tracker = drag_tracker.create(self.pi_wire.Points)
 
         pl = App.Placement()
         pl.Base = point.sub(self.active_tracker.position)
@@ -320,13 +331,14 @@ class EditAlignmentCmd(DraftTool):
         Set the mouse button state dict
         """
 
+        state = arg.get('State')
         button = arg.get('Button')
 
-        #no button presses, no state to update
-        if not button:
+        print(state, button)
+        if not state or not button:
             return
 
-        self.button_states[button] = arg['State'] == 'DOWN'
+        self.button_states[button] = state == 'DOWN'
 
     def get_current_tracker(self, info):
         """
@@ -391,16 +403,12 @@ class EditAlignmentCmd(DraftTool):
         if self.call:
             self.view.removeEventCallback("SoEvent", self.call)
 
-        #shut down trackers
-        if self.trackers:
+        #shut down tracker
+        if self.wire_tracker:
+            self.wire_tracker.finalize()
 
-            for _v in self.trackers.values():
-                _v.finalize()
-
-            self.trackers.clear()
-
-        self.selected_trackers = []
-        self.active_tracker = None
+        #re-enable selection
+        self.view.getSceneGraph().getField("selectionRole").setValue(1)
 
         Creator.finish(self)
 

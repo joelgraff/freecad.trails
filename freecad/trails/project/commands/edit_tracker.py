@@ -43,7 +43,7 @@ def create(coord, object_name, tracker_type):
           + str(hash((coord[0], coord[1], coord[2])))
 
     #return editTracker(pos=coord, name=nam)
-    return EditTracker(coord, object_name, nam, tracker_type)
+    return EditTracker(coord, object_name, nam)
 
 
 class EditTracker(Tracker):
@@ -51,45 +51,39 @@ class EditTracker(Tracker):
     A custom edit tracker
     """
 
-    def __init__(self, pos, object_name, node_name, tracker_type):
+    def __init__(self, pos, node_name, nodes=None, style=None):
 
         self.position = pos
         self.name = node_name
-        self.tracker_type = tracker_type
 
         self.inactive = False
 
         self.color = coin.SoBaseColor()
 
         self.marker = coin.SoMarkerSet()
-        self.set_marker(False)
 
         self.coords = coin.SoCoordinate3()
         self.coords.point.setValue((pos.x, pos.y, pos.z))
+        node = coin.SoSeparator()
 
-        selnode = None
+        #add child nodes to the selection node
+        for _node in [self.coords, self.color, self.marker]:
+            node.addChild(_node)
 
-        if self.inactive:
-            selnode = coin.SoSeparator()
+        child_nodes = nodes
 
-        else:
-            selnode = coin.SoType.fromName("SoFCSelection").createInstance()
-            selnode.documentName.setValue(App.ActiveDocument.Name)
-            selnode.objectName.setValue(object_name)
-            selnode.subElementName.setValue(node_name)
+        if not isinstance(nodes, list):
+            child_nodes = [nodes]
 
-        node = coin.SoAnnotation()
-
-        selnode.addChild(self.coords)
-        selnode.addChild(self.color)
-        selnode.addChild(self.marker)
-
-        node.addChild(selnode)
+        child_nodes += [node]
 
         ontop = not self.inactive
 
         Tracker.__init__(
-            self, children=[node], ontop=ontop, name="EditTracker")
+            self, children=child_nodes, ontop=ontop, name="EditTracker")
+
+        if style:
+            self.set_style(style)
 
         self.on()
 
@@ -117,16 +111,8 @@ class EditTracker(Tracker):
         """
         Set the marker style based on the passed tuple
         """
-        self.color.rgb = style[0]
 
-    def set_marker(self, is_open=True):
-        """
-        Set the marker style to either an open or closed circle
-        """
+        self.marker.markerIndex = \
+            Gui.getMarkerIndex(style['shape'], style['size'])
 
-        marker_type = 'CIRCLE'
-
-        if is_open:
-            marker_type = 'circle'
-
-        self.marker.markerIndex = Gui.getMarkerIndex(marker_type, 11)
+        self.color.rgb = style['color']
