@@ -29,9 +29,11 @@ from pivy import coin
 from DraftTrackers import Tracker
 
 from .edit_tracker import EditTracker
+from .base_tracker import BaseTracker
+
 from ..support.utils import Constants as C
 
-def create(object_name, points):
+def create(doc, object_name, points):
     """
     Factory method for edit tracker
     """
@@ -39,10 +41,10 @@ def create(object_name, points):
     for point in points:
         point[2] = C.Z_DEPTH[2]
 
-    return WireTracker(object_name, points)
+    return WireTracker(doc, object_name, points)
 
 
-class WireTracker(Tracker):
+class WireTracker(BaseTracker):
     """
     Customized wire tracker
     """
@@ -68,29 +70,16 @@ class WireTracker(Tracker):
         Constructor
         """
 
-        self.doc = doc
         self.edit_trackers = []
-        self.object_name = object_name
 
         self.line = coin.SoLineSet()
         self.line.numVertices.setValue(len(points))
 
-        self.coords = coin.SoCoordinate3()
-        self.transform = coin.SoTransform()
-        self.transform.translation.setValue([0.0, 0.0, 0.0])
+        super().__init__(doc=doc, object_name=object_name,
+                         node_name='WireTracker', nodes=self.line)
 
-        self.update(points=points)
-
-        Tracker.__init__(
-            self, False, None, None, [self.transform, self.coords, self.line], name="WireTracker"
-        )
-
-        self.node = self.switch.getChild(0)
-        self.draw_style = self.node.getChild(0)
-
-        self.color = self.node.getChild(1)
         self.color.rgb = (0.0, 0.0, 1.0)
-
+        self.update(points=points)
         self.on()
 
     def update(self, points=None, placement=None):
@@ -115,8 +104,10 @@ class WireTracker(Tracker):
 
         for _i, _pt in enumerate(points):
 
+            #set z value on top
             _pt.z = C.Z_DEPTH[2]
 
+            #build edit trackers
             _et = EditTracker(
                 self.doc, self.object_name, 'Node' + str(_i), self.transform
             )
@@ -125,6 +116,9 @@ class WireTracker(Tracker):
             _et.update(_pt)
 
             self.edit_trackers.append(_et)
+
+            #add coordinate to wire
+            self.coords.point.set1Value(_i, list(_pt))
 
     def update_placement(self, placement):
         """

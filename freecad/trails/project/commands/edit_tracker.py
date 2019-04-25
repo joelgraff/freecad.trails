@@ -53,9 +53,7 @@ class EditTracker(BaseTracker):
 
     def __init__(self, doc, object_name, node_name, nodes=None):
 
-        BaseTracker.__init__(
-            self, doc, object_name, node_name, nodes
-        )
+        super().__init__(doc, object_name, node_name, nodes)
 
         self.on()
 

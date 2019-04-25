@@ -36,7 +36,7 @@ from ..support.utils import Constants as C
 from ... import resources
 from ...alignment import horizontal_alignment as hz_align
 from ..tasks.alignment.draft_alignment_task import DraftAlignmentTask
-from .wire_tracker import WireTracker
+from . import wire_tracker
 
 class EditAlignmentCmd(DraftTool):
     """
@@ -160,7 +160,7 @@ class EditAlignmentCmd(DraftTool):
         pi_points = self.alignment.get_pi_coords()
 
         #create PI wire tracker geometry
-        self.wire_tracker = WireTracker(
+        self.wire_tracker = wire_tracker.create(
             self.doc, 'Sugar_Grove_Rd_Horiz', pi_points
         )
 

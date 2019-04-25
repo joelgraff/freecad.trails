@@ -38,34 +38,32 @@ class BaseTracker(Tracker):
 
     def __init__(self, doc, object_name, node_name, nodes=None):
 
+        self.doc = doc
         self.name = node_name
         self.object_name = object_name
 
         self.inactive = False
 
-        self.color = coin.SoBaseColor()
         self.marker = coin.SoMarkerSet()
         self.coords = coin.SoCoordinate3()
 
-        selnode  = coin.SoType.fromName("SoFCSelection").createInstance()
-        selnode.documentName.setValue(doc.Name)
-        selnode.objectName.setValue(object_name)
-        selnode.subElementName.setValue(node_name)
+        self.transform = coin.SoTransform()
+        self.transform.translation.setValue([0.0, 0.0, 0.0])
 
-        selnode.addChild(self.coords)
-        selnode.addChild(self.color)
-        selnode.addChild(self.marker)
+        _node = coin.SoType.fromName("SoFCSelection").createInstance()
+        _node.documentName.setValue(doc.Name)
+        _node.objectName.setValue(object_name)
+        _node.subElementName.setValue(node_name)
 
-        node = coin.SoAnnotation()
-        node.addChild(selnode)
-
-        child_nodes = nodes
+        child_nodes = [_node, self.coords, self.marker, self.transform]
 
         if not isinstance(nodes, list):
-            child_nodes = [nodes]
+            child_nodes += [nodes]
+        else:
+            child_nodes += nodes
 
-        child_nodes += [node]
+        super().__init__(children=child_nodes, ontop=True,
+                         name="EditTracker")
 
-        Tracker.__init__(
-            self, children=child_nodes + [node],
-            ontop=True, name="EditTracker")
+        self.draw_style = self.switch.getChild(0).getChild(0)
+        self.color = self.switch.getChild(0).getChild(1)
