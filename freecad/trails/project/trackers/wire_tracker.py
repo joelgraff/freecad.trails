@@ -23,17 +23,15 @@
 """
 Customized wire tracker from DraftTrackers.wireTracker
 """
+
 from pivy import coin
 
-import FreeCAD as App
-import FreeCADGui as Gui
-
-import DraftVecUtils
-from DraftTrackers import Tracker
+from .edit_tracker import EditTracker
+from .base_tracker import BaseTracker
 
 from ..support.utils import Constants as C
 
-def create(points):
+def create(doc, object_name, points):
     """
     Factory method for edit tracker
     """
@@ -41,64 +39,110 @@ def create(points):
     for point in points:
         point[2] = C.Z_DEPTH[2]
 
-    return DragTracker(points)
+    return WireTracker(doc, object_name, points)
 
 
-class DragTracker(Tracker):
+class WireTracker(BaseTracker):
     """
     Customized wire tracker
     """
 
-    def __init__(self, points):
+    style = [ \
+        #default
+        { \
+            'shape': 'CIRCLE_FILLED',
+            'size': 9,
+            'color': (0.8, 0.8, 0.8)
+        },
+
+        #moving
+        { \
+            'shape': 'CIRCLE_LINE',
+            'size': 9,
+            'color': (0.8, 0.4, 0.4)
+        }
+    ]
+
+    def __init__(self, doc, object_name, points):
         """
         Constructor
         """
 
+        self.edit_trackers = []
+
         self.line = coin.SoLineSet()
         self.line.numVertices.setValue(len(points))
 
-        self.coords = coin.SoCoordinate3()
-        self.transform = coin.SoTransform()
-        self.transform.translation.setValue([0.0, 0.0, 0.0])
-        self.update(points)
+        super().__init__(doc=doc, object_name=object_name,
+                         node_name='WireTracker', nodes=self.line)
 
-        Tracker.__init__(
-            self, False, None, None, [self.transform, self.coords, self.line], name="DragTracker"
-        )
-
-        self.node = self.switch.getChild(0)
-        self.draw_style = self.node.getChild(0)
-        self.color = self.node.getChild(1)
-
-        self.color.rgb = (1.0, 0.0, 0.0)
-
+        self.color.rgb = (0.0, 0.0, 1.0)
+        self.update(points=points)
         self.on()
 
-    def update(self, points):
+    def update(self, points=None, placement=None):
         """
         Update
         """
 
-        if not points:
-            return
+        if points:
+            self.update_points(points)
+
+        if placement:
+            self.update_placement(placement)
+
+    def update_points(self, points):
+        """
+        Clears and rebuilds the wire and edit trackers
+        """
 
         self.line.numVertices.setValue(len(points))
 
+        self.finalize_edit_trackers()
+
         for _i, _pt in enumerate(points):
+
+            #set z value on top
+            _pt.z = C.Z_DEPTH[2]
+
+            #build edit trackers
+            _et = EditTracker(
+                self.doc, self.object_name, self.object_name + str(_i),
+                self.transform
+            )
+
+            _et.set_style(self.style[0])
+            _et.update(_pt)
+
+            self.edit_trackers.append(_et)
+
+            #add coordinate to wire
             self.coords.point.set1Value(_i, list(_pt))
 
-    def set_placement(self, placement):
+    def update_placement(self, placement):
         """
-        Transform the tracker by the passed placement
-        """
-
-        vec = placement.Base
-
-        self.transform.translation.setValue(vec.x, vec.y, vec.z)
-
-    def set_style(self, style):
-        """
-        Set the ViewObject style based on the passed tuple.
+        Updates the placement for the wire and the trackers
         """
 
-        pass
+        return
+
+    def finalize_edit_trackers(self):
+        """
+        Destroy existing editr trackers
+        """
+
+        if not self.edit_trackers:
+            return
+
+        for _et in self.edit_trackers:
+            _et.finalize()
+
+        self.edit_trackers.clear()
+
+    def finalize(self):
+        """
+        Override of the parent method
+        """
+
+        self.finalize_edit_trackers()
+        super().finalize()

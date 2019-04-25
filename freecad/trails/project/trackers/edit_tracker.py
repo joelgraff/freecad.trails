@@ -21,49 +21,61 @@
 #*                                                                     *
 #***********************************************************************
 """
-Customized wire tracker from DraftTrackers.wireTracker
+Customized edit tracker from DraftTrackers.editTracker
 """
 
-from pivy import coin
+import FreeCAD as App
+import FreeCADGui as Gui
 
-from DraftTrackers import Tracker
+from .base_tracker import BaseTracker
 
 from ..support.utils import Constants as C
 
-
-class BaseTracker(Tracker):
+def create(coord, object_name, tracker_type):
     """
-    Customized wire tracker
+    Factory method for edit tracker
+    """
+
+    coord[2] = C.Z_DEPTH[2]
+
+    nam = 'Tracker' + '_' + tracker_type + '_' \
+          + str(hash((coord[0], coord[1], coord[2])))
+
+    #return editTracker(pos=coord, name=nam)
+    return EditTracker(coord, object_name, nam)
+
+
+class EditTracker(BaseTracker):
+    """
+    A custom edit tracker
     """
 
     def __init__(self, doc, object_name, node_name, nodes=None):
 
-        self.doc = doc
-        self.name = node_name
-        self.object_name = object_name
+        super().__init__(doc, object_name, node_name, nodes)
 
-        self.inactive = False
+        self.on()
 
-        self.marker = coin.SoMarkerSet()
-        self.coords = coin.SoCoordinate3()
+    def update(self, coord):
+        """
+        Update the coordinate position
+        """
+        self.coords.point.setValue(tuple(coord))
 
-        self.transform = coin.SoTransform()
-        self.transform.translation.setValue([0.0, 0.0, 0.0])
+    def get(self):
+        """
+        Get method
+        """
+        _pt = self.coords.point.getValues()[0]
 
-        _node = coin.SoType.fromName("SoFCSelection").createInstance()
-        _node.documentName.setValue(doc.Name)
-        _node.objectName.setValue(object_name)
-        _node.subElementName.setValue(node_name)
+        return App.Vector(_pt)
 
-        child_nodes = [_node, self.coords, self.marker, self.transform]
+    def set_style(self, style):
+        """
+        Set the marker style based on the passed tuple
+        """
 
-        if not isinstance(nodes, list):
-            child_nodes += [nodes]
-        else:
-            child_nodes += nodes
+        self.marker.markerIndex = \
+            Gui.getMarkerIndex(style['shape'], style['size'])
 
-        super().__init__(children=child_nodes, ontop=True,
-                         name="EditTracker")
-
-        self.draw_style = self.switch.getChild(0).getChild(0)
-        self.color = self.switch.getChild(0).getChild(1)
+        self.color.rgb = style['color']
