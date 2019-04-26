@@ -21,61 +21,47 @@
 # *                                                                        *
 # **************************************************************************
 
-import os
+import WorkingPlane
+
+from PySide import QtCore, QtGui
+
 import FreeCAD as App
 import FreeCADGui as Gui
-import random
-import timeit
 
+import Draft
+import DraftGeomUtils
+import DraftVecUtils
 
-class Command():
+from DraftTrackers import editTracker
+from DraftTools import Modifier
+from DraftTools import selectObject, getPoint, redraw3DView
+
+#from .edit_tracker import editTracker
+#plane = WorkingPlane.plane()
+
+class Command(Modifier):
     """
     Command Description
     """
     def __init__(self):
-        pass
+
+        self.tracker = None
 
     def GetResources(self):
-        """
-        Icon resources.
-        """
 
-        icon_path = os.path.dirname(os.path.abspath(__file__))
-
-        icon_path += "../../../icons/new_alignment.svg"
-
-        return {'Pixmap'  : icon_path,
+        return {'Pixmap'  : '',
                 'Accel'   : '',
                 'MenuText': '',
                 'ToolTip' : '',
                 'CmdType' : 'ForEdit'}
 
-
-    def f(self):
-
-        for _i in self.indices:
-            j = hash((self._list[_i], self._list[_i+1]))
-
-    def g(self):
-
-        for _i in self._list:
-            j = self._dict[_i]
-            
     def Activated(self):
         """
         Command activation method
         """
 
-        self._list = random.sample(range(-10000, 10000), 10000)
-        self._dict = dict((_i, 0) for _i in self._list)
+        Modifier.Activated(self, 'Command')
 
-        random.shuffle(self._list)
-
-        self.indices = list(range(0, 2,2))
-        #random.shuffle(self.indices)
-
-        itr = 100000
-        print(timeit.timeit(self.f, number=itr) / float(itr))
-        return
+        self.tracker = editTracker(App.Vector(), 'test', 0)
 
 Gui.addCommand('Command', Command())

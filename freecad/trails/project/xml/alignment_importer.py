@@ -28,7 +28,10 @@ import math
 
 from xml.etree import ElementTree as etree
 
+from PySide import QtGui
+
 from ..support import units, utils
+from ..support.document_properties import Preferences
 from . import landxml
 from .key_maps import KeyMaps as maps
 
@@ -53,15 +56,47 @@ class AlignmentImporter(object):
 
         xml_units = _units[0].attrib['linearUnit']
 
-        if xml_units != units.get_doc_units()[1]:
+        #match?  return units
+        system_units = units.get_doc_units()[1]
+        if xml_units == system_units:
+            return xml_units
 
+        #otherwise, prompt user for further action
+        msg_box = QtGui.QMessageBox()
+
+        msg = "Document units do not match the units selected in the system"\
+            + " preferences."
+
+        query = "Change current units ({0}) to match document units ({1}?"\
+            .format(system_units, xml_units)
+
+        msg_box.setText(msg)
+        msg_box.setInformativeText(query)
+        msg_box.setStandardButtons(
+            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+
+        msg_box.setDefaultButton(QtGui.QMessageBox.Yes)
+
+        response = msg_box.exec()
+        result = xml_units
+
+        if response == QtGui.QMessageBox.Yes:
+
+            _value = 7 #Civil Imperial
+
+            if xml_units == 'meter':
+                _value = 1 #MKS
+
+            Preferences.Units.set_value(_value)
+
+        else:
             self.errors.append(
                 'Document units of ' + units.get_doc_units()[1]
                 + ' expected, units of ' + xml_units + 'found')
 
-            return ''
+            result = ''
 
-        return xml_units
+        return result
 
     @staticmethod
     def _get_alignment_name(alignment, alignment_keys):
@@ -144,9 +179,6 @@ class AlignmentImporter(object):
                 elif attrib.get(_tag) == 'ccw':
                     attr_val = -1.0
 
-            if not attr_val:
-                attr_val = landxml.get_tag_default(_tag)
-
             result[maps.XML_MAP[_tag]] = attr_val
 
         return result
@@ -193,51 +225,6 @@ class AlignmentImporter(object):
 
         return result
 
-    def _parse_geo_data(self, align_name, geometry, curve_type):
-        """
-        Parse curve data and return as a dictionary
-        """
-
-        result = []
-
-        for curve in geometry:
-
-            #add the curve / line start / center / end coordinates,
-            #skipping if any are missing
-            _points = []
-
-            for _tag in ['Start', 'End', 'Center', 'PI']:
-
-                _pt = landxml.get_child_as_vector(curve, _tag)
-
-                if _pt:
-                    _pt.multiply(units.scale_factor())
-                else:
-
-                    #report missing coordinates
-                    if not (curve_type == 'line' and _tag in ['Center', 'PI']):
-
-                        self.errors.append(
-                            'Missing %s %s coordinate in alignment %s'
-                            % (curve_type, _tag, align_name)
-                        )
-
-                _points.append(_pt)
-
-            coords = {
-                'Type': curve_type, 'Start': _points[0], 'End': _points[1],
-                'Center': _points[2], 'PI': _points[3]
-                }
-
-            result.append({
-                **coords,
-                **self._parse_data(
-                    align_name, maps.XML_ATTRIBS[curve_type], curve.attrib
-                    )
-            })
-
-        return result
-
     def _parse_coord_geo_data(self, align_name, alignment):
         """
         Parse the alignment coorinate geometry data to get curve
@@ -277,7 +264,13 @@ class AlignmentImporter(object):
                         % (node_tag, _tag, align_name)
                     )
 
+            hash_value = None
+
+            if len(points) >= 2 and all(points):
+                hash_value = hash(tuple(points[0]) + tuple(points[1]))
+
             coords = {
+                'Hash': hash_value,
                 'Type': node_tag, 'Start': points[0], 'End': points[1],
                 'Center': points[2], 'PI': points[3]
                 }
@@ -295,6 +288,36 @@ class AlignmentImporter(object):
         """
         Import a landxml and build the Python dictionary fronm the
         appropriate elements
+
+        Returns a dictionary of the following structure:
+
+        {
+            Project: {
+                ID: <name>
+            },
+
+            Alignments: {
+
+                <alignment name>: {
+
+                    meta: {
+                        <tag/attribute>: value
+                    },
+
+                    station: [
+                        {
+                            <tag/attribute>: value
+                        }
+                    ],
+
+                    geometry: [
+                        {
+                            <tag/attribute>: value
+                        }
+                    ]
+                }
+            }
+        }
         """
 
         #get element tree and key nodes for parsing
@@ -334,8 +357,8 @@ class AlignmentImporter(object):
                 alignment, list(result.keys())
                 )
 
-            result['Alignments'][align_name] = {}
-            align_dict = result['Alignments'][align_name]
+            align_dict = {}
+            result['Alignments'][align_name] = align_dict
 
             align_dict['meta'] = self._parse_meta_data(align_name, alignment)
 

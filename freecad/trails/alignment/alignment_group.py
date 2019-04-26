@@ -64,6 +64,7 @@ def create():
 
     return fpo
 
+
 class _AlignmentGroup():
 
     def __init__(self, obj):
@@ -86,7 +87,6 @@ class _AlignmentGroup():
             'StartSaveDocument', self.write_xml
             )
 
-
     def onDocumentRestored(self, obj):
         """
         Restore object references on reload
@@ -99,9 +99,10 @@ class _AlignmentGroup():
             )
 
         print('Restoring alignment data...')
+
         self.data = AlignmentImporter().import_file(obj.Xml_Path)
 
-    def get_alignment_data(self, id):
+    def get_alignment_data(self, _id):
         """
         Return a reference to the XML data
         """
@@ -112,11 +113,11 @@ class _AlignmentGroup():
             print('No Alignment Group data found')
             return None
 
-        if _aligns[id] is None:
+        if _aligns[_id] is None:
             print('No alignment data found for ', id)
             return None
 
-        return _aligns[id]
+        return _aligns[_id]
 
     def write_xml(self):
         """
@@ -128,7 +129,7 @@ class _AlignmentGroup():
         #iterate the list of children, acquiring their data sets
         #and creating a total data set for alignments.
         for _obj in self.Object.OutList:
-            _list.append(_obj.Proxy.get_geometry())
+            _list.append(_obj.Proxy.get_data())
 
         exporter = AlignmentExporter()
 

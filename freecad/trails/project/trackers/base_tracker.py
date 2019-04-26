@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#***********************************************************************
+#**************************************************************************
 #*                                                                     *
 #* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
 #*                                                                     *
@@ -20,41 +20,47 @@
 #* USA                                                                 *
 #*                                                                     *
 #***********************************************************************
-
 """
-Task to draft an alignment
+Customized wire tracker from DraftTrackers.wireTracker
 """
 
-from .... import resources
+from pivy import coin
 
-__title__ = "draft_alignment_task.py"
-__author__ = "Joel Graff"
-__url__ = "https://www.freecadweb.org"
+from DraftTrackers import Tracker
 
-class DraftAlignmentTask:
+class BaseTracker(Tracker):
     """
-    Task to manage drafting horizontal alignments
+    Customized wire tracker
     """
-    def __init__(self, cb):
-        """
-        Constructor
-        """
 
-        self.ui_path = resources.__path__[0] + '/ui/'
-        self.ui = self.ui_path + 'import_alignment_task_panel.ui'
+    def __init__(self, doc, object_name, node_name, nodes=None):
 
-        self.form = None
-        self.subtask = None
-        self.cb = cb
+        self.doc = doc
+        self.name = node_name
+        self.object_name = object_name
 
-    def accept(self):
-        """
-        Accept the task parameters
-        """
-        return self.cb()
+        self.inactive = False
 
-    def reject(self):
-        """
-        Reject the task
-        """
-        return self.cb()
+        self.marker = coin.SoMarkerSet()
+        self.coords = coin.SoCoordinate3()
+
+        self.transform = coin.SoTransform()
+        self.transform.translation.setValue([0.0, 0.0, 0.0])
+
+        _node = coin.SoType.fromName("SoFCSelection").createInstance()
+        _node.documentName.setValue(doc.Name)
+        _node.objectName.setValue(object_name)
+        _node.subElementName.setValue(node_name)
+
+        child_nodes = [_node, self.coords, self.marker, self.transform]
+
+        if not isinstance(nodes, list):
+            child_nodes += [nodes]
+        else:
+            child_nodes += nodes
+
+        super().__init__(children=child_nodes, ontop=True,
+                         name="EditTracker")
+
+        self.draw_style = self.switch.getChild(0).getChild(0)
+        self.color = self.switch.getChild(0).getChild(1)

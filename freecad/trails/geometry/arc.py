@@ -152,8 +152,10 @@ def get_bearings(arc, mat, delta, rot):
 
     if _b:
 
+        _deltas = [abs(_i - _j) for _i in _b for _j in _b]
+
         #check to ensure all tangent start bearing values are identical
-        if not support.within_tolerance(_b):
+        if not support.within_tolerance(_deltas):
             return None
 
         #default to calculated if different from supplied bearing
@@ -163,7 +165,15 @@ def get_bearings(arc, mat, delta, rot):
     if not bearing_in:
         return None
 
+    #a negative rotation could push out bearing under pi
+    #a positive rotation could push out bearing over 2pi
     _b_out = bearing_in + (delta * rot)
+
+    if _b_out < 0.0:
+        _b_out += C.TWO_PI
+
+    if _b_out >= C.TWO_PI:
+        _b_out -= C.TWO_PI
 
     if not support.within_tolerance(_b_out, bearing_out):
         bearing_out = _b_out
@@ -219,7 +229,7 @@ def get_lengths(arc, mat):
             continue
 
         #if both were calculated and they aren't the same, quit
-        if all(_s) and not support.within_tolerance(_s):
+        if all(_s) and not support.within_tolerance(_s[0], _s[1]):
             return None
 
         if _s[0] and support.within_tolerance(_s[0], params[_i]):
@@ -622,7 +632,7 @@ def run_test(arc, comp, excludes):
 # -706.1075272957279,
 # 0.0)}
 
-def get_points(arc_dict, interval, interval_type='Segment'):
+def get_points(arc_dict, interval, interval_type='Segment', layer=0.0):
     """
     Discretize an arc into the specified segments.
     Resulting list of coordinates omits provided starting point and
@@ -641,6 +651,8 @@ def get_points(arc_dict, interval, interval_type='Segment'):
         'Segment'   - subdivide into n equal segments
         'Interval'  - subdivide into fixed length segments
         'Tolerance' - limit error between segment and curve
+
+    layer       - the z coordinate to apply to all points
 
     Points are returned references to start_coord
     """
@@ -681,9 +693,12 @@ def get_points(arc_dict, interval, interval_type='Segment'):
     for delta in segment_deltas:
 
         _dfw = App.Vector(_forward).multiply(math.sin(delta))
-        _drt = App.Vector(_right).multiply(direction * (1 - math.cos(delta)))
+        _drt = App.Vector(_right).multiply(direction * (1.0 - math.cos(delta)))
 
-        result.append(start_coord.add(_dfw.add(_drt).multiply(radius)))
+        _point = start_coord.add(_dfw.add(_drt).multiply(radius))
+        _point.z = layer
+
+        result.append(_point)
 
         #store the hash of the starting and ending coordinates
         #aka - the segment hash

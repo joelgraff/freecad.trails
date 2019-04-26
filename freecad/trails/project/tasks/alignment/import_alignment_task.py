@@ -35,7 +35,7 @@ import FreeCADGui as Gui
 from . import import_xml_subtask #, ImportCsvSubtask
 
 from .... import resources
-from ....alignment import alignment_group, horizontal_alignment
+from ....alignment import alignment_group, alignment
 
 
 class ImportAlignmentTask:
@@ -71,7 +71,7 @@ class ImportAlignmentTask:
 
         for key, value in data['Alignments'].items():
 
-            result = horizontal_alignment.create(
+            result = alignment.create(
                 value, value['meta']['ID'] + ' Horiz'
             )
 

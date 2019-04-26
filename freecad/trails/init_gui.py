@@ -28,7 +28,8 @@ import FreeCADGui as Gui
 from . import ICONPATH
 
 from .project.commands \
-    import new_project_cmd, import_alignment_cmd, draft_alignment_cmd, test_cmd
+    import new_project_cmd, import_alignment_cmd, edit_alignment_cmd, \
+    test_cmd, test_cmd_2
 
 from .corridor.template import ViewTemplateLibrary
 
@@ -59,7 +60,7 @@ class TrailsWorkbench(Gui.Workbench):
             'Alignment': {
                 'gui': self.menu + self.toolbar + self.context,
                 'cmd': ['ImportAlignmentCmd',
-                        'DraftAlignmentCmd',
+                        'EditAlignmentCmd',
                         #'GenerateVerticalAlignment',
                         #'Generate3dAlignment'
                        ]
@@ -71,22 +72,27 @@ class TrailsWorkbench(Gui.Workbench):
                         #'GenerateElementLoft',
                        ]
             },
+            #'Element Loft': {
+            #'gui': self.menu + self.toolbar + self.context,
+            #'cmd': ['EditIntervals']
+            #},
+            'Test': {
+                'gui': self.menu,
+                'cmd': ['Command', 'Command2']
+            }
         }
 
         if not self.dev:
             return
 
         #development commands
-        self.command.ui = {**self.command.ui,
+        self.command.ui = {
+            **self.command.ui,
             **{
                 'Test': {
                     'gui': self.menu,
                     'cmd': ['Command']
                 }
-                #'Element Loft': {
-                #'gui': self.menu + self.toolbar + self.context,
-                #'cmd': ['EditIntervals']
-                #},
             }
         }
 

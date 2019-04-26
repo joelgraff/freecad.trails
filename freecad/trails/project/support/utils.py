@@ -30,8 +30,11 @@ __author__ = "Joel Graff"
 __url__ = "https://www.freecadweb.org"
 
 import math
+import uuid
 
 import FreeCAD as App
+import DraftGui
+from Draft import _Wire, _ViewProviderWire
 
 from .const import Const
 
@@ -43,8 +46,48 @@ class Constants(Const):
     TWO_PI = math.pi * 2.0          # 2 * pi in radians
     HALF_PI = math.pi / 2.0         # 1/2 * pi in radians
     ONE_RADIAN = 180 / math.pi      # one radian in degrees
-    TOLERANCE = 0.000001            # tolerance for differences in measurements
+    TOLERANCE = 0.0001              # tolerance for differences in measurements
     UP = App.Vector(0.0, 1.0, 0.0)  # Up vector
+    Z_DEPTH = [0.0, 0.05, 0.1]      # Z values to provide rendering layers
+
+def get_uuid():
+    """
+    Returns a random UUID as a string
+    """
+
+    return str(uuid.uuid4())
+
+def translate(text, context = 'trails'):
+    """
+    Translate convenience fn for the DraftGui.translate() convenience fn
+    """
+
+    DraftGui.translate(context, text)
+
+def make_wire(points, wire_name=None, closed=False, support=None, depth=0.0):
+    """
+    Reduced version of Draft.makeWire()
+    """
+
+    if not wire_name:
+        wire_name = 'Wire'
+
+    obj = App.ActiveDocument.addObject("Part::Part2DObjectPython", wire_name)
+
+    _Wire(obj)
+
+    #set point z-depth to create fake rendering order
+    if depth:
+        for point in points:
+            point.z = depth
+
+    obj.Points = points
+    obj.Closed = closed
+    obj.Support = support
+
+    _ViewProviderWire(obj.ViewObject)
+
+    return obj
 
 def to_float(value):
     """
@@ -120,8 +163,8 @@ def distance_bearing_to_coordinates(distance, bearing):
 
 def coordinates_to_distance_bearing(prev_coord, next_coord):
     """
-    Given two coordinates in (x,y,z) format, calculate the distance between them
-    and the bearing from prev to next
+    Given two coordinates in (x,y,z) format, calculate the distance
+    between them and the bearing from prev to next
     """
 
     distance = (next_coord-prev_coord).Length

@@ -36,7 +36,7 @@ import FreeCAD as App
 from ..support import utils, const
 from .key_maps import KeyMaps
 
-class C(const.Const):
+class _C(const.Const):
     """
     Useful math constants
     """
@@ -101,7 +101,7 @@ def write_to_file(node, target, pretty_print=True):
     Write the node to the target file, prettyprinting if desrired
     """
 
-    etree.register_namespace(C.VERSION, C.NAMESPACE[C.VERSION])
+    etree.register_namespace(_C.VERSION, _C.NAMESPACE[_C.VERSION])
 
     _xml = minidom.parseString(
         etree.tostring(node, encoding='utf-8').decode('utf-8')
@@ -109,8 +109,8 @@ def write_to_file(node, target, pretty_print=True):
 
     if pretty_print:
         _xml = _xml.toprettyxml(indent='  ', encoding='utf-8').decode('utf-8')
-        _xml = re.sub(C.VERSION + ':', '', _xml)
-        _xml = re.sub('xmlns:' + C.VERSION, 'xmlns', _xml)
+        _xml = re.sub(_C.VERSION + ':', '', _xml)
+        _xml = re.sub('xmlns:' + _C.VERSION, 'xmlns', _xml)
 
     with open(target, 'w', encoding='UTF-8') as _file:
         _file.write(_xml)
@@ -133,7 +133,7 @@ def set_attribute(node, tag, value):
     result = value
 
     if isinstance(value, float):
-        result = C.PRECISION.format(value)
+        result = _C.PRECISION.format(value)
 
     node.set(tag, result)
 
@@ -161,7 +161,7 @@ def get_child(node, node_name):
     """
     Return the first child matching node_name in node
     """
-    child = node.find(C.VERSION + ":" + node_name, C.NAMESPACE)
+    child = node.find(_C.VERSION + ":" + node_name, _C.NAMESPACE)
 
     return child
 
@@ -196,7 +196,7 @@ def get_children(node, node_name):
     """
     Return all children mathcing node_name in node
     """
-    return node.findall(C.VERSION + ':' + node_name, C.NAMESPACE)
+    return node.findall(_C.VERSION + ':' + node_name, _C.NAMESPACE)
 
 def get_float_list(text, delimiter=' '):
     """
@@ -211,7 +211,7 @@ def get_vector_string(vector, delimiter=' '):
     Return a string of vector or list elements
     """
 
-    result = [C.PRECISION.format(_v) for _v in vector]
+    result = [_C.PRECISION.format(_v) for _v in vector]
 
     return delimiter.join(result)
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#***********************************************************************
+#**************************************************************************
 #*                                                                     *
 #* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
 #*                                                                     *
@@ -20,41 +20,62 @@
 #* USA                                                                 *
 #*                                                                     *
 #***********************************************************************
-
 """
-Task to draft an alignment
+Customized edit tracker from DraftTrackers.editTracker
 """
 
-from .... import resources
+import FreeCAD as App
+import FreeCADGui as Gui
 
-__title__ = "draft_alignment_task.py"
-__author__ = "Joel Graff"
-__url__ = "https://www.freecadweb.org"
+from .base_tracker import BaseTracker
 
-class DraftAlignmentTask:
+from ..support.utils import Constants as C
+
+def create(coord, object_name, tracker_type):
     """
-    Task to manage drafting horizontal alignments
+    Factory method for edit tracker
     """
-    def __init__(self, cb):
+
+    coord[2] = C.Z_DEPTH[2]
+
+    nam = 'Tracker' + '_' + tracker_type + '_' \
+          + str(hash((coord[0], coord[1], coord[2])))
+
+    #return editTracker(pos=coord, name=nam)
+    return EditTracker(coord, object_name, nam)
+
+
+class EditTracker(BaseTracker):
+    """
+    A custom edit tracker
+    """
+
+    def __init__(self, doc, object_name, node_name, nodes=None):
+
+        super().__init__(doc, object_name, node_name, nodes)
+
+        self.on()
+
+    def update(self, coord):
         """
-        Constructor
+        Update the coordinate position
+        """
+        self.coords.point.setValue(tuple(coord))
+
+    def get(self):
+        """
+        Get method
+        """
+        _pt = self.coords.point.getValues()[0]
+
+        return App.Vector(_pt)
+
+    def set_style(self, style):
+        """
+        Set the marker style based on the passed tuple
         """
 
-        self.ui_path = resources.__path__[0] + '/ui/'
-        self.ui = self.ui_path + 'import_alignment_task_panel.ui'
+        self.marker.markerIndex = \
+            Gui.getMarkerIndex(style['shape'], style['size'])
 
-        self.form = None
-        self.subtask = None
-        self.cb = cb
-
-    def accept(self):
-        """
-        Accept the task parameters
-        """
-        return self.cb()
-
-    def reject(self):
-        """
-        Reject the task
-        """
-        return self.cb()
+        self.color.rgb = style['color']
