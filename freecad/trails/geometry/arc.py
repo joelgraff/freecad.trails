@@ -165,7 +165,15 @@ def get_bearings(arc, mat, delta, rot):
     if not bearing_in:
         return None
 
+    #a negative rotation could push out bearing under pi
+    #a positive rotation could push out bearing over 2pi
     _b_out = bearing_in + (delta * rot)
+
+    if _b_out < 0.0:
+        _b_out += C.TWO_PI
+
+    if _b_out >= C.TWO_PI:
+        _b_out -= C.TWO_PI
 
     if not support.within_tolerance(_b_out, bearing_out):
         bearing_out = _b_out
@@ -216,7 +224,6 @@ def get_lengths(arc, mat):
         #get two consecutive elements, saving only if they're valid
         _s = [_v for _v in lengths[_i*2:(_i+1)*2] if _v]
 
-        support.within_tolerance(_s[0], _s[1])
         #skip the rest if not defined, we'll use the user values
         if not _s:
             continue
@@ -686,7 +693,7 @@ def get_points(arc_dict, interval, interval_type='Segment', layer=0.0):
     for delta in segment_deltas:
 
         _dfw = App.Vector(_forward).multiply(math.sin(delta))
-        _drt = App.Vector(_right).multiply(direction * (1 - math.cos(delta)))
+        _drt = App.Vector(_right).multiply(direction * (1.0 - math.cos(delta)))
 
         _point = start_coord.add(_dfw.add(_drt).multiply(radius))
         _point.z = layer
