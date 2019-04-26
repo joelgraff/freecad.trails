@@ -31,6 +31,7 @@ __url__ = "https://www.freecadweb.org"
 
 import FreeCAD as App
 from .const import Const
+from .document_properties import Preferences
 
 def get_doc_units():
     """
@@ -43,9 +44,7 @@ def get_doc_units():
     english = ['ft', 'foot', 'feet']
     metric = ['m', 'meter', 'meters']
 
-    if App.ParamGet('User parameter:BaseApp/Preferences/Units'
-                   ).GetInt('UserSchema') == 7:
-
+    if Preferences.Units.get_value() == 7:
         return english
 
     return metric

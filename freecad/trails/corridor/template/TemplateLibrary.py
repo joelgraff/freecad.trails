@@ -396,8 +396,8 @@ class ExpDockWidget(QtGui.QDockWidget):
             return
 
         #save the thumbnail enabling the logo if desired
-        document_properties.DocumentPreferences.AddThumbnailLogo.set_value()
-        document_properties.DocumentPreferences.SaveThumbnail.set_value()
+        document_properties.Preferences.AddThumbnailLogo.set_value()
+        document_properties.Preferences.SaveThumbnail.set_value()
 
         _fn = _dialog[0]
 
