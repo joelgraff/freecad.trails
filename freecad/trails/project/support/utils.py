@@ -46,7 +46,7 @@ class Constants(Const):
     TWO_PI = math.pi * 2.0          # 2 * pi in radians
     HALF_PI = math.pi / 2.0         # 1/2 * pi in radians
     ONE_RADIAN = 180 / math.pi      # one radian in degrees
-    TOLERANCE = 0.000001            # tolerance for differences in measurements
+    TOLERANCE = 0.0001              # tolerance for differences in measurements
     UP = App.Vector(0.0, 1.0, 0.0)  # Up vector
     Z_DEPTH = [0.0, 0.05, 0.1]      # Z values to provide rendering layers
 
