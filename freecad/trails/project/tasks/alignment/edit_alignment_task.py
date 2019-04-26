@@ -39,11 +39,11 @@ from ...trackers import wire_tracker
 
 from . import edit_pi_subtask
 
-def create(doc, view):
+def create(doc, view, ailgnment):
     """
     Class factory method
     """
-    return EditAlignmentTask(doc, view)
+    return EditAlignmentTask(doc, view, alignment)
 
 class EditAlignmentTask:
     """
@@ -61,13 +61,13 @@ class EditAlignmentTask:
         PI =        [(0.0, 0.0, 1.0), 'Solid']
         SELECTED =  [(1.0, 0.8, 0.0), 'Solid']
 
-    def __init__(self, doc, view):
+    def __init__(self, doc, view, alignment):
 
         self.panel = None
         self.view = view
         self.doc = doc
         self.tmp_group = None
-        self.alignment = None
+        self.alignment = alignment
         self.points = None
         self.pi_tracker = None
         self.pi_subtask = None
@@ -95,12 +95,6 @@ class EditAlignmentTask:
 
         #create temporary group
         self.tmp_group = self.doc.addObject('App::DocumentObjectGroup', 'Temp')
-
-        #create working, non-visual copy of horizontal alignment
-        data = Gui.Selection.getSelection()[0].Proxy.get_data_copy()
-
-        self.alignment = \
-            horizontal_alignment.create(data, utils.get_uuid(), True)
 
         #deselect existing selections
         Gui.Selection.clearSelection()

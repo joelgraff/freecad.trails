@@ -164,6 +164,7 @@ class ImportAlignmentTask:
 
         self.form.layout().addWidget(subpanel)
 
+        print(file_path)
         if 'xml' in extension:
             self.subtask = import_xml_subtask.create(subpanel, file_path)
 

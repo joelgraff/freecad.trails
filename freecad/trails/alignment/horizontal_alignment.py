@@ -88,6 +88,7 @@ class _HorizontalAlignment(Draft._Wire):
         self.no_execute = True
 
         obj.Proxy = self
+        
         self.Type = _CLASS_NAME
         self.Object = obj
         self.errors = []

@@ -55,6 +55,7 @@ class EditAlignmentCmd(DraftTool):
         self.edit_alignment_task = None
         self.is_activated = False
         self.call = None
+        self.tmp_group = None
 
         self.button_states = {
             'BUTTON1': False,
@@ -103,6 +104,17 @@ class EditAlignmentCmd(DraftTool):
 
         if self.is_activated:
             return
+
+        #create working, non-visual copy of horizontal alignment
+        data = Gui.Selection.getSelection()[0].Proxy.get_data_copy()
+
+        #create temporary group
+        self.tmp_group = self.doc.addObject('App::DocumentObjectGroup', 'Temp')
+
+        self.alignment = \
+            hz_align.create(data, utils.get_uuid(), True)
+
+        self.tmp_group.addObject(self.alignment.Object)
 
         DraftTool.Activated(self, name=utils.translate('Alignment'))
 
@@ -240,8 +252,8 @@ class EditAlignmentCmd(DraftTool):
             self.view.removeEventCallback('SoEvent', self.action)
 
 
-        #self.tmp_group.removeObjectsFromDocument()
-        #self.doc.removeObject(self.tmp_group.Name)
+        self.tmp_group.removeObjectsFromDocument()
+        self.doc.removeObject(self.tmp_group.Name)
 
         #finalize tracking
         #if self.ui:
