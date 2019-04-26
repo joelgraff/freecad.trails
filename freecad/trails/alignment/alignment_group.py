@@ -64,6 +64,7 @@ def create():
 
     return fpo
 
+
 class _AlignmentGroup():
 
     def __init__(self, obj):
@@ -86,7 +87,6 @@ class _AlignmentGroup():
             'StartSaveDocument', self.write_xml
             )
 
-
     def onDocumentRestored(self, obj):
         """
         Restore object references on reload
@@ -99,6 +99,7 @@ class _AlignmentGroup():
             )
 
         print('Restoring alignment data...')
+
         self.data = AlignmentImporter().import_file(obj.Xml_Path)
 
     def get_alignment_data(self, _id):
