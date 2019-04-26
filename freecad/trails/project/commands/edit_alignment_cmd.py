@@ -26,18 +26,14 @@ Command to edit an alignment
 
 import FreeCAD as App
 import FreeCADGui as Gui
-from pivy import coin
-import Draft
-import DraftTools
-from DraftTools import DraftTool, Creator
-from DraftTrackers import Tracker
 
-from ..support import utils, const
-from ..support.utils import Constants as C
+from DraftTools import DraftTool
+
+from ..support import utils
+
 from ... import resources
-from ...alignment import horizontal_alignment as hz_align
-#from ..tasks.alignment.draft_alignment_task import DraftAlignmentTask
-from ..trackers import wire_tracker
+from ...alignment import alignment as hz_align
+
 from ..tasks.alignment import edit_alignment_task 
 
 class EditAlignmentCmd(DraftTool):
@@ -51,7 +47,7 @@ class EditAlignmentCmd(DraftTool):
         """
 
         self.doc = None
-
+        self.view = None
         self.edit_alignment_task = None
         self.is_activated = False
         self.call = None
@@ -79,7 +75,7 @@ class EditAlignmentCmd(DraftTool):
         if not selected:
             return False
 
-        if not selected[0].Proxy.Type == 'HorizontalAlignment':
+        if not selected[0].Proxy.Type == 'Alignment':
             return False
 
         return True
@@ -105,16 +101,10 @@ class EditAlignmentCmd(DraftTool):
         if self.is_activated:
             return
 
+        self.doc = App.ActiveDocument
+
         #create working, non-visual copy of horizontal alignment
         data = Gui.Selection.getSelection()[0].Proxy.get_data_copy()
-
-        #create temporary group
-        self.tmp_group = self.doc.addObject('App::DocumentObjectGroup', 'Temp')
-
-        self.alignment = \
-            hz_align.create(data, utils.get_uuid(), True)
-
-        self.tmp_group.addObject(self.alignment.Object)
 
         DraftTool.Activated(self, name=utils.translate('Alignment'))
 
@@ -125,7 +115,7 @@ class EditAlignmentCmd(DraftTool):
 
         #create alignment editing task
         self.edit_alignment_task = \
-            edit_alignment_task.create(self.doc, self.view)
+            edit_alignment_task.create(self.doc, self.view, data)
 
         self.is_activated = True
 
@@ -148,23 +138,6 @@ class EditAlignmentCmd(DraftTool):
         #trap button clicks
         elif arg['Type'] == 'SoMouseButtonEvent':
             pass
-
-    def handle_drag_tracker(self, point):
-        """
-        Handle dragging activity when button is pressed
-        """
-
-        if not self.active_tracker:
-            return
-
-        #if self.drag_tracker is None:
-           # self.drag_tracker = drag_tracker.create(self.pi_wire.Points)
-
-        pl = App.Placement()
-        pl.Base = point.sub(self.active_tracker.position)
-
-        self.drag_tracker.set_placement(pl)
-
 
     def handle_mouseover_tracker(self, info):
         """
@@ -250,33 +223,6 @@ class EditAlignmentCmd(DraftTool):
 
         if self.call:
             self.view.removeEventCallback('SoEvent', self.action)
-
-
-        self.tmp_group.removeObjectsFromDocument()
-        self.doc.removeObject(self.tmp_group.Name)
-
-        #finalize tracking
-        #if self.ui:
-            #if hasattr(self, 'alignment_tracker'):
-                #self.alignment_tracker.finalize()
-
-
-        #reset selctable object values
-        #for _v in self.view_objects['selectables']:
-        #    _v.Selectable = True
-
-        #reset line colors
-        #for _v in self.view_objects['line_colors']:
-        #    _v[0].LineColor = _v[1]
-
-        #close dialog
-        #if not Draft.getParam('UiMode', 1):
-        #    Gui.Control.closeDialog()
-
-        #re-enable selection
-        #self.view.getSceneGraph().getField("selectionRole").setValue(1)
-
-       # Creator.finish(self)
 
         self.is_activated = False
 

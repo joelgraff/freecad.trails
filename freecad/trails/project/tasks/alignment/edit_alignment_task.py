@@ -29,9 +29,7 @@ import FreeCADGui as Gui
 import Draft
 import DraftTools
 
-from DraftGui import todo
-
-from ....alignment import horizontal_alignment
+from ....alignment import alignment_model
 
 from ...support import const, utils
 
@@ -39,11 +37,11 @@ from ...trackers import wire_tracker
 
 from . import edit_pi_subtask
 
-def create(doc, view, ailgnment):
+def create(doc, view, alignment_data):
     """
     Class factory method
     """
-    return EditAlignmentTask(doc, view, alignment)
+    return EditAlignmentTask(doc, view, alignment_data)
 
 class EditAlignmentTask:
     """
@@ -61,13 +59,13 @@ class EditAlignmentTask:
         PI =        [(0.0, 0.0, 1.0), 'Solid']
         SELECTED =  [(1.0, 0.8, 0.0), 'Solid']
 
-    def __init__(self, doc, view, alignment):
+    def __init__(self, doc, view, alignment_data):
 
         self.panel = None
         self.view = view
         self.doc = doc
         self.tmp_group = None
-        self.alignment = alignment
+        self.alignment = alignment_model.AlignmentModel(alignment_data)
         self.points = None
         self.pi_tracker = None
         self.pi_subtask = None
@@ -93,9 +91,6 @@ class EditAlignmentTask:
         for _v in self.view_objects['line_colors']:
             self.set_vobj_style(_v[0], self.STYLES.DISABLED)
 
-        #create temporary group
-        self.tmp_group = self.doc.addObject('App::DocumentObjectGroup', 'Temp')
-
         #deselect existing selections
         Gui.Selection.clearSelection()
 
@@ -107,8 +102,6 @@ class EditAlignmentTask:
 
         self.pi_tracker = \
             wire_tracker.create(self.doc, 'PI_TRACKER', self.points)
-
-        self.tmp_group.addObject(self.alignment.Object)
 
         self.call = self.view.addEventCallback('SoEvent', self.action)
         #panel = DraftAlignmentTask(self.clean_up)
@@ -170,5 +163,3 @@ class EditAlignmentTask:
         if self.pi_subtask:
             self.pi_subtask.finish()
             self.pi_subtask = None
-
-        self.doc.recompute()
