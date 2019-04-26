@@ -28,6 +28,7 @@ Subtask to edit the PI trackers of an alignment
 import DraftTools
 
 from ...trackers.wire_tracker import WireTracker
+from ...trackers.node_tracker import NodeTracker
 
 def create(doc, view, panel, points):
     """
@@ -49,8 +50,21 @@ class EditPiSubtask:
         #set up callback for SoEvents
         self.call = self.view.addEventCallback("SoEvent", self.action)
 
-        #create the baseline pi tracker for the entire alignment
-        #self.pi_tracker = WireTracker(doc, 'PI_TRACKER', points)
+        #create the wire and edit trackers
+        self.wire_trackers = []
+        
+        for _i in range(0, len(points) - 1):
+            _start = points[_i]
+            _end = points[_i + 1]
+
+            self.wire_trackers.append(
+                WireTracker(doc, 'WIRE' + str(_i), [_start, _end]))
+
+            self.node_trackers.append(
+                NodeTracker(doc, 'NODE' + str(_i), )
+            )
+        for _pt in points:
+         self.wire_trackers.append(WireTracker(doc, 'PI_TRACKER', points))
 
         self.edit_trackers = []
 
@@ -58,8 +72,6 @@ class EditPiSubtask:
         """
         Coin SoEvent callback for mouse / keyboard handling
         """
-
-        return
 
         #trap mouse movement
         if arg['Type'] == 'SoLocation2Event':

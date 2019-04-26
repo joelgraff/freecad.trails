@@ -27,33 +27,21 @@ Customized edit tracker from DraftTrackers.editTracker
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from .base_tracker import BaseTracker
+from DraftTrackers import Tracker
 
 from ..support.utils import Constants as C
 
-def create(coord, object_name, tracker_type):
-    """
-    Factory method for edit tracker
-    """
 
-    coord[2] = C.Z_DEPTH[2]
-
-    nam = 'Tracker' + '_' + tracker_type + '_' \
-          + str(hash((coord[0], coord[1], coord[2])))
-
-    #return editTracker(pos=coord, name=nam)
-    return EditTracker(coord, object_name, nam)
-
-
-class EditTracker(BaseTracker):
+class NodeTracker(Tracker):
     """
     A custom edit tracker
     """
 
-    def __init__(self, doc, object_name, node_name, nodes=None):
+    def __init__(self, object_name, node_name, coord, nodes=None):
 
-        super().__init__(doc, object_name, node_name, nodes)
+        super().__init__(object_name, node_name, nodes)
 
+        self.update(coord)
         self.on()
 
     def update(self, coord):
