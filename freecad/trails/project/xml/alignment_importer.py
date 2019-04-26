@@ -28,7 +28,7 @@ import math
 
 from xml.etree import ElementTree as etree
 
-from PySide import QtCore, QtGui
+from PySide import QtGui
 
 from ..support import units, utils
 from ..support.document_properties import Preferences
@@ -64,9 +64,11 @@ class AlignmentImporter(object):
         #otherwise, prompt user for further action
         msg_box = QtGui.QMessageBox()
 
-        msg = """ Document units do not match the units selected in the system preferences."""
+        msg = "Document units do not match the units selected in the system"\
+            + " preferences."
 
-        query = """Change system preference ({0}) to match the document units ({1})?""".format(system_units, xml_units)
+        query = "Change current units ({0}) to match document units ({1}?"\
+            .format(system_units, xml_units)
 
         msg_box.setText(msg)
         msg_box.setInformativeText(query)
@@ -89,8 +91,8 @@ class AlignmentImporter(object):
 
         else:
             self.errors.append(
-            'Document units of ' + units.get_doc_units()[1]
-            + ' expected, units of ' + xml_units + 'found')
+                'Document units of ' + units.get_doc_units()[1]
+                + ' expected, units of ' + xml_units + 'found')
 
             result = ''
 

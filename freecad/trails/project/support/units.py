@@ -29,7 +29,6 @@ __title__ = "units.py"
 __author__ = "Joel Graff"
 __url__ = "https://www.freecadweb.org"
 
-import FreeCAD as App
 from .const import Const
 from .document_properties import Preferences
 

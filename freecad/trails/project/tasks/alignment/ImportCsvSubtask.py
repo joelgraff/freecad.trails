@@ -36,8 +36,6 @@ from freecad.trails.project.tasks.alignment.import_alignment_model \
 from freecad.trails.project.tasks.alignment.import_alignment_view_delegate \
     import ImportAlignmentViewDelegate as Delegate
 
-from freecad.trails.corridor.alignment import horizontal_alignment
-
 def create(panel, filepath):
 
     return ImportCsvSubtask(panel, filepath)
@@ -117,7 +115,7 @@ class ImportCsvSubtask:
         """
         Populate the table views with the data acquired from open_file
         """
-        model = HorizontalAlignment.meta_fields + HorizontalAlignment.data_fields + HorizontalAlignment.station_fields
+        model = alignment.Alignment.meta_fields + HorizontalAlignment.data_fields + HorizontalAlignment.station_fields
 
         lower_header = [_x.lower() for _x in header]
         lower_model = [_x.lower() for _x in model]

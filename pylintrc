@@ -409,7 +409,7 @@ ignored-classes=optparse.Values,thread._local,_thread._local, Pyside.QtGui, PySi
 # (useful for modules/projects where namespaces are manipulated during runtime
 # and thus existing member attributes cannot be deduced by static analysis. It
 # supports qualified module names, as well as Unix pattern matching.
-ignored-modules=FreeCADGui, FreeCAD, Part, Draft, PySide.QtGui, PySide.QtCore
+ignored-modules=FreeCADGui, FreeCAD, Part, Draft, PySide, PySide.QtGui, PySide.QtCore
 
 # Show a hint with possible names when a member name was not found. The aspect
 # of finding the hint is based on edit distance.
