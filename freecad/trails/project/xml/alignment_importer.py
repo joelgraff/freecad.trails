@@ -144,9 +144,6 @@ class AlignmentImporter(object):
                 elif attrib.get(_tag) == 'ccw':
                     attr_val = -1.0
 
-            if not attr_val:
-                attr_val = landxml.get_tag_default(_tag)
-
             result[maps.XML_MAP[_tag]] = attr_val
 
         return result
