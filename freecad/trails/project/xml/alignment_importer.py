@@ -28,7 +28,10 @@ import math
 
 from xml.etree import ElementTree as etree
 
+from PySide import QtCore, QtGui
+
 from ..support import units, utils
+from ..support.document_properties import Preferences
 from . import landxml
 from .key_maps import KeyMaps as maps
 
@@ -53,15 +56,45 @@ class AlignmentImporter(object):
 
         xml_units = _units[0].attrib['linearUnit']
 
-        if xml_units != units.get_doc_units()[1]:
+        #match?  return units
+        system_units = units.get_doc_units()[1]
+        if xml_units == system_units:
+            return xml_units
 
+        #otherwise, prompt user for further action
+        msg_box = QtGui.QMessageBox()
+
+        msg = """ Document units do not match the units selected in the system preferences."""
+
+        query = """Change system preference ({0}) to match the document units ({1})?""".format(system_units, xml_units)
+
+        msg_box.setText(msg)
+        msg_box.setInformativeText(query)
+        msg_box.setStandardButtons(
+            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+
+        msg_box.setDefaultButton(QtGui.QMessageBox.Yes)
+
+        response = msg_box.exec()
+        result = xml_units
+
+        if response == QtGui.QMessageBox.Yes:
+
+            _value = 7 #Civil Imperial
+
+            if xml_units == 'meter':
+                _value = 1 #MKS
+
+            Preferences.Units.set_value(_value)
+
+        else:
             self.errors.append(
-                'Document units of ' + units.get_doc_units()[1]
-                + ' expected, units of ' + xml_units + 'found')
+            'Document units of ' + units.get_doc_units()[1]
+            + ' expected, units of ' + xml_units + 'found')
 
-            return ''
+            result = ''
 
-        return xml_units
+        return result
 
     @staticmethod
     def _get_alignment_name(alignment, alignment_keys):
