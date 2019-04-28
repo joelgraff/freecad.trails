@@ -387,11 +387,11 @@ class AlignmentModel:
             prev_station = _geo['StartStation'] \
                 + _geo['Length']/units.scale_factor()
 
-            int_sta = self._get_internal_station(geo_station)
+            int_sta = self.get_internal_station(geo_station)
 
             _geo['InternalStation'] = (int_sta, int_sta + _geo['Length'])
 
-    def _get_internal_station(self, station):
+    def get_internal_station(self, station):
         """
         Using the station equations, determine the internal station
         (position) along the alignment, scaled to the document units
