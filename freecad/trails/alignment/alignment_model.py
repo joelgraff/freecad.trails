@@ -163,6 +163,10 @@ class AlignmentModel:
         _geo_truth = [not _geo.get('StartStation') is None,
                       not _geo.get('Start') is None]
 
+        print('\ndatum: ', _datum)
+        print('\ndataum truth: ', _datum_truth)
+        print('\geo_truth: ', _geo_truth)
+        
         #----------------------------
         #CASE 0
         #----------------------------
@@ -196,7 +200,7 @@ class AlignmentModel:
         #if the geometry has a station and coordinate,
         #project the start coordinate
 
-        if _datum['StartStation']:
+        if _datum_truth[0]:
 
             _datum['Start'] = _geo_start
 
@@ -351,7 +355,7 @@ class AlignmentModel:
         prev_station = self.data['meta'].get('StartStation')
         prev_coord = self.data['meta'].get('Start')
 
-        if not prev_coord or not prev_station:
+        if (prev_coord is None) or (prev_station is None):
             print('Unable to validate alignment stationing')
             return
 
