@@ -24,6 +24,8 @@
 """
 Class for managing 2D Horizontal Alignment data
 """
+import copy
+
 import FreeCAD as App
 
 from ..project.support import units
@@ -422,7 +424,8 @@ class AlignmentModel:
         """
 
         geometry = self.data['geometry']
-        points = [[self.data['meta']['Start']]]
+        datum = self.data['meta']['Start']
+        points = [[App.Vector()]]
         last_curve = None
         hashes = {}
 
@@ -433,10 +436,18 @@ class AlignmentModel:
             if not curve:
                 continue
 
+
             curve_hash = hash(tuple(curve['Start']) + tuple(curve['End']))
 
             if curve['Type'] == 'arc':
-                _pts, _hsh = arc.get_points(curve, interval, interval_type)
+
+                tmp_curve = copy.deepcopy(curve)
+
+                for _coord in ['Start', 'PI', 'End', 'Center']:
+                    tmp_curve[_coord] = tmp_curve[_coord].sub(datum)
+
+                _pts, _hsh = arc.get_points(tmp_curve, interval, interval_type)
+
                 points.append(_pts)
                 hashes = {**hashes,
                           **dict.fromkeys(set(_hsh), curve_hash)}
