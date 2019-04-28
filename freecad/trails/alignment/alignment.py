@@ -200,7 +200,7 @@ class Alignment(Draft._Wire):
         #that lists it's wire edges keyed by it's Edge index
         for curve in curves:
 
-            if curve['Type'] == 'line':
+            if curve['Type'] == 'Line':
                 continue
 
             curve_edges = self.Object.Shape.Edges

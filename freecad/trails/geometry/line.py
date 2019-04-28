@@ -85,6 +85,6 @@ def get_parameters(line):
     result = None
 
     if _case_one or _case_two:
-        result = {**{'Type': 'line'}, **line}
+        result = {**{'Type': 'Line'}, **line}
 
     return result

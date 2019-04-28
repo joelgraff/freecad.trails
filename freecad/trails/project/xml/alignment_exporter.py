@@ -158,12 +158,12 @@ class AlignmentExporter(object):
 
             _node = None
 
-            if _geo['Type'] == 'line':
+            if _geo['Type'] == 'Line':
 
                 _node = landxml.add_child(_coord_geo_node, 'Line')
                 self._write_tree_data(_geo, _node, Maps.XML_ATTRIBS['Line'])
 
-            elif _geo['Type'] == 'arc':
+            elif _geo['Type'] == 'Curve':
 
                 _node = landxml.add_child(_coord_geo_node, 'Curve')
                 self._write_tree_data(_geo, _node, Maps.XML_ATTRIBS['Curve'])

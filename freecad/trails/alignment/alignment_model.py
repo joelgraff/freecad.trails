@@ -142,6 +142,27 @@ class AlignmentModel:
             _geo_list.append(_geo)
             _prev_coord = _geo['End']
 
+        _length = 0.0
+
+        for _geo in _geo_list:
+            _length += _geo['Length']
+
+        align_length = self.data['meta']['Length']
+
+        if not support.within_tolerance(_length, align_length):
+
+            if  _length > align_length:
+                self.data['meta']['Length'] = align_length
+
+            else:
+                _geo_list.append(
+                    line.get_parameters({'Start': _geo_list[-1]['End'],
+                                         'End': None,
+                                         'BearingIn': _geo_list[-1]['BearingOut'],
+                                         'BearingOut': _geo_list[-1]['BearingOut']
+                    })
+                )
+
         self.data['geometry'] = _geo_list
 
     def validate_datum(self):
@@ -440,10 +461,9 @@ class AlignmentModel:
             if not curve:
                 continue
 
-
             curve_hash = hash(tuple(curve['Start']) + tuple(curve['End']))
 
-            if curve['Type'] == 'arc':
+            if curve['Type'] == 'Curve':
 
                 tmp_curve = copy.deepcopy(curve)
 
@@ -456,8 +476,8 @@ class AlignmentModel:
                 hashes = {**hashes,
                           **dict.fromkeys(set(_hsh), curve_hash)}
 
-            #if curve['Type'] == 'line':
-            #    points.append([curve['Start'], curve['End']])
+            if curve['Type'] == 'Line':
+                points.append([curve['Start'].sub(datum), curve['End'].sub(datum)])
 
             last_curve = curve
 

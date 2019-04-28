@@ -410,7 +410,7 @@ def get_parameters(arc):
             support.safe_sub(arc.get('End'), arc.get('Start'), True)
            ]
 
-    result = {'Type': 'arc'}
+    result = {'Type': 'Curve'}
 
     mat = get_scalar_matrix(vecs)
     _p = get_lengths(arc, mat)
@@ -544,7 +544,7 @@ def parameter_test(excludes=None):
     #convert the arc to system units before processing
     #and back to document units on return
 
-    comp = {'Type': 'arc',
+    comp = {'Type': 'Curve',
             'Radius': 670.0,
             'Tangent': 314.67910063712156,
             'Chord': 569.6563702820052,
