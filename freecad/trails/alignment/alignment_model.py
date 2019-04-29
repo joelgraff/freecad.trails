@@ -477,10 +477,16 @@ class AlignmentModel:
         if (curve is None) or (int_sta is None):
             return None
 
-        print(curve)
-        print(int_sta)
+        distance = int_sta - curve['InternalStation'][0]
 
-        return arc.get_ortho_vector(curve, int_sta - curve['InternalStation'][0], side)
+
+        if curve['Type'] == 'Line':
+            return line.get_ortho_vector(curve, distance, side)
+
+        elif curve['Type'] == 'Curve':
+            return arc.get_ortho_vector(curve, distance, side)
+
+        return None
 
     def discretize_geometry(self, interval=10.0, interval_type='Segment'):
         """

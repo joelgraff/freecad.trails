@@ -25,6 +25,9 @@
 Line generation tools
 """
 
+import math
+
+import FreeCAD as App
 from . import support
 
 def get_parameters(line):
@@ -88,3 +91,49 @@ def get_parameters(line):
         result = {**{'Type': 'Line'}, **line}
 
     return result
+
+def get_coordinate(line_dict, distance):
+    """
+    Return the x/y coordinate of the line at the specified distance along it
+    """
+
+    _vec = support.vector_from_angle(line_dict['BearingIn'])
+
+    return line_dict['Start'].add(_vec.multiply(distance))
+
+def get_ortho_vector(line_dict, distance, side=''):
+    """
+    Return the orthogonal vector pointing toward the indicated side at the
+    provided position
+    """
+
+    _side = 1.0
+
+    if side in ['l', 'lt', 'left']:
+        _side = -1.0
+
+    start = line_dict['Start']
+    end = line_dict['End']
+
+    if (start is None) or (end is None):
+        return None
+
+    coord = get_coordinate(line_dict, distance)
+
+    slope = App.Vector(-(end.y-start.y), end.x - start.x).normalize()
+
+    _c = coord.add(slope)
+
+    _dir = ((end.x - start.x)*(_c.y - start.y)) \
+            - ((end.y - start.y)*(_c.x - start.x))
+
+    if _side != _dir:
+        _side *= -1.0
+
+
+    print(slope)
+    import Draft
+    Draft.makeWire([coord, coord.add(App.Vector(slope.x, slope.y).multiply(1000.0))])
+    App.ActiveDocument.recompute()
+
+    return slope
