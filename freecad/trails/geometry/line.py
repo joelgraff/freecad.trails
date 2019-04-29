@@ -83,7 +83,7 @@ def get_parameters(line):
             line['Start'] = line['End'].add(_vec)
 
     else:
-        print('Unable to calculate line parametters')
+        print('Unable to calculate parametters for line', line)
 
     result = None
 
@@ -92,14 +92,14 @@ def get_parameters(line):
 
     return result
 
-def get_coordinate(line_dict, datum, distance):
+def get_coordinate(start, bearing, datum, distance):
     """
     Return the x/y coordinate of the line at the specified distance along it
     """
 
-    _vec = support.vector_from_angle(line_dict['BearingIn'])
+    _vec = support.vector_from_angle(bearing)
 
-    return line_dict['Start'].sub(datum).add(_vec.multiply(distance))
+    return start.sub(datum).add(_vec.multiply(distance))
 
 def get_ortho_vector(line_dict, datum, distance, side=''):
     """
@@ -119,7 +119,9 @@ def get_ortho_vector(line_dict, datum, distance, side=''):
         return None
 
     slope = App.Vector(-(end.y-start.y), end.x - start.x).normalize()
-    coord = get_coordinate(line_dict, datum, distance).add(slope)
+    coord = get_coordinate(
+        line_dict['Start'], line_dict['BearingIn'], datum, distance
+        ).add(slope)
 
     #determine which side of the line the slope projects from
     _dir = (

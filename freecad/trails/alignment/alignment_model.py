@@ -155,12 +155,19 @@ class AlignmentModel:
                 self.data['meta']['Length'] = align_length
 
             else:
+                _start = _geo_list[-1]['End']
+                bearing = _geo_list[-1]['BearingOut']
+
+                _end = line.get_coordinate(
+                    _start, bearing, App.Vector(), align_length - _length
+                    )
+
                 _geo_list.append(
                     line.get_parameters({
-                        'Start': _geo_list[-1]['End'],
-                        'End': None,
-                        'BearingIn': _geo_list[-1]['BearingOut'],
-                        'BearingOut': _geo_list[-1]['BearingOut']
+                        'Start': _start,
+                        'End': _end,
+                        'BearingIn': bearing,
+                        'BearingOut': bearing
                     })
                 )
 
