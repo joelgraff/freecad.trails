@@ -30,7 +30,7 @@ import FreeCAD as App
 import Draft
 
 from ..project.support import properties, units
-from ..geometry import support
+from ..geometry import support, arc
 from . import alignment_group, alignment_model
 
 _CLASS_NAME = 'Alignment'
@@ -100,6 +100,7 @@ class Alignment(Draft._Wire):
 
         self.model = None
         self.meta = {}
+        self.hashes = None
 
         obj.Label = label
         obj.Closed = False
@@ -239,7 +240,13 @@ class Alignment(Draft._Wire):
         Convenience function to get PI coordinates from the model
         """
 
-        return self.model.get_pi_coords()
+        coords = self.model.get_pi_coords()
+        datum = self.model.get_datum()
+
+        for _coord in coords:
+            _coord.sub(datum)
+
+        return coords
 
     def get_edges(self):
         """
@@ -318,6 +325,87 @@ class Alignment(Draft._Wire):
         if meta.get('StartStation'):
             obj.Start_Station = str(meta['StartStation']) + ' ft'
 
+    def discretize_geometry(self, interval=10.0, interval_type='Segment'):
+        """
+        Discretizes the alignment geometry to a series of vector points
+        """
+
+        geometry = self.model.data['geometry']
+        datum = self.model.data['meta']['Start']
+        points = [[App.Vector()]]
+        last_curve = None
+        hashes = {}
+
+        print('\n<<<--datum--->>>', datum)
+        #discretize each arc in the geometry list,
+        #store each point set as a sublist in the main points list
+        for curve in geometry:
+
+            if not curve:
+                continue
+
+            curve_hash = hash(tuple(curve['Start']) + tuple(curve['End']))
+
+            if curve['Type'] == 'Curve':
+
+                tmp_curve = deepcopy(curve)
+
+                print('\n<<<--- curve --->>>', tmp_curve)
+                for _coord in ['Start', 'PI', 'End', 'Center']:
+                    tmp_curve[_coord] = tmp_curve[_coord].sub(datum)
+
+                _pts, _hsh = arc.get_points(tmp_curve, interval, interval_type)
+
+                points.append(_pts)
+                hashes = {**hashes,
+                          **dict.fromkeys(set(_hsh), curve_hash)}
+
+            elif curve['Type'] == 'Line':
+                points.append(
+                    [curve['Start'].sub(datum), curve['End'].sub(datum)]
+                )
+
+            last_curve = curve
+
+        self.hashes = hashes
+
+        #store the last point of the first geometry for the next iteration
+        _prev = points[0][-1]
+        result = points[0]
+
+        if not (_prev and result):
+            return None
+
+        #iterate the point sets, adding them to the result set
+        #and eliminating any duplicate points
+        for item in points[1:]:
+
+            if _prev.sub(item[0]).Length < 0.0001:
+                result.extend(item[1:])
+            else:
+                result.extend(item)
+
+            _prev = item[-1]
+
+        last_tangent = abs(
+            self.model.data['meta']['Length'] \
+                - last_curve['InternalStation'][1]
+            )
+
+        if not support.within_tolerance(last_tangent):
+            _vec = support.vector_from_angle(last_curve['BearingOut'])\
+                .multiply(last_tangent)
+
+            last_point = result[-1]
+
+            result.append(last_point.add(_vec))
+
+        if not self.model.data['meta'].get('End'):
+            self.model.data['meta']['End'] = result[-1]
+
+        print('\n<<<--- result --->>>', result)
+        return result
+
     def onChanged(self, obj, prop):
         """
         Property change callback
@@ -346,7 +434,7 @@ class Alignment(Draft._Wire):
         if hasattr(self, 'no_execute'):
             return
 
-        points = self.model.discretize_geometry(
+        points = self.discretize_geometry(
             self.Object.Seg_Value, self.Object.Method)
 
         if not points:

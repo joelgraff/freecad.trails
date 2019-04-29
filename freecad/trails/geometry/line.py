@@ -92,16 +92,16 @@ def get_parameters(line):
 
     return result
 
-def get_coordinate(start, bearing, datum, distance):
+def get_coordinate(start, bearing, distance):
     """
     Return the x/y coordinate of the line at the specified distance along it
     """
 
     _vec = support.vector_from_angle(bearing)
 
-    return start.sub(datum).add(_vec.multiply(distance))
+    return start.add(_vec.multiply(distance))
 
-def get_ortho_vector(line_dict, datum, distance, side=''):
+def get_ortho_vector(line_dict, distance, side=''):
     """
     Return the orthogonal vector pointing toward the indicated side at the
     provided position
@@ -120,7 +120,7 @@ def get_ortho_vector(line_dict, datum, distance, side=''):
 
     slope = App.Vector(-(end.y-start.y), end.x - start.x).normalize()
     coord = get_coordinate(
-        line_dict['Start'], line_dict['BearingIn'], datum, distance
+        line_dict['Start'], line_dict['BearingIn'], distance
         ).add(slope)
 
     #determine which side of the line the slope projects from
