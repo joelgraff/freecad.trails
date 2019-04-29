@@ -47,14 +47,15 @@ class AlignmentModel:
     """
     Alignment model for the alignment FeaturePython class
     """
-    def __init__(self, geometry):
+    def __init__(self, geometry=None):
         """
         Default Constructor
         """
         self.errors = []
         self.data = []
 
-        self.construct_geometry(geometry)
+        if geometry:
+            self.construct_geometry(geometry)
 
     def get_datum(self):
         """
@@ -69,9 +70,9 @@ class AlignmentModel:
         as a list of vectors
         """
 
-        result = [self.get_datum()]
+        result = [App.Vector()]
         result += [_v['PI'] for _v in self.data['geometry'] if _v.get('PI')]
-        result.append(self.data['meta']['End'].add(result[0]))
+        result.append(self.data['meta']['End'])
 
         return result
 
@@ -110,7 +111,7 @@ class AlignmentModel:
         #call once more to catch geometry added by validate_alignment()
         self.validate_stationing()
 
-        #self.zero_reference_coordinates()
+        self.zero_reference_coordinates()
 
         return True
 
@@ -130,6 +131,8 @@ class AlignmentModel:
                     continue
 
                 _geo[_key] = _geo[_key].sub(datum)
+
+        print('\nzero reference = \n', self.data['geometry'])
 
     def validate_alignment(self):
         """
@@ -179,7 +182,7 @@ class AlignmentModel:
                 bearing = _geo_list[-1]['BearingOut']
 
                 _end = line.get_coordinate(
-                    _start, bearing, App.Vector(), align_length - _length
+                    _start, bearing, align_length - _length
                     )
 
                 _geo_list.append(

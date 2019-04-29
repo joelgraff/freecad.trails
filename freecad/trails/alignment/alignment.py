@@ -240,13 +240,7 @@ class Alignment(Draft._Wire):
         Convenience function to get PI coordinates from the model
         """
 
-        coords = self.model.get_pi_coords()
-        datum = self.model.get_datum()
-
-        for _coord in coords:
-            _coord.sub(datum)
-
-        return coords
+        return self.model.get_pi_coords()
 
     def get_edges(self):
         """
@@ -331,12 +325,10 @@ class Alignment(Draft._Wire):
         """
 
         geometry = self.model.data['geometry']
-        datum = self.model.data['meta']['Start']
         points = [[App.Vector()]]
         last_curve = None
         hashes = {}
 
-        print('\n<<<--datum--->>>', datum)
         #discretize each arc in the geometry list,
         #store each point set as a sublist in the main points list
         for curve in geometry:
@@ -348,22 +340,14 @@ class Alignment(Draft._Wire):
 
             if curve['Type'] == 'Curve':
 
-                tmp_curve = deepcopy(curve)
-
-                print('\n<<<--- curve --->>>', tmp_curve)
-                for _coord in ['Start', 'PI', 'End', 'Center']:
-                    tmp_curve[_coord] = tmp_curve[_coord].sub(datum)
-
-                _pts, _hsh = arc.get_points(tmp_curve, interval, interval_type)
+                _pts, _hsh = arc.get_points(curve, interval, interval_type)
 
                 points.append(_pts)
                 hashes = {**hashes,
                           **dict.fromkeys(set(_hsh), curve_hash)}
 
             elif curve['Type'] == 'Line':
-                points.append(
-                    [curve['Start'].sub(datum), curve['End'].sub(datum)]
-                )
+                points.append([curve['Start'], curve['End']])
 
             last_curve = curve
 
@@ -403,7 +387,6 @@ class Alignment(Draft._Wire):
         if not self.model.data['meta'].get('End'):
             self.model.data['meta']['End'] = result[-1]
 
-        print('\n<<<--- result --->>>', result)
         return result
 
     def onChanged(self, obj, prop):
