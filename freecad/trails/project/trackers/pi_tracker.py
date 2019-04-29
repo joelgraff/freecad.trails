@@ -21,32 +21,51 @@
 #*                                                                     *
 #***********************************************************************
 """
-Customized wire tracker from DraftTrackers.wireTracker
+Customized wire tracker for PI alignments
 """
 
 from pivy import coin
 
-from DraftTrackers import Tracker
+import FreeCAD as App
+import FreeCADGui as Gui
+
+from .base_tracker import BaseTracker
+from .node_tracker import NodeTracker
+from .wire_tracker import WireTracker
 
 from ..support.utils import Constants as C
-from .base_tracker import BaseTracker
 
-class WireTracker(BaseTracker):
-    """
-    Customized wire tracker
-    """
+class PI_Tracker(BaseTracker):
 
-    def __init__(self, doc, object_name, points, nodes=None):
+    style = [ \
+        #default
+        { \
+            'shape': 'CIRCLE_FILLED',
+            'size': 9,
+            'color': (0.8, 0.8, 0.8)
+        },
+
+        #moving
+        { \
+            'shape': 'CIRCLE_LINE',
+            'size': 9,
+            'color': (0.8, 0.4, 0.4)
+        }
+    ]
+
+    def __init__(self, doc, object_name, points):
         """
         Constructor
         """
+
+        self.node_trackers = []
+        self.wire_trackers = []
+
         self.line = coin.SoLineSet()
         self.line.numVertices.setValue(len(points))
 
-        super().__init__(doc, object_name, 'Wire_Tracker', nodes)
-
-        self.draw_style = self.switch.getChild(0).getChild(0)
-        self.color = self.switch.getChild(0).getChild(1)
+        super().__init__(doc=doc, object_name=object_name,
+                         node_name='PI_Tracker')
 
         self.color.rgb = (0.0, 0.0, 1.0)
         self.update(points=points)
@@ -70,7 +89,24 @@ class WireTracker(BaseTracker):
 
         self.line.numVertices.setValue(len(points))
 
+        self.finalize_node_trackers()
+
         for _i, _pt in enumerate(points):
+
+            #set z value on top
+            _pt.z = C.Z_DEPTH[2]
+
+            #build edit trackers
+            _nt = NodeTracker(
+                self.object_name, 'NODE_' + str(_i), self.transform
+            )
+
+            _nt.set_style(self.style[0])
+            _nt.update(_pt)
+
+            self.node_trackers.append(_nt)
+
+            #add coordinate to wire
             self.coords.point.set1Value(_i, list(_pt))
 
     def update_placement(self, placement):
@@ -80,8 +116,29 @@ class WireTracker(BaseTracker):
 
         return
 
+    def finalize__trackers(self):
+        """
+        Destroy existing trackers
+        """
+
+        if self.node_trackers:
+
+            for _tracker in self.node_trackers:
+                _tracker.finalize()
+
+            self.node_trackers.clear()
+
+        if self.wire_trackers:
+
+            for _tracker in self.wire_trackers:
+                _tracker.finalize()
+
+            self.wire_trackers.clear()
+
     def finalize(self):
         """
         Override of the parent method
         """
+
+        self.finalize_edit_trackers()
         super().finalize()

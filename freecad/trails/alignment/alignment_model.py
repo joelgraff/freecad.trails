@@ -24,6 +24,9 @@
 """
 Class for managing 2D Horizontal Alignment data
 """
+import copy
+import math
+
 import FreeCAD as App
 
 from ..project.support import units
@@ -140,6 +143,27 @@ class AlignmentModel:
             _geo_list.append(_geo)
             _prev_coord = _geo['End']
 
+        _length = 0.0
+
+        for _geo in _geo_list:
+            _length += _geo['Length']
+
+        align_length = self.data['meta']['Length']
+
+        if not support.within_tolerance(_length, align_length):
+
+            if  _length > align_length:
+                self.data['meta']['Length'] = align_length
+
+            else:
+                _geo_list.append(
+                    line.get_parameters({'Start': _geo_list[-1]['End'],
+                                         'End': None,
+                                         'BearingIn': _geo_list[-1]['BearingOut'],
+                                         'BearingOut': _geo_list[-1]['BearingOut']
+                    })
+                )
+
         self.data['geometry'] = _geo_list
 
     def validate_datum(self):
@@ -161,6 +185,10 @@ class AlignmentModel:
         _geo_truth = [not _geo.get('StartStation') is None,
                       not _geo.get('Start') is None]
 
+        print('\ndatum: ', _datum)
+        print('\ndataum truth: ', _datum_truth)
+        print('\geo_truth: ', _geo_truth)
+        
         #----------------------------
         #CASE 0
         #----------------------------
@@ -194,7 +222,7 @@ class AlignmentModel:
         #if the geometry has a station and coordinate,
         #project the start coordinate
 
-        if _datum['StartStation']:
+        if _datum_truth[0]:
 
             _datum['Start'] = _geo_start
 
@@ -349,7 +377,7 @@ class AlignmentModel:
         prev_station = self.data['meta'].get('StartStation')
         prev_coord = self.data['meta'].get('Start')
 
-        if not prev_coord or not prev_station:
+        if (prev_coord is None) or (prev_station is None):
             print('Unable to validate alignment stationing')
             return
 
@@ -381,11 +409,11 @@ class AlignmentModel:
             prev_station = _geo['StartStation'] \
                 + _geo['Length']/units.scale_factor()
 
-            int_sta = self._get_internal_station(geo_station)
+            int_sta = self.get_internal_station(geo_station)
 
             _geo['InternalStation'] = (int_sta, int_sta + _geo['Length'])
 
-    def _get_internal_station(self, station):
+    def get_internal_station(self, station):
         """
         Using the station equations, determine the internal station
         (position) along the alignment, scaled to the document units
@@ -416,13 +444,58 @@ class AlignmentModel:
 
         return position * units.scale_factor()
 
+    def locate_curve(self, station):
+        """
+        Retrieve the curve at the specified station
+        """
+
+        int_station = self.get_internal_station(station)
+
+        print('internal station: ', int_station)
+        if int_station is None:
+            return None
+
+        prev_geo = None
+
+        for _geo in self.data['geometry']:
+
+            if _geo['InternalStation'][0] > int_station:
+                break
+
+            prev_geo = _geo
+
+        return prev_geo
+
+    def get_orthogonal(self, station, side):
+        """
+        Return the orthogonal vector to a station along the alignment
+        """
+
+        curve = self.locate_curve(station)
+        int_sta = self.get_internal_station(station)
+
+        if (curve is None) or (int_sta is None):
+            return None
+
+        distance = int_sta - curve['InternalStation'][0]
+        datum = self.data['meta']['Start']
+
+        if curve['Type'] == 'Line':
+            return line.get_ortho_vector(curve, datum, distance, side)
+
+        elif curve['Type'] == 'Curve':
+            return arc.get_ortho_vector(curve, distance, side)
+
+        return None
+
     def discretize_geometry(self, interval=10.0, interval_type='Segment'):
         """
         Discretizes the alignment geometry to a series of vector points
         """
 
         geometry = self.data['geometry']
-        points = [[self.data['meta']['Start']]]
+        datum = self.data['meta']['Start']
+        points = [[App.Vector()]]
         last_curve = None
         hashes = {}
 
@@ -435,14 +508,21 @@ class AlignmentModel:
 
             curve_hash = hash(tuple(curve['Start']) + tuple(curve['End']))
 
-            if curve['Type'] == 'arc':
-                _pts, _hsh = arc.get_points(curve, interval, interval_type)
+            if curve['Type'] == 'Curve':
+
+                tmp_curve = copy.deepcopy(curve)
+
+                for _coord in ['Start', 'PI', 'End', 'Center']:
+                    tmp_curve[_coord] = tmp_curve[_coord].sub(datum)
+
+                _pts, _hsh = arc.get_points(tmp_curve, interval, interval_type)
+
                 points.append(_pts)
                 hashes = {**hashes,
                           **dict.fromkeys(set(_hsh), curve_hash)}
 
-            #if curve['Type'] == 'line':
-            #    points.append([curve['Start'], curve['End']])
+            if curve['Type'] == 'Line':
+                points.append([curve['Start'].sub(datum), curve['End'].sub(datum)])
 
             last_curve = curve
 

@@ -29,7 +29,7 @@ from copy import deepcopy
 import FreeCAD as App
 import Draft
 
-from ..project.support import properties
+from ..project.support import properties, units
 from ..geometry import support
 from . import alignment_group, alignment_model
 
@@ -163,7 +163,9 @@ class Alignment(Draft._Wire):
         ).Method = ['Tolerance', 'Interval', 'Segment']
 
         properties.add(obj, 'Float', 'Segment.Seg_Value',
-                       'Set the curve segments to control accuracy', 1.0)
+                       'Set the curve segments to control accuracy',
+                       int(1000.0 / units.scale_factor()) / 100.0
+                      )
 
         delattr(self, 'no_execute')
 
@@ -200,7 +202,7 @@ class Alignment(Draft._Wire):
         #that lists it's wire edges keyed by it's Edge index
         for curve in curves:
 
-            if curve['Type'] == 'line':
+            if curve['Type'] == 'Line':
                 continue
 
             curve_edges = self.Object.Shape.Edges
@@ -329,13 +331,13 @@ class Alignment(Draft._Wire):
             _prop = obj.getPropertyByName(prop)
 
             if _prop == 'Interval':
-                self.Object.Seg_Value = 100.0
+                self.Object.Seg_Value = int(3000.0 / units.scale_factor())
 
             elif _prop == 'Segment':
-                self.Object.Seg_Value = 10.0
+                self.Object.Seg_Value = 200.0
 
             elif _prop == 'Tolerance':
-                self.Object.Seg_Value = 1.0
+                self.Object.Seg_Value = int(1000.0 / units.scale_factor()) / 100.0
 
     def execute(self, obj):
         """
@@ -351,6 +353,11 @@ class Alignment(Draft._Wire):
             return
 
         self.Object.Points = points
+
+        _pl = App.Placement()
+        _pl.Base = self.model.data['meta']['Start']
+
+        self.Object.Placement = _pl
 
         super(Alignment, self).execute(obj)
 

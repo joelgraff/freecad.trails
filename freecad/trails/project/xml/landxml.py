@@ -190,6 +190,9 @@ def get_child_as_vector(node, node_name, delimiter=' '):
     if _len < 3:
         vec_list = vec_list + [0.0]*(3-_len)
 
+    #Northing / Easting reverse for X/Ycd Project
+    vec_list[0], vec_list[1] = vec_list[1], vec_list[0]
+
     return App.Vector(vec_list)
 
 def get_children(node, node_name):
@@ -210,6 +213,9 @@ def get_vector_string(vector, delimiter=' '):
     """
     Return a string of vector or list elements
     """
+
+    #swap X/Y to store as Northing / Easting
+    vector.x, vector.y = vector.y, vector.x
 
     result = [_C.PRECISION.format(_v) for _v in vector]
 

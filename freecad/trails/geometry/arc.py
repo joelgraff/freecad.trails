@@ -410,7 +410,7 @@ def get_parameters(arc):
             support.safe_sub(arc.get('End'), arc.get('Start'), True)
            ]
 
-    result = {'Type': 'arc'}
+    result = {'Type': 'Curve'}
 
     mat = get_scalar_matrix(vecs)
     _p = get_lengths(arc, mat)
@@ -544,7 +544,7 @@ def parameter_test(excludes=None):
     #convert the arc to system units before processing
     #and back to document units on return
 
-    comp = {'Type': 'arc',
+    comp = {'Type': 'Curve',
             'Radius': 670.0,
             'Tangent': 314.67910063712156,
             'Chord': 569.6563702820052,
@@ -632,6 +632,80 @@ def run_test(arc, comp, excludes):
 # -706.1075272957279,
 # 0.0)}
 
+def get_coord_on_arc(start, radius, direction, distance):
+    """
+    Get the coordinate at the specified distance on the arc with
+    defined start, radius, and direction.
+    """
+
+    delta = distance / radius
+
+    return App.Vector(math.sin(delta), 1 - math.cos(delta), 0.0).multiply(radius) + start
+
+
+    return None
+
+def get_ortho_vector(arc_dict, distance, side=''):
+    """
+    Given a distance form the start of a curve,
+    and optional direction, return the orthogonal vector
+    If no side is specified, directed vector to centerpoint is returned
+
+    arc_dict - arc dictionary
+    distance - distance along arc from start point
+    side - any of 'l', 'lt', 'left', 'r', 'rt', 'right',
+                regardless of case
+    """
+
+    direction = arc_dict['Direction']
+    bearing = arc_dict['BearingIn']
+    radius = arc_dict['Radius']
+    start = arc_dict['Start']
+    _side = side.lower()
+    _x = 1.0
+
+    if (direction < 0.0 and side in ['r', 'rt', 'right']) or \
+       (direction > 0.0 and side in ['l', 'lt', 'left']):
+            _x = -1.0
+
+    delta = distance / radius
+    coord = get_segments(bearing, [delta], direction, start, radius)[1]
+
+    if not coord:
+        return None
+
+    ortho = App.Vector(arc_dict['Center']).sub(coord).multiply(_x).normalize()
+
+    import Draft 
+    Draft.makeWire([coord, coord.add(App.Vector(ortho).multiply(10000))])
+    App.ActiveDocument.recompute()
+
+    return ortho
+
+def get_segments(bearing, deltas, direction, start, radius):
+    """
+    Calculate the coordinates of the curve segments
+
+    bearing - beginning bearing
+    deltas - list of angles to calculate
+    direction - curve direction: -1.0 = ccw, 1.0 = cw
+    start - starting coordinate
+    radius - arc radius
+    """
+
+    _forward = App.Vector(math.sin(bearing), math.cos(bearing), 0.0)
+    _right = App.Vector(_forward.y, -_forward.x, 0.0)
+    _points = [start]
+
+    for delta in deltas:
+
+        _dfw = App.Vector(_forward).multiply(math.sin(delta))
+        _drt = App.Vector(_right).multiply(direction * (1.0 - math.cos(delta)))
+
+        _points.append(start.add(_dfw.add(_drt).multiply(radius)))
+
+    return _points
+
 def get_points(arc_dict, interval, interval_type='Segment', layer=0.0):
     """
     Discretize an arc into the specified segments.
@@ -661,12 +735,9 @@ def get_points(arc_dict, interval, interval_type='Segment', layer=0.0):
     direction = arc_dict['Direction']
     bearing_in = arc_dict['BearingIn']
     radius = arc_dict['Radius']
-    start_coord = arc_dict['Start']
+    start = arc_dict['Start']
 
-    _forward = App.Vector(math.sin(bearing_in), math.cos(bearing_in), 0.0)
-    _right = App.Vector(_forward.y, -_forward.x, 0.0)
-
-    result = [start_coord]
+    result = [start]
 
     #define the incremental angle for segment calculations,
     #defaulting to 'Segment'
@@ -688,20 +759,22 @@ def get_points(arc_dict, interval, interval_type='Segment', layer=0.0):
 
     segment_deltas[-1] = angle
 
+    points = get_segments(bearing_in, segment_deltas, direction, start, radius)
+
+    _forward = App.Vector(math.sin(bearing_in), math.cos(bearing_in), 0.0)
+    _right = App.Vector(_forward.y, -_forward.x, 0.0)
     hashes = []
 
-    for delta in segment_deltas:
+    _prev = None
 
-        _dfw = App.Vector(_forward).multiply(math.sin(delta))
-        _drt = App.Vector(_right).multiply(direction * (1.0 - math.cos(delta)))
-
-        _point = start_coord.add(_dfw.add(_drt).multiply(radius))
-        _point.z = layer
-
-        result.append(_point)
+    for _pt in points:
 
         #store the hash of the starting and ending coordinates
         #aka - the segment hash
-        hashes.append(hash(tuple(result[-2]) + tuple(result[-1])))
+        if _prev:
+            hashes.append(hash(tuple(_prev) + tuple(_pt)))
 
-    return result, hashes
+        _pt.z = layer
+        _prev = _pt
+
+    return points, hashes
