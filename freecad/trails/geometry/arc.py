@@ -265,7 +265,7 @@ def get_delta(arc, mat):
         if arc.get('BearingIn') and arc.get('BearingOut'):
             delta = abs(arc['BearingOut'] - arc['BearingIn'])
 
-    #find the first occurence of the delta value
+    #find the first occurrence of the delta value
     for _i in range(1, 6):
         for _j in range(0, _i):
             if utils.to_float(mat.A[_i][_j]):
@@ -748,7 +748,7 @@ def get_points(
     Resulting list of coordinates omits provided starting point and
     concludes with end point
 
-    arc_dict    - A dictionary containing key elemnts:
+    arc_dict    - A dictionary containing key elements:
         Direction   - non-zero.  <0 = ccw, >0 = cw
         Radius      - in document units (non-zero, positive)
         Delta       - in radians (non-zero, positive)

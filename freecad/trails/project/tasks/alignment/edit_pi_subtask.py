@@ -88,7 +88,7 @@ class EditPiSubtask:
 
             _key, _it = self.get_current_tracker(info)
 
-            #empty the arry and reset the trackers
+            #empty the array and reset the trackers
             if self.selected_trackers:
 
                 for _tracker in self.selected_trackers:
@@ -99,7 +99,7 @@ class EditPiSubtask:
             #current defined?  add it to the selection.
             if _it:
 
-                #Clear the button states so dragging won't work unles
+                #Clear the button states so dragging won't work unless
                 for _v in self.button_states.values():
                     _v = False
 

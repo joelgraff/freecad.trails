@@ -64,7 +64,7 @@ class _ElementLoft(object):
 
     def __init__(self, obj, spline, sketch):
         """
-        Main class intialization
+        Main class initialization
         """
 
         obj.Proxy = self
@@ -179,7 +179,7 @@ class _ElementLoft(object):
                 comps += [Part.makePolygon(poly_points)]
 
                 #averaging tangents on the first tangent
-                #requries skipping the end vertex
+                #requires skipping the end vertex
                 if average and not prev_tangent:
                     continue
 

@@ -129,7 +129,7 @@ class Generate3dAlignment():
         if ((point_count - 1) * step) < hz_len:
             point_count += 1
 
-        #vertial curve as equidistant points at the step interval...
+        #vertical curve as equidistant points at the step interval...
         vt_pts = edges[1].discretize(
             Number=point_count, First=0.00, Last=hz_len
         )

@@ -42,10 +42,10 @@ def createVerticalCurve(data, units):
     """
     Creates a vertical curve alignment object
 
-    data - dictionary containg:
+    data - dictionary containing:
     'pi' - the station of the point of intersection
     'elev' - the elevation of the point of intersection
-    'g1' / 'g2' - the incoming and outoign grades between VPC / VPI and VPI / VPT
+    'g1' / 'g2' - the incoming and outgoing grades between VPC / VPI and VPI / VPT
     'length' - the length of the vertical curve
     """
 
@@ -92,7 +92,7 @@ class _VerticalCurve():
         Properties.add(obj, 'Length', 'General.PT_Station', 'Station of the vertical Point of Tangency', 0.00, True)
         Properties.add(obj, 'Distance', 'General.PT_Elevation', 'Elevtaion of the vertical Point of Tangency', 0.00, True)
         Properties.add(obj, 'Float', 'General.Grade_In', 'Grade of tangent between VPC and VPI', 0.00)
-        Properties.add(obj, 'Float', 'General.Grade_Out', 'Grade of tangent beteen VPI and VPT', 0.00)
+        Properties.add(obj, 'Float', 'General.Grade_Out', 'Grade of tangent between VPI and VPT', 0.00)
         Properties.add(obj, 'Length', 'General.Length', 'Length of the vertical curve', 0.00)
         Properties.add(obj, 'Float', 'Characteristics.A', 'Absolute difference between grades', 0.00, True)
         Properties.add(obj, 'Length', 'Characteristics.K', 'Rate of Curvature', 0.00, True)

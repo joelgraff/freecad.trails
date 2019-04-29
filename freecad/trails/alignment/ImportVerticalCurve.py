@@ -73,7 +73,7 @@ class ImportVerticalCurve():
 
     def validate_heirarchy(self, _id, _units):
         """
-        Validates the alignment heirarchy, adding missing groups
+        Validates the alignment hierarchy, adding missing groups
         """
 
         grand_parent = App.ActiveDocument.getObject('Alignments')

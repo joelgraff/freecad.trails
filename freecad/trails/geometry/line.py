@@ -83,7 +83,7 @@ def get_parameters(line):
             line['Start'] = line['End'].add(_vec)
 
     else:
-        print('Unable to calculate parametters for line', line)
+        print('Unable to calculate parameters for line', line)
 
     result = None
 

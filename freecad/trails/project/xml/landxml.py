@@ -197,7 +197,7 @@ def get_child_as_vector(node, node_name, delimiter=' '):
 
 def get_children(node, node_name):
     """
-    Return all children mathcing node_name in node
+    Return all children matching node_name in node
     """
     return node.findall(_C.VERSION + ':' + node_name, _C.NAMESPACE)
 
