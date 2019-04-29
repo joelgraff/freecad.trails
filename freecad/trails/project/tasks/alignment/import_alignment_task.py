@@ -87,6 +87,8 @@ class ImportAlignmentTask:
             for _e in errors:
                 print(_e)
 
+        Gui.SendMsgToActiveView("ViewFit")
+
         return True
 
     def reject(self):
