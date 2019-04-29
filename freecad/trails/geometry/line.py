@@ -107,10 +107,12 @@ def get_ortho_vector(line_dict, distance, side=''):
     provided position
     """
 
-    _side = -1.0
+    direction = -1.0
 
-    if side in ['l', 'lt', 'left']:
-        _side = 1.0
+    _side = side.lower()
+
+    if _side in ['l', 'lt', 'left']:
+        direction = 1.0
 
     start = line_dict['Start']
     end = line_dict['End']
@@ -130,8 +132,8 @@ def get_ortho_vector(line_dict, distance, side=''):
         )
 
     #if it doesn't match the desired side, switch it
-    if side:
-        if _side != math.copysign(1, _dir):
+    if _side:
+        if direction != math.copysign(1, _dir):
             slope.multiply(-1.0)
 
     return coord, slope
