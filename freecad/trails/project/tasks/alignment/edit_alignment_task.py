@@ -31,7 +31,7 @@ import DraftTools
 
 from ....alignment import alignment_model
 
-from ...support import const, utils
+from ...support import const
 
 from ...trackers import wire_tracker
 

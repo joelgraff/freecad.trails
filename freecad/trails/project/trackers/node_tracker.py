@@ -29,8 +29,6 @@ import FreeCADGui as Gui
 
 from DraftTrackers import Tracker
 
-from ..support.utils import Constants as C
-
 
 class NodeTracker(Tracker):
     """

@@ -25,7 +25,6 @@
 Class for managing 2D Horizontal Alignment data
 """
 import copy
-import math
 
 import FreeCAD as App
 
@@ -157,10 +156,11 @@ class AlignmentModel:
 
             else:
                 _geo_list.append(
-                    line.get_parameters({'Start': _geo_list[-1]['End'],
-                                         'End': None,
-                                         'BearingIn': _geo_list[-1]['BearingOut'],
-                                         'BearingOut': _geo_list[-1]['BearingOut']
+                    line.get_parameters({
+                        'Start': _geo_list[-1]['End'],
+                        'End': None,
+                        'BearingIn': _geo_list[-1]['BearingOut'],
+                        'BearingOut': _geo_list[-1]['BearingOut']
                     })
                 )
 
@@ -185,10 +185,6 @@ class AlignmentModel:
         _geo_truth = [not _geo.get('StartStation') is None,
                       not _geo.get('Start') is None]
 
-        print('\ndatum: ', _datum)
-        print('\ndataum truth: ', _datum_truth)
-        print('\geo_truth: ', _geo_truth)
-        
         #----------------------------
         #CASE 0
         #----------------------------
@@ -522,7 +518,9 @@ class AlignmentModel:
                           **dict.fromkeys(set(_hsh), curve_hash)}
 
             if curve['Type'] == 'Line':
-                points.append([curve['Start'].sub(datum), curve['End'].sub(datum)])
+                points.append(
+                    [curve['Start'].sub(datum), curve['End'].sub(datum)]
+                )
 
             last_curve = curve
 
