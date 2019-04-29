@@ -116,7 +116,7 @@ def get_ortho_vector(line_dict, datum, distance, side=''):
     end = line_dict['End']
 
     if (start is None) or (end is None):
-        return None
+        return None, None
 
     slope = App.Vector(-(end.y-start.y), end.x - start.x).normalize()
     coord = get_coordinate(
@@ -134,4 +134,4 @@ def get_ortho_vector(line_dict, datum, distance, side=''):
         if _side != math.copysign(1, _dir):
             slope.multiply(-1.0)
 
-    return slope
+    return coord, slope

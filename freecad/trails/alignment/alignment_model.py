@@ -486,7 +486,7 @@ class AlignmentModel:
         if curve['Type'] == 'Line':
             return line.get_ortho_vector(curve, datum, distance, side)
 
-        elif curve['Type'] == 'Curve':
+        if curve['Type'] == 'Curve':
             return arc.get_ortho_vector(curve, distance, side)
 
         return None

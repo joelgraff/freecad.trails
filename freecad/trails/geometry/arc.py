@@ -672,15 +672,13 @@ def get_ortho_vector(arc_dict, distance, side=''):
     coord = get_segments(bearing, [delta], direction, start, radius)[1]
 
     if not coord:
-        return None
+        return None, None
 
     ortho = App.Vector(arc_dict['Center']).sub(coord).multiply(_x).normalize()
 
-    import Draft 
-    Draft.makeWire([coord, coord.add(App.Vector(ortho).multiply(10000))])
     App.ActiveDocument.recompute()
 
-    return ortho
+    return coord, ortho
 
 def get_segments(bearing, deltas, direction, start, radius):
     """
