@@ -92,25 +92,25 @@ def get_parameters(line):
 
     return result
 
-def get_coordinate(line_dict, distance):
+def get_coordinate(line_dict, datum, distance):
     """
     Return the x/y coordinate of the line at the specified distance along it
     """
 
     _vec = support.vector_from_angle(line_dict['BearingIn'])
 
-    return line_dict['Start'].add(_vec.multiply(distance))
+    return line_dict['Start'].sub(datum).add(_vec.multiply(distance))
 
-def get_ortho_vector(line_dict, distance, side=''):
+def get_ortho_vector(line_dict, datum, distance, side=''):
     """
     Return the orthogonal vector pointing toward the indicated side at the
     provided position
     """
 
-    _side = 1.0
+    _side = -1.0
 
     if side in ['l', 'lt', 'left']:
-        _side = -1.0
+        _side = 1.0
 
     start = line_dict['Start']
     end = line_dict['End']
@@ -118,22 +118,18 @@ def get_ortho_vector(line_dict, distance, side=''):
     if (start is None) or (end is None):
         return None
 
-    coord = get_coordinate(line_dict, distance)
-
     slope = App.Vector(-(end.y-start.y), end.x - start.x).normalize()
+    coord = get_coordinate(line_dict, datum, distance).add(slope)
 
-    _c = coord.add(slope)
+    #determine which side of the line the slope projects from
+    _dir = (
+        ((end.x - start.x)*(coord.y - start.y)) \
+            - ((end.y - start.y)*(coord.x - start.x))
+        )
 
-    _dir = ((end.x - start.x)*(_c.y - start.y)) \
-            - ((end.y - start.y)*(_c.x - start.x))
-
-    if _side != _dir:
-        _side *= -1.0
-
-
-    print(slope)
-    import Draft
-    Draft.makeWire([coord, coord.add(App.Vector(slope.x, slope.y).multiply(1000.0))])
-    App.ActiveDocument.recompute()
+    #if it doesn't match the desired side, switch it
+    if side:
+        if _side != math.copysign(1, _dir):
+            slope.multiply(-1.0)
 
     return slope
