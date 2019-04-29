@@ -664,9 +664,10 @@ def get_ortho_vector(arc_dict, distance, side=''):
     _side = side.lower()
     _x = 1.0
 
-    if (direction < 0.0 and side in ['r', 'rt', 'right']) or \
-       (direction > 0.0 and side in ['l', 'lt', 'left']):
-            _x = -1.0
+    if (direction < 0.0 and _side in ['r', 'rt', 'right']) or \
+       (direction > 0.0 and _side in ['l', 'lt', 'left']):
+
+        _x = -1.0
 
     delta = distance / radius
     coord = get_segments(bearing, [delta], direction, start, radius)[1]
