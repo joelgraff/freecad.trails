@@ -106,6 +106,7 @@ class EditAlignmentCmd(DraftTool):
         #create working, non-visual copy of horizontal alignment
         data = Gui.Selection.getSelection()[0].Proxy.get_data_copy()
 
+        print('\ndeep copy = ', data)
         DraftTool.Activated(self, name=utils.translate('Alignment'))
 
         self.doc = App.ActiveDocument

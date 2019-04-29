@@ -36,20 +36,26 @@ class WireTracker(BaseTracker):
     Customized wire tracker
     """
 
-    def __init__(self, doc, object_name, points, nodes=None):
+    def __init__(self, doc, object_name, node_name, nodes=None, parent=None):
         """
         Constructor
         """
         self.line = coin.SoLineSet()
-        self.line.numVertices.setValue(len(points))
 
-        super().__init__(doc, object_name, 'Wire_Tracker', nodes)
+        self.select = coin.SoType.fromName("SoFCSelection").createInstance()
+        self.select.documentName.setValue(doc.Name)
+        self.select.objectName.setValue(object_name)
+        self.select.subElementName.setValue(node_name)
 
-        self.draw_style = self.switch.getChild(0).getChild(0)
-        self.color = self.switch.getChild(0).getChild(1)
+        self.coords = coin.SoCoordinate3()
 
-        self.color.rgb = (0.0, 0.0, 1.0)
-        self.update(points=points)
+        if not isinstance(nodes, list):
+            nodes = [nodes]
+
+        nodes += [self.select, self.line, self.coords]
+
+        super().__init__(doc, object_name, 'Wire_Tracker', nodes, parent)
+
         self.on()
 
     def update(self, points=None, placement=None):
@@ -79,6 +85,20 @@ class WireTracker(BaseTracker):
         """
 
         return
+
+    def set_style(self, style):
+        """
+        Update the tracker style
+        """
+
+        if style['line width']:
+            self.draw_style.lineWidth = style['line width']
+
+        self.draw_style.style = style['line style']
+        self.draw_style.lineWeight = style['line weight']
+
+        if style['line pattern']:
+            self.draw_style.linePattern = style['line pattern']
 
     def finalize(self):
         """

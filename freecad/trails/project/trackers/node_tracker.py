@@ -24,22 +24,39 @@
 Customized edit tracker from DraftTrackers.editTracker
 """
 
+from pivy import coin
+
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from DraftTrackers import Tracker
+from .base_tracker import BaseTracker
 
 
-class NodeTracker(Tracker):
+class NodeTracker(BaseTracker):
     """
     A custom edit tracker
     """
 
-    def __init__(self, object_name, node_name, coord, nodes=None):
+    def __init__(self, doc, object_name, node_name,nodes=None, parent=None):
 
-        super().__init__(object_name, node_name, nodes)
+        if not isinstance(nodes, list):
+            nodes = [nodes]
 
-        self.update(coord)
+        self.marker = coin.SoMarkerSet()
+
+        self.select = coin.SoType.fromName("SoFCSelection").createInstance()
+        self.select.documentName.setValue(doc.Name)
+        self.select.objectName.setValue(object_name)
+        self.select.subElementName.setValue(node_name)
+
+        self.coord = coin.SoCoordinate3()
+        if not isinstance(nodes, list):
+            nodes = [nodes]
+
+        nodes += [self.select, self.marker, self.coord]
+
+        super().__init__(doc, object_name, node_name, nodes, parent)
+
         self.on()
 
     def update(self, coord):

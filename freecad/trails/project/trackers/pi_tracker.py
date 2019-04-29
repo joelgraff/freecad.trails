@@ -35,23 +35,42 @@ from .wire_tracker import WireTracker
 
 from ..support.utils import Constants as C
 
-class PI_Tracker(BaseTracker):
-
-    style = [ \
-        #default
-        { \
+class PiTracker(BaseTracker):
+    """
+    Tracker class which manages alignment PI  and tangnet
+    picking and editing
+    """
+    style = {
+        'default node':
+        {
             'shape': 'CIRCLE_FILLED',
             'size': 9,
             'color': (0.8, 0.8, 0.8)
         },
 
-        #moving
-        { \
+        'default wire':
+        {
+            'line width': None,
+            'line style': coin.SoDrawStyle.LINES,
+            'line weight': 3,
+            'line pattern': None
+        },
+
+        'edit node':
+        {
             'shape': 'CIRCLE_LINE',
             'size': 9,
             'color': (0.8, 0.4, 0.4)
+        },
+
+        'edit wire':
+        {
+            'line width': None,
+            'line style': coin.SoDrawStyle.LINES,
+            'line weight': 3,
+            'line pattern': 0x0f0f #oxaaa
         }
-    ]
+    }
 
     def __init__(self, doc, object_name, points):
         """
@@ -61,14 +80,20 @@ class PI_Tracker(BaseTracker):
         self.node_trackers = []
         self.wire_trackers = []
 
-        self.line = coin.SoLineSet()
-        self.line.numVertices.setValue(len(points))
+        self.transform = coin.SoTransform()
+        self.transform.translation.setValue([0.0, 0.0, 0.0])
+
+        print('\ntracker points ', points)
+
+        self.update(points=points)
+
+        child_nodes = \
+            self.node_trackers + self.wire_trackers + [self.transform]
 
         super().__init__(doc=doc, object_name=object_name,
-                         node_name='PI_Tracker')
+                         node_name='PI_Tracker', nodes=child_nodes)
 
         self.color.rgb = (0.0, 0.0, 1.0)
-        self.update(points=points)
         self.on()
 
     def update(self, points=None, placement=None):
@@ -84,12 +109,14 @@ class PI_Tracker(BaseTracker):
 
     def update_points(self, points):
         """
-        Clears and rebuilds the wire and edit trackers
+        Clears and rebuilds the wire and node trackers
         """
 
         self.line.numVertices.setValue(len(points))
 
-        self.finalize_node_trackers()
+        self.finalize_trackers()
+
+        prev_coord = None
 
         for _i, _pt in enumerate(points):
 
@@ -97,26 +124,37 @@ class PI_Tracker(BaseTracker):
             _pt.z = C.Z_DEPTH[2]
 
             #build edit trackers
-            _nt = NodeTracker(
-                self.object_name, 'NODE_' + str(_i), self.transform
+            _nt = NodeTracker(self.doc, self.object_name, 'NODE_' + str(_i),                     _pt, self.transform
             )
 
-            _nt.set_style(self.style[0])
+            _nt.set_style(self.style['default node'])
             _nt.update(_pt)
 
             self.node_trackers.append(_nt)
 
-            #add coordinate to wire
-            self.coords.point.set1Value(_i, list(_pt))
+            if not prev_coord is None:
 
-    def update_placement(self, placement):
+                points = [prev_coord, _pt]
+
+                _wt = WireTracker(
+                    self.doc, self.object_name, points, self.transform
+                )
+
+                _wt.set_style(self.style['default wire'])
+
+                self.wire_trackers.append(_wt)
+
+            prev_coord = _pt
+
+    def update_placement(self, vector):
         """
         Updates the placement for the wire and the trackers
         """
 
-        return
+        print('\n<<<--- setting transofrm ', list(vector))
+        self.transform.translation.setValue(list(vector))
 
-    def finalize__trackers(self):
+    def finalize_trackers(self, tracker_list=None):
         """
         Destroy existing trackers
         """
@@ -140,5 +178,5 @@ class PI_Tracker(BaseTracker):
         Override of the parent method
         """
 
-        self.finalize_edit_trackers()
+        self.finalize_trackers()
         super().finalize()
