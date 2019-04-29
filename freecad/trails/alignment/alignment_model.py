@@ -25,6 +25,7 @@
 Class for managing 2D Horizontal Alignment data
 """
 import copy
+import math
 
 import FreeCAD as App
 
@@ -442,6 +443,44 @@ class AlignmentModel:
         position += station - start_sta
 
         return position * units.scale_factor()
+
+    def locate_curve(self, station):
+        """
+        Retrieve the curve at the specified station
+        """
+
+        int_station = self.get_internal_station(station)
+
+        print('internal station: ', int_station)
+        if int_station is None:
+            return None
+
+        prev_geo = None
+
+        for _geo in self.data['geometry']:
+
+            if _geo['InternalStation'][0] > int_station:
+                break
+
+            prev_geo = _geo
+
+        return prev_geo
+
+    def get_orthogonal(self, station, side):
+        """
+        Return the orthogonal vector to a station along the alignment
+        """
+
+        curve = self.locate_curve(station)
+        int_sta = self.get_internal_station(station)
+
+        if (curve is None) or (int_sta is None):
+            return None
+
+        print(curve)
+        print(int_sta)
+
+        return arc.get_ortho_vector(curve, int_sta - curve['InternalStation'][0], side)
 
     def discretize_geometry(self, interval=10.0, interval_type='Segment'):
         """
