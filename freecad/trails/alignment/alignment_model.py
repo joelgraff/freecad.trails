@@ -25,7 +25,6 @@
 Class for managing 2D Horizontal Alignment data
 """
 import copy
-import math
 
 import FreeCAD as App
 
@@ -48,14 +47,22 @@ class AlignmentModel:
     """
     Alignment model for the alignment FeaturePython class
     """
-    def __init__(self, geometry):
+    def __init__(self, geometry=None):
         """
         Default Constructor
         """
         self.errors = []
         self.data = []
 
-        self.construct_geometry(geometry)
+        if geometry:
+            self.construct_geometry(geometry)
+
+    def get_datum(self):
+        """
+        Return the alignment datum
+        """
+
+        return self.data['meta']['Start']
 
     def get_pi_coords(self):
         """
@@ -63,14 +70,8 @@ class AlignmentModel:
         as a list of vectors
         """
 
-        result = [self.data['meta']['Start']]
+        result = [App.Vector()]
         result += [_v['PI'] for _v in self.data['geometry'] if _v.get('PI')]
-
-        end_pt = self.data['meta'].get('End')
-
-        if end_pt is None:
-            self.discretize_geometry()
-
         result.append(self.data['meta']['End'])
 
         return result
@@ -110,7 +111,26 @@ class AlignmentModel:
         #call once more to catch geometry added by validate_alignment()
         self.validate_stationing()
 
+        self.zero_reference_coordinates()
+
         return True
+
+    def zero_reference_coordinates(self):
+        """
+        Reference the coordinates to the origin (0,0,0)
+        by adjustuing by the datum
+        """
+
+        datum = self.get_datum()
+
+        for _geo in self.data['geometry']:
+
+            for _key in ['Start', 'End', 'Center', 'PI']:
+
+                if _geo.get(_key) is None:
+                    continue
+
+                _geo[_key] = _geo[_key].sub(datum)
 
     def validate_alignment(self):
         """
@@ -119,7 +139,7 @@ class AlignmentModel:
         must be filled by a completely defined line
         """
 
-        _prev_coord = self.data['meta']['Start']
+        _prev_coord = self.get_datum()
         _geo_list = []
 
         for _geo in self.data['geometry']:
@@ -156,11 +176,19 @@ class AlignmentModel:
                 self.data['meta']['Length'] = align_length
 
             else:
+                _start = _geo_list[-1]['End']
+                bearing = _geo_list[-1]['BearingOut']
+
+                _end = line.get_coordinate(
+                    _start, bearing, align_length - _length
+                    )
+
                 _geo_list.append(
-                    line.get_parameters({'Start': _geo_list[-1]['End'],
-                                         'End': None,
-                                         'BearingIn': _geo_list[-1]['BearingOut'],
-                                         'BearingOut': _geo_list[-1]['BearingOut']
+                    line.get_parameters({
+                        'Start': _start,
+                        'End': _end,
+                        'BearingIn': bearing,
+                        'BearingOut': bearing
                     })
                 )
 
@@ -185,10 +213,6 @@ class AlignmentModel:
         _geo_truth = [not _geo.get('StartStation') is None,
                       not _geo.get('Start') is None]
 
-        print('\ndatum: ', _datum)
-        print('\ndataum truth: ', _datum_truth)
-        print('\geo_truth: ', _geo_truth)
-        
         #----------------------------
         #CASE 0
         #----------------------------
@@ -451,7 +475,6 @@ class AlignmentModel:
 
         int_station = self.get_internal_station(station)
 
-        print('internal station: ', int_station)
         if int_station is None:
             return None
 
@@ -478,87 +501,11 @@ class AlignmentModel:
             return None
 
         distance = int_sta - curve['InternalStation'][0]
-        datum = self.data['meta']['Start']
 
         if curve['Type'] == 'Line':
-            return line.get_ortho_vector(curve, datum, distance, side)
+            return line.get_ortho_vector(curve, distance, side)
 
-        elif curve['Type'] == 'Curve':
+        if curve['Type'] == 'Curve':
             return arc.get_ortho_vector(curve, distance, side)
 
         return None
-
-    def discretize_geometry(self, interval=10.0, interval_type='Segment'):
-        """
-        Discretizes the alignment geometry to a series of vector points
-        """
-
-        geometry = self.data['geometry']
-        datum = self.data['meta']['Start']
-        points = [[App.Vector()]]
-        last_curve = None
-        hashes = {}
-
-        #discretize each arc in the geometry list,
-        #store each point set as a sublist in the main points list
-        for curve in geometry:
-
-            if not curve:
-                continue
-
-            curve_hash = hash(tuple(curve['Start']) + tuple(curve['End']))
-
-            if curve['Type'] == 'Curve':
-
-                tmp_curve = copy.deepcopy(curve)
-
-                for _coord in ['Start', 'PI', 'End', 'Center']:
-                    tmp_curve[_coord] = tmp_curve[_coord].sub(datum)
-
-                _pts, _hsh = arc.get_points(tmp_curve, interval, interval_type)
-
-                points.append(_pts)
-                hashes = {**hashes,
-                          **dict.fromkeys(set(_hsh), curve_hash)}
-
-            if curve['Type'] == 'Line':
-                points.append([curve['Start'].sub(datum), curve['End'].sub(datum)])
-
-            last_curve = curve
-
-        #self.Object.Hashes = hashes
-
-        #store the last point of the first geometry for the next iteration
-        _prev = points[0][-1]
-        result = points[0]
-
-        if not (_prev and result):
-            return None
-
-        #iterate the point sets, adding them to the result set
-        #and eliminating any duplicate points
-        for item in points[1:]:
-
-            if _prev.sub(item[0]).Length < 0.0001:
-                result.extend(item[1:])
-            else:
-                result.extend(item)
-
-            _prev = item[-1]
-
-        last_tangent = abs(
-            self.data['meta']['Length'] - last_curve['InternalStation'][1]
-            )
-
-        if not support.within_tolerance(last_tangent):
-            _vec = support.vector_from_angle(last_curve['BearingOut'])\
-                .multiply(last_tangent)
-
-            last_point = result[-1]
-
-            result.append(last_point.add(_vec))
-
-        if not self.data['meta'].get('End'):
-            self.data['meta']['End'] = result[-1]
-
-        return result

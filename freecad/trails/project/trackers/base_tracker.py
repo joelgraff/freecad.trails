@@ -26,41 +26,94 @@ Customized wire tracker from DraftTrackers.wireTracker
 
 from pivy import coin
 
+import Draft
+
 from DraftTrackers import Tracker
+from DraftGui import todo
 
-class BaseTracker(Tracker):
+class BaseTracker:
     """
-    Customized wire tracker
+    A custom base Draft Tracker
     """
 
-    def __init__(self, doc, object_name, node_name, nodes=None):
+    def __init__(self, doc, children=[], ontop=False, name=None, parent=None):
 
-        self.doc = doc
-        self.name = node_name
-        self.object_name = object_name
+        self.ontop = ontop
 
-        self.inactive = False
+        self.color = coin.SoBaseColor()
+        self.drawstyle = coin.SoDrawStyle()
 
-        self.marker = coin.SoMarkerSet()
-        self.coords = coin.SoCoordinate3()
+        node = coin.SoSeparator()
 
-        self.transform = coin.SoTransform()
-        self.transform.translation.setValue([0.0, 0.0, 0.0])
+        for c in [self.drawstyle, self.color] + children:
+            node.addChild(c)
 
-        _node = coin.SoType.fromName("SoFCSelection").createInstance()
-        _node.documentName.setValue(doc.Name)
-        _node.objectName.setValue(object_name)
-        _node.subElementName.setValue(node_name)
+        self.switch = coin.SoSwitch() # this is the on/off switch
 
-        child_nodes = [_node, self.coords, self.marker, self.transform]
+        if name:
+            self.switch.setName(name)
 
-        if not isinstance(nodes, list):
-            child_nodes += [nodes]
+        self.switch.addChild(node)
+        self.off()
+
+        self.parent = parent
+
+        if self.parent:
+            self.parent.addChild(self.switch)
         else:
-            child_nodes += nodes
+            todo.delay(self._insertSwitch, self.switch)
 
-        super().__init__(children=child_nodes, ontop=True,
-                         name="EditTracker")
+    def finalize(self):
 
-        self.draw_style = self.switch.getChild(0).getChild(0)
-        self.color = self.switch.getChild(0).getChild(1)
+        if not self.parent:
+            todo.delay(self._removeSwitch, self.switch)
+            self.switch = None
+
+    def _insertSwitch(self, switch):
+        """
+        Insert self.switch into the scene graph.
+        Must not be called from an event handler (or other scene graph
+        traversal).
+        """
+
+        sg=Draft.get3DView().getSceneGraph()
+
+        if self.ontop:
+            sg.insertChild(switch, 0)
+        else:
+            sg.addChild(switch)
+
+    def _removeSwitch(self, switch):
+        """
+        Remove self.switch from the scene graph.
+        Must not be called during scene graph traversal).
+        """
+
+        sg=Draft.get3DView().getSceneGraph()
+
+        if sg.findChild(switch) >= 0:
+            sg.removeChild(switch)
+
+    def on(self):
+        self.switch.whichChild = 0
+        self.Visible = True
+
+    def off(self):
+        self.switch.whichChild = -1
+        self.Visible = False
+
+    def adjustTracker(self, toTop = True):
+        """
+        Raises the tracker to the top or lowers it to the bottom based
+        on the passed boolean
+        """
+
+        if self.switch:
+
+            sg = Draft.get3DView().getSceneGraph()
+            sg.removeChild(self.switch)
+
+            if toTop:
+                sg.insertChild(self.switch)
+            else:
+                sg.addChild(self.switch)

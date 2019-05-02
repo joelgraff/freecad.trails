@@ -31,9 +31,9 @@ import DraftTools
 
 from ....alignment import alignment_model
 
-from ...support import const, utils
+from ...support import const
 
-from ...trackers import wire_tracker
+from ...trackers.pi_tracker import PiTracker
 
 from . import edit_pi_subtask
 
@@ -65,7 +65,8 @@ class EditAlignmentTask:
         self.view = view
         self.doc = doc
         self.tmp_group = None
-        self.alignment = alignment_model.AlignmentModel(alignment_data)
+        self.alignment = alignment_model.AlignmentModel()
+        self.alignment.data = alignment_data
         self.points = None
         self.pi_tracker = None
         self.pi_subtask = None
@@ -96,13 +97,13 @@ class EditAlignmentTask:
 
         self.points = self.alignment.get_pi_coords()
 
-        self.pi_subtask = \
-            edit_pi_subtask.create(self.doc, self.view, self.panel,
-                                   self.points)
+        #self.pi_subtask = \
+        #    edit_pi_subtask.create(self.doc, self.view, self.panel,
+        #                           self.points)
 
-        self.pi_tracker = \
-            wire_tracker.create(self.doc, 'PI_TRACKER', self.points)
-
+        self.pi_tracker = PiTracker(self.doc, 'PI_TRACKER', self.points)
+        self.pi_tracker.update_placement(self.alignment.get_datum())
+        print('\n<<<--- TRACKER DATUM --->>>\n', self.alignment.get_datum())
         self.call = self.view.addEventCallback('SoEvent', self.action)
         #panel = DraftAlignmentTask(self.clean_up)
 

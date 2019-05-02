@@ -118,7 +118,7 @@ class AlignmentExporter(object):
 
         for _key in Maps.XML_TAGS['coordinate']:
 
-            if not _key in data:
+            if data.get(_key) is None:
                 continue
 
             #scale the coordinates to the document units
