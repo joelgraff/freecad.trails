@@ -36,16 +36,18 @@ class BaseTracker:
     A custom base Draft Tracker
     """
 
-    def __init__(self, doc, children=[], ontop=False, name=None, parent=None):
+    def __init__(self, doc, children=[], ontop=False, name=None, insert=False):
 
+        self.top_node = insert
         self.ontop = ontop
 
         self.color = coin.SoBaseColor()
-        self.drawstyle = coin.SoDrawStyle()
+        self.draw_style = coin.SoDrawStyle()
 
         node = coin.SoSeparator()
 
-        for c in [self.drawstyle, self.color] + children:
+        for c in [self.draw_style, self.color] + children:
+            print(c)
             node.addChild(c)
 
         self.switch = coin.SoSwitch() # this is the on/off switch
@@ -56,18 +58,16 @@ class BaseTracker:
         self.switch.addChild(node)
         self.off()
 
-        self.parent = parent
-
-        if self.parent:
-            self.parent.addChild(self.switch)
-        else:
+        if self.top_node:
             todo.delay(self._insertSwitch, self.switch)
 
     def finalize(self):
 
-        if not self.parent:
-            todo.delay(self._removeSwitch, self.switch)
-            self.switch = None
+        if not self.top_node:
+            return
+
+        todo.delay(self._removeSwitch, self.switch)
+        self.switch = None
 
     def _insertSwitch(self, switch):
         """

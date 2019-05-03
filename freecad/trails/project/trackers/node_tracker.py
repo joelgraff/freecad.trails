@@ -37,10 +37,7 @@ class NodeTracker(BaseTracker):
     A custom edit tracker
     """
 
-    def __init__(self, doc, object_name, node_name,nodes=None, parent=None):
-
-        if not isinstance(nodes, list):
-            nodes = [nodes]
+    def __init__(self, doc, object_name, node_name, nodes=None):
 
         self.marker = coin.SoMarkerSet()
 
@@ -50,12 +47,17 @@ class NodeTracker(BaseTracker):
         self.select.subElementName.setValue(node_name)
 
         self.coord = coin.SoCoordinate3()
-        if not isinstance(nodes, list):
+
+        if not nodes:
+            nodes = []
+
+        elif not isinstance(nodes, list):
             nodes = [nodes]
 
         nodes += [self.select, self.marker, self.coord]
 
-        super().__init__(doc, object_name, node_name, nodes, parent)
+        print('node tracker nodes: ', nodes)
+        super().__init__(doc, children=nodes, name=node_name)
 
         self.on()
 
@@ -63,13 +65,13 @@ class NodeTracker(BaseTracker):
         """
         Update the coordinate position
         """
-        self.coords.point.setValue(tuple(coord))
+        self.coord.point.setValue(tuple(coord))
 
     def get(self):
         """
         Get method
         """
-        _pt = self.coords.point.getValues()[0]
+        _pt = self.coord.point.getValues()[0]
 
         return App.Vector(_pt)
 

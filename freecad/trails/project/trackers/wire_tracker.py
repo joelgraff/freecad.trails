@@ -36,7 +36,7 @@ class WireTracker(BaseTracker):
     Customized wire tracker
     """
 
-    def __init__(self, doc, object_name, node_name, nodes=None, parent=None):
+    def __init__(self, doc, object_name, node_name, nodes=None):
         """
         Constructor
         """
@@ -49,12 +49,15 @@ class WireTracker(BaseTracker):
 
         self.coords = coin.SoCoordinate3()
 
-        if not isinstance(nodes, list):
+        if not nodes:
+            nodes = []
+
+        elif not isinstance(nodes, list):
             nodes = [nodes]
 
         nodes += [self.select, self.line, self.coords]
 
-        super().__init__(doc, object_name, 'Wire_Tracker', nodes, parent)
+        super().__init__(doc=doc, name='Wire_Tracker', children=nodes)
 
         self.on()
 

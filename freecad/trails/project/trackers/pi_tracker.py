@@ -85,13 +85,19 @@ class PiTracker(BaseTracker):
 
         print('\ntracker points ', points)
 
-        self.update(points=points)
+        points = [App.Vector(), App.Vector(10000,10000,0), App.Vector(20000,20000,0)]
+        self.update_points(points=points, doc=doc, obj_name=object_name)
 
-        child_nodes = \
-            self.node_trackers + self.wire_trackers + [self.transform]
+        child_nodes = [self.transform]
 
-        super().__init__(doc=doc, object_name=object_name,
-                         node_name='PI_Tracker', nodes=child_nodes)
+        for _tracker in self.node_trackers + self.wire_trackers:
+            _sep = coin.SoSeparator()
+            _sep.addChild(_tracker.switch)
+            child_nodes.append(_sep)
+
+        super().__init__(
+            doc=doc, name=object_name, children=child_nodes, insert=True
+        )
 
         self.color.rgb = (0.0, 0.0, 1.0)
         self.on()
@@ -107,12 +113,10 @@ class PiTracker(BaseTracker):
         if placement:
             self.update_placement(placement)
 
-    def update_points(self, points):
+    def update_points(self, points, doc=None, obj_name=None):
         """
         Clears and rebuilds the wire and node trackers
         """
-
-        self.line.numVertices.setValue(len(points))
 
         self.finalize_trackers()
 
@@ -124,8 +128,8 @@ class PiTracker(BaseTracker):
             _pt.z = C.Z_DEPTH[2]
 
             #build edit trackers
-            _nt = NodeTracker(self.doc, self.object_name, 'NODE_' + str(_i),                     _pt, self.transform
-            )
+            _nt = NodeTracker(doc=doc, object_name=obj_name,
+                              node_name='NODE_' + str(_i))
 
             _nt.set_style(self.style['default node'])
             _nt.update(_pt)
@@ -136,9 +140,8 @@ class PiTracker(BaseTracker):
 
                 points = [prev_coord, _pt]
 
-                _wt = WireTracker(
-                    self.doc, self.object_name, points, self.transform
-                )
+                _wt = WireTracker(doc=doc, object_name=obj_name,
+                                  node_name='WIRE_' + str(_i))
 
                 _wt.set_style(self.style['default wire'])
 

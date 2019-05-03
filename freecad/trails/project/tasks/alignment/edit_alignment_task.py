@@ -103,7 +103,7 @@ class EditAlignmentTask:
 
         self.pi_tracker = PiTracker(self.doc, 'PI_TRACKER', self.points)
         self.pi_tracker.update_placement(self.alignment.get_datum())
-        print('\n<<<--- TRACKER DATUM --->>>\n', self.alignment.get_datum())
+
         self.call = self.view.addEventCallback('SoEvent', self.action)
         #panel = DraftAlignmentTask(self.clean_up)
 
