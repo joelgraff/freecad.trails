@@ -96,9 +96,9 @@ class PiTracker(BaseTracker):
                 if self.rollover_node is not None:
 
                     #if self.rollover_count > 10:
-                    self.node_trackers[self.rollover_node].switch_node()
-                    self.rollover_node = None
-                    self.rollover_count = 0
+                        self.node_trackers[self.rollover_node].switch_node()
+                        self.rollover_node = None
+                        self.rollover_count = 0
 
                     #else:
                     #    self.rollover_count += 1
