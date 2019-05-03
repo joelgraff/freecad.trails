@@ -26,27 +26,43 @@ Customized wire tracker from DraftTrackers.wireTracker
 
 from pivy import coin
 
-from DraftTrackers import Tracker
-
-from ..support.utils import Constants as C
+from ..support.const import Const
 from .base_tracker import BaseTracker
+
 
 class WireTracker(BaseTracker):
     """
     Customized wire tracker
     """
 
-    def __init__(self, doc, object_name, node_name, nodes=None):
+
+    class STYLE(Const):
+        """
+        Const Style class
+        """
+
+        DEFAULT = {
+            'line width': None,
+            'line style': coin.SoDrawStyle.LINES,
+            'line weight': 3,
+            'line pattern': None,
+            'select': True
+        }
+
+        EDIT = {
+            'line width': None,
+            'line style': coin.SoDrawStyle.LINES,
+            'line weight': 3,
+            'line pattern': 0x0f0f, #oxaaa
+            'select': False
+        }
+
+    def __init__(self, names, nodes=None, style=STYLE.DEFAULT):
         """
         Constructor
         """
+
         self.line = coin.SoLineSet()
-
-        self.select = coin.SoType.fromName("SoFCSelection").createInstance()
-        self.select.documentName.setValue(doc.Name)
-        self.select.objectName.setValue(object_name)
-        self.select.subElementName.setValue(node_name)
-
         self.coords = coin.SoCoordinate3()
 
         if not nodes:
@@ -55,11 +71,27 @@ class WireTracker(BaseTracker):
         elif not isinstance(nodes, list):
             nodes = [nodes]
 
-        nodes += [self.select, self.line, self.coords]
+        nodes += [self.coords, self.line]
 
-        super().__init__(doc=doc, name='Wire_Tracker', children=nodes)
+        print('\n\t-->style', style)
+        super().__init__(names=names, children=nodes, select=style['select'])
+
+        self.switch = coin.SoSwitch() # this is the on/off switch
+
+        if names[2]:
+            self.switch.setName(names[2])
+
+        self.switch.addChild(self.node)
 
         self.on()
+
+    def on(self):
+        self.switch.whichChild = 0
+        self.visible = True
+
+    def off(self):
+        self.switch.whichChild = -1
+        self.visible = False
 
     def update(self, points=None, placement=None):
         """
@@ -105,6 +137,7 @@ class WireTracker(BaseTracker):
 
     def finalize(self):
         """
-        Override of the parent method
+        Cleanup
         """
-        super().finalize()
+
+        self._removeSwitch(self.switch)

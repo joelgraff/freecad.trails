@@ -37,11 +37,11 @@ from ...trackers.pi_tracker import PiTracker
 
 from . import edit_pi_subtask
 
-def create(doc, view, alignment_data):
+def create(doc, view, alignment_data, object_name):
     """
     Class factory method
     """
-    return EditAlignmentTask(doc, view, alignment_data)
+    return EditAlignmentTask(doc, view, alignment_data, object_name)
 
 class EditAlignmentTask:
     """
@@ -59,7 +59,7 @@ class EditAlignmentTask:
         PI =        [(0.0, 0.0, 1.0), 'Solid']
         SELECTED =  [(1.0, 0.8, 0.0), 'Solid']
 
-    def __init__(self, doc, view, alignment_data):
+    def __init__(self, doc, view, alignment_data, object_name):
 
         self.panel = None
         self.view = view
@@ -70,7 +70,8 @@ class EditAlignmentTask:
         self.points = None
         self.pi_tracker = None
         self.pi_subtask = None
-        self.call = None
+        self.call_backs = []
+        self.object_name = object_name
 
         self.view_objects = {
             'selectables': [],
@@ -78,7 +79,7 @@ class EditAlignmentTask:
         }
 
         #disable selection entirely
-        self.view.getSceneGraph().getField("selectionRole").setValue(0)
+        #self.view.getSceneGraph().getField("selectionRole").setValue(0)
 
         #get all objects with LineColor and set them all to gray
         self.view_objects['line_colors'] = \
@@ -101,10 +102,17 @@ class EditAlignmentTask:
         #    edit_pi_subtask.create(self.doc, self.view, self.panel,
         #                           self.points)
 
-        self.pi_tracker = PiTracker(self.doc, 'PI_TRACKER', self.points)
+        self.pi_tracker = PiTracker(
+            self.doc, self.object_name, 'PI_TRACKER', self.points
+        )
+
         self.pi_tracker.update_placement(self.alignment.get_datum())
 
-        self.call = self.view.addEventCallback('SoEvent', self.action)
+        #self.call = self.view.addEventCallback('SoEvent', self.action)
+        self.call_backs.append(
+            self.view.addEventCallback('SoEvent', self.pi_tracker.action)
+        )
+
         #panel = DraftAlignmentTask(self.clean_up)
 
         #Gui.Control.showDialog(panel)
@@ -152,8 +160,12 @@ class EditAlignmentTask:
             Gui.Control.closeDialog()
 
         #remove the callback for action
-        if self.call:
-            self.view.removeEventCallback("SoEvent", self.call)
+        if self.call_backs:
+
+            for _cb in self.call_backs:
+                self.view.removeEventCallback("SoEvent", _cb)
+            
+            self.call_backs.clear()
 
         #shut down the tracker
         if self.pi_tracker:

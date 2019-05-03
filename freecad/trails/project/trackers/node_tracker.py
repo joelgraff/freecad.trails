@@ -30,23 +30,44 @@ import FreeCAD as App
 import FreeCADGui as Gui
 
 from .base_tracker import BaseTracker
-
+from ..support.const import Const
 
 class NodeTracker(BaseTracker):
     """
     A custom edit tracker
     """
 
-    def __init__(self, doc, object_name, node_name, nodes=None):
 
-        self.marker = coin.SoMarkerSet()
+    class STYLE(Const):
+        """
+        Style constants for nodes
+        """
 
-        self.select = coin.SoType.fromName("SoFCSelection").createInstance()
-        self.select.documentName.setValue(doc.Name)
-        self.select.objectName.setValue(object_name)
-        self.select.subElementName.setValue(node_name)
+        DEFAULT = {
+            'id': 'default',
+            'shape': 'default',
+            'size': 9,
+            'color': (0.8, 0.8, 0.8),
+            'select': True
+        }
 
-        self.coord = coin.SoCoordinate3()
+        OUTER = {
+            'id': 'outer',
+            'shape': 'circle',
+            'size': 9,
+            'color': (0.4, 0.8, 0.4),
+            'select': True
+        }
+
+        INNER = {
+            'id': 'inner',
+            'shape': 'cross',
+            'size': 5,
+            'color': (0.4, 0.8, 0.4),
+            'select': False
+        }
+
+    def __init__(self, names, point, nodes=None):
 
         if not nodes:
             nodes = []
@@ -54,17 +75,99 @@ class NodeTracker(BaseTracker):
         elif not isinstance(nodes, list):
             nodes = [nodes]
 
-        nodes += [self.select, self.marker, self.coord]
+        self.groups = {
+            'default': [],
+            'rollover': []
+        }
 
-        print('node tracker nodes: ', nodes)
-        super().__init__(doc, children=nodes, name=node_name)
+        self.switch = coin.SoSwitch() # this is the on/off switch
+        self.coord = coin.SoCoordinate3()
+        
+        if names[2]:
+            self.switch.setName(names[2])
 
-        self.on()
+        self.switch.addChild(self.create_default(names))
+        self.switch.addChild(self.create_rollover(names))
+
+        super().__init__(names=names, children=nodes + [self.switch],
+                         select=False)
+
+        self.on(self.switch, 0)
+
+    def create_rollover(self, names):
+        """
+        Create the rollover node tracker
+        """
+
+        group = coin.SoGroup()
+
+        for style in [self.STYLE.INNER, self.STYLE.OUTER]:
+
+            marker = coin.SoMarkerSet()
+
+            marker.markerIndex = \
+                Gui.getMarkerIndex(style['shape'], style['size'])
+
+            nam = names[:]
+            nam[2] += '_' +style['id']
+
+            child = BaseTracker(nam, [self.coord, marker], style['select'])
+            child.color.rgb = style['color']
+
+            group.addChild(child.node)
+
+            self.groups['rollover'].append(child)
+
+        return group
+
+    def create_default(self, names):
+        """
+        Create the default node tracker
+        """
+        style = self.STYLE.DEFAULT
+
+        marker = coin.SoMarkerSet()
+
+        marker.markerIndex = Gui.getMarkerIndex(style['shape'], style['size'])
+
+        nam = names[:]
+        nam[2] += '_' +style['id']
+
+        child = BaseTracker(nam, [self.coord, marker], style['select'])
+        child.color.rgb = style['color']
+
+        group = coin.SoGroup()
+        group.addChild(child.node)
+
+        self.groups['default'].append(child)
+
+        return group
+
+    def switch_node(self, state='default'):
+        """
+        Switch to default node
+        """
+
+        idx = 0
+
+        if state == 'rollover':
+            idx = 1
+
+        elif state == 'select':
+            for _child in self.groups['rollover']:
+                _child.node.color.rgb = (0.8, 0.8, 0.4)
+
+        elif state == 'deselect':
+            for _child in self.groups['rollover']:
+                _child.node.color.rgb = (0.8, 0.8, 0.8)
+
+        self.switch.whichChild = idx
 
     def update(self, coord):
         """
         Update the coordinate position
         """
+
         self.coord.point.setValue(tuple(coord))
 
     def get(self):
@@ -75,12 +178,9 @@ class NodeTracker(BaseTracker):
 
         return App.Vector(_pt)
 
-    def set_style(self, style):
+    def finalize(self):
         """
-        Set the marker style based on the passed tuple
+        Cleanup
         """
 
-        self.marker.markerIndex = \
-            Gui.getMarkerIndex(style['shape'], style['size'])
-
-        self.color.rgb = style['color']
+        self._removeSwitch(self.switch)

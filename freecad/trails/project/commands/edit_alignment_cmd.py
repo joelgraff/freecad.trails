@@ -104,19 +104,19 @@ class EditAlignmentCmd(DraftTool):
         self.doc = App.ActiveDocument
 
         #create working, non-visual copy of horizontal alignment
-        data = Gui.Selection.getSelection()[0].Proxy.get_data_copy()
+        obj = Gui.Selection.getSelection()[0]
+        data = obj.Proxy.get_data_copy()
 
-        print('\ndeep copy = ', data)
         DraftTool.Activated(self, name=utils.translate('Alignment'))
 
         self.doc = App.ActiveDocument
         self.view = Gui.ActiveDocument.ActiveView
 
-        self.call = self.view.addEventCallback('SoEvent', self.action)
+        #self.call = self.view.addEventCallback('SoEvent', self.action)
 
         #create alignment editing task
         self.edit_alignment_task = \
-            edit_alignment_task.create(self.doc, self.view, data)
+            edit_alignment_task.create(self.doc, self.view, data, obj.Name)
 
         self.is_activated = True
 

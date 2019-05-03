@@ -36,40 +36,39 @@ class BaseTracker:
     A custom base Draft Tracker
     """
 
-    def __init__(self, doc, children=[], ontop=False, name=None, insert=False):
+    def __init__(self, names, children=[], select=True):
 
-        self.top_node = insert
-        self.ontop = ontop
-
+        self.visible = False
+        self.select = select
         self.color = coin.SoBaseColor()
         self.draw_style = coin.SoDrawStyle()
+        self.names = names
+        self.node = coin.SoSeparator()
 
-        node = coin.SoSeparator()
+        if self.select:
+
+            self.node = \
+                coin.SoType.fromName("SoFCSelection").createInstance()
+
+            self.node.documentName.setValue(self.names[0])
+            self.node.objectName.setValue(self.names[1])
+            self.node.subElementName.setValue(self.names[2])
 
         for c in [self.draw_style, self.color] + children:
-            print(c)
-            node.addChild(c)
+            self.node.addChild(c)
 
-        self.switch = coin.SoSwitch() # this is the on/off switch
+    def finalize(self, switch):
+        todo.delay(self._removeSwitch, switch)
 
-        if name:
-            self.switch.setName(name)
+    def on(self, switch, which_child=0):
+        switch.whichChild = which_child
+        self.visible = True
 
-        self.switch.addChild(node)
-        self.off()
+    def off(self, switch):
+        switch.whichChild = -1
+        self.visible = False
 
-        if self.top_node:
-            todo.delay(self._insertSwitch, self.switch)
-
-    def finalize(self):
-
-        if not self.top_node:
-            return
-
-        todo.delay(self._removeSwitch, self.switch)
-        self.switch = None
-
-    def _insertSwitch(self, switch):
+    def _insertSwitch(self, switch, ontop=False):
         """
         Insert self.switch into the scene graph.
         Must not be called from an event handler (or other scene graph
@@ -78,7 +77,7 @@ class BaseTracker:
 
         sg=Draft.get3DView().getSceneGraph()
 
-        if self.ontop:
+        if ontop:
             sg.insertChild(switch, 0)
         else:
             sg.addChild(switch)
@@ -94,15 +93,7 @@ class BaseTracker:
         if sg.findChild(switch) >= 0:
             sg.removeChild(switch)
 
-    def on(self):
-        self.switch.whichChild = 0
-        self.Visible = True
-
-    def off(self):
-        self.switch.whichChild = -1
-        self.Visible = False
-
-    def adjustTracker(self, toTop = True):
+    def adjustTracker(self, toTop=True):
         """
         Raises the tracker to the top or lowers it to the bottom based
         on the passed boolean

@@ -26,8 +26,10 @@ Customized wire tracker for PI alignments
 
 from pivy import coin
 
-import FreeCAD as App
 import FreeCADGui as Gui
+import DraftTools
+
+from DraftGui import todo
 
 from .base_tracker import BaseTracker
 from .node_tracker import NodeTracker
@@ -40,42 +42,15 @@ class PiTracker(BaseTracker):
     Tracker class which manages alignment PI  and tangnet
     picking and editing
     """
-    style = {
-        'default node':
-        {
-            'shape': 'CIRCLE_FILLED',
-            'size': 9,
-            'color': (0.8, 0.8, 0.8)
-        },
 
-        'default wire':
-        {
-            'line width': None,
-            'line style': coin.SoDrawStyle.LINES,
-            'line weight': 3,
-            'line pattern': None
-        },
-
-        'edit node':
-        {
-            'shape': 'CIRCLE_LINE',
-            'size': 9,
-            'color': (0.8, 0.4, 0.4)
-        },
-
-        'edit wire':
-        {
-            'line width': None,
-            'line style': coin.SoDrawStyle.LINES,
-            'line weight': 3,
-            'line pattern': 0x0f0f #oxaaa
-        }
-    }
-
-    def __init__(self, doc, object_name, points):
+    def __init__(self, doc, object_name, node_name, points):
         """
         Constructor
         """
+
+        self.selected_node = None
+        self.rollover_node = None
+        self.rollover_count = 0
 
         self.node_trackers = []
         self.wire_trackers = []
@@ -83,24 +58,90 @@ class PiTracker(BaseTracker):
         self.transform = coin.SoTransform()
         self.transform.translation.setValue([0.0, 0.0, 0.0])
 
-        print('\ntracker points ', points)
-
-        points = [App.Vector(), App.Vector(10000,10000,0), App.Vector(20000,20000,0)]
-        self.update_points(points=points, doc=doc, obj_name=object_name)
+        self.set_points(points=points, doc=doc, obj_name=object_name)
 
         child_nodes = [self.transform]
 
-        for _tracker in self.node_trackers + self.wire_trackers:
-            _sep = coin.SoSeparator()
-            _sep.addChild(_tracker.switch)
-            child_nodes.append(_sep)
+        super().__init__(names=[doc.Name, object_name, node_name],
+                         children=child_nodes, select=False)
 
-        super().__init__(
-            doc=doc, name=object_name, children=child_nodes, insert=True
-        )
+        for _tracker in self.node_trackers + self.wire_trackers:
+            self.node.addChild(_tracker.node)
 
         self.color.rgb = (0.0, 0.0, 1.0)
-        self.on()
+
+        todo.delay(self._insertSwitch, self.node)
+
+    def action(self, arg):
+        """
+        Event handling for alignment drawing
+        """
+
+        #trap the escape key to quit
+        if arg['Type'] == 'SoKeyboardEvent':
+            if arg['Key'] == 'ESCAPE':
+
+                self.finalize()
+                return
+
+        #trap mouse movement
+        if arg['Type'] == 'SoLocation2Event':
+
+            _p = Gui.ActiveDocument.ActiveView.getCursorPos()
+            info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
+
+            print(info)
+            if not info:
+
+                if self.rollover_node is not None:
+
+                    #if self.rollover_count > 10:
+                    self.node_trackers[self.rollover_node].switch_node()
+                    self.rollover_node = None
+                    self.rollover_count = 0
+
+                    #else:
+                    #    self.rollover_count += 1
+
+                DraftTools.redraw3DView()
+                return
+
+            component = info['Component'].split('_')
+
+            if component[0] == 'NODE':
+
+                if int(component[1]) != self.rollover_node:
+                    self.rollover_node = int(component[1])
+                    self.rollover_count = 0
+
+                self.node_trackers[self.rollover_node].switch_node('rollover')
+
+        #trap button clicks
+        elif arg['Type'] == 'SoMouseButtonEvent':
+
+            _p = Gui.ActiveDocument.ActiveView.getCursorPos()
+            info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
+
+            print(info)
+
+            if not info:
+                return
+
+            component = info['Component'].split('_')
+
+            if component[0] == 'NODE':
+
+                if int(component[1]) != self.selected_node:
+
+                    if self.selected_node is not None:
+                        self.node_trackers[self.selected_node] \
+                            .switch_node('deselected')
+
+                    self.selected_node = int(component[1])
+
+                self.node_trackers[self.selected_node].switch_node('selected')
+
+        DraftTools.redraw3DView()
 
     def update(self, points=None, placement=None):
         """
@@ -113,7 +154,24 @@ class PiTracker(BaseTracker):
         if placement:
             self.update_placement(placement)
 
-    def update_points(self, points, doc=None, obj_name=None):
+    def update_points(self, points):
+        """
+        Updates existing coordinates
+        """
+
+        _prev = None
+
+        for _i, _pt in enumerate(points):
+
+            for _node in self.node_trackers:
+                _node.update(_pt)
+
+            if _prev:
+                self.wire_trackers[_i - 1].update([_prev, _pt])
+
+            _prev = _pt
+
+    def set_points(self, points, doc=None, obj_name=None):
         """
         Clears and rebuilds the wire and node trackers
         """
@@ -127,23 +185,23 @@ class PiTracker(BaseTracker):
             #set z value on top
             _pt.z = C.Z_DEPTH[2]
 
-            #build edit trackers
-            _nt = NodeTracker(doc=doc, object_name=obj_name,
-                              node_name='NODE_' + str(_i))
+            #build node trackers
+            self.node_trackers.append(NodeTracker(
+                names=[doc.Name, obj_name, 'NODE_' + str(_i)], point=_pt)
+            )
 
-            _nt.set_style(self.style['default node'])
-            _nt.update(_pt)
-
-            self.node_trackers.append(_nt)
+            self.node_trackers[-1].update(_pt)
 
             if not prev_coord is None:
 
+                continue
                 points = [prev_coord, _pt]
 
-                _wt = WireTracker(doc=doc, object_name=obj_name,
-                                  node_name='WIRE_' + str(_i))
+                _wt = WireTracker(
+                    names=[doc.Name, obj_name, 'WIRE_' + str(_i - 1)]
+                )
 
-                _wt.set_style(self.style['default wire'])
+                _wt.update_points(points)
 
                 self.wire_trackers.append(_wt)
 
@@ -154,7 +212,6 @@ class PiTracker(BaseTracker):
         Updates the placement for the wire and the trackers
         """
 
-        print('\n<<<--- setting transofrm ', list(vector))
         self.transform.translation.setValue(list(vector))
 
     def finalize_trackers(self, tracker_list=None):
@@ -182,4 +239,4 @@ class PiTracker(BaseTracker):
         """
 
         self.finalize_trackers()
-        super().finalize()
+        super().finalize(self.node)
