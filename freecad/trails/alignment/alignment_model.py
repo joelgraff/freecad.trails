@@ -132,8 +132,6 @@ class AlignmentModel:
 
                 _geo[_key] = _geo[_key].sub(datum)
 
-        print('\nzero reference = \n', self.data['geometry'])
-
     def validate_alignment(self):
         """
         Ensure the alignment geometry is continuous.
