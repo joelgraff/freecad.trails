@@ -51,20 +51,14 @@ class PiTracker(BaseTracker):
         """
 
         #dict which tracks actions on nodes in the gui
-        self.gui_nodes = {
-            'drag': -1,
-            'rollover': -1,
-            'selected': [-1],
+        self.gui_action = {
+            'drag': None,
+            'rollover': None,
+            'selected': {},
         }
 
-        self.gui_wires = {
-            'drag': -1,
-            'rollover': -1,
-            'selected': [-1],
-        }
-
-        self.node_trackers = []
-        self.wire_trackers = []
+        self.node_trackers = {}
+        self.wire_trackers = {}
         self.callbacks = []
         self.mouse = MouseState()
 
@@ -78,7 +72,7 @@ class PiTracker(BaseTracker):
         super().__init__(names=[doc.Name, object_name, node_name],
                          children=child_nodes, select=False)
 
-        for _tracker in self.node_trackers + self.wire_trackers:
+        for _tracker in {**self.node_trackers, **self.wire_trackers}.values():
             self.node.addChild(_tracker.node)
 
         self.color.rgb = (0.0, 0.0, 1.0)
@@ -119,31 +113,30 @@ class PiTracker(BaseTracker):
 
         self.mouse.update(arg, _p)
 
-        roll_node = self.gui_nodes['rollover']
+        roll_node = self.gui_action['rollover']
 
         if not info:
 
-            if roll_node > -1:
+            if roll_node:
+                roll_node.switch_node()
 
-                self.node_trackers[roll_node].switch_node()
-                roll_node = -1
+            self.gui_action['rollover'] = None
 
         else:
 
-            component = info['Component'].split('_')
+            component = info['Component'].split('.')[0]
 
-            if component[0] == 'NODE':
+            if 'NODE' in component:
 
-                _idx = int(component[1])
-
-                if _idx == self.gui_nodes['selected']:
+                if component in self.gui_action['selected']:
                     return
 
-                if _idx != roll_node:
-                    self.gui_nodes['rollover'] = _idx
+                if not roll_node or component != roll_node.name:
+                    roll_node = self.node_trackers[component]
 
-                self.node_trackers[self.gui_nodes['rollover']] \
-                        .switch_node('rollover')
+                self.gui_action['rollover'] = roll_node
+
+                roll_node.switch_node('rollover')
 
         DraftTools.redraw3DView()
 
@@ -157,45 +150,49 @@ class PiTracker(BaseTracker):
 
         self.mouse.update(arg, _p)
 
-        print(self.mouse.state)
-        print(self.mouse.last)
-
         info = self.validate_info(info)
 
-        #click over nothing - deselect all
+        #click over nothing - clear selection if the last operation
+        #was not a drag click
         if not info:
-            self.deselect_geometry('all')
+
+            #abort in case this is just a bad drag
+            if self.mouse.button1.pressed:
+                return
+
+            if self.mouse.last[0:2] != ['BUTTON1', 'DRAG']:
+                self.deselect_geometry('all')
 
             return
 
-#        if not self.mouse.button_states['DRAG']:
-#            self.deselect_geometry('all')
-
         #otherwise, split on underscore to get element type and index
-        component = info['Component'].split('_')
+        component = info['Component'].split('.')[0]
         multi_select = arg['AltDown']
 
-        if component[0] == 'NODE':
+        if 'NODE' in component:
 
-            _clicked = int(component[1])
+            if not component in self.gui_action['selected']:
+                self.deselect_geometry('all')
+
+            _clicked = int(component.split('-')[1])
 
             #if alt is held down (we're in multi-select mode)
             #select every node after the selected one as well
-            self.gui_nodes['selected'] = [_clicked]
+            keys = [component]
 
             if multi_select:
 
-                idx_range = range(_clicked, len(self.node_trackers))
-                self.gui_nodes['selected'] = [_x for _x in idx_range]
+                idx_range = list(range(_clicked, len(self.node_trackers)))
 
-            nodes = [
-                self.node_trackers[_i] for _i in self.gui_nodes['selected']
-            ]
+                keys = ['NODE-' + str(_x) for _x in idx_range]
 
-            for _node in nodes:
+            self.gui_action['selected'] = {}
+
+            for key in keys:
+                _node = self.node_trackers[key]
                 _node.switch_node('select')
+                self.gui_action['selected'][key] = self.node_trackers[key]
 
-            print(self.gui_nodes)
         DraftTools.redraw3DView()
 
     def validate_info(self, info):
@@ -211,38 +208,34 @@ class PiTracker(BaseTracker):
         component = info['Component']
 
         #abort if this isn't the geometry we're looking for
-        if not ('NODE_' in component) or ('WIRE_' in component):
+        if not ('NODE-' in component) or ('WIRE-' in component):
             return None
 
         return info
 
-    def deselect_geometry(self, geo_types):
+    def deselect_geometry(self, geo_type):
         """
         Deselect geometry
         geo_types:
         'all', 'node', 'wire'
         """
 
-        sel_nodes = self.gui_nodes['selected']
-        sel_wires = self.gui_wires['selected']
+        do_node = geo_type in ['all', 'node']
+        do_wire = geo_type in ['all', 'wire']
 
-        do_nodes = geo_types in ['all', 'node']
-        do_wires = geo_types in ['all', 'wire']
+        selected = {}
 
-        if do_nodes and sel_nodes[0] > -1:
+        for _k, _v in self.gui_action['selected'].items():
 
-            for _node in sel_nodes:
-                self.node_trackers[_node].switch_node('deselect')
+            if (do_node and 'NODE' in _k) or \
+               (do_wire and 'WIRE' in _k):
 
-            self.gui_nodes['selected'] = [-1]
+                _v.default()
 
-        if do_wires and sel_wires[0] > -1:
+            else:
+                selected[_k] = _v
 
-            for _wire in sel_wires:
-                self.wire_trackers[_wire].switch_wire('deselect')
-
-            self.gui_wires['selected'] = [-1]
-
+        self.gui_action['selected'] = selected
 
     def update(self, points=None, placement=None):
         """
@@ -287,11 +280,14 @@ class PiTracker(BaseTracker):
             _pt.z = C.Z_DEPTH[2]
 
             #build node trackers
-            self.node_trackers.append(NodeTracker(
-                names=[doc.Name, obj_name, 'NODE_' + str(_i)], point=_pt)
+            _tr = NodeTracker(
+                names=[doc.Name, obj_name, 'NODE-' + str(_i)], 
+                point=_pt
             )
 
-            self.node_trackers[-1].update(_pt)
+            _tr.update(_pt)
+
+            self.node_trackers[_tr.name] = _tr
 
             if not prev_coord is None:
 
@@ -299,12 +295,12 @@ class PiTracker(BaseTracker):
                 points = [prev_coord, _pt]
 
                 _wt = WireTracker(
-                    names=[doc.Name, obj_name, 'WIRE_' + str(_i - 1)]
+                    names=[doc.Name, obj_name, 'WIRE-' + str(_i - 1)]
                 )
 
                 _wt.update_points(points)
 
-                self.wire_trackers.append(_wt)
+                self.wire_trackers[_wt.name] = _wt
 
             prev_coord = _pt
 

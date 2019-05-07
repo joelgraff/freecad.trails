@@ -90,9 +90,9 @@ class NodeTracker(BaseTracker):
 
         self.switch = coin.SoSwitch() # this is the on/off switch
         self.coord = coin.SoCoordinate3()
-        
-        if names[2]:
-            self.switch.setName(names[2])
+        self.name = names[2]
+
+        self.switch.setName(self.name)
 
         self.switch.addChild(self.create_default(names))
         self.switch.addChild(self.create_rollover(names))
@@ -117,7 +117,7 @@ class NodeTracker(BaseTracker):
                 Gui.getMarkerIndex(style['shape'], style['size'])
 
             nam = names[:]
-            nam[2] += '_' +style['id']
+            nam[2] += '.' +style['id']
 
             child = BaseTracker(nam, [self.coord, marker], style['select'])
             child.color.rgb = style['color']
@@ -139,7 +139,7 @@ class NodeTracker(BaseTracker):
         marker.markerIndex = Gui.getMarkerIndex(style['shape'], style['size'])
 
         nam = names[:]
-        nam[2] += '_' +style['id']
+        nam[2] += '.' +style['id']
 
         child = BaseTracker(nam, [self.coord, marker], style['select'])
         child.color.rgb = style['color']
@@ -150,6 +150,16 @@ class NodeTracker(BaseTracker):
         self.groups['default'].append(child)
 
         return group
+
+    def default(self):
+        """
+        Swtich to node default
+        """
+
+        for _child in self.groups['default']:
+            _child.color.rgb = self.STYLE.DEFAULT['color']
+
+        self.switch.whichChild = 0
 
     def switch_node(self, state='default'):
         """
