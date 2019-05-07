@@ -26,6 +26,7 @@ Customized wire tracker for PI alignments
 
 from pivy import coin
 
+import FreeCAD as App
 import FreeCADGui as Gui
 import DraftTools
 
@@ -36,6 +37,7 @@ from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
 
 from ..support.utils import Constants as C
+from ..support.mouse_state import MouseState
 
 class PiTracker(BaseTracker):
     """
@@ -55,16 +57,16 @@ class PiTracker(BaseTracker):
             'selected': [-1],
         }
 
+        self.gui_wires = {
+            'drag': -1,
+            'rollover': -1,
+            'selected': [-1],
+        }
+
         self.node_trackers = []
         self.wire_trackers = []
         self.callbacks = []
-
-        self.button_states = {
-            'BUTTON1': False,
-            'BUTTON2': False,
-            'BUTTON3': False
-        }
-
+        self.mouse = MouseState()
 
         self.transform = coin.SoTransform()
         self.transform.translation.setValue([0.0, 0.0, 0.0])
@@ -82,21 +84,6 @@ class PiTracker(BaseTracker):
         self.color.rgb = (0.0, 0.0, 1.0)
 
         todo.delay(self._insertSwitch, self.node)
-
-    def get_button_states(self, arg):
-        """
-        Set the mouse button state dict
-        """
-
-        state = arg.get('State')
-        button = arg.get('Button')
-
-        print(state, button)
-
-        if not state or not button:
-            return
-
-        self.button_states[button] = state == 'DOWN'
 
     def setup_callbacks(self, view):
         """
@@ -129,6 +116,8 @@ class PiTracker(BaseTracker):
 
         _p = Gui.ActiveDocument.ActiveView.getCursorPos()
         info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
+
+        self.mouse.update(arg, _p)
 
         roll_node = self.gui_nodes['rollover']
 
@@ -166,17 +155,21 @@ class PiTracker(BaseTracker):
         _p = Gui.ActiveDocument.ActiveView.getCursorPos()
         info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
 
-        sel_nodes = self.gui_nodes['selected']
+        self.mouse.update(arg, _p)
 
-        #a click means the current selection gets cleared
-        if sel_nodes[0] > -1:
-            for _node in sel_nodes:
-                self.node_trackers[_node].switch_node('deselect')
+        print(self.mouse.state)
+        print(self.mouse.last)
 
-            self.gui_nodes['selected'] = [-1]
+        info = self.validate_info(info)
 
+        #click over nothing - deselect all
         if not info:
+            self.deselect_geometry('all')
+
             return
+
+#        if not self.mouse.button_states['DRAG']:
+#            self.deselect_geometry('all')
 
         #otherwise, split on underscore to get element type and index
         component = info['Component'].split('_')
@@ -202,7 +195,54 @@ class PiTracker(BaseTracker):
             for _node in nodes:
                 _node.switch_node('select')
 
+            print(self.gui_nodes)
         DraftTools.redraw3DView()
+
+    def validate_info(self, info):
+        """
+        If the info is not none and contains a reference to a node
+        or wire tracker, return true
+        """
+
+        #abort if no info passed
+        if not info:
+            return None
+
+        component = info['Component']
+
+        #abort if this isn't the geometry we're looking for
+        if not ('NODE_' in component) or ('WIRE_' in component):
+            return None
+
+        return info
+
+    def deselect_geometry(self, geo_types):
+        """
+        Deselect geometry
+        geo_types:
+        'all', 'node', 'wire'
+        """
+
+        sel_nodes = self.gui_nodes['selected']
+        sel_wires = self.gui_wires['selected']
+
+        do_nodes = geo_types in ['all', 'node']
+        do_wires = geo_types in ['all', 'wire']
+
+        if do_nodes and sel_nodes[0] > -1:
+
+            for _node in sel_nodes:
+                self.node_trackers[_node].switch_node('deselect')
+
+            self.gui_nodes['selected'] = [-1]
+
+        if do_wires and sel_wires[0] > -1:
+
+            for _wire in sel_wires:
+                self.wire_trackers[_wire].switch_wire('deselect')
+
+            self.gui_wires['selected'] = [-1]
+
 
     def update(self, points=None, placement=None):
         """
