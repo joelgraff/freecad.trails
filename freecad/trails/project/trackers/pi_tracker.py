@@ -48,12 +48,23 @@ class PiTracker(BaseTracker):
         Constructor
         """
 
-        self.selected_node = None
-        self.rollover_node = None
-        self.rollover_count = 0
+        #dict which tracks actions on nodes in the gui
+        self.gui_nodes = {
+            'drag': -1,
+            'rollover': -1,
+            'selected': [-1],
+        }
 
         self.node_trackers = []
         self.wire_trackers = []
+        self.callbacks = []
+
+        self.button_states = {
+            'BUTTON1': False,
+            'BUTTON2': False,
+            'BUTTON3': False
+        }
+
 
         self.transform = coin.SoTransform()
         self.transform.translation.setValue([0.0, 0.0, 0.0])
@@ -72,74 +83,124 @@ class PiTracker(BaseTracker):
 
         todo.delay(self._insertSwitch, self.node)
 
-    def action(self, arg):
+    def get_button_states(self, arg):
         """
-        Event handling for alignment drawing
+        Set the mouse button state dict
         """
 
-        #trap the escape key to quit
-        if arg['Type'] == 'SoKeyboardEvent':
-            if arg['Key'] == 'ESCAPE':
+        state = arg.get('State')
+        button = arg.get('Button')
 
-                self.finalize()
-                return
+        print(state, button)
 
-        #trap mouse movement
-        if arg['Type'] == 'SoLocation2Event':
+        if not state or not button:
+            return
 
-            _p = Gui.ActiveDocument.ActiveView.getCursorPos()
-            info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
+        self.button_states[button] = state == 'DOWN'
 
-            print(info)
-            if not info:
+    def setup_callbacks(self, view):
+        """
+        Setup event handling callbacks and return as a list
+        """
 
-                if self.rollover_node is not None:
+        return [
+            ('SoKeyboardEvent',
+             view.addEventCallback('SoKeyboardEvent', self.key_action)
+            ),
+            ('SoLocation2Event',
+             view.addEventCallback('SoLocation2Event', self.mouse_action)
+            ),
+            ('SoMouseButtonEvent',
+             view.addEventCallback('SoMouseButtonEvent', self.button_action)
+            )
+        ]
 
-                    #if self.rollover_count > 10:
-                        self.node_trackers[self.rollover_node].switch_node()
-                        self.rollover_node = None
-                        self.rollover_count = 0
+    def key_action(self, arg):
+        """
+        Keypress actions
+        """
 
-                    #else:
-                    #    self.rollover_count += 1
+        return
 
-                DraftTools.redraw3DView()
-                return
+    def mouse_action(self, arg):
+        """
+        Mouse movement actions
+        """
+
+        _p = Gui.ActiveDocument.ActiveView.getCursorPos()
+        info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
+
+        roll_node = self.gui_nodes['rollover']
+
+        if not info:
+
+            if roll_node > -1:
+
+                self.node_trackers[roll_node].switch_node()
+                roll_node = -1
+
+        else:
 
             component = info['Component'].split('_')
 
             if component[0] == 'NODE':
 
-                if int(component[1]) != self.rollover_node:
-                    self.rollover_node = int(component[1])
-                    self.rollover_count = 0
+                _idx = int(component[1])
 
-                self.node_trackers[self.rollover_node].switch_node('rollover')
+                if _idx == self.gui_nodes['selected']:
+                    return
 
-        #trap button clicks
-        elif arg['Type'] == 'SoMouseButtonEvent':
+                if _idx != roll_node:
+                    self.gui_nodes['rollover'] = _idx
 
-            _p = Gui.ActiveDocument.ActiveView.getCursorPos()
-            info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
+                self.node_trackers[self.gui_nodes['rollover']] \
+                        .switch_node('rollover')
 
-            print(info)
+        DraftTools.redraw3DView()
 
-            if not info:
-                return
+    def button_action(self, arg):
+        """
+        Button actions
+        """
 
-            component = info['Component'].split('_')
+        _p = Gui.ActiveDocument.ActiveView.getCursorPos()
+        info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
 
-            if component[0] == 'NODE':
+        sel_nodes = self.gui_nodes['selected']
 
-                if int(component[1]) != self.selected_node:
+        #a click means the current selection gets cleared
+        if sel_nodes[0] > -1:
+            for _node in sel_nodes:
+                self.node_trackers[_node].switch_node('deselect')
 
-                    if self.selected_node is not None:
-                        self.node_trackers[self.selected_node] \
-                            .switch_node('deselected')
+            self.gui_nodes['selected'] = [-1]
 
-                    self.selected_node = int(component[1])
+        if not info:
+            return
 
-                self.node_trackers[self.selected_node].switch_node('selected')
+        #otherwise, split on underscore to get element type and index
+        component = info['Component'].split('_')
+        multi_select = arg['AltDown']
+
+        if component[0] == 'NODE':
+
+            _clicked = int(component[1])
+
+            #if alt is held down (we're in multi-select mode)
+            #select every node after the selected one as well
+            self.gui_nodes['selected'] = [_clicked]
+
+            if multi_select:
+
+                idx_range = range(_clicked, len(self.node_trackers))
+                self.gui_nodes['selected'] = [_x for _x in idx_range]
+
+            nodes = [
+                self.node_trackers[_i] for _i in self.gui_nodes['selected']
+            ]
+
+            for _node in nodes:
+                _node.switch_node('select')
 
         DraftTools.redraw3DView()
 

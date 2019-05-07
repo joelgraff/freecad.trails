@@ -51,20 +51,28 @@ class NodeTracker(BaseTracker):
             'select': True
         }
 
-        OUTER = {
-            'id': 'outer',
+        ROLL_OUTER = {
+            'id': 'roll_outer',
             'shape': 'circle',
             'size': 9,
             'color': (0.4, 0.8, 0.4),
             'select': True
         }
 
-        INNER = {
-            'id': 'inner',
+        ROLL_INNER = {
+            'id': 'roll_inner',
             'shape': 'cross',
             'size': 5,
             'color': (0.4, 0.8, 0.4),
-            'select': False
+            'select': True
+        }
+
+        SELECTED = {
+            'id': 'selected',
+            'shape': 'default',
+            'size': 9,
+            'color': (1.0, 0.9, 0.0),
+            'select': True
         }
 
     def __init__(self, names, point, nodes=None):
@@ -101,7 +109,7 @@ class NodeTracker(BaseTracker):
 
         group = coin.SoGroup()
 
-        for style in [self.STYLE.INNER, self.STYLE.OUTER]:
+        for style in [self.STYLE.ROLL_INNER, self.STYLE.ROLL_OUTER]:
 
             marker = coin.SoMarkerSet()
 
@@ -154,12 +162,12 @@ class NodeTracker(BaseTracker):
             idx = 1
 
         elif state == 'select':
-            for _child in self.groups['rollover']:
-                _child.node.color.rgb = (0.8, 0.8, 0.4)
+            for _child in self.groups['default']:
+                _child.color.rgb = self.STYLE.SELECTED['color']
 
         elif state == 'deselect':
-            for _child in self.groups['rollover']:
-                _child.node.color.rgb = (0.8, 0.8, 0.8)
+            for _child in self.groups['default']:
+                _child.color.rgb = self.STYLE.DEFAULT['color']
 
         self.switch.whichChild = idx
 

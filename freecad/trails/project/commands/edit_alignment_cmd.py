@@ -53,18 +53,12 @@ class EditAlignmentCmd(DraftTool):
         self.call = None
         self.tmp_group = None
 
-        self.button_states = {
-            'BUTTON1': False,
-            'BUTTON2': False,
-            'BUTTON3': False
-        }
-
     def IsActive(self):
         """
         Activation condition requires one alignment be selected
         """
 
-        if self.is_activated:
+        if Gui.Control.activeDialog():
             return False
 
         if not App.ActiveDocument:
@@ -98,9 +92,6 @@ class EditAlignmentCmd(DraftTool):
         Command activation method
         """
 
-        if self.is_activated:
-            return
-
         self.doc = App.ActiveDocument
 
         #create working, non-visual copy of horizontal alignment
@@ -116,77 +107,7 @@ class EditAlignmentCmd(DraftTool):
 
         #create alignment editing task
         self.edit_alignment_task = \
-            edit_alignment_task.create(self.doc, self.view, data, obj.Name)
-
-        self.is_activated = True
-
-    def action(self, arg):
-        """
-        Event handling for alignment drawing
-        """
-
-        #trap the escape key to quit
-        if arg['Type'] == 'SoKeyboardEvent':
-            if arg['Key'] == 'ESCAPE':
-
-                self.finish()
-                return
-
-        #trap mouse movement
-        if arg['Type'] == 'SoLocation2Event':
-            pass
-
-        #trap button clicks
-        elif arg['Type'] == 'SoMouseButtonEvent':
-            pass
-
-    def handle_mouseover_tracker(self, info):
-        """
-        Handle mouseover activity when button is not pressed
-        """
-
-        _active = self.active_tracker
-
-        _key, _it = self.get_current_tracker(info)
-
-        _current = None
-
-        if _it:
-            _current = self.trackers[_key]
-
-        #if we haven't moved off the previous tracker, we're done
-        if _current == _active:
-            return
-
-        #_current is not None if a valid tracker was detected
-        if _current:
-            _current.set_style(self.STYLES.HIGHLIGHT)
-            self.active_tracker = _current
-
-        else:
-            self.active_tracker = None
-
-        if _active:
-            _style = self.STYLES.ENABLED
-
-            if _active in self.selected_trackers:
-                _style = self.STYLES.SELECTED
-
-            _active.set_style(_style)
-
-    def get_button_states(self, arg):
-        """
-        Set the mouse button state dict
-        """
-
-        state = arg.get('State')
-        button = arg.get('Button')
-
-        print(state, button)
-        if not state or not button:
-            return
-
-        self.button_states[button] = state == 'DOWN'
+            edit_alignment_task.create(self.doc, self.view, data, obj)
 
     def get_current_tracker(self, info):
         """
@@ -203,15 +124,6 @@ class EditAlignmentCmd(DraftTool):
                 return val, _it
 
         return None, None
-
-    def clean_up(self):
-        """
-        Callback to finish the command
-        """
-
-        self.finish()
-
-        return True
 
     def finish(self, closed=False, cont=False):
         """

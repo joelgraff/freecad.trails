@@ -35,7 +35,7 @@ from ...support import const
 
 from ...trackers.pi_tracker import PiTracker
 
-from . import edit_pi_subtask
+from .draft_alignment_task import DraftAlignmentTask
 
 def create(doc, view, alignment_data, object_name):
     """
@@ -59,11 +59,12 @@ class EditAlignmentTask:
         PI =        [(0.0, 0.0, 1.0), 'Solid']
         SELECTED =  [(1.0, 0.8, 0.0), 'Solid']
 
-    def __init__(self, doc, view, alignment_data, object_name):
+    def __init__(self, doc, view, alignment_data, obj):
 
         self.panel = None
         self.view = view
         self.doc = doc
+        self.obj = obj
         self.tmp_group = None
         self.alignment = alignment_model.AlignmentModel()
         self.alignment.data = alignment_data
@@ -71,51 +72,59 @@ class EditAlignmentTask:
         self.pi_tracker = None
         self.pi_subtask = None
         self.call_backs = []
-        self.object_name = object_name
 
         self.view_objects = {
             'selectables': [],
-            'line_colors': []
+            'line_colors': [],
         }
 
         #disable selection entirely
-        #self.view.getSceneGraph().getField("selectionRole").setValue(0)
+        self.view.getSceneGraph().getField("selectionRole").setValue(0)
 
         #get all objects with LineColor and set them all to gray
-        self.view_objects['line_colors'] = \
-            [
-                (_v.ViewObject, _v.ViewObject.LineColor)
-                for _v in self.doc.findObjects()
-                if hasattr(_v, 'ViewObject')
-                if hasattr(_v.ViewObject, 'LineColor')
-            ]
+        self.view_objects['line_colors'] = [
+            (_v.ViewObject, _v.ViewObject.LineColor)
+            for _v in self.doc.findObjects()
+            if hasattr(_v, 'ViewObject')
+            if hasattr(_v.ViewObject, 'LineColor')
+        ]
 
         for _v in self.view_objects['line_colors']:
             self.set_vobj_style(_v[0], self.STYLES.DISABLED)
+
+        #get all objects in the scene that are selecctable.
+        self.view_objects['selectable'] = [
+            (_v.ViewObject, _v.ViewObject.Selectable)
+            for _v in self.doc.findObjects()
+            if hasattr(_v, 'ViewObject')
+            if hasattr(_v.ViewObject, 'Selectable')
+        ]
+
+        for _v in self.view_objects['selectable']:
+            _v[0].Selectable = False
 
         #deselect existing selections
         Gui.Selection.clearSelection()
 
         self.points = self.alignment.get_pi_coords()
 
-        #self.pi_subtask = \
-        #    edit_pi_subtask.create(self.doc, self.view, self.panel,
-        #                           self.points)
-
         self.pi_tracker = PiTracker(
-            self.doc, self.object_name, 'PI_TRACKER', self.points
+            self.doc, self.obj.Name, 'PI_TRACKER', self.points
         )
 
         self.pi_tracker.update_placement(self.alignment.get_datum())
 
-        #self.call = self.view.addEventCallback('SoEvent', self.action)
         self.call_backs.append(
-            self.view.addEventCallback('SoEvent', self.pi_tracker.action)
+             ('SoKeyboardEvent',
+             self.view.addEventCallback('SoKeyboardEvent', self.action)
+            )
         )
 
-        #panel = DraftAlignmentTask(self.clean_up)
+        self.call_backs += self.pi_tracker.setup_callbacks(view)
 
-        #Gui.Control.showDialog(panel)
+        panel = DraftAlignmentTask(self.clean_up)
+
+        Gui.Control.showDialog(panel)
         #panel.setup()
 
         self.doc.recompute()
@@ -126,12 +135,9 @@ class EditAlignmentTask:
         SoEvent callback for mouse / keyboard handling
         """
 
-        return
-
         #trap the escape key to quit
         if arg['Type'] == 'SoKeyboardEvent':
             if arg['Key'] == 'ESCAPE':
-                print('ESCAPE!')
                 self.finish()
 
     def set_vobj_style(self, vobj, style):
@@ -142,15 +148,27 @@ class EditAlignmentTask:
         vobj.LineColor = style[0]
         vobj.DrawStyle = style[1]
 
+    def clean_up(self):
+        """
+        Callback to finish the command
+        """
+
+        self.finish()
+
+        return True
+
     def finish(self):
         """
         Task cleanup
         """
 
-        print('task finish')
         #reset line colors
         for _v in self.view_objects['line_colors']:
             _v[0].LineColor = _v[1]
+
+        #reenable object selctables
+        for _v in self.view_objects['selectable']:
+            _v[0].Selectable = _v[1]
 
         #re-enable selection
         self.view.getSceneGraph().getField("selectionRole").setValue(1)
@@ -163,16 +181,12 @@ class EditAlignmentTask:
         if self.call_backs:
 
             for _cb in self.call_backs:
-                self.view.removeEventCallback("SoEvent", _cb)
+                self.view.removeEventCallback(_cb[0], _cb[1])
             
             self.call_backs.clear()
 
-        #shut down the tracker
+        #shut down the tracker and re-select the object
         if self.pi_tracker:
             self.pi_tracker.finalize()
             self.pi_tracker = None
-
-        #shut down the subtask
-        if self.pi_subtask:
-            self.pi_subtask.finish()
-            self.pi_subtask = None
+            Gui.Selection.addSelection(self.obj)
