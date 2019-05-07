@@ -61,6 +61,7 @@ class PiTracker(BaseTracker):
         self.wire_trackers = {}
         self.callbacks = []
         self.mouse = MouseState()
+        self.datum = App.Vector()
 
         self.transform = coin.SoTransform()
         self.transform.translation.setValue([0.0, 0.0, 0.0])
@@ -111,10 +112,13 @@ class PiTracker(BaseTracker):
         _p = Gui.ActiveDocument.ActiveView.getCursorPos()
         info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
 
+        world_pos = Gui.ActiveDocument.ActiveView.getPoint(_p).sub(self.datum)
+
         self.mouse.update(arg, _p)
 
         roll_node = self.gui_action['rollover']
 
+        print(info)
         if not info:
 
             if roll_node:
@@ -126,9 +130,16 @@ class PiTracker(BaseTracker):
 
             component = info['Component'].split('.')[0]
 
+            print(component)
+
             if 'NODE' in component:
 
                 if component in self.gui_action['selected']:
+
+                    if self.mouse.button1.pressed:
+                        drag_node = self.node_trackers[component]
+                        print('world pos = ', world_pos)
+                        drag_node.update(world_pos)
                     return
 
                 if not roll_node or component != roll_node.name:
@@ -194,6 +205,13 @@ class PiTracker(BaseTracker):
                 self.gui_action['selected'][key] = self.node_trackers[key]
 
         DraftTools.redraw3DView()
+
+    def set_datum(self, datum):
+        """
+        Set the datum for coordinate transformations
+        """
+
+        self.datum = datum
 
     def validate_info(self, info):
         """

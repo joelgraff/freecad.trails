@@ -112,6 +112,7 @@ class EditAlignmentTask:
             self.doc, self.obj.Name, 'PI_TRACKER', self.points
         )
 
+        self.pi_tracker.set_datum(self.alignment.get_datum())
         self.pi_tracker.update_placement(self.alignment.get_datum())
 
         self.call_backs.append(

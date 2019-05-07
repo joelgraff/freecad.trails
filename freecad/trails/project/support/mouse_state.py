@@ -124,5 +124,5 @@ class MouseState():
         old_pos = _btn.pos
 
         self.buttons[button].update(state, self.pos)
-
+        self.state = [self.buttons, self.pos]
         self.last = [button, _btn.last, old_pos]
