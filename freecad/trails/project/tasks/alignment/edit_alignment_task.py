@@ -109,14 +109,14 @@ class EditAlignmentTask:
         self.points = self.alignment.get_pi_coords()
 
         self.pi_tracker = PiTracker(
-            self.doc, self.obj.Name, 'PI_TRACKER', self.points
+            self.doc, self.view, self.obj.Name, 'PI_TRACKER', self.points
         )
 
         self.pi_tracker.set_datum(self.alignment.get_datum())
         self.pi_tracker.update_placement(self.alignment.get_datum())
 
         self.call_backs.append(
-             ('SoKeyboardEvent',
+            ('SoKeyboardEvent',
              self.view.addEventCallback('SoKeyboardEvent', self.action)
             )
         )

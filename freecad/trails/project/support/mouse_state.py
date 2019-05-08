@@ -43,7 +43,7 @@ class MouseState():
             self.state = ''
             self.pressed = False
             self.pos = App.Vector()
-            self.drag = False
+            self.dragging = False
             self.last = ''
 
         def __str__(self):
@@ -62,7 +62,7 @@ class MouseState():
                 'state': self.state,
                 'pressed': self.pressed,
                 'pos': self.pos,
-                'drag': self.drag,
+                'drag': self.dragging,
                 'last': self.last,
                 })
 
@@ -71,10 +71,24 @@ class MouseState():
             Update the button state
             """
 
-            self.last = self.state
+            #update state on a state change only
+            if state and (self.state != state):
+
+                self.last = (self.state, self.pos)
+                self.state = state
+                self.pressed = state == 'DOWN'
+
+                #assign position at down click
+                if self.pressed:
+                    self.pos = pos
+
+            #true if button is down and state did not change before this call
+            self.dragging = self.pressed and (self.pos != pos)
+
+            if self.dragging:
+                self.state = 'DRAG'
+
             self.pos = pos
-            self.state = state
-            self.pressed = state == 'DOWN'
 
     def __init__(self):
         """
@@ -101,28 +115,23 @@ class MouseState():
         Update the current mouse state
         """
 
-        if _p:
-            self.pos = App.Vector(_p + (0.0,))
-
-        if not arg or not _p:
-            return
+        self.pos = App.Vector(_p + (0.0,))
 
         button = arg.get('Button')
         state = arg.get('State')
+        buttons = []
 
-        if not button or not state:
+        if button:
+            buttons = [self.buttons[button]]
+
+        #abort unless one or more buttons are pressed
+        if not buttons or not state:
+            buttons = [_x for _x in self.buttons.values() if _x.pressed]
+
+        if not buttons:
             return
 
-        _btn = self.buttons[button]
+        for _btn in buttons:
+            _btn.update(state, self.pos)
 
-        #test for drag if not already set
-        if not _btn.drag:
-            if _btn.state == 'DOWN':
-                _btn.drag = self.pos.distanceToPoint(_btn.pos) >= 1.0
-                _btn.state = 'DRAG'
-
-        old_pos = _btn.pos
-
-        self.buttons[button].update(state, self.pos)
         self.state = [self.buttons, self.pos]
-        self.last = [button, _btn.last, old_pos]

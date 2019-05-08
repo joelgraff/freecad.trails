@@ -153,33 +153,25 @@ class NodeTracker(BaseTracker):
 
     def default(self):
         """
-        Swtich to node default
+        Set node to default style
         """
 
         for _child in self.groups['default']:
             _child.color.rgb = self.STYLE.DEFAULT['color']
 
-        self.switch.whichChild = 0
+        if self.switch.whichChild:
+            self.switch.whichChild = 0
 
-    def switch_node(self, state='default'):
+    def selected(self):
         """
-        Switch to default node
+        Set node to select style
         """
 
-        idx = 0
+        for _child in self.groups['default']:
+            _child.color.rgb = self.STYLE.SELECTED['color']
 
-        if state == 'rollover':
-            idx = 1
-
-        elif state == 'select':
-            for _child in self.groups['default']:
-                _child.color.rgb = self.STYLE.SELECTED['color']
-
-        elif state == 'deselect':
-            for _child in self.groups['default']:
-                _child.color.rgb = self.STYLE.DEFAULT['color']
-
-        self.switch.whichChild = idx
+        if self.switch.whichChild:
+            self.switch.whichChild = 0
 
     def update(self, coord):
         """
@@ -192,9 +184,8 @@ class NodeTracker(BaseTracker):
         """
         Get method
         """
-        _pt = self.coord.point.getValues()[0]
 
-        return App.Vector(_pt)
+        return App.Vector(self.coord.point.getValues()[0].getValue())
 
     def finalize(self):
         """

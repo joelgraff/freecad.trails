@@ -45,7 +45,7 @@ class PiTracker(BaseTracker):
     picking and editing
     """
 
-    def __init__(self, doc, object_name, node_name, points):
+    def __init__(self, doc, view, object_name, node_name, points):
         """
         Constructor
         """
@@ -62,6 +62,7 @@ class PiTracker(BaseTracker):
         self.callbacks = []
         self.mouse = MouseState()
         self.datum = App.Vector()
+        self.view = view
 
         self.transform = coin.SoTransform()
         self.transform.translation.setValue([0.0, 0.0, 0.0])
@@ -104,105 +105,164 @@ class PiTracker(BaseTracker):
 
         return
 
+    def unhighlight(self):
+        """
+        Disable rollover node
+        """
+
+        if self.gui_action['rollover']:
+            self.gui_action['rollover'].whichChild = 0
+            self.gui_action['rollover'] = None
+
+    def on_rollover(self, pos):
+        """
+        Manage element highlighting
+
+        TODO: combine all trackers into one dict to not have to detect
+              the tracker type in the name
+        """
+
+        info = self.view.getObjectInfo(pos)
+
+        roll_node = self.gui_action['rollover']
+
+        #if we rolled over nothing or an invalid object,
+        #unhighlight the existing node
+        if not self.validate_info(info):
+
+            if roll_node:
+                roll_node.switch.whichChild = 0
+
+            self.gui_action['rollover'] = None
+
+            return
+
+        component = info['Component'].split('.')[0]
+
+        if 'NODE' in component:
+
+            #unhighlight existing node
+            if roll_node and roll_node.name != component:
+                roll_node.switch.whichChild = 0
+
+            #highlight new nodes
+            roll_node = self.node_trackers[component]
+            roll_node.switch.whichChild = 1
+
+            self.gui_action['rollover'] = roll_node
+
+    def start_drag(self, arg):
+        """
+        Set up scenegraph and object for dragging
+        """
+
+        self.unhighlight()
+
+        pos = self.mouse.button1.pos
+        info = self.validate_info(self.view.getObjectInfo((pos.x, pos.y)))
+
+        if not info:
+            return
+
+        component = info['Component'].split('.')[0]
+
+        if component in self.gui_action['selected']:
+
+            self.gui_action['drag'] = \
+                self.gui_action['selected'][component]
+
+    def end_drag(self):
+        """
+        Teardown for dragging
+        """
+
+        self.gui_action['drag'] = None
+
+    def on_drag(self, pos):
+        """
+        Drag operation in view
+        """
+
+        world_pos = self.view.getPoint(pos).sub(self.datum)
+        self.gui_action['drag'].update(world_pos)
+
+    def on_selection(self, arg, pos):
+        """
+        Mouse selection in view
+        """
+
+        self.unhighlight()
+
+        info = self.validate_info(self.view.getObjectInfo(pos))
+
+        #deselect all and quit if no valid object is picked
+        if not info:
+            self.deselect_geometry('all')
+            return
+
+        #quit if this is not a previously-picked object
+        component = info['Component'].split('.')[0]
+
+        if component in self.gui_action['selected']:
+            return
+
+        #still here - deselect and select
+        self.deselect_geometry('all')
+
+        _idx = int(component.split('-')[1])
+        _max = _idx + 1
+
+        if arg['AltDown']:
+            _max = len(self.node_trackers)
+
+        nodes = \
+        [self.node_trackers['NODE-' + str(_x)] for _x in range(_idx, _max)]
+
+        self.gui_action['selected'] = {}
+
+        for _node in nodes:
+            _node.selected()
+            self.gui_action['selected'][_node.name] = _node
+
     def mouse_action(self, arg):
         """
         Mouse movement actions
         """
 
-        _p = Gui.ActiveDocument.ActiveView.getCursorPos()
-        info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
+        #need to determine if we're in a special mode.
+        #if not in a special mode, then it's just highlight operations
 
-        world_pos = Gui.ActiveDocument.ActiveView.getPoint(_p).sub(self.datum)
+        _p = self.view.getCursorPos()
 
-        self.mouse.update(arg, _p)
+        #don't do highlighting if dragging is enabled
+        if not (self.mouse.button1.dragging or self.mouse.button1.pressed):
 
-        roll_node = self.gui_action['rollover']
+            self.mouse.update(arg, _p)
+            self.on_rollover(_p)
 
-        print(info)
-        if not info:
+            if self.gui_action['drag']:
+                self.end_drag()
 
-            if roll_node:
-                roll_node.switch_node()
-
-            self.gui_action['rollover'] = None
-
+        #manage dragging
         else:
 
-            component = info['Component'].split('.')[0]
+            if self.gui_action['drag']:
+                self.on_drag(_p)
 
-            print(component)
-
-            if 'NODE' in component:
-
-                if component in self.gui_action['selected']:
-
-                    if self.mouse.button1.pressed:
-                        drag_node = self.node_trackers[component]
-                        print('world pos = ', world_pos)
-                        drag_node.update(world_pos)
-                    return
-
-                if not roll_node or component != roll_node.name:
-                    roll_node = self.node_trackers[component]
-
-                self.gui_action['rollover'] = roll_node
-
-                roll_node.switch_node('rollover')
-
-        DraftTools.redraw3DView()
+            else:
+                self.start_drag(arg)
 
     def button_action(self, arg):
         """
-        Button actions
+        Button click trapping
         """
 
-        _p = Gui.ActiveDocument.ActiveView.getCursorPos()
-        info = Gui.ActiveDocument.ActiveView.getObjectInfo(_p)
-
+        _p = self.view.getCursorPos()
         self.mouse.update(arg, _p)
 
-        info = self.validate_info(info)
-
-        #click over nothing - clear selection if the last operation
-        #was not a drag click
-        if not info:
-
-            #abort in case this is just a bad drag
-            if self.mouse.button1.pressed:
-                return
-
-            if self.mouse.last[0:2] != ['BUTTON1', 'DRAG']:
-                self.deselect_geometry('all')
-
-            return
-
-        #otherwise, split on underscore to get element type and index
-        component = info['Component'].split('.')[0]
-        multi_select = arg['AltDown']
-
-        if 'NODE' in component:
-
-            if not component in self.gui_action['selected']:
-                self.deselect_geometry('all')
-
-            _clicked = int(component.split('-')[1])
-
-            #if alt is held down (we're in multi-select mode)
-            #select every node after the selected one as well
-            keys = [component]
-
-            if multi_select:
-
-                idx_range = list(range(_clicked, len(self.node_trackers)))
-
-                keys = ['NODE-' + str(_x) for _x in idx_range]
-
-            self.gui_action['selected'] = {}
-
-            for key in keys:
-                _node = self.node_trackers[key]
-                _node.switch_node('select')
-                self.gui_action['selected'][key] = self.node_trackers[key]
+        #manage selection
+        if self.mouse.button1.pressed:
+            self.on_selection(arg, _p)
 
         DraftTools.redraw3DView()
 
@@ -336,14 +396,14 @@ class PiTracker(BaseTracker):
 
         if self.node_trackers:
 
-            for _tracker in self.node_trackers:
+            for _tracker in self.node_trackers.values():
                 _tracker.finalize()
 
             self.node_trackers.clear()
 
         if self.wire_trackers:
 
-            for _tracker in self.wire_trackers:
+            for _tracker in self.wire_trackers.values():
                 _tracker.finalize()
 
             self.wire_trackers.clear()
