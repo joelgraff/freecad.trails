@@ -36,14 +36,19 @@ class BaseTracker:
     A custom base Draft Tracker
     """
 
-    def __init__(self, names, children=[], select=True):
-
+    def __init__(self, names, children=[], select=True, group=False):
+        """
+        Constructor
+        """
         self.visible = False
         self.select = select
         self.color = coin.SoBaseColor()
         self.draw_style = coin.SoDrawStyle()
         self.names = names
         self.node = coin.SoSeparator()
+
+        if group:
+            self.node = coin.SoGroup()
 
         if self.select:
 
@@ -57,8 +62,8 @@ class BaseTracker:
         for c in [self.draw_style, self.color] + children:
             self.node.addChild(c)
 
-    def finalize(self, switch):
-        todo.delay(self._removeSwitch, switch)
+    def finalize(self, node):
+        self.remove_node(node)
 
     def on(self, switch, which_child=0):
         switch.whichChild = which_child
@@ -68,30 +73,47 @@ class BaseTracker:
         switch.whichChild = -1
         self.visible = False
 
-    def _insertSwitch(self, switch, ontop=False):
+    def insert_node(self, node):
         """
-        Insert self.switch into the scene graph.
+        Convenince wrapper for _insert_node
+        """
+
+        todo.delay(self._insert_node, node)
+
+    def remove_node(self, node):
+        """
+        Convenience wrapper for _remove_node
+        """
+
+        todo.delay(self._remove_node, node)
+
+    def _insert_node(self, node, ontop=False):
+        """
+        Insert node into the scene graph.
         Must not be called from an event handler (or other scene graph
         traversal).
         """
 
-        sg=Draft.get3DView().getSceneGraph()
+        _sg = Draft.get3DView().getSceneGraph()
 
         if ontop:
-            sg.insertChild(switch, 0)
+            _sg.insertChild(node, 0)
         else:
-            sg.addChild(switch)
+            _sg.addChild(node)
 
-    def _removeSwitch(self, switch):
+    def _remove_node(self, node):
         """
         Remove self.switch from the scene graph.
         Must not be called during scene graph traversal).
         """
 
-        sg=Draft.get3DView().getSceneGraph()
+        _sg = Draft.get3DView().getSceneGraph()
 
-        if sg.findChild(switch) >= 0:
-            sg.removeChild(switch)
+        print('try remove node ', node, '\n\t', _sg.findChild(node))
+
+        if _sg.findChild(node) >= 0:
+            print('remove node ', node)
+            _sg.removeChild(node)
 
     def adjustTracker(self, toTop=True):
         """

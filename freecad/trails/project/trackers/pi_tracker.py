@@ -35,6 +35,7 @@ from DraftGui import todo
 from .base_tracker import BaseTracker
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
+from .drag_tracker import DragTracker
 
 from ..support.utils import Constants as C
 from ..support.mouse_state import MouseState
@@ -79,7 +80,7 @@ class PiTracker(BaseTracker):
 
         self.color.rgb = (0.0, 0.0, 1.0)
 
-        todo.delay(self._insertSwitch, self.node)
+        self.insert_node(self.node)
 
     def setup_callbacks(self, view):
         """
@@ -168,14 +169,28 @@ class PiTracker(BaseTracker):
 
         if component in self.gui_action['selected']:
 
+            names = self.names[:]
+            names[2] = 'DRAG_TRACKER'
+
+            children = []
+
+            for _node in self.gui_action['selected'].values():
+                children.append(_node.node)
+                todo.delay(self.node.removeChild, _node.node)
+
             self.gui_action['drag'] = \
-                self.gui_action['selected'][component]
+                DragTracker(names, children)
+
+            self.gui_action['drag'].transform.translation.setValue(tuple(self.datum))
+
+            #self.gui_action['drag'] = \
+            #    self.gui_action['selected'][component]
 
     def end_drag(self):
         """
         Teardown for dragging
         """
-
+        self.gui_action['drag'].finalize()
         self.gui_action['drag'] = None
 
     def on_drag(self, pos):

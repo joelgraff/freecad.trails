@@ -192,4 +192,4 @@ class NodeTracker(BaseTracker):
         Cleanup
         """
 
-        self._removeSwitch(self.switch)
+        self.remove_node(self.node)
