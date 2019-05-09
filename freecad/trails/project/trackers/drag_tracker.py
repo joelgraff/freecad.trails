@@ -81,9 +81,12 @@ class DragTracker(BaseTracker):
 
         return Vector(self.transform.translation.getValue())
 
-    def finalize(self):
+    def finalize(self, node=None):
         """
         Shutdown
         """
 
-        todo.delay(self.parent.removeChild, self.switch)
+        if not node:
+            node = self.switch
+
+        todo.delay(self.parent.removeChild, node)

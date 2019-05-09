@@ -28,7 +28,6 @@ from pivy import coin
 
 import Draft
 
-from DraftTrackers import Tracker
 from DraftGui import todo
 
 class BaseTracker:
@@ -36,7 +35,7 @@ class BaseTracker:
     A custom base Draft Tracker
     """
 
-    def __init__(self, names, children=[], select=True, group=False):
+    def __init__(self, names, children=None, select=True, group=False):
         """
         Constructor
         """
@@ -46,6 +45,9 @@ class BaseTracker:
         self.draw_style = coin.SoDrawStyle()
         self.names = names
         self.node = coin.SoSeparator()
+
+        if not children:
+            children = []
 
         if group:
             self.node = coin.SoGroup()
@@ -59,17 +61,29 @@ class BaseTracker:
             self.node.objectName.setValue(self.names[1])
             self.node.subElementName.setValue(self.names[2])
 
-        for c in [self.draw_style, self.color] + children:
-            self.node.addChild(c)
+        for child in [self.draw_style, self.color] + children:
+            self.node.addChild(child)
 
-    def finalize(self, node, parent=None):
-        self.remove_node(node, parent)
+    def finalize(self, node):
+        """
+        Node destruction / cleanup
+        """
+
+        self.remove_node(node)
 
     def on(self, switch, which_child=0):
+        """
+        Make node visible
+        """
+
         switch.whichChild = which_child
         self.visible = True
 
     def off(self, switch):
+        """
+        Make node invisible
+        """
+
         switch.whichChild = -1
         self.visible = False
 
@@ -115,18 +129,23 @@ class BaseTracker:
             print('remove node ', node)
             _sg.removeChild(node)
 
-    def adjustTracker(self, toTop=True):
+    def adjustTracker(self, node=None, to_top=True):
         """
         Raises the tracker to the top or lowers it to the bottom based
         on the passed boolean
         """
 
-        if self.switch:
+        if not node:
+            node = self.node
 
-            sg = Draft.get3DView().getSceneGraph()
-            sg.removeChild(self.switch)
+        if not node:
+            return
 
-            if toTop:
-                sg.insertChild(self.switch)
-            else:
-                sg.addChild(self.switch)
+        _sg = Draft.get3DView().getSceneGraph()
+        _sg.removeChild(node)
+
+        if to_top:
+            _sg.insertChild(node)
+
+        else:
+            _sg.addChild(node)

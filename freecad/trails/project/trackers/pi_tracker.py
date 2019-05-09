@@ -26,8 +26,7 @@ Customized wire tracker for PI alignments
 
 from pivy import coin
 
-import FreeCAD as App
-import FreeCADGui as Gui
+from FreeCAD import Vector
 import DraftTools
 
 from DraftGui import todo
@@ -62,7 +61,7 @@ class PiTracker(BaseTracker):
         self.wire_trackers = {}
         self.callbacks = []
         self.mouse = MouseState()
-        self.datum = App.Vector()
+        self.datum = Vector()
         self.view = view
 
         self.transform = coin.SoTransform()
@@ -182,9 +181,6 @@ class PiTracker(BaseTracker):
             self.gui_action['drag'] = \
                 DragTracker(names, children, self.node, picked_node)
 
-            #self.gui_action['drag'] = \
-            #    self.gui_action['selected'][component]
-
     def end_drag(self):
         """
         Teardown for dragging
@@ -192,7 +188,6 @@ class PiTracker(BaseTracker):
 
         translation = self.gui_action['drag'].get_placement()
 
-        print('translation = ', translation)
         self.gui_action['drag'].finalize()
         self.gui_action['drag'] = None
 
@@ -381,7 +376,7 @@ class PiTracker(BaseTracker):
 
             #build node trackers
             _tr = NodeTracker(
-                names=[doc.Name, obj_name, 'NODE-' + str(_i)], 
+                names=[doc.Name, obj_name, 'NODE-' + str(_i)],
                 point=_pt
             )
 
@@ -409,7 +404,7 @@ class PiTracker(BaseTracker):
         Updates the placement for the wire and the trackers
         """
 
-        self.transform.translation.setValue(list(vector))
+        self.transform.translation.setValue(tuple(vector))
 
     def finalize_trackers(self, tracker_list=None):
         """
@@ -430,10 +425,14 @@ class PiTracker(BaseTracker):
 
             self.wire_trackers.clear()
 
-    def finalize(self):
+    def finalize(self, node=None):
         """
         Override of the parent method
         """
 
         self.finalize_trackers()
-        super().finalize(self.node)
+
+        if not node:
+            node = self.node
+
+        super().finalize(node)

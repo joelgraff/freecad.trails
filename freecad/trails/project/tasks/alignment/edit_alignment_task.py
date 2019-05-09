@@ -53,11 +53,11 @@ class EditAlignmentTask:
         Internal constants used to define ViewObject styles
         """
 
-        DISABLED =  [(0.4, 0.4, 0.4), 'Solid']
-        ENABLED =   [(0.8, 0.8, 0.8), 'Solid']
+        DISABLED = [(0.4, 0.4, 0.4), 'Solid']
+        ENABLED = [(0.8, 0.8, 0.8), 'Solid']
         HIGHLIGHT = [(0.0, 1.0, 0.0), 'Solid']
-        PI =        [(0.0, 0.0, 1.0), 'Solid']
-        SELECTED =  [(1.0, 0.8, 0.0), 'Solid']
+        PI = [(0.0, 0.0, 1.0), 'Solid']
+        SELECTED = [(1.0, 0.8, 0.0), 'Solid']
 
     def __init__(self, doc, view, alignment_data, obj):
 
@@ -183,7 +183,7 @@ class EditAlignmentTask:
 
             for _cb in self.call_backs:
                 self.view.removeEventCallback(_cb[0], _cb[1])
-            
+
             self.call_backs.clear()
 
         #shut down the tracker and re-select the object

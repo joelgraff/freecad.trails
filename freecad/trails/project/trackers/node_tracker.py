@@ -26,7 +26,7 @@ Customized edit tracker from DraftTrackers.editTracker
 
 from pivy import coin
 
-import FreeCAD as App
+from FreeCAD import Vector
 import FreeCADGui as Gui
 
 from .base_tracker import BaseTracker
@@ -185,7 +185,7 @@ class NodeTracker(BaseTracker):
         Get method
         """
 
-        return App.Vector(self.coord.point.getValues()[0].getValue())
+        return Vector(self.coord.point.getValues()[0].getValue())
 
     def finalize(self):
         """
