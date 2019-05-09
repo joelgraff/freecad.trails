@@ -62,8 +62,8 @@ class BaseTracker:
         for c in [self.draw_style, self.color] + children:
             self.node.addChild(c)
 
-    def finalize(self, node):
-        self.remove_node(node)
+    def finalize(self, node, parent=None):
+        self.remove_node(node, parent)
 
     def on(self, switch, which_child=0):
         switch.whichChild = which_child

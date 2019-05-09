@@ -26,6 +26,10 @@ Tracker for dragging operations
 
 from pivy import coin
 
+from FreeCAD import Vector
+
+from DraftGui import todo
+
 from .base_tracker import BaseTracker
 
 class DragTracker(BaseTracker):
@@ -33,18 +37,26 @@ class DragTracker(BaseTracker):
     Tracker for dragging operations
     """
 
-    def __init__(self, names, children):
+    def __init__(self, names, children, parent, node_tracker):
         """
         Constructor
         """
+
+        self.parent = parent
         self.switch = coin.SoSwitch()
+        self.datum = \
+            Vector(node_tracker.coord.point.getValues()[0].getValue())
+
         self.transform = coin.SoTransform()
+        self.transform.translation.setValue([0.0, 0.0, 0.0])
 
         super().__init__(names,
-                         children + [self.transform, self.switch], False, True
+                         [self.transform] + children, False, True
                         )
 
-        self.insert_node(self.node)
+        self.switch.addChild(self.node)
+        self.parent.addChild(self.switch)
+
         self.on(self.switch)
 
     def update(self, position):
@@ -54,9 +66,24 @@ class DragTracker(BaseTracker):
 
         self.transform.translation.setValue(tuple(position))
 
+    def update_placement(self, position):
+        """
+        Update the placement
+        """
+
+        _pos = tuple(list(position.sub(self.datum)))
+        self.transform.translation.setValue(_pos)
+
+    def get_placement(self):
+        """
+        Return the placement of the tracker
+        """
+
+        return Vector(self.transform.translation.getValue())
+
     def finalize(self):
         """
         Shutdown
         """
 
-        super().finalize(self.switch)
+        todo.delay(self.parent.removeChild, self.switch)

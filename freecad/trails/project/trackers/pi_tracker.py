@@ -73,7 +73,7 @@ class PiTracker(BaseTracker):
         child_nodes = [self.transform]
 
         super().__init__(names=[doc.Name, object_name, node_name],
-                         children=child_nodes, select=False)
+                         children=child_nodes, select=False, group=True)
 
         for _tracker in {**self.node_trackers, **self.wire_trackers}.values():
             self.node.addChild(_tracker.node)
@@ -169,6 +169,7 @@ class PiTracker(BaseTracker):
 
         if component in self.gui_action['selected']:
 
+            picked_node = self.node_trackers[component]
             names = self.names[:]
             names[2] = 'DRAG_TRACKER'
 
@@ -179,9 +180,7 @@ class PiTracker(BaseTracker):
                 todo.delay(self.node.removeChild, _node.node)
 
             self.gui_action['drag'] = \
-                DragTracker(names, children)
-
-            self.gui_action['drag'].transform.translation.setValue(tuple(self.datum))
+                DragTracker(names, children, self.node, picked_node)
 
             #self.gui_action['drag'] = \
             #    self.gui_action['selected'][component]
@@ -190,16 +189,24 @@ class PiTracker(BaseTracker):
         """
         Teardown for dragging
         """
+
+        translation = self.gui_action['drag'].get_placement()
+
+        print('translation = ', translation)
         self.gui_action['drag'].finalize()
         self.gui_action['drag'] = None
+
+        for _node in self.gui_action['selected'].values():
+            _node.update(_node.get().add(translation))
+            todo.delay(self.node.addChild, _node.node)
 
     def on_drag(self, pos):
         """
         Drag operation in view
         """
 
-        world_pos = self.view.getPoint(pos).sub(self.datum)
-        self.gui_action['drag'].update(world_pos)
+        world_pos = self.view.getPoint(pos)
+        self.gui_action['drag'].update_placement(world_pos.sub(self.datum))
 
     def on_selection(self, arg, pos):
         """
