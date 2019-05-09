@@ -175,7 +175,7 @@ class PiTracker(BaseTracker):
             children = []
 
             for _node in self.gui_action['selected'].values():
-                children.append(_node.node)
+                children.append(_node)
                 todo.delay(self.node.removeChild, _node.node)
 
             self.gui_action['drag'] = \

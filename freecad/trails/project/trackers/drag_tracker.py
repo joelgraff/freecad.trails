@@ -44,6 +44,40 @@ class DragTracker(BaseTracker):
 
         self.parent = parent
         self.switch = coin.SoSwitch()
+        self.datum = Vector(node_tracker.coord.point.getValues()[0].getValue())
+        self.transform = coin.SoTransform()
+        self.transform.translation.setValue([0.0, 0.0, 0.0])
+
+        self.marker_coords = coin.SoCoordinate3()
+
+        coords = []
+
+        for child in children:
+            coords.append(child.get())
+
+        #assign all coords to self.marker_coords
+        #...
+
+        self.marker_set = coin.SoMarkerSet()
+
+        if len(coords) > 1:
+            self.line_set = coin.SoLineSet()
+            self.line_set.numVertices.setValue(len(coords))
+
+        child_nodes = \
+            [self.transform, self.marker_coords, self.marker_set, self.line_set] + [_v.node for _v in children]
+
+        super().__init__(names, child_nodes, False)
+
+
+    def _init_(self, names, children, parent, node_tracker):
+        """
+        Deprecated Constructor
+        """
+
+        self.parent = parent
+        self.switch = coin.SoSwitch()
+        self.separator = coin.SoSeparator()
         self.datum = \
             Vector(node_tracker.coord.point.getValues()[0].getValue())
 
@@ -51,10 +85,22 @@ class DragTracker(BaseTracker):
         self.transform.translation.setValue([0.0, 0.0, 0.0])
 
         super().__init__(names,
-                         [self.transform] + children, False, True
+                         [self.transform] + [_v.node for _v in children], False, True
                         )
 
-        self.switch.addChild(self.node)
+        coord = coin.SoCoordinate3()
+        coord.point.setValue((tuple(children[0].get())))
+        self.node.addChild(coord)
+        coord = coin.SoCoordinate3()
+        coord.point.setValue((tuple(children[1].get())))
+        self.node.addChild(coord)
+        line = coin.SoLineSet()
+        line.numVertices.setValue((1,1))
+
+        self.node.addChild(line)
+
+        self.separator.addChild(self.node)
+        self.switch.addChild(self.separator)
         self.parent.addChild(self.switch)
 
         self.on(self.switch)

@@ -98,7 +98,7 @@ class NodeTracker(BaseTracker):
         self.switch.addChild(self.create_rollover(names))
 
         super().__init__(names=names, children=nodes + [self.switch],
-                         select=False)
+                         select=False, group=True)
 
         self.on(self.switch, 0)
 
