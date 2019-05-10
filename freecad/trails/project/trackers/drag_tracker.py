@@ -37,73 +37,172 @@ class DragTracker(BaseTracker):
     Tracker for dragging operations
     """
 
-    def __init__(self, names, children, parent, node_tracker):
+    def __init__(self, names, trackers, selected, picked_name):
         """
         Constructor
+        names - list of names for BaseTracker
+        trackers - dict of all node trackers
+        selected - dict of selected trackers
+        picked_name - name of tracker picked at start of drag
         """
+        self.trackers = {
+            'start': None,
+            'picked': trackers[picked_name],
+            'selected': selected,
+            'end': None
+        }
 
-        self.parent = parent
         self.switch = coin.SoSwitch()
-        self.datum = Vector(node_tracker.coord.point.getValues()[0].getValue())
         self.transform = coin.SoTransform()
         self.transform.translation.setValue([0.0, 0.0, 0.0])
 
-        self.marker_coords = coin.SoCoordinate3()
+        #get ordered list of trackers, including preceding and following
+        self.build_tracker_dict(trackers, selected)
 
-        coords = []
+        self.connector_group = self.build_connector_group()
 
-        for child in children:
-            coords.append(child.get())
+        self.selected_group = self.build_selected_group()
 
-        #assign all coords to self.marker_coords
-        #...
+        super().__init__(
+            names, [self.connector_group], False #, self.selected_group],
+            #False
+        )
 
-        self.marker_set = coin.SoMarkerSet()
+        self.datum = Vector(
+            self.trackers['picked'].coord.point.getValues()[0].getValue()
+        )
 
-        if len(coords) > 1:
-            self.line_set = coin.SoLineSet()
-            self.line_set.numVertices.setValue(len(coords))
-
-        child_nodes = \
-            [self.transform, self.marker_coords, self.marker_set, self.line_set] + [_v.node for _v in children]
-
-        super().__init__(names, child_nodes, False)
-
-
-    def _init_(self, names, children, parent, node_tracker):
-        """
-        Deprecated Constructor
-        """
-
-        self.parent = parent
-        self.switch = coin.SoSwitch()
-        self.separator = coin.SoSeparator()
-        self.datum = \
-            Vector(node_tracker.coord.point.getValues()[0].getValue())
-
-        self.transform = coin.SoTransform()
-        self.transform.translation.setValue([0.0, 0.0, 0.0])
-
-        super().__init__(names,
-                         [self.transform] + [_v.node for _v in children], False, True
-                        )
-
-        coord = coin.SoCoordinate3()
-        coord.point.setValue((tuple(children[0].get())))
-        self.node.addChild(coord)
-        coord = coin.SoCoordinate3()
-        coord.point.setValue((tuple(children[1].get())))
-        self.node.addChild(coord)
-        line = coin.SoLineSet()
-        line.numVertices.setValue((1,1))
-
-        self.node.addChild(line)
-
-        self.separator.addChild(self.node)
-        self.switch.addChild(self.separator)
-        self.parent.addChild(self.switch)
+        self.switch.addChild(self.node)
 
         self.on(self.switch)
+
+    def build_selected_group(self):
+        """
+        Build the SoGroup node which provides transformation for the
+        SoMarkerSet and SoLineSet that represents the selected geometry
+        """
+
+        #create list of each coordinate duplicated
+        coordinates = []
+
+        if not self.trackers['selected']:
+            return None
+
+        count = len(self.trackers['selected']) - 1
+
+        for _i, _v in enumerate(self.trackers['selected']):
+
+            _c = list(_v.get())
+
+            coordinates.append(_c)
+
+            if _i == 0 or _i == count:
+                continue
+
+            coordinates.append(_c)
+
+        count = len(coordinates)
+
+        verts = [2]*int(count/2)
+
+        coord = coin.SoCoordinate3()
+
+        print('\n\t----> coords: ', coordinates, '\n\tcount: ', count)
+
+        coord.point.setValues(0, count, coordinates)
+
+        marker = coin.SoMarkerSet()
+
+        line = coin.SoLineSet()
+        line.numVertices.setValues(verts)
+
+        #build node and add children
+        group = coin.SoGroup()
+        group.addChild(self.transform)
+        group.addChild(coord)
+        group.addChild(marker)
+        group.addChild(line)
+
+        return group
+
+    def build_connector_group(self):
+        """
+        Build the SoGroup node which provides the connecting SoLineSet
+        geometry to the geometry which is not being selected / dragged
+        """
+
+        trackers = [self.trackers['start'],
+                    self.trackers['picked'],
+                    self.trackers['end']
+                      ]
+
+        verts = []
+
+        if trackers[0]:
+            verts.append(2)
+
+        if trackers[2]:
+            verts.append(2)
+
+        #abort if we don't have at least two coordinates defined
+        if len([_c for _c in trackers if _c]) < 2:
+            return None
+
+        count = len(trackers) - 1
+
+        coordinates = []
+
+        #replace None values
+        for _i, _v in enumerate(trackers):
+
+            _c = list(_v.get())
+
+            coordinates.append(_c)
+
+            if _i == 0 or _i == count:
+                continue
+
+            coordinates.append(_c)
+
+        coord = coin.SoCoordinate3()
+        coord.point.setValues(0, len(coordinates), coordinates)
+
+        marker = coin.SoMarkerSet()
+
+        line = coin.SoLineSet()
+
+        line.numVertices.setValues(verts)
+
+        group = coin.SoGroup()
+        group.addChild(coord)
+        group.addChild(marker)
+        group.addChild(line)
+
+        return group
+
+    def build_tracker_dict(self, trackers, selected):
+        """
+        Build the dictionary of trackers
+        """
+
+        #TODO: this should not be necessary - dict should only be node trackers
+        #at the start.
+        sel_list = [_v.name for _v in selected]
+        sel_list.sort()
+
+        key_list = list(trackers.keys())
+        key_list.sort()
+
+        _start = int(sel_list[0].split('-')[1])
+        _end = int(sel_list[-1].split('-')[1])
+
+        #if our starting node isn't the first, add the previous node
+        if _start > 0:
+            self.trackers['start'] = trackers[key_list[_start - 1]]
+
+        #if our ending node isn't the last, add the next node
+        if _end < len(trackers) - 1:
+            self.trackers['end'] = trackers[key_list[_end + 1]]
 
     def update(self, position):
         """
@@ -117,7 +216,7 @@ class DragTracker(BaseTracker):
         Update the placement
         """
 
-        _pos = tuple(list(position.sub(self.datum)))
+        _pos = tuple(position.sub(self.datum))
         self.transform.translation.setValue(_pos)
 
     def get_placement(self):

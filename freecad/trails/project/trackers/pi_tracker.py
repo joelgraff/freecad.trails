@@ -168,40 +168,49 @@ class PiTracker(BaseTracker):
 
         if component in self.gui_action['selected']:
 
-            picked_node = self.node_trackers[component]
             names = self.names[:]
             names[2] = 'DRAG_TRACKER'
 
-            children = []
+            _selected = list(self.gui_action['selected'].values())
 
-            for _node in self.gui_action['selected'].values():
-                children.append(_node)
+            for _node in _selected:
                 todo.delay(self.node.removeChild, _node.node)
 
-            self.gui_action['drag'] = \
-                DragTracker(names, children, self.node, picked_node)
+            _drag = DragTracker(
+                names, self.node_trackers, _selected, component
+            )
+
+            todo.delay(self.insert_node, _drag.switch)
 
     def end_drag(self):
         """
         Teardown for dragging
         """
 
-        translation = self.gui_action['drag'].get_placement()
+        _drag = self.gui['drag']
 
-        self.gui_action['drag'].finalize()
+        if not _drag:
+            return
+
+        translation = _drag.get_placement()
+
+        _drag.finalize()
         self.gui_action['drag'] = None
 
-        for _node in self.gui_action['selected'].values():
-            _node.update(_node.get().add(translation))
-            todo.delay(self.node.addChild, _node.node)
+        todo.delay(self.remove_node, _drag.switch)
 
     def on_drag(self, pos):
         """
         Drag operation in view
         """
 
+        _drag = self.gui_action['drag']
+
+        if not _drag:
+            return
+
         world_pos = self.view.getPoint(pos)
-        self.gui_action['drag'].update_placement(world_pos.sub(self.datum))
+        _drag.update_placement(world_pos.sub(self.datum))
 
     def on_selection(self, arg, pos):
         """
