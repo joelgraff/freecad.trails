@@ -509,3 +509,25 @@ class AlignmentModel:
             return arc.get_ortho_vector(curve, distance, side)
 
         return None
+
+    def get_tangent(self, station):
+        """
+        Return the tangent vector to a station along the alignment,
+        directed in the direction of the curve
+        """
+
+        curve = self.locate_curve(station)
+        int_sta = self.get_internal_station(station)
+
+        if (curve is None) or (int_sta is None):
+            return None
+
+        distance = int_sta - curve['InternalStation'][0]
+
+        if curve['Type'] == 'Line':
+            return line.get_tangent_vector(curve, distance)
+
+        if curve['Type'] == 'Curve':
+            return arc.get_tangent_vector(curve, distance)
+
+        return None

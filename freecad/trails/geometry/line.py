@@ -101,6 +101,25 @@ def get_coordinate(start, bearing, distance):
 
     return start.add(_vec.multiply(distance))
 
+def get_tangent_vector(line_dict, distance):
+    """
+    Return the directed tangent vector
+    """
+
+    _start = line_dict('Start')
+    _end = line_dict['End']
+
+    if _start is None or _end is None:
+        return None, None
+
+    _slope = App.Vector(-(_end.y - _start.y), _end.x - _start.x).normalize()
+
+    _coord = get_coordinate(
+        line_dict['Start'], line_dict['BearingIn'], distance
+        ).add(_slope)
+
+    return _coord, _slope
+
 def get_ortho_vector(line_dict, distance, side=''):
     """
     Return the orthogonal vector pointing toward the indicated side at the
