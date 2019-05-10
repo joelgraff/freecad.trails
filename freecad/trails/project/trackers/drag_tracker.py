@@ -45,13 +45,16 @@ class DragTracker(BaseTracker):
         selected - dict of selected trackers
         picked_name - name of tracker picked at start of drag
         """
+
         self.trackers = {
             'start': None,
-            'picked': trackers[picked_name],
-            'selected': selected,
+            'selected': self.sort_selected(selected),
             'end': None
         }
 
+        picked = trackers[picked_name]
+
+        self.connector_coord = None
         self.switch = coin.SoSwitch()
         self.transform = coin.SoTransform()
         self.transform.translation.setValue([0.0, 0.0, 0.0])
@@ -68,13 +71,30 @@ class DragTracker(BaseTracker):
             #False
         )
 
-        self.datum = Vector(
-            self.trackers['picked'].coord.point.getValues()[0].getValue()
-        )
+        self.datum = Vector(picked.coord.point.getValues()[0].getValue())
 
         self.switch.addChild(self.node)
 
         self.on(self.switch)
+
+    def sort_selected(self, selected):
+        """
+        Iterate the selected group of trackers and ensure they are
+        in the proper order
+        """
+
+        name_list = [_v.name for _v in selected]
+        name_list.sort()
+
+        result = []
+
+        for _n in name_list:
+            for _t in selected:
+                if _t.name == _n:
+                    result.append(_t)
+                    break
+
+        return result
 
     def build_selected_group(self):
         """
@@ -131,8 +151,9 @@ class DragTracker(BaseTracker):
         geometry to the geometry which is not being selected / dragged
         """
 
+
         trackers = [self.trackers['start'],
-                    self.trackers['picked'],
+                    self.trackers['selected'][0],
                     self.trackers['end']
                       ]
 
@@ -209,6 +230,7 @@ class DragTracker(BaseTracker):
         Update the transform with the passed position
         """
 
+        self.connector_coord.point.setValue(tuple(position))
         self.transform.translation.setValue(tuple(position))
 
     def update_placement(self, position):

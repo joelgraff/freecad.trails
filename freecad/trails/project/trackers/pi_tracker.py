@@ -180,6 +180,8 @@ class PiTracker(BaseTracker):
                 names, self.node_trackers, _selected, component
             )
 
+            self.gui_action['drag'] = _drag
+
             todo.delay(self.insert_node, _drag.switch)
 
     def end_drag(self):
@@ -187,17 +189,16 @@ class PiTracker(BaseTracker):
         Teardown for dragging
         """
 
-        _drag = self.gui['drag']
+        _drag = self.gui_action['drag']
 
         if not _drag:
             return
 
         translation = _drag.get_placement()
 
-        _drag.finalize()
         self.gui_action['drag'] = None
 
-        todo.delay(self.remove_node, _drag.switch)
+        self.remove_node(_drag.switch)
 
     def on_drag(self, pos):
         """
@@ -210,7 +211,8 @@ class PiTracker(BaseTracker):
             return
 
         world_pos = self.view.getPoint(pos)
-        _drag.update_placement(world_pos.sub(self.datum))
+
+        _drag.update(world_pos.sub(self.datum))
 
     def on_selection(self, arg, pos):
         """
