@@ -106,7 +106,7 @@ def get_tangent_vector(line_dict, distance):
     Return the directed tangent vector
     """
 
-    _start = line_dict('Start')
+    _start = line_dict['Start']
     _end = line_dict['End']
 
     if _start is None or _end is None:
