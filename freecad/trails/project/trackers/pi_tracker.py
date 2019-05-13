@@ -75,7 +75,7 @@ class PiTracker(BaseTracker):
                          children=child_nodes, select=False, group=True)
 
         for _tracker in {**self.node_trackers, **self.wire_trackers}.values():
-            self.node.addChild(_tracker.node)
+            self.insert_child(_tracker.node)
 
         self.color.rgb = (0.0, 0.0, 1.0)
 
@@ -182,7 +182,7 @@ class PiTracker(BaseTracker):
 
             self.gui_action['drag'] = _drag
 
-            todo.delay(self.insert_node, _drag.switch)
+            self.insert_child(_drag.switch)
 
     def end_drag(self):
         """
@@ -194,11 +194,12 @@ class PiTracker(BaseTracker):
         if not _drag:
             return
 
-        translation = _drag.get_placement()
-
         self.gui_action['drag'] = None
 
-        self.remove_node(_drag.switch)
+        todo.delay(self.remove_child, _drag.switch)
+
+        for _node in list(self.gui_action['selected'].values()):
+            self.insert_child(_node.node)
 
     def on_drag(self, pos):
         """

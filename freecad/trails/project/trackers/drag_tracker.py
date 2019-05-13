@@ -54,7 +54,11 @@ class DragTracker(BaseTracker):
 
         picked = trackers[picked_name]
 
-        self.connector_coord = None
+        self.connector_coords = coin.SoCoordinate3()
+        
+        for _i in range(0, 3):
+            self.connector_coords.point.set1Value(_i, (0.0, 0.0, 0.0))
+
         self.switch = coin.SoSwitch()
         self.transform = coin.SoTransform()
         self.transform.translation.setValue([0.0, 0.0, 0.0])
@@ -127,8 +131,6 @@ class DragTracker(BaseTracker):
 
         coord = coin.SoCoordinate3()
 
-        print('\n\t----> coords: ', coordinates, '\n\tcount: ', count)
-
         coord.point.setValues(0, count, coordinates)
 
         marker = coin.SoMarkerSet()
@@ -171,22 +173,21 @@ class DragTracker(BaseTracker):
 
         count = len(trackers) - 1
 
-        coordinates = []
+        coords = []
 
-        #replace None values
+        #build list where every point is duplicated except the first and last
         for _i, _v in enumerate(trackers):
 
             _c = list(_v.get())
+            coords.append(_c)
 
-            coordinates.append(_c)
-
-            if _i == 0 or _i == count:
+            if _i in (0, count):
                 continue
 
-            coordinates.append(_c)
+            coords.append(_c)
 
-        coord = coin.SoCoordinate3()
-        coord.point.setValues(0, len(coordinates), coordinates)
+        for _i, _c in enumerate(coords):
+            self.connector_coords.point.set1Value(_i, _c)
 
         marker = coin.SoMarkerSet()
 
@@ -195,7 +196,7 @@ class DragTracker(BaseTracker):
         line.numVertices.setValues(verts)
 
         group = coin.SoGroup()
-        group.addChild(coord)
+        group.addChild(self.connector_coords)
         group.addChild(marker)
         group.addChild(line)
 
@@ -230,7 +231,8 @@ class DragTracker(BaseTracker):
         Update the transform with the passed position
         """
 
-        self.connector_coord.point.setValue(tuple(position))
+        self.connector_coords.point.set1Value(1, tuple(position))
+        self.connector_coords.point.set1Value(2, tuple(position))
         self.transform.translation.setValue(tuple(position))
 
     def update_placement(self, position):

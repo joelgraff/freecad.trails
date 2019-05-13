@@ -92,42 +92,51 @@ class BaseTracker:
         Convenince wrapper for _insert_node
         """
 
-        todo.delay(self._insert_node, node)
+        todo.delay(Draft.get3DView().getSceneGraph().addChild, node)
 
     def remove_node(self, node):
         """
         Convenience wrapper for _remove_node
         """
 
-        todo.delay(self._remove_node, node)
+        if Draft.get3DView().getSceneGraph().findChild(node) >= 0:
+            todo.delay(Draft.get3DView().getSceneGraph().removeChild, node)
 
-    def _insert_node(self, node, ontop=False):
+    def insert_child(self, node):
+        """
+        Convenience wrapper for _insert_child
+        """
+
+        todo.delay(self.node.addChild, node)
+
+    def remove_child(self, node):
+        """
+        Convenience wrapper for _remove_child
+        """
+
+        if self.node.findChild(node) >= 0:
+            todo.delay(self.node.removeChild, node)
+
+    def _insert_node(self, node, parent, ontop=False):
         """
         Insert node into the scene graph.
         Must not be called from an event handler (or other scene graph
         traversal).
         """
 
-        _sg = Draft.get3DView().getSceneGraph()
-
         if ontop:
-            _sg.insertChild(node, 0)
+            parent.insertChild(node, 0)
         else:
-            _sg.addChild(node)
+            parent.addChild(node)
 
-    def _remove_node(self, node):
+    def _remove_node(self, parent, node):
         """
         Remove self.switch from the scene graph.
         Must not be called during scene graph traversal).
         """
 
-        _sg = Draft.get3DView().getSceneGraph()
-
-        print('try remove node ', node, '\n\t', _sg.findChild(node))
-
-        if _sg.findChild(node) >= 0:
-            print('remove node ', node)
-            _sg.removeChild(node)
+        if parent.findChild(node) >= 0:
+            parent.removeChild(node)
 
     def adjustTracker(self, node=None, to_top=True):
         """
