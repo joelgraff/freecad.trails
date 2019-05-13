@@ -201,6 +201,15 @@ class PiTracker(BaseTracker):
         for _node in list(self.gui_action['selected'].values()):
             self.insert_child(_node.node)
 
+        search_act = coin.SoSearchAction
+        search_act.setNode(_node.node) #<--- where does the transform live?
+        so_path = search_act.getPath()
+        vpr = self.view.getViewer().getSoRenderManager().getViewportRegion()
+        mat_act = coin.SoGetMatrixAction(vpr)
+        mat_act.apply(so_path)
+        transform = mat_act.getMatrix()
+        #multiply by coordinate matrix and done...?
+
     def on_drag(self, pos):
         """
         Drag operation in view
