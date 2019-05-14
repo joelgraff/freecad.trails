@@ -37,7 +37,7 @@ class DragTracker(BaseTracker):
     Tracker for dragging operations
     """
 
-    def __init__(self, names, trackers, selected, picked_name):
+    def __init__(self, view, names, trackers, selected, picked_name):
         """
         Constructor
         names - list of names for BaseTracker
@@ -55,7 +55,8 @@ class DragTracker(BaseTracker):
         picked = trackers[picked_name]
 
         self.connector_coords = coin.SoCoordinate3()
-        
+        self.view = view
+
         for _i in range(0, 3):
             self.connector_coords.point.set1Value(_i, (0.0, 0.0, 0.0))
 
@@ -67,19 +68,49 @@ class DragTracker(BaseTracker):
         self.build_tracker_dict(trackers, selected)
 
         self.connector_group = self.build_connector_group()
-
         self.selected_group = self.build_selected_group()
 
         super().__init__(
-            names, [self.connector_group], False #, self.selected_group],
-            #False
+            names, [self.connector_group], False #, self.selected_group], False
         )
+
+        x = self.connector_group.getChildren()
+        coord = x.get(0)
+
+        print(coord.point.getValues()[0].getValue())
+        print(coord.point.getValues()[1].getValue())
+        print(coord.point.getValues()[2].getValue())
 
         self.datum = Vector(picked.coord.point.getValues()[0].getValue())
 
         self.switch.addChild(self.node)
 
         self.on(self.switch)
+
+    def get_transformed_coordinates(self):
+        """
+        Return the transformed coordinates of the selected nodes based on the
+        transformations applied by the drag tracker
+        """
+
+        vpr = self.view.getViewer().getSoRenderManager().getViewportRegion()
+
+        search_act = coin.SoSearchAction()
+        mat_act = coin.SoGetMatrixAction(vpr)
+
+        _sel_coords = self.selected_group.getChild(1)
+        search_act.setNode(_sel_coords)
+
+        search_act.apply(self.selected_group)
+        mat_act.apply(search_act.getPath())
+
+        _xf = mat_act.getMatrix()
+
+        _coords = [
+            _v.getValue() + (1.0,) for _v in _sel_coords.point.getValues()
+        ]
+
+        return [_xf.multVecMatrix(coin.SbVec4f(_v)) for _v in _coords]
 
     def sort_selected(self, selected):
         """
@@ -153,40 +184,42 @@ class DragTracker(BaseTracker):
         geometry to the geometry which is not being selected / dragged
         """
 
-
         trackers = [self.trackers['start'],
                     self.trackers['selected'][0],
                     self.trackers['end']
-                      ]
+                   ]
 
-        verts = []
+
+        print (self.trackers)
+        for _t in self.trackers['selected']:
+            print(_t.name)
+
+        print(trackers)
+
+
+        verts = [1]
 
         if trackers[0]:
-            verts.append(2)
+            verts.insert(0, 0)
 
         if trackers[2]:
             verts.append(2)
 
+        print(verts)
+        #remove none types
+        trackers = [_c for _c in trackers if _c]
+
         #abort if we don't have at least two coordinates defined
-        if len([_c for _c in trackers if _c]) < 2:
+        if len(trackers) < 2:
             return None
 
         count = len(trackers) - 1
 
-        coords = []
-
-        #build list where every point is duplicated except the first and last
+        #build list of coordinates
         for _i, _v in enumerate(trackers):
 
             _c = list(_v.get())
-            coords.append(_c)
-
-            if _i in (0, count):
-                continue
-
-            coords.append(_c)
-
-        for _i, _c in enumerate(coords):
+            print('adding node at ', _c)
             self.connector_coords.point.set1Value(_i, _c)
 
         marker = coin.SoMarkerSet()
@@ -233,14 +266,14 @@ class DragTracker(BaseTracker):
 
         self.connector_coords.point.set1Value(1, tuple(position))
         self.connector_coords.point.set1Value(2, tuple(position))
-        self.transform.translation.setValue(tuple(position))
+        self.transform.translation.setValue(tuple(position.sub(self.datum)))
 
     def update_placement(self, position):
         """
         Update the placement
         """
 
-        _pos = tuple(position.sub(self.datum))
+        _pos = tuple(position) #.sub(self.datum))
         self.transform.translation.setValue(_pos)
 
     def get_placement(self):

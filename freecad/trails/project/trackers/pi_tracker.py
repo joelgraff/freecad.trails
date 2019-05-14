@@ -27,6 +27,8 @@ Customized wire tracker for PI alignments
 from pivy import coin
 
 from FreeCAD import Vector
+
+import Draft
 import DraftTools
 
 from DraftGui import todo
@@ -166,23 +168,24 @@ class PiTracker(BaseTracker):
 
         component = info['Component'].split('.')[0]
 
-        if component in self.gui_action['selected']:
+        if not component in self.gui_action['selected']:
+            return
 
-            names = self.names[:]
-            names[2] = 'DRAG_TRACKER'
+        names = self.names[:]
+        names[2] = 'DRAG_TRACKER'
 
-            _selected = list(self.gui_action['selected'].values())
+        _selected = list(self.gui_action['selected'].values())
 
-            for _node in _selected:
-                todo.delay(self.node.removeChild, _node.node)
+        for _node in _selected:
+            todo.delay(self.node.removeChild, _node.node)
 
-            _drag = DragTracker(
-                names, self.node_trackers, _selected, component
-            )
+        _drag = DragTracker(
+            self.view, names, self.node_trackers, _selected, component
+        )
 
-            self.gui_action['drag'] = _drag
+        self.gui_action['drag'] = _drag
 
-            self.insert_child(_drag.switch)
+        self.insert_child(_drag.switch)
 
     def end_drag(self):
         """
@@ -198,17 +201,10 @@ class PiTracker(BaseTracker):
 
         todo.delay(self.remove_child, _drag.switch)
 
-        for _node in list(self.gui_action['selected'].values()):
-            self.insert_child(_node.node)
+        result = _drag.get_transformed_coordinates()
 
-        search_act = coin.SoSearchAction
-        search_act.setNode(_node.node) #<--- where does the transform live?
-        so_path = search_act.getPath()
-        vpr = self.view.getViewer().getSoRenderManager().getViewportRegion()
-        mat_act = coin.SoGetMatrixAction(vpr)
-        mat_act.apply(so_path)
-        transform = mat_act.getMatrix()
-        #multiply by coordinate matrix and done...?
+        for _v in result:
+            print(_v.getValue())
 
     def on_drag(self, pos):
         """
