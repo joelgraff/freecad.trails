@@ -76,6 +76,9 @@ class NodeTracker(BaseTracker):
         }
 
     def __init__(self, names, point, nodes=None):
+        """
+        Constructor
+        """
 
         if not nodes:
             nodes = []
@@ -132,6 +135,7 @@ class NodeTracker(BaseTracker):
         """
         Create the default node tracker
         """
+
         style = self.STYLE.DEFAULT
 
         marker = coin.SoMarkerSet()

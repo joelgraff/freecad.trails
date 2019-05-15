@@ -54,6 +54,7 @@ class DragTracker(BaseTracker):
 
         picked = trackers[picked_name]
 
+        self.start_idx = 1
         self.connector_coords = coin.SoCoordinate3()
         self.view = view
 
@@ -73,13 +74,6 @@ class DragTracker(BaseTracker):
         super().__init__(
             names, [self.connector_group], False #, self.selected_group], False
         )
-
-        x = self.connector_group.getChildren()
-        coord = x.get(0)
-
-        print(coord.point.getValues()[0].getValue())
-        print(coord.point.getValues()[1].getValue())
-        print(coord.point.getValues()[2].getValue())
 
         self.datum = Vector(picked.coord.point.getValues()[0].getValue())
 
@@ -189,23 +183,9 @@ class DragTracker(BaseTracker):
                     self.trackers['end']
                    ]
 
+        if not trackers[0]:
+            self.start_idx = 0
 
-        print (self.trackers)
-        for _t in self.trackers['selected']:
-            print(_t.name)
-
-        print(trackers)
-
-
-        verts = [1]
-
-        if trackers[0]:
-            verts.insert(0, 0)
-
-        if trackers[2]:
-            verts.append(2)
-
-        print(verts)
         #remove none types
         trackers = [_c for _c in trackers if _c]
 
@@ -213,20 +193,17 @@ class DragTracker(BaseTracker):
         if len(trackers) < 2:
             return None
 
-        count = len(trackers) - 1
-
         #build list of coordinates
         for _i, _v in enumerate(trackers):
 
             _c = list(_v.get())
-            print('adding node at ', _c)
             self.connector_coords.point.set1Value(_i, _c)
 
         marker = coin.SoMarkerSet()
 
         line = coin.SoLineSet()
 
-        line.numVertices.setValues(verts)
+        line.numVertices.setValue(len(trackers))
 
         group = coin.SoGroup()
         group.addChild(self.connector_coords)
@@ -251,22 +228,25 @@ class DragTracker(BaseTracker):
         _start = int(sel_list[0].split('-')[1])
         _end = int(sel_list[-1].split('-')[1])
 
+        print('\t--->sel_list = ', sel_list)
+        print('\t--->key_list = ', key_list)
+        print('\t--->trackers = ', trackers)
+
         #if our starting node isn't the first, add the previous node
         if _start > 0:
-            self.trackers['start'] = trackers[key_list[_start - 1]]
+            self.trackers['start'] = trackers['NODE-' + str(_start - 1)]
 
         #if our ending node isn't the last, add the next node
         if _end < len(trackers) - 1:
-            self.trackers['end'] = trackers[key_list[_end + 1]]
+            self.trackers['end'] = trackers['NODE-' + str(_end + 1)]
 
     def update(self, position):
         """
         Update the transform with the passed position
         """
 
-        self.connector_coords.point.set1Value(1, tuple(position))
-        self.connector_coords.point.set1Value(2, tuple(position))
-        self.transform.translation.setValue(tuple(position.sub(self.datum)))
+        self.connector_coords.point.set1Value(self.start_idx, tuple(position))
+        self.transform.translation.setValue(tuple(position))
 
     def update_placement(self, position):
         """
