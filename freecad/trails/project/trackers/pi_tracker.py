@@ -207,7 +207,7 @@ class PiTracker(BaseTracker):
             _node.update(result[_i])
             todo.delay(self.node.addChild, _node.node)
 
-    def on_drag(self, pos):
+    def on_drag(self, pos, rotate):
         """
         Drag operation in view
         """
@@ -217,9 +217,14 @@ class PiTracker(BaseTracker):
         if not _drag:
             return
 
-        world_pos = self.view.getPoint(pos)
+        vec = None
 
-        _drag.update(world_pos.sub(self.datum))
+        if rotate:
+            vec = Vector(pos + (0.0,))
+        else:
+            vec = self.view.getPoint(pos).sub(self.datum)
+
+        _drag.update(vec, rotate)
 
     def on_selection(self, arg, pos):
         """
@@ -282,7 +287,7 @@ class PiTracker(BaseTracker):
         else:
 
             if self.gui_action['drag']:
-                self.on_drag(_p)
+                self.on_drag(_p, rotate=arg['AltDown'])
 
             else:
                 self.start_drag(arg)

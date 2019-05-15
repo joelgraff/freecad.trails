@@ -32,6 +32,8 @@ from DraftGui import todo
 
 from .base_tracker import BaseTracker
 
+from ..support.utils import Constants as C
+
 class DragTracker(BaseTracker):
     """
     Tracker for dragging operations
@@ -45,6 +47,11 @@ class DragTracker(BaseTracker):
         selected - dict of selected trackers
         picked_name - name of tracker picked at start of drag
         """
+
+        self.viewport = \
+            view.getViewer().getSoRenderManager().getViewportRegion()
+
+        screen_dims = self.viewport.getViewportSizePixels().getValue()
 
         self.nodes = {
             'connector': coin.SoGroup(),
@@ -62,11 +69,15 @@ class DragTracker(BaseTracker):
 
         self.datums = {
             'picked': _picked,
-            'start': _picked.sub(_sel0)
+            'start': _picked.sub(_sel0),
+            'screen area': screen_dims[0] * screen_dims[1] * 2.0,
+            'rotation': {
+                'center': None,
+                'ref_vec': Vector(),
+            },
         }
 
         self.start_idx = 1
-        self.view = view
 
         for _i in range(0, 3):
             self.nodes['connector coords'].point.set1Value(_i, (0.0, 0.0, 0.0))
@@ -89,10 +100,8 @@ class DragTracker(BaseTracker):
         transformations applied by the drag tracker
         """
 
-        vpr = self.view.getViewer().getSoRenderManager().getViewportRegion()
-
         search_act = coin.SoSearchAction()
-        mat_act = coin.SoGetMatrixAction(vpr)
+        mat_act = coin.SoGetMatrixAction(self.viewport)
 
         _sel_coords = self.nodes['selected'].getChild(1)
         search_act.setNode(_sel_coords)
@@ -227,17 +236,51 @@ class DragTracker(BaseTracker):
 
         return result
 
-    def update(self, position):
+    def update(self, vector, rotation=False):
         """
         Update the transform with the passed position
         """
 
+        datum = self.datums['rotation']
+        _ctr = datum['center']
+
+        if rotation:
+
+            _ref_vec = datum['ref_vec']
+
+            if not _ctr:
+                _ctr = self.trackers['selected'][0].get()
+                datum['center'] = _ctr
+
+                _ref_vec = vector.sub(_ctr)
+                datum['ref_vec'] = _ref_vec
+
+            _vec = vector.sub(_ctr)
+            _dir = _vec.cross(_ref_vec)
+
+            if _dir.z != 0:
+                _dir.z = _dir.z / abs(_dir.z)
+
+            _rot = _vec.getAngle(_ref_vec) * _dir.z
+
+            print(_rot, _vec, _ref_vec, _dir.z)
+            self.nodes['transform'].rotation =\
+                coin.SbRotation(coin.SbVec3f(0.0, 0.0, 1.0), _rot)
+
+            return
+
+        if _ctr:
+            self.datums['rotation'] = {
+                'center': None,
+                'ref_vec': Vector(),
+            }
+
         self.nodes['connector coords'].point.set1Value(
-            self.start_idx, tuple(position.sub(self.datums['start']))
+            self.start_idx, tuple(vector.sub(self.datums['start']))
         )
 
         self.nodes['transform'].translation.setValue(
-            tuple(position.sub(self.datums['picked']))
+            tuple(vector.sub(self.datums['picked']))
         )
 
     def update_placement(self, position):
