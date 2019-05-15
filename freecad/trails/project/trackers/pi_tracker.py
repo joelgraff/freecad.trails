@@ -185,7 +185,7 @@ class PiTracker(BaseTracker):
 
         self.gui_action['drag'] = _drag
 
-        self.insert_child(_drag.switch)
+        self.insert_child(_drag.nodes['switch'])
 
     def end_drag(self):
         """
@@ -199,12 +199,13 @@ class PiTracker(BaseTracker):
 
         self.gui_action['drag'] = None
 
-        todo.delay(self.remove_child, _drag.switch)
+        todo.delay(self.remove_child, _drag.nodes['switch'])
 
         result = _drag.get_transformed_coordinates()
 
-        for _v in result:
-            print(_v.getValue())
+        for _i, _node in enumerate(self.gui_action['selected'].values()):
+            _node.update(result[_i])
+            todo.delay(self.node.addChild, _node.node)
 
     def on_drag(self, pos):
         """

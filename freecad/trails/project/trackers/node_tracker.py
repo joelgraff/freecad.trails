@@ -182,7 +182,12 @@ class NodeTracker(BaseTracker):
         Update the coordinate position
         """
 
-        self.coord.point.setValue(tuple(coord))
+        _c = coord
+
+        if not isinstance(coord, tuple):
+            _c = tuple(_c)
+
+        self.coord.point.setValue(_c)
 
     def get(self):
         """
