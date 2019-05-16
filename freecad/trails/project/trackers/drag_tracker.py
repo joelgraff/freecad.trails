@@ -39,7 +39,7 @@ class DragTracker(BaseTracker):
     Tracker for dragging operations
     """
 
-    def __init__(self, view, names, trackers, selected, picked_name):
+    def __init__(self, view, names, trackers, selected, picked_name, datum):
         """
         Constructor
         names - list of names for BaseTracker
@@ -50,8 +50,6 @@ class DragTracker(BaseTracker):
 
         self.viewport = \
             view.getViewer().getSoRenderManager().getViewportRegion()
-
-        screen_dims = self.viewport.getViewportSizePixels().getValue()
 
         self.nodes = {
             'connector': coin.SoGroup(),
@@ -68,12 +66,13 @@ class DragTracker(BaseTracker):
         _sel0 = self.trackers['selected'][0].get()
 
         self.datums = {
+            'origin': datum,
             'picked': _picked,
             'start': _picked.sub(_sel0),
-            'screen area': screen_dims[0] * screen_dims[1] * 2.0,
             'rotation': {
                 'center': None,
-                'ref_vec': Vector(),
+                'ref_vec': None,
+                'angle': 0.0
             },
         }
 
@@ -83,8 +82,10 @@ class DragTracker(BaseTracker):
             self.nodes['connector coords'].point.set1Value(_i, (0.0, 0.0, 0.0))
 
         self.nodes['transform'].translation.setValue([0.0, 0.0, 0.0])
+
         self.build_connector_group()
         self.build_selected_group()
+        self.start_path = None
 
         super().__init__(names, [
             self.nodes['connector'], self.nodes['selected']
@@ -100,25 +101,37 @@ class DragTracker(BaseTracker):
         transformations applied by the drag tracker
         """
 
-        search_act = coin.SoSearchAction()
-        mat_act = coin.SoGetMatrixAction(self.viewport)
-
         _sel_coords = self.nodes['selected'].getChild(1)
-        search_act.setNode(_sel_coords)
-
-        search_act.apply(self.nodes['selected'])
-        mat_act.apply(search_act.getPath())
-
-        _xf = mat_act.getMatrix()
 
         _coords = [
             _v.getValue() + (1.0,) for _v in _sel_coords.point.getValues()
         ]
 
+        return self._transform_coordinates(_coords)
+
+    def _transform_coordinates(self, coords):
+        """
+        Transform the given set of coordinates using the active transformation
+        Coordinates must be a list of tuples
+        """
+
+        if not self.start_path:
+
+            search_act = coin.SoSearchAction()
+            search_act.setNode(self.nodes['selected'].getChild(1))
+            search_act.apply(self.nodes['selected'])
+
+            self.start_path = search_act.getPath()
+
+        mat_act = coin.SoGetMatrixAction(self.viewport)
+        mat_act.apply(self.start_path)
+
+        _xf = mat_act.getMatrix()
+
         #return only the first three coordinates of the resulting transforms
         return [
             _xf.multVecMatrix(coin.SbVec4f(_v)).getValue()[:3]\
-                for _v in _coords
+                for _v in coords
         ]
 
     def sort_selected(self, selected):
@@ -236,52 +249,81 @@ class DragTracker(BaseTracker):
 
         return result
 
-    def update(self, vector, rotation=False):
+    def drag_rotation (self, vector, modify):
         """
-        Update the transform with the passed position
+        Manage rotation during dragging
         """
 
         datum = self.datums['rotation']
+
         _ctr = datum['center']
+        _ref_vec = datum['ref_vec']
+        _angle = datum['angle']
+
+        if not _ctr:
+            _ctr = self.trackers['selected'][0].get()
+            datum['center'] = _ctr
+
+            _ref_vec = vector.sub(_ctr).normalize()
+            datum['ref_vec'] = _ref_vec
+
+            self.nodes['transform'].center = coin.SbVec3f(tuple(_ctr))
+
+        _scale = 1.0
+
+        if modify:
+            _scale = 0.1
+
+        _vec = vector.sub(_ctr).normalize()
+        _dir = _vec.cross(_ref_vec)
+
+        if _dir.z != 0:
+            _dir.z = -_dir.z / abs(_dir.z)
+
+        _rot = _angle + _vec.getAngle(_ref_vec) * _dir.z * _scale
+
+        datum['ref_vec'] = _vec
+        datum['angle'] = _rot
+
+        return coin.SbRotation(coin.SbVec3f(0.0, 0.0, 1.0), _rot)
+
+    def update(self, vector, rotation=False, modify=True):
+        """
+        Update the transform with the passed position
+        rotation - flag for drag rotations
+        modify - modify drag magnitudes
+        """
 
         if rotation:
 
-            _ref_vec = datum['ref_vec']
+            self.nodes['transform'].rotation = \
+                self.drag_rotation(vector, modify)
 
-            if not _ctr:
-                _ctr = self.trackers['selected'][0].get()
-                datum['center'] = _ctr
-
-                _ref_vec = vector.sub(_ctr)
-                datum['ref_vec'] = _ref_vec
-
-            _vec = vector.sub(_ctr)
-            _dir = _vec.cross(_ref_vec)
-
-            if _dir.z != 0:
-                _dir.z = _dir.z / abs(_dir.z)
-
-            _rot = _vec.getAngle(_ref_vec) * _dir.z
-
-            print(_rot, _vec, _ref_vec, _dir.z)
-            self.nodes['transform'].rotation =\
-                coin.SbRotation(coin.SbVec3f(0.0, 0.0, 1.0), _rot)
+            self.datums['trans_start'] = vector
 
             return
 
-        if _ctr:
-            self.datums['rotation'] = {
-                'center': None,
-                'ref_vec': Vector(),
-            }
+        #get the existing translation
+        _xf = self.nodes['transform'].translation.getValue()
 
-        self.nodes['connector coords'].point.set1Value(
-            self.start_idx, tuple(vector.sub(self.datums['start']))
+        #calculate the new trnaslation, which is the distance the mouse has
+        #moved from the previous position added to the existing translation
+        _xf = tuple(Vector(_xf).add(vector.sub(self.datums['trans_start'])))
+
+        #save the current mouse position as the next translation start
+        self.datums['trans_start'] = vector
+
+        #apply the updated translation
+        self.nodes['transform'].translation.setValue(_xf)
+
+        #update the position of the connector node to the translation position
+        _con = Vector(
+            self.nodes['connector coords'].point.getValues()[1].getValue()
         )
 
-        self.nodes['transform'].translation.setValue(
-            tuple(vector.sub(self.datums['picked']))
-        )
+        _con = _con.add(Vector(_xf))
+
+        self.nodes['connector coords'].point.set1Value(self.start_idx, tuple(_con))
 
     def update_placement(self, position):
         """
