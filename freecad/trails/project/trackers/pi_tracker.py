@@ -185,9 +185,11 @@ class PiTracker(BaseTracker):
         for _node in _selected.values():
             todo.delay(self.node.removeChild, _node.node)
 
-        _drag = DragTracker(
-            self.view, names, self.trackers['NODE'], list(_selected.keys()),
-            component, self.datum
+        _drag = DragTracker(self.view, names)
+
+        _drag.set_trackers(
+            self.trackers['NODE'], list(_selected.keys()), component,
+            self.datum
         )
 
         self.gui_action['drag'] = _drag

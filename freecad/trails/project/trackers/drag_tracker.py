@@ -28,8 +28,6 @@ from pivy import coin
 
 from FreeCAD import Vector
 
-from DraftGui import todo
-
 from .base_tracker import BaseTracker
 
 class DragTracker(BaseTracker):
@@ -37,13 +35,9 @@ class DragTracker(BaseTracker):
     Tracker for dragging operations
     """
 
-    def __init__(self, view, names, trackers, selected, picked_name, datum):
+    def __init__(self, view, names):
         """
         Constructor
-        names - list of names for BaseTracker
-        trackers - dict of all node trackers
-        selected - dict of selected trackers
-        picked_name - name of tracker picked at start of drag
         """
 
         self.viewport = \
@@ -55,29 +49,16 @@ class DragTracker(BaseTracker):
             'switch': coin.SoSwitch(),
             'transform': coin.SoTransform(),
         }
-
-        self.trackers = self.build_tracker_dict(trackers, selected)
-        self.trackers['picked'] = trackers[picked_name]
-
-        _p = self.trackers['picked'].get()
+        self.start_path = None
+        self.trackers = None
 
         self.datums = {
-            'origin': datum,
-            'picked': _p,
-            'start': _p.sub(self.trackers['selected'][0].get()),
-            'trans_start': _p,
-            'rotation': {
-                'center': None,
-                'ref_vec': None,
-                'angle': 0.0
-            },
+            _k: None for _k in ['origin', 'picked', 'start', 'trans_start']
         }
 
-        self.nodes['transform'].translation.setValue([0.0, 0.0, 0.0])
-
-        self.build_connector_group()
-        self.build_selected_group()
-        self.start_path = None
+        self.datums['rotation'] = {
+            'center': None, 'ref_vec': None, 'angle': 0.0
+        }
 
         super().__init__(names, [
             self.nodes['connector'], self.nodes['selected']
@@ -87,44 +68,58 @@ class DragTracker(BaseTracker):
 
         self.on(self.nodes['switch'])
 
+    def set_trackers(self, trackers, selected, picked, datum):
+        """
+        Set the trackes the drag tracker will use
+        """
+
+        self.build_tracker_dict(trackers, selected)
+        self.trackers['picked'] = trackers[picked]
+
+        _p = trackers[picked].get()
+
+        self.datums['origin'] = datum
+        self.datums['picked'] = _p
+        self.datums['start'] = _p.sub(self.trackers['selected'][0].get())
+        self.datums['trans_start'] = _p
+
+        self.nodes['transform'].translation.setValue([0.0, 0.0, 0.0])
+
+        self.build_connector_group()
+        self.build_selected_group()
+
     def get_transformed_coordinates(self):
         """
         Return the transformed coordinates of the selected nodes based on the
         transformations applied by the drag tracker
         """
 
-        _sel_coords = self.nodes['selected'].getChild(1)
+        _coords = self.nodes['selected'].getChild(1)
 
-        _coords = [
-            _v.getValue() + (1.0,) for _v in _sel_coords.point.getValues()
-        ]
-
-        return self._transform_coordinates(_coords)
-
-    def _transform_coordinates(self, coords):
-        """
-        Transform the given set of coordinates using the active transformation
-        Coordinates must be a list of tuples
-        """
-
+        #define the search path if not defined
         if not self.start_path:
 
-            search_act = coin.SoSearchAction()
-            search_act.setNode(self.nodes['selected'].getChild(1))
-            search_act.apply(self.nodes['selected'])
+            _search = coin.SoSearchAction()
+            _search.setNode(_coords)
+            _search.apply(self.nodes['selected'])
 
-            self.start_path = search_act.getPath()
+            self.start_path = _search.getPath()
 
-        mat_act = coin.SoGetMatrixAction(self.viewport)
-        mat_act.apply(self.start_path)
+        #get the matrix for the transformation
+        _matrix = coin.SoGetMatrixAction(self.viewport)
+        _matrix.apply(self.start_path)
 
-        _xf = mat_act.getMatrix()
+        _xf = _matrix.getMatrix()
 
-        #return only the first three coordinates of the resulting transforms
-        return [
-            _xf.multVecMatrix(coin.SbVec4f(_v)).getValue()[:3]\
-                for _v in coords
-        ]
+        #create the 4D vectors for the transformation
+        _vecs = [
+            coin.SbVec4f(_v.getValue() + (1.0,)) \
+                for _v in _coords.point.getValues()
+            ]
+
+        #multiply each coordinate by the transformation matrix and return
+        #a list of the transformed coordinates, omitting the fourth value
+        return [_xf.multVecMatrix(_v).getValue()[:3] for _v in _vecs]
 
     def build_selected_group(self):
         """
@@ -132,31 +127,29 @@ class DragTracker(BaseTracker):
         SoMarkerSet and SoLineSet that represents the selected geometry
         """
 
-        #create list of each coordinate duplicated
-        coordinates = []
+        _selected = self.trackers['selected']
 
-        if not self.trackers['selected']:
-            return None
+        if not _selected:
+            return
 
-        for _i, _v in enumerate(self.trackers['selected']):
-            coordinates.append(list(_v.get()))
+        #create coordinate node from list of selected node coordinates
+        _coord = coin.SoCoordinate3()
+        _count = len(_selected)
 
-        coord = coin.SoCoordinate3()
+        _coord.point.setValues(0, _count, [list(_v.get()) for _v in _selected])
 
-        count = len(coordinates)
-        coord.point.setValues(0, count, coordinates)
+        #create marker / line geometry
+        _marker = coin.SoMarkerSet()
 
-        marker = coin.SoMarkerSet()
-
-        line = coin.SoLineSet()
-        line.numVertices.setValue(count)
+        _line = coin.SoLineSet()
+        _line.numVertices.setValue(_count)
 
         #build node and add children
-        group = self.nodes['selected']
-        group.addChild(self.nodes['transform'])
-        group.addChild(coord)
-        group.addChild(marker)
-        group.addChild(line)
+        _group = self.nodes['selected']
+        _group.addChild(self.nodes['transform'])
+        _group.addChild(_coord)
+        _group.addChild(_marker)
+        _group.addChild(_line)
 
     def build_connector_group(self):
         """
@@ -175,11 +168,11 @@ class DragTracker(BaseTracker):
 
         #abort if we don't have at least two coordinates defined
         if len(_trackers) < 2:
-            return None
+            return
 
         #if end node is picked, reverse array so selected node is still 2nd
         if not self.trackers['start']:
-            _trackers=reversed(_trackers)
+            _trackers = reversed(_trackers)
 
         #build component nodes
         _marker = coin.SoMarkerSet()
@@ -203,17 +196,18 @@ class DragTracker(BaseTracker):
         Build the dictionary of trackers
         """
 
+        _selected = [trackers[_k] for _k in sorted(selected)]
+
         result = {
             'start': None,
-            'selected': [trackers[_k] for _k in sorted(selected)],
+            'selected': _selected,
             'end': None
         }
 
         trackers = dict(sorted(trackers.items()))
-        _sel = result['selected']
 
-        _start = int(_sel[0].name.split('-')[1])
-        _end = int(_sel[-1].name.split('-')[1])
+        _start = int(_selected[0].name.split('-')[1])
+        _end = int(_selected[-1].name.split('-')[1])
 
         #if our starting node isn't the first, add the previous node
         if _start > 0:
@@ -223,7 +217,7 @@ class DragTracker(BaseTracker):
         if _end < len(trackers) - 1:
             result['end'] = trackers['NODE-' + str(_end + 1)]
 
-        return result
+        self.trackers = result
 
     def drag_rotation(self, vector, modify):
         """
@@ -232,10 +226,17 @@ class DragTracker(BaseTracker):
 
         datum = self.datums['rotation']
 
+        #center is the first selected node
         _ctr = datum['center']
+
+        #ref_vec is the refernce vector from the previous mouse position
+        #used to calculate the change in rotation
         _ref_vec = datum['ref_vec']
+
+        #angle is the cumulative angle of rotation
         _angle = datum['angle']
 
+        #non-continuous rotation case
         if not _ctr:
             _ctr = self.trackers['selected'][0].get()
             datum['center'] = _ctr
@@ -245,22 +246,28 @@ class DragTracker(BaseTracker):
 
             self.nodes['transform'].center = coin.SbVec3f(tuple(_ctr))
 
+        #scale the rotation by one-tenth if shift is depressed
         _scale = 1.0
 
         if modify:
             _scale = 0.1
 
+        #calculate the direction of rotation between the current mouse position
+        #vector and the previous.  Normalize and reverse sign on direction.z
         _vec = vector.sub(_ctr).normalize()
-        _dir = _vec.cross(_ref_vec)
+        _dir = _vec.cross(_ref_vec).z
 
-        if _dir.z != 0:
-            _dir.z = -_dir.z / abs(_dir.z)
+        if _dir != 0:
+            _dir = -_dir / abs(_dir)
 
-        _rot = _angle + _vec.getAngle(_ref_vec) * _dir.z * _scale
+        #calculate the cumulatibe rotation
+        _rot = _angle + _vec.getAngle(_ref_vec) * _dir * _scale
 
+        #store the updated values
         datum['ref_vec'] = _vec
         datum['angle'] = _rot
 
+        #return the +z axis rotation for the transformation
         return coin.SbRotation(coin.SbVec3f(0.0, 0.0, 1.0), _rot)
 
     def update(self, vector, rotation=False, modify=True):
@@ -270,6 +277,7 @@ class DragTracker(BaseTracker):
         modify - modify drag magnitudes
         """
 
+        #quit after handling rotation case
         if rotation:
 
             self.nodes['transform'].rotation = \
@@ -297,13 +305,6 @@ class DragTracker(BaseTracker):
 
         self.nodes['connector'].getChild(0).point.set1Value(1, tuple(_con))
 
-    def get_placement(self):
-        """
-        Return the placement of the tracker
-        """
-
-        return Vector(self.nodes['transform'].translation.getValue())
-
     def finalize(self, node=None):
         """
         Shutdown
@@ -311,5 +312,3 @@ class DragTracker(BaseTracker):
 
         if not node:
             node = self.nodes['switch']
-
-        todo.delay(self.parent.removeChild, node)
