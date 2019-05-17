@@ -87,12 +87,17 @@ class BaseTracker:
         switch.whichChild = -1
         self.visible = False
 
-    def insert_node(self, node):
+    def insert_node(self, node, on_top = False):
         """
         Convenince wrapper for _insert_node
         """
 
-        todo.delay(Draft.get3DView().getSceneGraph().addChild, node)
+        _fn = Draft.get3DView().getSceneGraph().addChild
+
+        if on_top:
+            _fn = Draft.get3DView().getSceneGraph().insertChild
+
+        todo.delay(_fn, node)
 
     def remove_node(self, node):
         """
@@ -102,12 +107,18 @@ class BaseTracker:
         if Draft.get3DView().getSceneGraph().findChild(node) >= 0:
             todo.delay(Draft.get3DView().getSceneGraph().removeChild, node)
 
-    def insert_child(self, node):
+    def _insert(self, node):
+        self.node.insertChild(node, 0)
+
+    def insert_child(self, node, on_top=False):
         """
         Convenience wrapper for _insert_child
         """
 
-        todo.delay(self.node.addChild, node)
+        if on_top:
+            todo.delay(self._insert, node)
+        else:
+            todo.delay(self.node.addChild, node)
 
     def remove_child(self, node):
         """

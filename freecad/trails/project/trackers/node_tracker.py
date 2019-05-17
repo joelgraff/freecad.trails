@@ -104,7 +104,21 @@ class NodeTracker(BaseTracker):
         super().__init__(names=names, children=nodes + [self.switch],
                          select=False, group=True)
 
-        self.on(self.switch, 0)
+        self.on()
+
+    def off(self):
+        """
+        Override for base tracker function
+        """
+
+        super().off(self.switch)
+
+    def on(self):
+        """
+        Override for base tracker function
+        """
+
+        super().on(self.switch)
 
     def create_rollover(self, names):
         """

@@ -174,7 +174,7 @@ class DragTracker(BaseTracker):
 
         #if end node is picked, reverse array so selected node is still 2nd
         if not self.trackers['start']:
-            _trackers = reversed(_trackers)
+            _trackers = list(reversed(_trackers))
 
         #build component nodes
         _marker = coin.SoMarkerSet()

@@ -71,12 +71,15 @@ class PiTracker(BaseTracker):
         self.transform = coin.SoTransform()
         self.transform.translation.setValue([0.0, 0.0, 0.0])
 
-        self.set_points(points=points, doc=doc, obj_name=object_name)
+        _names = [doc.Name, object_name, node_name]
+
+        self.build_trackers(points, _names)
 
         child_nodes = [self.transform]
 
-        super().__init__(names=[doc.Name, object_name, node_name],
-                         children=child_nodes, select=False, group=True)
+        super().__init__(
+            names=_names, children=child_nodes, select=False, group=True
+        )
 
         for _tracker in {
                 **self.trackers['NODE'],
@@ -177,7 +180,7 @@ class PiTracker(BaseTracker):
         _selected = self.gui_action['selected']
 
         for _node in _selected.values():
-            todo.delay(self.node.removeChild, _node.node)
+            _node.off()
 
         _drag = DragTracker(self.view, self.names[:2])
 
@@ -204,9 +207,7 @@ class PiTracker(BaseTracker):
 
         result = _drag.get_transformed_coordinates()
 
-        for _i, _node in enumerate(self.gui_action['selected'].values()):
-            _node.update(result[_i])
-            todo.delay(self.node.addChild, _node.node)
+        self.update_points(result)
 
         self.gui_action['drag'] = None
 
@@ -238,7 +239,7 @@ class PiTracker(BaseTracker):
             self.deselect_geometry('all')
             return
 
-        #quit if this is not a previously-picked object
+        #quit if this is a previously-picked object
         component = info['Component'].split('.')[0]
 
         if component in self.gui_action['selected']:
@@ -247,8 +248,12 @@ class PiTracker(BaseTracker):
         #still here - deselect and select
         self.deselect_geometry('all')
 
-        _idx = int(component.split('-')[1])
+        _split = component.split('-')
+        _idx = int(_split[1])
         _max = _idx + 1
+
+        if (_split[0] == 'WIRE'):
+            _max += 1
 
         if arg['AltDown']:
             _max = len(self.trackers['NODE'])
@@ -258,6 +263,10 @@ class PiTracker(BaseTracker):
         for _node in list(self.trackers['NODE'].values())[_idx:_max]:
             _node.selected()
             self.gui_action['selected'][_node.name] = _node
+
+        if (_max - _idx) > 1:
+            for _wire in list(self.trackers['WIRE'].values())[_idx:_max -1]:
+                _wire.selected()
 
     def mouse_action(self, arg):
         """
@@ -321,7 +330,7 @@ class PiTracker(BaseTracker):
         component = info['Component']
 
         #abort if this isn't the geometry we're looking for
-        if not ('NODE-' in component) or ('WIRE-' in component):
+        if not (('NODE-' in component) or ('WIRE-' in component)):
             return None
 
         return info
@@ -366,26 +375,19 @@ class PiTracker(BaseTracker):
         Updates existing coordinates
         """
 
-        _prev = None
+        for _i, _node in enumerate(self.gui_action['selected'].values()):
+            _node.update(points[_i])
+            _node.on()
 
-        for _i, _pt in enumerate(points):
+        for _wire in self.trackers['WIRE'].values():
+            _wire.update()
 
-            for _node in self.trackers['NODE'].values():
-                _node.update(_pt)
-
-            if _prev:
-                self.trackers['WIRE'][_i - 1].update([_prev, _pt])
-
-            _prev = _pt
-
-    def set_points(self, points, doc=None, obj_name=None):
+    def build_trackers(self, points, names):
         """
-        Clears and rebuilds the wire and node trackers
+        Builds node and wire trackers
         """
 
         self.finalize_trackers()
-
-        prev_coord = None
 
         for _i, _pt in enumerate(points):
 
@@ -394,7 +396,7 @@ class PiTracker(BaseTracker):
 
             #build node trackers
             _tr = NodeTracker(
-                names=[doc.Name, obj_name, 'NODE-' + str(_i)],
+                names=names[:2] + ['NODE-' + str(_i)],
                 point=_pt
             )
 
@@ -402,20 +404,22 @@ class PiTracker(BaseTracker):
 
             self.trackers['NODE'][_tr.name] = _tr
 
-            if prev_coord:
+        _prev = None
 
+        for _i, _tr in enumerate(self.trackers['NODE'].values()):
+
+            if not _prev:
+                _prev = _tr
                 continue
-                points = [prev_coord, _pt]
 
-                _wt = WireTracker(
-                    names=[doc.Name, obj_name, 'WIRE-' + str(_i - 1)]
-                )
+            points = [_prev, _tr]
 
-                _wt.update_points(points)
+            _wt = WireTracker(
+                names=names[:2] + ['WIRE-' + str(_i - 1)], points=points)
 
-                self.trackers['WIRE'][_wt.name] = _wt
+            self.trackers['WIRE'][_wt.name] = _wt
 
-            prev_coord = _pt
+            _prev = _tr
 
     def update_placement(self, vector):
         """
