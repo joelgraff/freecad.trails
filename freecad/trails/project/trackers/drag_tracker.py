@@ -317,13 +317,11 @@ class DragTracker(BaseTracker):
         self.nodes['transform'].translation.setValue(_xf)
 
         #update the position of the connector node to the translation position
-        _con = Vector(
-            self.nodes['connector coords'].point.getValues()[1].getValue()
+        _con = self.trackers['selected'][0].get().add(Vector(_xf))
+
+        self.nodes['connector coords'].point.set1Value(
+            self.start_idx, tuple(_con)
         )
-
-        _con = _con.add(Vector(_xf))
-
-        self.nodes['connector coords'].point.set1Value(self.start_idx, tuple(_con))
 
     def update_placement(self, position):
         """
