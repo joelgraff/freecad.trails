@@ -125,9 +125,6 @@ class PiTracker(BaseTracker):
     def on_rollover(self, pos):
         """
         Manage element highlighting
-
-        TODO: combine all trackers into one dict to not have to detect
-              the tracker type in the name
         """
 
         info = self.view.getObjectInfo(pos)
@@ -177,15 +174,12 @@ class PiTracker(BaseTracker):
         if not component in self.gui_action['selected']:
             return
 
-        names = self.names[:]
-        names[2] = 'DRAG_TRACKER'
-
         _selected = self.gui_action['selected']
 
         for _node in _selected.values():
             todo.delay(self.node.removeChild, _node.node)
 
-        _drag = DragTracker(self.view, names)
+        _drag = DragTracker(self.view, self.names[:2])
 
         _drag.set_trackers(
             self.trackers['NODE'], list(_selected.keys()), component,
@@ -206,8 +200,6 @@ class PiTracker(BaseTracker):
         if not _drag:
             return
 
-        self.gui_action['drag'] = None
-
         todo.delay(self.remove_child, _drag.nodes['switch'])
 
         result = _drag.get_transformed_coordinates()
@@ -215,6 +207,8 @@ class PiTracker(BaseTracker):
         for _i, _node in enumerate(self.gui_action['selected'].values()):
             _node.update(result[_i])
             todo.delay(self.node.addChild, _node.node)
+
+        self.gui_action['drag'] = None
 
     def on_drag(self, pos, rotate, modify):
         """
@@ -408,7 +402,7 @@ class PiTracker(BaseTracker):
 
             self.trackers['NODE'][_tr.name] = _tr
 
-            if not prev_coord is None:
+            if prev_coord:
 
                 continue
                 points = [prev_coord, _pt]

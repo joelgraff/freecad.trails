@@ -60,6 +60,8 @@ class DragTracker(BaseTracker):
             'center': None, 'ref_vec': None, 'angle': 0.0
         }
 
+        names.append('DRAG TRACKER')
+
         super().__init__(names, [
             self.nodes['connector'], self.nodes['selected']
         ], False)
