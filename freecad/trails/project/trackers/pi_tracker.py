@@ -28,7 +28,6 @@ from pivy import coin
 
 from FreeCAD import Vector
 
-import Draft
 import DraftTools
 
 from DraftGui import todo
@@ -59,8 +58,11 @@ class PiTracker(BaseTracker):
             'selected': {},
         }
 
-        self.node_trackers = {}
-        self.wire_trackers = {}
+        self.trackers = {
+            'NODE': {},
+            'WIRE': {},
+        }
+
         self.callbacks = []
         self.mouse = MouseState()
         self.datum = Vector()
@@ -76,7 +78,11 @@ class PiTracker(BaseTracker):
         super().__init__(names=[doc.Name, object_name, node_name],
                          children=child_nodes, select=False, group=True)
 
-        for _tracker in {**self.node_trackers, **self.wire_trackers}.values():
+        for _tracker in {
+                **self.trackers['NODE'],
+                **self.trackers['WIRE']
+            }.values():
+
             self.insert_child(_tracker.node)
 
         self.color.rgb = (0.0, 0.0, 1.0)
@@ -141,17 +147,17 @@ class PiTracker(BaseTracker):
 
         component = info['Component'].split('.')[0]
 
-        if 'NODE' in component:
+        _tracker = self.trackers['NODE'].get(component)
+
+        if _tracker:
 
             #unhighlight existing node
             if roll_node and roll_node.name != component:
                 roll_node.switch.whichChild = 0
 
-            #highlight new nodes
-            roll_node = self.node_trackers[component]
-            roll_node.switch.whichChild = 1
+            _tracker.switch.whichChild = 1
 
-            self.gui_action['rollover'] = roll_node
+            self.gui_action['rollover'] = _tracker
 
     def start_drag(self, arg):
         """
@@ -174,13 +180,14 @@ class PiTracker(BaseTracker):
         names = self.names[:]
         names[2] = 'DRAG_TRACKER'
 
-        _selected = list(self.gui_action['selected'].values())
+        _selected = self.gui_action['selected']
 
-        for _node in _selected:
+        for _node in _selected.values():
             todo.delay(self.node.removeChild, _node.node)
 
         _drag = DragTracker(
-            self.view, names, self.node_trackers, _selected, component, self.datum
+            self.view, names, self.trackers['NODE'], list(_selected.keys()),
+            component, self.datum
         )
 
         self.gui_action['drag'] = _drag
@@ -248,14 +255,11 @@ class PiTracker(BaseTracker):
         _max = _idx + 1
 
         if arg['AltDown']:
-            _max = len(self.node_trackers)
-
-        nodes = \
-        [self.node_trackers['NODE-' + str(_x)] for _x in range(_idx, _max)]
+            _max = len(self.trackers['NODE'])
 
         self.gui_action['selected'] = {}
 
-        for _node in nodes:
+        for _node in list(self.trackers['NODE'].values())[_idx:_max]:
             _node.selected()
             self.gui_action['selected'][_node.name] = _node
 
@@ -370,11 +374,11 @@ class PiTracker(BaseTracker):
 
         for _i, _pt in enumerate(points):
 
-            for _node in self.node_trackers:
+            for _node in self.trackers['NODE'].values():
                 _node.update(_pt)
 
             if _prev:
-                self.wire_trackers[_i - 1].update([_prev, _pt])
+                self.trackers['WIRE'][_i - 1].update([_prev, _pt])
 
             _prev = _pt
 
@@ -400,7 +404,7 @@ class PiTracker(BaseTracker):
 
             _tr.update(_pt)
 
-            self.node_trackers[_tr.name] = _tr
+            self.trackers['NODE'][_tr.name] = _tr
 
             if not prev_coord is None:
 
@@ -413,7 +417,7 @@ class PiTracker(BaseTracker):
 
                 _wt.update_points(points)
 
-                self.wire_trackers[_wt.name] = _wt
+                self.trackers['WIRE'][_wt.name] = _wt
 
             prev_coord = _pt
 
@@ -429,19 +433,14 @@ class PiTracker(BaseTracker):
         Destroy existing trackers
         """
 
-        if self.node_trackers:
+        if self.trackers['NODE'] or self.trackers['WIRE']:
 
-            for _tracker in self.node_trackers.values():
-                _tracker.finalize()
+            for _grp in self.trackers.values():
 
-            self.node_trackers.clear()
+                for _tracker in _grp.values():
+                    _tracker.finalize()
 
-        if self.wire_trackers:
-
-            for _tracker in self.wire_trackers.values():
-                _tracker.finalize()
-
-            self.wire_trackers.clear()
+            self.trackers.clear()
 
     def finalize(self, node=None):
         """

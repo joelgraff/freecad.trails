@@ -80,6 +80,7 @@ class NodeTracker(BaseTracker):
         Constructor
         """
 
+        self.type = 'NODE'
         if not nodes:
             nodes = []
 

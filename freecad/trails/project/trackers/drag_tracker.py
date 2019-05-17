@@ -32,8 +32,6 @@ from DraftGui import todo
 
 from .base_tracker import BaseTracker
 
-from ..support.utils import Constants as C
-
 class DragTracker(BaseTracker):
     """
     Tracker for dragging operations
@@ -56,30 +54,24 @@ class DragTracker(BaseTracker):
             'selected': coin.SoGroup(),
             'switch': coin.SoSwitch(),
             'transform': coin.SoTransform(),
-            'connector coords': coin.SoCoordinate3()
         }
 
         self.trackers = self.build_tracker_dict(trackers, selected)
         self.trackers['picked'] = trackers[picked_name]
 
-        _picked = self.trackers['picked'].get()
-        _sel0 = self.trackers['selected'][0].get()
+        _p = self.trackers['picked'].get()
 
         self.datums = {
             'origin': datum,
-            'picked': _picked,
-            'start': _picked.sub(_sel0),
+            'picked': _p,
+            'start': _p.sub(self.trackers['selected'][0].get()),
+            'trans_start': _p,
             'rotation': {
                 'center': None,
                 'ref_vec': None,
                 'angle': 0.0
             },
         }
-
-        self.start_idx = 1
-
-        for _i in range(0, 3):
-            self.nodes['connector coords'].point.set1Value(_i, (0.0, 0.0, 0.0))
 
         self.nodes['transform'].translation.setValue([0.0, 0.0, 0.0])
 
@@ -134,25 +126,6 @@ class DragTracker(BaseTracker):
                 for _v in coords
         ]
 
-    def sort_selected(self, selected):
-        """
-        Iterate the selected group of trackers and ensure they are
-        in the proper order
-        """
-
-        name_list = [_v.name for _v in selected]
-        name_list.sort()
-
-        result = []
-
-        for _n in name_list:
-            for _t in selected:
-                if _t.name == _n:
-                    result.append(_t)
-                    break
-
-        return result
-
     def build_selected_group(self):
         """
         Build the SoGroup node which provides transformation for the
@@ -191,36 +164,39 @@ class DragTracker(BaseTracker):
         geometry to the geometry which is not being selected / dragged
         """
 
-        trackers = [self.trackers['start'],
-                    self.trackers['selected'][0],
-                    self.trackers['end']
-                   ]
-
-        if not self.trackers['start']:
-            self.start_idx = 0
-
-        #remove none types
-        trackers = [_c for _c in trackers if _c]
+        #select only the valid nodes among three
+        _trackers = [
+            _c for _c in [
+                self.trackers['start'],
+                self.trackers['selected'][0],
+                self.trackers['end']
+            ] if _c
+        ]
 
         #abort if we don't have at least two coordinates defined
-        if len(trackers) < 2:
+        if len(_trackers) < 2:
             return None
 
-        #build list of coordinates
-        for _i, _v in enumerate(trackers):
+        #if end node is picked, reverse array so selected node is still 2nd
+        if not self.trackers['start']:
+            _trackers=reversed(_trackers)
 
-            _c = list(_v.get())
-            self.nodes['connector coords'].point.set1Value(_i, _c)
+        #build component nodes
+        _marker = coin.SoMarkerSet()
 
-        marker = coin.SoMarkerSet()
+        _line = coin.SoLineSet()
+        _line.numVertices.setValue(len(_trackers))
 
-        line = coin.SoLineSet()
-        line.numVertices.setValue(len(trackers))
+        _coord = coin.SoCoordinate3()
 
+        for _i, _v in enumerate(_trackers):
+            _coord.point.set1Value(_i, tuple(_v.get()))
+
+        #build the group node with coordinates, markers and lines
         group = self.nodes['connector']
-        group.addChild(self.nodes['connector coords'])
-        group.addChild(marker)
-        group.addChild(line)
+        group.addChild(_coord)
+        group.addChild(_marker)
+        group.addChild(_line)
 
     def build_tracker_dict(self, trackers, selected):
         """
@@ -229,7 +205,7 @@ class DragTracker(BaseTracker):
 
         result = {
             'start': None,
-            'selected': self.sort_selected(selected),
+            'selected': [trackers[_k] for _k in sorted(selected)],
             'end': None
         }
 
@@ -249,7 +225,7 @@ class DragTracker(BaseTracker):
 
         return result
 
-    def drag_rotation (self, vector, modify):
+    def drag_rotation(self, vector, modify):
         """
         Manage rotation during dragging
         """
@@ -306,7 +282,7 @@ class DragTracker(BaseTracker):
         #get the existing translation
         _xf = self.nodes['transform'].translation.getValue()
 
-        #calculate the new trnaslation, which is the distance the mouse has
+        #calculate the new translation, which is the distance the mouse has
         #moved from the previous position added to the existing translation
         _xf = tuple(Vector(_xf).add(vector.sub(self.datums['trans_start'])))
 
@@ -319,17 +295,7 @@ class DragTracker(BaseTracker):
         #update the position of the connector node to the translation position
         _con = self.trackers['selected'][0].get().add(Vector(_xf))
 
-        self.nodes['connector coords'].point.set1Value(
-            self.start_idx, tuple(_con)
-        )
-
-    def update_placement(self, position):
-        """
-        Update the placement
-        """
-
-        _pos = tuple(position) #.sub(self.datum))
-        self.nodes['transform'].translation.setValue(_pos)
+        self.nodes['connector'].getChild(0).point.set1Value(1, tuple(_con))
 
     def get_placement(self):
         """
