@@ -76,6 +76,14 @@ class AlignmentModel:
 
         return result
 
+    def get_alignment_wires(self):
+        """
+        Return wire (discrete) representations of the curves which
+        comprise the alignment, subdivided by the method and interval parameters.  Returns a dict keyed to each PI internal station
+        """
+
+        pass
+
     def construct_geometry(self, geometry):
         """
         Assign geometry to the alignment object

@@ -115,6 +115,10 @@ class EditAlignmentTask:
         self.pi_tracker.set_datum(self.alignment.get_datum())
         self.pi_tracker.update_placement(self.alignment.get_datum())
 
+        #provide PI Tracker with wire representing the alignment,
+        #broken into curves and tangents (or at least curves)
+
+        #self.pi_tracker.set_alignment_wires(self.alignment.get_alignment_wires())
         self.call_backs.append(
             ('SoKeyboardEvent',
              self.view.addEventCallback('SoKeyboardEvent', self.action)
