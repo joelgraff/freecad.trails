@@ -330,7 +330,7 @@ class PiTracker(BaseTracker):
         component = info['Component']
 
         #abort if this isn't the geometry we're looking for
-        if not (('NODE-' in component) or ('WIRE-' in component)):
+        if not (('NODE-' in component)): # or ('WIRE-' in component)):
             return None
 
         return info
@@ -342,22 +342,15 @@ class PiTracker(BaseTracker):
         'all', 'node', 'wire'
         """
 
-        do_node = geo_type in ['all', 'node']
-        do_wire = geo_type in ['all', 'wire']
+        for _grp in self.trackers.values():
+            for _tracker in _grp.values():
+                _tracker.default()
 
-        selected = {}
-
-        for _k, _v in self.gui_action['selected'].items():
-
-            if (do_node and 'NODE' in _k) or \
-               (do_wire and 'WIRE' in _k):
-
-                _v.default()
-
-            else:
-                selected[_k] = _v
-
-        self.gui_action['selected'] = selected
+        self.gui_action = {
+            'drag': None,
+            'rollover': None,
+            'selected': {},
+        }
 
     def update(self, points=None, placement=None):
         """

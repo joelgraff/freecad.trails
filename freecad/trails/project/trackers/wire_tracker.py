@@ -46,6 +46,7 @@ class WireTracker(BaseTracker):
             'line style': coin.SoDrawStyle.LINES,
             'line weight': 3,
             'line pattern': None,
+            'color': (0.8, 0.8, 0.8),
             'select': True
         }
 
