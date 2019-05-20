@@ -120,9 +120,17 @@ class EditAlignmentTask:
 
         #self.pi_tracker.set_alignment_wires(self.alignment.get_alignment_wires())
         self.call_backs.append(
-            ('SoKeyboardEvent',
-             self.view.addEventCallback('SoKeyboardEvent', self.action)
+            self.view.addEventCallback('SoKeyboardEvent', self.key_action)
+        )
+
+        self.call_backs.append(
+            self.view.addEventCallback(
+                'SoMouseButtonEvent', self.button_action
             )
+        )
+
+        self.call_backs.append(
+            self.view.addEventCallback('SoLocation2Event', self.mouse_action)
         )
 
         self.call_backs += self.pi_tracker.setup_callbacks(view)
@@ -135,15 +143,31 @@ class EditAlignmentTask:
         self.doc.recompute()
         DraftTools.redraw3DView()
 
-    def action(self, arg):
+    def key_action(self, arg):
         """
-        SoEvent callback for mouse / keyboard handling
+        SoKeyboardEvent callback
         """
 
-        #trap the escape key to quit
-        if arg['Type'] == 'SoKeyboardEvent':
-            if arg['Key'] == 'ESCAPE':
-                self.finish()
+        if arg['Key'] == 'ESCAPE':
+            self.finish()
+
+    def button_action(self, arg):
+        """
+        SoLocation2Event callback for mouse / keyboard handling
+        """
+
+        pass
+
+    def mouse_action(self, arg):
+        """
+        Mouse movement actions
+        """
+
+        if not (self.mouse.button1.dragging or self.mouse.button1.pressed):
+            return
+
+        if not self.drag_tracker:
+            self.start_drag(arg)
 
     def set_vobj_style(self, vobj, style):
         """

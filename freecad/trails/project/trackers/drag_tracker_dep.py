@@ -70,17 +70,12 @@ class DragTracker(BaseTracker):
 
         self.on(self.nodes['switch'])
 
-    def set_nodes(self, selected, connector):
+    def set_trackers(self, trackers, selected, picked, datum):
         """
         Set the trackes the drag tracker will use
         """
 
-        for _group in selected:
-            self.nodes['selected'].addChild(_group)
-
-        for _group in connector:
-            self.nodes['connector'].addChild(_group)
-
+        self.build_tracker_dict(trackers, selected)
         self.trackers['picked'] = trackers[picked]
 
         _p = trackers[picked].get()
@@ -91,6 +86,9 @@ class DragTracker(BaseTracker):
         self.datums['trans_start'] = _p
 
         self.nodes['transform'].translation.setValue([0.0, 0.0, 0.0])
+
+        self.build_connector_group()
+        self.build_selected_group()
 
     def get_transformed_coordinates(self):
         """
@@ -124,6 +122,104 @@ class DragTracker(BaseTracker):
         #multiply each coordinate by the transformation matrix and return
         #a list of the transformed coordinates, omitting the fourth value
         return [_xf.multVecMatrix(_v).getValue()[:3] for _v in _vecs]
+
+    def build_selected_group(self):
+        """
+        Build the SoGroup node which provides transformation for the
+        SoMarkerSet and SoLineSet that represents the selected geometry
+        """
+
+        _selected = self.trackers['selected']
+
+        if not _selected:
+            return
+
+        #create coordinate node from list of selected node coordinates
+        _coord = coin.SoCoordinate3()
+        _count = len(_selected)
+
+        _coord.point.setValues(0, _count, [list(_v.get()) for _v in _selected])
+
+        #create marker / line geometry
+        _marker = coin.SoMarkerSet()
+
+        _line = coin.SoLineSet()
+        _line.numVertices.setValue(_count)
+
+        #build node and add children
+        _group = self.nodes['selected']
+        _group.addChild(self.nodes['transform'])
+        _group.addChild(_coord)
+        _group.addChild(_marker)
+        _group.addChild(_line)
+
+    def build_connector_group(self):
+        """
+        Build the SoGroup node which provides the connecting SoLineSet
+        geometry to the geometry which is not being selected / dragged
+        """
+
+        #select only the valid nodes among three
+        _trackers = [
+            _c for _c in [
+                self.trackers['start'],
+                self.trackers['selected'][0],
+                self.trackers['end']
+            ] if _c
+        ]
+
+        #abort if we don't have at least two coordinates defined
+        if len(_trackers) < 2:
+            return
+
+        #if end node is picked, reverse array so selected node is still 2nd
+        if not self.trackers['start']:
+            _trackers = list(reversed(_trackers))
+
+        #build component nodes
+        _marker = coin.SoMarkerSet()
+
+        _line = coin.SoLineSet()
+        _line.numVertices.setValue(len(_trackers))
+
+        _coord = coin.SoCoordinate3()
+
+        for _i, _v in enumerate(_trackers):
+            _coord.point.set1Value(_i, tuple(_v.get()))
+
+        #build the group node with coordinates, markers and lines
+        group = self.nodes['connector']
+        group.addChild(_coord)
+        group.addChild(_marker)
+        group.addChild(_line)
+
+    def build_tracker_dict(self, trackers, selected):
+        """
+        Build the dictionary of trackers
+        """
+
+        _selected = [trackers[_k] for _k in sorted(selected)]
+
+        result = {
+            'start': None,
+            'selected': _selected,
+            'end': None
+        }
+
+        trackers = dict(sorted(trackers.items()))
+
+        _start = int(_selected[0].name.split('-')[1])
+        _end = int(_selected[-1].name.split('-')[1])
+
+        #if our starting node isn't the first, add the previous node
+        if _start > 0:
+            result['start'] = trackers['NODE-' + str(_start - 1)]
+
+        #if our ending node isn't the last, add the next node
+        if _end < len(trackers) - 1:
+            result['end'] = trackers['NODE-' + str(_end + 1)]
+
+        self.trackers = result
 
     def drag_rotation(self, vector, modify):
         """

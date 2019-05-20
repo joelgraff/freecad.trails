@@ -159,6 +159,75 @@ class PiTracker(BaseTracker):
 
             self.gui_action['rollover'] = _tracker
 
+    def get_drag_selection(self):
+        """
+        Return a SoGroup() object of trackers to be transformed by draf
+        """
+
+        #coordinates, markers, lines, draw-styles, transforms, etc. to be 
+        #rendered in a single SoGroup()
+
+        _result = coin.SoGroup()
+        _c = [list(_v.get()) for _v in self.gui_action['selected'].values()]
+
+        _coord = coin.SoCoordinate3()
+        _coord.setValues(0, len(_c), _c)
+
+        _line = coin.SoLineSet()
+        _line.numVertices.setValue(len(_c))
+
+        _result.addChild(_c)
+        _result.addChild(coin.SoMarkerSet())
+        _result.addChild(_line)
+
+        return _result
+
+    def get_drag_connection(self):
+        """
+        Return a SoGroup() object of trackers which connect to the drag select
+        """
+
+        #get list of sorted trackers
+        _selected = [
+            self.trackers[_k] for _k in sorted(self.gui_action['selected'])
+        ]
+
+        #get index values for first and last selected elements
+        _idx = [int(_selected[_i].name.split('-')[1]) for _i in [0, -1]]
+        _trackers = []
+
+        #if our starting node isn't the first, add the previous node
+        if _idx[0] > 0:
+            _trackers.append(self.trackers['NODE-' + str(_idx[0] - 1)])
+
+        #if our ending node isn't the last, add the next node
+        if _idx[-1] < len(self.trackers) - 1:
+            _trackers.append(self.trackers['NODE-' + str(_idx[0] + 1)])
+
+        _result = coin.SoGroup()
+
+        #build separate groups for each connector, setting the coordiante to 
+        #be updates as the first coordinate in each group
+        for _v in _trackers:
+
+            _marker = coin.SoMarkerSet()
+
+            _line = coin.SoLineSet()
+            _line.numVertices.setValue(2)
+
+            _coord = coin.SoCoordinate3()
+            _coord.set1Value(0, list(_selected[0]).get())
+            _coord.set1Value(1, list(_v.get()))
+
+            _node = coin.SoGroup()
+            _node.addChild(_coord)
+            _node.addChild(_marker)
+            _node.addChild(_line)
+
+            _result.addChild(_node)
+
+        return _result
+
     def start_drag(self, arg):
         """
         Set up scenegraph and object for dragging
@@ -273,28 +342,17 @@ class PiTracker(BaseTracker):
         Mouse movement actions
         """
 
-        #need to determine if we're in a special mode.
-        #if not in a special mode, then it's just highlight operations
+        #do nothing in drag mode
+        if self.drag_mode:
+            return
 
         _p = self.view.getCursorPos()
 
-        #don't do highlighting if dragging is enabled
-        if not (self.mouse.button1.dragging or self.mouse.button1.pressed):
+        self.mouse.update(arg, _p)
+        self.on_rollover(_p)
 
-            self.mouse.update(arg, _p)
-            self.on_rollover(_p)
-
-            if self.gui_action['drag']:
-                self.end_drag()
-
-        #manage dragging
-        else:
-
-            if self.gui_action['drag']:
-                self.on_drag(_p, arg['AltDown'], arg['ShiftDown'])
-
-            else:
-                self.start_drag(arg)
+        if self.gui_action['drag']:
+            self.end_drag()
 
     def button_action(self, arg):
         """
