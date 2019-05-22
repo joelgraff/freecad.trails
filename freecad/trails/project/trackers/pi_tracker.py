@@ -261,11 +261,11 @@ class PiTracker(BaseTracker):
             self.deselect_geometry('all')
             return
 
-        #quit if this is a previously-picked object
         component = info['Component'].split('.')[0]
 
-        if component in self.gui_action['selected']:
-            return
+        #quit if this is a previously-picked object
+        #if component in self.gui_action['selected']:
+        #    return
 
         #still here - deselect and select
         self.deselect_geometry('all')

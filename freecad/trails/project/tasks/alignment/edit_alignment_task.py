@@ -199,7 +199,6 @@ class EditAlignmentTask:
 
         self.drag_tracker.set_nodes(_selected, _connected, world_pos)
 
-        print(list(self.pi_tracker.gui_action['selected'].values())[0].get())
         self.drag_tracker.set_rotation_center(
             list(self.pi_tracker.gui_action['selected'].values())[0].get()
         )

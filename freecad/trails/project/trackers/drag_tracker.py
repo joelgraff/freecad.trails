@@ -254,11 +254,6 @@ class DragTracker(BaseTracker):
         #apply the updated translation
         self.nodes['transform'].translation.setValue(tuple(_xf))
 
-        #_p = self.nodes['selected'].getChild(1).getChild(0).point
-       # _p2 = Vector(_p.getValues()[0].getValue()).add(Vector(_xf))
-       # _p.set1Value(0, tuple(_p2))
-        #print(_p2)
-
         #trigger tracker callbacks for updating the connecting geometry to the
         #geometry being dragged
         for _cb in self.callbacks:

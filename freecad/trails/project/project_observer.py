@@ -78,5 +78,4 @@ class ProjectObserver(object):
         if not doc == self.doc:
             return
 
-        print('removing observer')
         App.removeDocumentObserver(self)
