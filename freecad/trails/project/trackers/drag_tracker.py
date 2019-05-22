@@ -97,7 +97,6 @@ class DragTracker(BaseTracker):
         """
 
         world_pos = self.view.getPoint(self.view.getCursorPos())
-
         self.update(world_pos, arg['AltDown'], arg['ShiftDown'])
 
     def set_nodes(self, selected, connector, world_pos):
@@ -117,13 +116,19 @@ class DragTracker(BaseTracker):
         self.datums['drag_start'] = world_pos
         self.update(world_pos)
 
-    def get_transformed_coordinates(self):
+    def get_transformed_coordinates(self, group_name):
         """
         Return the transformed coordinates of the selected nodes based on the
         transformations applied by the drag tracker
         """
 
-        _coords = self.nodes['selected'].getChild(1)
+        #retrive the group to transform by name
+        _group = self.nodes['selected'].getByName(group_name)
+
+        if not _group:
+            return
+
+        _coords = _group.getChild(0)
 
         #define the search path if not defined
         if not self.start_path:
@@ -175,7 +180,7 @@ class DragTracker(BaseTracker):
             datum['center'] = _ctr
 
             _ref_vec = vector.sub(_ctr)
-            
+
             if _ref_vec != Vector():
                 _ref_vec.normalize()
 
@@ -195,7 +200,7 @@ class DragTracker(BaseTracker):
         #calculate the direction of rotation between the current mouse position
         #vector and the previous.  Normalize and reverse sign on direction.z
         _vec = vector.sub(_ctr)
-        
+
         if _vec != Vector():
             _vec.normalize()
 

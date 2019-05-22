@@ -27,16 +27,12 @@ Customized wire tracker for PI alignments
 from pivy import coin
 
 from FreeCAD import Vector
-import FreeCADGui as Gui
 
 import DraftTools
-
-from DraftGui import todo
 
 from .base_tracker import BaseTracker
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
-from .drag_tracker import DragTracker
 
 from ..support.utils import Constants as C
 from ..support.mouse_state import MouseState
@@ -54,7 +50,6 @@ class PiTracker(BaseTracker):
 
         #dict which tracks actions on nodes in the gui
         self.gui_action = {
-            'drag': None,
             'rollover': None,
             'selected': {},
         }
@@ -66,24 +61,18 @@ class PiTracker(BaseTracker):
 
         self.callbacks = {}
         self.mouse = MouseState()
-        self.datum = Vector()
         self.view = view
         self.connect_coord = None
         self.connect_idx = -1
         self.drag_start = None
         self.drag_mode = False
 
-        self.transform = coin.SoTransform()
-        self.transform.translation.setValue([0.0, 0.0, 0.0])
-
         _names = [doc.Name, object_name, node_name]
 
         self.build_trackers(points, _names)
 
-        child_nodes = [self.transform]
-
         super().__init__(
-            names=_names, children=child_nodes, select=False, group=True
+            names=_names, select=False, group=True
         )
 
         for _tracker in {
@@ -170,10 +159,12 @@ class PiTracker(BaseTracker):
         Return a SoGroup() object of trackers to be transformed by draf
         """
 
-        #coordinates, markers, lines, draw-styles, transforms, etc. to be 
+        #coordinates, markers, lines, draw-styles, transforms, etc. to be
         #rendered in a single SoGroup()
 
         _result = coin.SoGroup()
+        _result.setName('PI_TRACKER')
+
         _c = [list(_v.get()) for _v in self.gui_action['selected'].values()]
 
         _count = len(_c)
@@ -199,8 +190,8 @@ class PiTracker(BaseTracker):
         _trackers = self.trackers['NODE']
 
         #get list of sorted trackers
-        _selected = [_trackers[_k] \
-            for _k in sorted(self.gui_action['selected'])
+        _selected = [
+            _trackers[_k] for _k in sorted(self.gui_action['selected'])
         ]
 
         #get index values for first and last selected elements
@@ -256,72 +247,6 @@ class PiTracker(BaseTracker):
             self.connect_idx, self.drag_start.add(Vector(xform))
         )
 
-    def start_drag(self, arg):
-        """
-        Set up scenegraph and object for dragging
-        """
-
-        self.unhighlight()
-
-        pos = self.mouse.button1.pos
-        info = self.validate_info(self.view.getObjectInfo((pos.x, pos.y)))
-
-        if not info:
-            return
-
-        component = info['Component'].split('.')[0]
-
-        if not component in self.gui_action['selected']:
-            return
-
-        _selected = self.gui_action['selected']
-
-        for _node in _selected.values():
-            _node.off()
-
-        _drag = DragTracker(self.view, self.names[:2])
-
-        _drag.set_trackers(
-            self.trackers['NODE'], list(_selected.keys()), component,
-            self.datum
-        )
-
-        self.gui_action['drag'] = _drag
-
-        self.insert_node(_drag.nodes['switch'], self.node)
-
-    def end_drag(self):
-        """
-        Teardown for dragging
-        """
-
-        _drag = self.gui_action['drag']
-
-        if not _drag:
-            return
-
-        self.remove_node(_drag.nodes['switch'], self.node)
-
-        result = _drag.get_transformed_coordinates()
-
-        self.update_points(result)
-
-        self.gui_action['drag'] = None
-
-    def on_drag(self, pos, rotate, modify):
-        """
-        Drag operation in view
-        """
-
-        _drag = self.gui_action['drag']
-
-        if not _drag:
-            return
-
-        vec = self.view.getPoint(pos).sub(self.datum)
-
-        _drag.update(vec, rotate, modify)
-
     def on_selection(self, arg, pos):
         """
         Mouse selection in view
@@ -349,7 +274,7 @@ class PiTracker(BaseTracker):
         _idx = int(_split[1])
         _max = _idx + 1
 
-        if (_split[0] == 'WIRE'):
+        if _split[0] == 'WIRE':
             _max += 1
 
         if arg['AltDown']:
@@ -379,9 +304,6 @@ class PiTracker(BaseTracker):
         self.mouse.update(arg, _p)
         self.on_rollover(_p)
 
-        if self.gui_action['drag']:
-            self.end_drag()
-
     def button_action(self, arg):
         """
         Button click trapping
@@ -396,14 +318,8 @@ class PiTracker(BaseTracker):
 
         DraftTools.redraw3DView()
 
-    def set_datum(self, datum):
-        """
-        Set the datum for coordinate transformations
-        """
-
-        self.datum = datum
-
-    def validate_info(self, info):
+    @staticmethod
+    def validate_info(info):
         """
         If the info is not none and contains a reference to a node
         or wire tracker, return true
@@ -416,7 +332,7 @@ class PiTracker(BaseTracker):
         component = info['Component']
 
         #abort if this isn't the geometry we're looking for
-        if not (('NODE-' in component)): # or ('WIRE-' in component)):
+        if 'NODE-' not in component: # or ('WIRE-' in component)):
             return None
 
         return info
@@ -433,23 +349,11 @@ class PiTracker(BaseTracker):
                 _tracker.default()
 
         self.gui_action = {
-            'drag': None,
             'rollover': None,
             'selected': {},
         }
 
-    def update(self, points=None, placement=None):
-        """
-        Update
-        """
-
-        if points:
-            self.update_points(points)
-
-        if placement:
-            self.update_placement(placement)
-
-    def update_points(self, points):
+    def update(self, points):
         """
         Updates existing coordinates
         """
@@ -499,13 +403,6 @@ class PiTracker(BaseTracker):
             self.trackers['WIRE'][_wt.name] = _wt
 
             _prev = _tr
-
-    def update_placement(self, vector):
-        """
-        Updates the placement for the wire and the trackers
-        """
-
-        self.transform.translation.setValue(tuple(vector))
 
     def finalize_trackers(self, tracker_list=None):
         """

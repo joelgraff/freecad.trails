@@ -67,13 +67,10 @@ class EditAlignmentTask:
         self.view = view
         self.doc = doc
         self.obj = obj
-        self.tmp_group = None
         self.alignment = alignment_model.AlignmentModel()
         self.alignment.data = alignment_data
-        self.points = None
         self.pi_tracker = None
         self.drag_tracker = None
-        self.pi_subtask = None
         self.callbacks = {}
         self.mouse = MouseState()
 
@@ -110,19 +107,11 @@ class EditAlignmentTask:
         #deselect existing selections
         Gui.Selection.clearSelection()
 
-        self.points = self.alignment.get_pi_coords()
+        _points = self.alignment.get_pi_coords()
 
         self.pi_tracker = PiTracker(
-            self.doc, self.view, self.obj.Name, 'PI_TRACKER', self.points
+            self.doc, self.view, self.obj.Name, 'PI_TRACKER', _points
         )
-
-        self.pi_tracker.set_datum(self.alignment.get_datum())
-        self.pi_tracker.update_placement(self.alignment.get_datum())
-
-        #provide PI Tracker with wire representing the alignment,
-        #broken into curves and tangents (or at least curves)
-
-        #self.pi_tracker.set_alignment_wires(self.alignment.get_alignment_wires())
 
         self.callbacks = {
             'SoKeyboardEvent': self.key_action,
@@ -165,7 +154,7 @@ class EditAlignmentTask:
         _dragging = self.mouse.button1.dragging or self.mouse.button1.pressed
 
         #exclusive or - abort if both are true or false
-        if not ((self.drag_tracker is not None) ^ _dragging):
+        if not (self.drag_tracker is not None) ^ _dragging:
             return
 
         pos = self.view.getCursorPos()
@@ -183,6 +172,7 @@ class EditAlignmentTask:
         End drag operations with drag tracker
         """
 
+        self.drag_tracker.get_transformed_coordinates('PI_TRACKER')
         self.drag_tracker.finalize()
         self.pi_tracker.drag_mode = False
         self.drag_tracker = None

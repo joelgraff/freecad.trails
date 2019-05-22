@@ -24,7 +24,6 @@
 """
 Class for managing 2D Horizontal Alignment data
 """
-import copy
 
 import FreeCAD as App
 
@@ -79,7 +78,8 @@ class AlignmentModel:
     def get_alignment_wires(self):
         """
         Return wire (discrete) representations of the curves which
-        comprise the alignment, subdivided by the method and interval parameters.  Returns a dict keyed to each PI internal station
+        comprise the alignment, subdivided by the method and interval
+        parameters.  Returns a dict keyed to each PI internal station
         """
 
         pass
