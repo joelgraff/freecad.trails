@@ -32,16 +32,18 @@ import DraftTools
 from ....alignment import alignment_model
 
 from ...support import const
+from ...support.mouse_state import MouseState
 
 from ...trackers.pi_tracker import PiTracker
+from ...trackers.drag_tracker import DragTracker
 
-from . import edit_pi_subtask
+from .draft_alignment_task import DraftAlignmentTask
 
-def create(doc, view, alignment_data):
+def create(doc, view, alignment_data, object_name):
     """
     Class factory method
     """
-    return EditAlignmentTask(doc, view, alignment_data)
+    return EditAlignmentTask(doc, view, alignment_data, object_name)
 
 class EditAlignmentTask:
     """
@@ -53,78 +55,158 @@ class EditAlignmentTask:
         Internal constants used to define ViewObject styles
         """
 
-        DISABLED =  [(0.4, 0.4, 0.4), 'Solid']
-        ENABLED =   [(0.8, 0.8, 0.8), 'Solid']
+        DISABLED = [(0.4, 0.4, 0.4), 'Solid']
+        ENABLED = [(0.8, 0.8, 0.8), 'Solid']
         HIGHLIGHT = [(0.0, 1.0, 0.0), 'Solid']
-        PI =        [(0.0, 0.0, 1.0), 'Solid']
-        SELECTED =  [(1.0, 0.8, 0.0), 'Solid']
+        PI = [(0.0, 0.0, 1.0), 'Solid']
+        SELECTED = [(1.0, 0.8, 0.0), 'Solid']
 
-    def __init__(self, doc, view, alignment_data):
+    def __init__(self, doc, view, alignment_data, obj):
 
         self.panel = None
         self.view = view
         self.doc = doc
-        self.tmp_group = None
+        self.obj = obj
         self.alignment = alignment_model.AlignmentModel()
         self.alignment.data = alignment_data
-        self.points = None
         self.pi_tracker = None
-        self.pi_subtask = None
-        self.call = None
+        self.drag_tracker = None
+        self.callbacks = {}
+        self.mouse = MouseState()
 
         self.view_objects = {
             'selectables': [],
-            'line_colors': []
+            'line_colors': [],
         }
 
         #disable selection entirely
         self.view.getSceneGraph().getField("selectionRole").setValue(0)
 
         #get all objects with LineColor and set them all to gray
-        self.view_objects['line_colors'] = \
-            [
-                (_v.ViewObject, _v.ViewObject.LineColor)
-                for _v in self.doc.findObjects()
-                if hasattr(_v, 'ViewObject')
-                if hasattr(_v.ViewObject, 'LineColor')
-            ]
+        self.view_objects['line_colors'] = [
+            (_v.ViewObject, _v.ViewObject.LineColor)
+            for _v in self.doc.findObjects()
+            if hasattr(_v, 'ViewObject')
+            if hasattr(_v.ViewObject, 'LineColor')
+        ]
 
         for _v in self.view_objects['line_colors']:
             self.set_vobj_style(_v[0], self.STYLES.DISABLED)
 
+        #get all objects in the scene that are selecctable.
+        self.view_objects['selectable'] = [
+            (_v.ViewObject, _v.ViewObject.Selectable)
+            for _v in self.doc.findObjects()
+            if hasattr(_v, 'ViewObject')
+            if hasattr(_v.ViewObject, 'Selectable')
+        ]
+
+        for _v in self.view_objects['selectable']:
+            _v[0].Selectable = False
+
         #deselect existing selections
         Gui.Selection.clearSelection()
 
-        self.points = self.alignment.get_pi_coords()
+        _points = self.alignment.get_pi_coords()
 
-        #self.pi_subtask = \
-        #    edit_pi_subtask.create(self.doc, self.view, self.panel,
-        #                           self.points)
+        self.pi_tracker = PiTracker(
+            self.doc, self.view, self.obj.Name, 'PI_TRACKER', _points
+        )
 
-        self.pi_tracker = PiTracker(self.doc, 'PI_TRACKER', self.points)
-        self.pi_tracker.update_placement(self.alignment.get_datum())
-        print('\n<<<--- TRACKER DATUM --->>>\n', self.alignment.get_datum())
-        self.call = self.view.addEventCallback('SoEvent', self.action)
-        #panel = DraftAlignmentTask(self.clean_up)
+        self.callbacks = {
+            'SoKeyboardEvent': self.key_action,
+            'SoMouseButtonEvent': self.button_action,
+            'SoLocation2Event': self.mouse_action
+        }
 
-        #Gui.Control.showDialog(panel)
+        for _k, _v in self.callbacks.items():
+            self.view.addEventCallback(_k, _v)
+
+        panel = DraftAlignmentTask(self.clean_up)
+
+        Gui.Control.showDialog(panel)
         #panel.setup()
 
         self.doc.recompute()
         DraftTools.redraw3DView()
 
-    def action(self, arg):
+    def key_action(self, arg):
         """
-        SoEvent callback for mouse / keyboard handling
+        SoKeyboardEvent callback
         """
 
-        return
+        if arg['Key'] == 'ESCAPE':
+            self.finish()
 
-        #trap the escape key to quit
-        if arg['Type'] == 'SoKeyboardEvent':
-            if arg['Key'] == 'ESCAPE':
-                print('ESCAPE!')
-                self.finish()
+    def button_action(self, arg):
+        """
+        SoLocation2Event callback for mouse / keyboard handling
+        """
+
+        pos = self.view.getCursorPos()
+        self.mouse.update(arg, pos)
+
+    def mouse_action(self, arg):
+        """
+        Mouse movement actions
+        """
+
+        _dragging = self.mouse.button1.dragging or self.mouse.button1.pressed
+
+        #exclusive or - abort if both are true or false
+        if not (self.drag_tracker is not None) ^ _dragging:
+            return
+
+        pos = self.view.getCursorPos()
+        self.mouse.update(arg, pos)
+
+        #if tracker exists, but we're nut dragging, shut it down
+        if self.drag_tracker:
+            self.end_drag(arg, self.view.getPoint(pos))
+
+        elif _dragging:
+            self.start_drag(arg, self.view.getPoint(pos))
+
+    def end_drag(self, arg, world_pos):
+        """
+        End drag operations with drag tracker
+        """
+
+        _coords = self.drag_tracker.get_transformed_coordinates('PI_TRACKER')
+
+        self.pi_tracker.update(_coords)
+
+        self.drag_tracker.finalize()
+        self.pi_tracker.drag_mode = False
+        self.drag_tracker = None
+
+    def start_drag(self, arg, world_pos):
+        """
+        Begin drag operations with drag tracker
+        """
+
+        self.drag_tracker = DragTracker(
+            self.view,
+            [self.doc.Name, self.obj.Name, 'DRAG_TRACKER'],
+            self.pi_tracker.node
+        )
+
+        _selected = [self.pi_tracker.get_drag_selection()]
+        #_selected.append(self.alignment_tracker.get_drag_selection())
+
+        _connected = [self.pi_tracker.get_drag_connection()]
+        #_connected.append(self.alignment_tracker.get_drag_connected())
+
+        self.drag_tracker.set_nodes(_selected, _connected, world_pos)
+
+        self.drag_tracker.set_rotation_center(
+            list(self.pi_tracker.gui_action['selected'].values())[0].get()
+        )
+
+        self.drag_tracker.callbacks.append(self.pi_tracker.drag_callback)
+        #self.drag_tracker.callbacks.append
+        #    self.alignment_tracker.drag_callback
+        #)
 
     def set_vobj_style(self, vobj, style):
         """
@@ -134,15 +216,27 @@ class EditAlignmentTask:
         vobj.LineColor = style[0]
         vobj.DrawStyle = style[1]
 
+    def clean_up(self):
+        """
+        Callback to finish the command
+        """
+
+        self.finish()
+
+        return True
+
     def finish(self):
         """
         Task cleanup
         """
 
-        print('task finish')
         #reset line colors
         for _v in self.view_objects['line_colors']:
             _v[0].LineColor = _v[1]
+
+        #reenable object selctables
+        for _v in self.view_objects['selectable']:
+            _v[0].Selectable = _v[1]
 
         #re-enable selection
         self.view.getSceneGraph().getField("selectionRole").setValue(1)
@@ -152,15 +246,15 @@ class EditAlignmentTask:
             Gui.Control.closeDialog()
 
         #remove the callback for action
-        if self.call:
-            self.view.removeEventCallback("SoEvent", self.call)
+        if self.callbacks:
 
-        #shut down the tracker
+            for _k, _v in self.callbacks.items():
+                self.view.removeEventCallback(_k, _v)
+
+            self.callbacks.clear()
+
+        #shut down the tracker and re-select the object
         if self.pi_tracker:
             self.pi_tracker.finalize()
             self.pi_tracker = None
-
-        #shut down the subtask
-        if self.pi_subtask:
-            self.pi_subtask.finish()
-            self.pi_subtask = None
+            Gui.Selection.addSelection(self.obj)

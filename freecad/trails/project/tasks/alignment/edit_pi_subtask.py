@@ -40,17 +40,17 @@ class EditPiSubtask:
     """
     Subtask to manage importing LandXML files
     """
-    def __init__(self, doc, view, panel, points):
+    def __init__(self, doc, view, panel):
 
         self.panel = panel
         self.view = view
         self.doc = doc
 
         #set up callback for SoEvents
-        self.call = self.view.addEventCallback("SoEvent", self.action)
+        #self.call = self.view.addEventCallback("SoEvent", self.action)
 
         #create the wire and edit trackers
-        self.pi_tracker = PiTracker(doc, 'PI_TRACKER', points)
+        #self.pi_tracker = PiTracker(doc, 'PI_TRACKER', points)
 
     def action(self, arg):
         """

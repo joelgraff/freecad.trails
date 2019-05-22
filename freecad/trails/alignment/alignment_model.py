@@ -24,7 +24,6 @@
 """
 Class for managing 2D Horizontal Alignment data
 """
-import copy
 
 import FreeCAD as App
 
@@ -75,6 +74,15 @@ class AlignmentModel:
         result.append(self.data['meta']['End'])
 
         return result
+
+    def get_alignment_wires(self):
+        """
+        Return wire (discrete) representations of the curves which
+        comprise the alignment, subdivided by the method and interval
+        parameters.  Returns a dict keyed to each PI internal station
+        """
+
+        pass
 
     def construct_geometry(self, geometry):
         """
@@ -507,5 +515,27 @@ class AlignmentModel:
 
         if curve['Type'] == 'Curve':
             return arc.get_ortho_vector(curve, distance, side)
+
+        return None
+
+    def get_tangent(self, station):
+        """
+        Return the tangent vector to a station along the alignment,
+        directed in the direction of the curve
+        """
+
+        curve = self.locate_curve(station)
+        int_sta = self.get_internal_station(station)
+
+        if (curve is None) or (int_sta is None):
+            return None
+
+        distance = int_sta - curve['InternalStation'][0]
+
+        if curve['Type'] == 'Line':
+            return line.get_tangent_vector(curve, distance)
+
+        if curve['Type'] == 'Curve':
+            return arc.get_tangent_vector(curve, distance)
 
         return None

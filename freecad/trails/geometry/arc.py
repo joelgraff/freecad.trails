@@ -677,7 +677,25 @@ def get_ortho_vector(arc_dict, distance, side=''):
 
     ortho = App.Vector(arc_dict['Center']).sub(coord).multiply(_x).normalize()
 
-    App.ActiveDocument.recompute()
+    return coord, ortho
+
+def get_tangent_vector(arc_dict, distance):
+    """
+    Given an arc and a distance, return the tangent at the point along
+    the curve from it's start
+    """
+
+    side = 'r'
+    multiplier = 1.0
+
+    if arc_dict < 0.0:
+        side = 'l'
+        multiplier = -1.0
+
+    coord, ortho = get_ortho_vector(arc_dict, distance, side)
+
+    ortho.x, ortho.y = -ortho.y, ortho.x
+    ortho.multiply(multiplier)
 
     return coord, ortho
 

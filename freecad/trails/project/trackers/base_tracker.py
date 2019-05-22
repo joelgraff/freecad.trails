@@ -28,7 +28,6 @@ from pivy import coin
 
 import Draft
 
-from DraftTrackers import Tracker
 from DraftGui import todo
 
 class BaseTracker:
@@ -36,84 +35,102 @@ class BaseTracker:
     A custom base Draft Tracker
     """
 
-    def __init__(self, doc, children=[], ontop=False, name=None, parent=None):
-
-        self.ontop = ontop
-
+    def __init__(self, names, children=None, select=True, group=False):
+        """
+        Constructor
+        """
+        self.visible = False
+        self.select = select
         self.color = coin.SoBaseColor()
-        self.drawstyle = coin.SoDrawStyle()
+        self.draw_style = coin.SoDrawStyle()
+        self.names = names
+        self.node = coin.SoSeparator()
+        self.parent = None
 
-        node = coin.SoSeparator()
+        if not children:
+            children = []
 
-        for c in [self.drawstyle, self.color] + children:
-            node.addChild(c)
+        if group:
+            self.node = coin.SoGroup()
 
-        self.switch = coin.SoSwitch() # this is the on/off switch
+        if self.select:
 
-        if name:
-            self.switch.setName(name)
+            self.node = \
+                coin.SoType.fromName("SoFCSelection").createInstance()
 
-        self.switch.addChild(node)
-        self.off()
+            self.node.documentName.setValue(self.names[0])
+            self.node.objectName.setValue(self.names[1])
+            self.node.subElementName.setValue(self.names[2])
 
-        self.parent = parent
+        for child in [self.draw_style, self.color] + children:
+            self.node.addChild(child)
 
-        if self.parent:
-            self.parent.addChild(self.switch)
-        else:
-            todo.delay(self._insertSwitch, self.switch)
-
-    def finalize(self):
-
-        if not self.parent:
-            todo.delay(self._removeSwitch, self.switch)
-            self.switch = None
-
-    def _insertSwitch(self, switch):
+    def finalize(self, node):
         """
-        Insert self.switch into the scene graph.
-        Must not be called from an event handler (or other scene graph
-        traversal).
+        Node destruction / cleanup
         """
 
-        sg=Draft.get3DView().getSceneGraph()
+        self.remove_node(node)
 
-        if self.ontop:
-            sg.insertChild(switch, 0)
-        else:
-            sg.addChild(switch)
-
-    def _removeSwitch(self, switch):
+    def on(self, switch, which_child=0):
         """
-        Remove self.switch from the scene graph.
-        Must not be called during scene graph traversal).
+        Make node visible
         """
 
-        sg=Draft.get3DView().getSceneGraph()
+        switch.whichChild = which_child
+        self.visible = True
 
-        if sg.findChild(switch) >= 0:
-            sg.removeChild(switch)
+    def off(self, switch):
+        """
+        Make node invisible
+        """
 
-    def on(self):
-        self.switch.whichChild = 0
-        self.Visible = True
+        switch.whichChild = -1
+        self.visible = False
 
-    def off(self):
-        self.switch.whichChild = -1
-        self.Visible = False
+    def insert_node(self, node, parent=None, on_top=False):
+        """
+        Insert a node as a child of the passed node
+        """
 
-    def adjustTracker(self, toTop = True):
+        if not parent:
+            parent = Draft.get3DView().getSceneGraph()
+
+        _fn = parent.addChild
+
+        if on_top:
+            _fn = parent.insertChild
+
+        todo.delay(_fn, node)
+
+    def remove_node(self, node, parent=None):
+        """
+        Convenience wrapper for _remove_node
+        """
+
+        if not parent:
+            parent = Draft.get3DView().getSceneGraph()
+
+        if parent.findChild(node) >= 0:
+            todo.delay(parent.removeChild, node)
+
+    def adjustTracker(self, node=None, to_top=True):
         """
         Raises the tracker to the top or lowers it to the bottom based
         on the passed boolean
         """
 
-        if self.switch:
+        if not node:
+            node = self.node
 
-            sg = Draft.get3DView().getSceneGraph()
-            sg.removeChild(self.switch)
+        if not node:
+            return
 
-            if toTop:
-                sg.insertChild(self.switch)
-            else:
-                sg.addChild(self.switch)
+        _sg = Draft.get3DView().getSceneGraph()
+        _sg.removeChild(node)
+
+        if to_top:
+            _sg.insertChild(node)
+
+        else:
+            _sg.addChild(node)
