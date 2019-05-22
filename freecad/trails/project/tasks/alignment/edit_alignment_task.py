@@ -172,7 +172,10 @@ class EditAlignmentTask:
         End drag operations with drag tracker
         """
 
-        self.drag_tracker.get_transformed_coordinates('PI_TRACKER')
+        _coords = self.drag_tracker.get_transformed_coordinates('PI_TRACKER')
+
+        self.pi_tracker.update(_coords)
+
         self.drag_tracker.finalize()
         self.pi_tracker.drag_mode = False
         self.drag_tracker = None

@@ -241,7 +241,12 @@ class DragTracker(BaseTracker):
 
         #calculate the new translation, which is the distance the mouse has
         #moved from the previous position added to the existing translation
-        _xf = Vector(_xf).add(world_pos.sub(self.datums['drag_start']))
+        _delta = world_pos.sub(self.datums['drag_start'])
+
+        if modify:
+            _delta.multiply(0.1)
+
+        _xf = Vector(_xf).add(_delta)
 
         #save the current mouse position as the next translation start
         self.datums['drag_start'] = world_pos
