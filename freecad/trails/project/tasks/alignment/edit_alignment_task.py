@@ -32,8 +32,10 @@ import DraftTools
 from ....alignment import alignment_model
 
 from ...support import const
+from ...support.mouse_state import MouseState
 
 from ...trackers.pi_tracker import PiTracker
+from ...trackers.drag_tracker import DragTracker
 
 from .draft_alignment_task import DraftAlignmentTask
 
@@ -70,8 +72,10 @@ class EditAlignmentTask:
         self.alignment.data = alignment_data
         self.points = None
         self.pi_tracker = None
+        self.drag_tracker = None
         self.pi_subtask = None
-        self.call_backs = []
+        self.callbacks = {}
+        self.mouse = MouseState()
 
         self.view_objects = {
             'selectables': [],
@@ -119,21 +123,15 @@ class EditAlignmentTask:
         #broken into curves and tangents (or at least curves)
 
         #self.pi_tracker.set_alignment_wires(self.alignment.get_alignment_wires())
-        self.call_backs.append(
-            self.view.addEventCallback('SoKeyboardEvent', self.key_action)
-        )
 
-        self.call_backs.append(
-            self.view.addEventCallback(
-                'SoMouseButtonEvent', self.button_action
-            )
-        )
+        self.callbacks = {
+            'SoKeyboardEvent': self.key_action,
+            'SoMouseButtonEvent': self.button_action,
+            'SoLocation2Event': self.mouse_action
+        }
 
-        self.call_backs.append(
-            self.view.addEventCallback('SoLocation2Event', self.mouse_action)
-        )
-
-        self.call_backs += self.pi_tracker.setup_callbacks(view)
+        for _k, _v in self.callbacks.items():
+            self.view.addEventCallback(_k, _v)
 
         panel = DraftAlignmentTask(self.clean_up)
 
@@ -156,18 +154,67 @@ class EditAlignmentTask:
         SoLocation2Event callback for mouse / keyboard handling
         """
 
-        pass
+        pos = self.view.getCursorPos()
+        self.mouse.update(arg, pos)
 
     def mouse_action(self, arg):
         """
         Mouse movement actions
         """
 
-        if not (self.mouse.button1.dragging or self.mouse.button1.pressed):
+        _dragging = self.mouse.button1.dragging or self.mouse.button1.pressed
+
+        #exclusive or - abort if both are true or false
+        if not ((self.drag_tracker is not None) ^ _dragging):
             return
 
-        if not self.drag_tracker:
-            self.start_drag(arg)
+        pos = self.view.getCursorPos()
+        self.mouse.update(arg, pos)
+
+        #if tracker exists, but we're nut dragging, shut it down
+        if self.drag_tracker:
+            self.end_drag(arg, self.view.getPoint(pos))
+
+        elif _dragging:
+            self.start_drag(arg, self.view.getPoint(pos))
+
+    def end_drag(self, arg, world_pos):
+        """
+        End drag operations with drag tracker
+        """
+
+        self.drag_tracker.finalize()
+        self.pi_tracker.drag_mode = False
+        self.drag_tracker = None
+
+    def start_drag(self, arg, world_pos):
+        """
+        Begin drag operations with drag tracker
+        """
+
+        self.drag_tracker = DragTracker(
+            self.view,
+            [self.doc.Name, self.obj.Name, 'DRAG_TRACKER'],
+            self.pi_tracker.node
+        )
+
+        _selected = [self.pi_tracker.get_drag_selection()]
+        #_selected.append(self.alignment_tracker.get_drag_selection())
+
+        _connected = [self.pi_tracker.get_drag_connection()]
+        #_connected.append(self.alignment_tracker.get_drag_connected())
+
+        self.drag_tracker.set_nodes(_selected, _connected, world_pos)
+
+        print(list(self.pi_tracker.gui_action['selected'].values())[0].get())
+        self.drag_tracker.set_rotation_center(
+            list(self.pi_tracker.gui_action['selected'].values())[0].get()
+        )
+
+        self.drag_tracker.callbacks.append(self.pi_tracker.drag_callback)
+        #self.drag_tracker.callbacks.append
+        #    self.alignment_tracker.drag_callback
+        #)
 
     def set_vobj_style(self, vobj, style):
         """
@@ -207,12 +254,12 @@ class EditAlignmentTask:
             Gui.Control.closeDialog()
 
         #remove the callback for action
-        if self.call_backs:
+        if self.callbacks:
 
-            for _cb in self.call_backs:
-                self.view.removeEventCallback(_cb[0], _cb[1])
+            for _k, _v in self.callbacks.items():
+                self.view.removeEventCallback(_k, _v)
 
-            self.call_backs.clear()
+            self.callbacks.clear()
 
         #shut down the tracker and re-select the object
         if self.pi_tracker:

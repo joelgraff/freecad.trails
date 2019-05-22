@@ -27,6 +27,7 @@ Customized wire tracker for PI alignments
 from pivy import coin
 
 from FreeCAD import Vector
+import FreeCADGui as Gui
 
 import DraftTools
 
@@ -63,10 +64,14 @@ class PiTracker(BaseTracker):
             'WIRE': {},
         }
 
-        self.callbacks = []
+        self.callbacks = {}
         self.mouse = MouseState()
         self.datum = Vector()
         self.view = view
+        self.connect_coord = None
+        self.connect_idx = -1
+        self.drag_start = None
+        self.drag_mode = False
 
         self.transform = coin.SoTransform()
         self.transform.translation.setValue([0.0, 0.0, 0.0])
@@ -86,28 +91,29 @@ class PiTracker(BaseTracker):
                 **self.trackers['WIRE']
             }.values():
 
-            self.insert_child(_tracker.node)
+            self.insert_node(_tracker.node, self.node)
 
         self.color.rgb = (0.0, 0.0, 1.0)
 
+        self.setup_callbacks()
+
+        #insert in the scenegraph root
         self.insert_node(self.node)
 
-    def setup_callbacks(self, view):
+    def setup_callbacks(self):
         """
         Setup event handling callbacks and return as a list
         """
 
-        return [
-            ('SoKeyboardEvent',
-             view.addEventCallback('SoKeyboardEvent', self.key_action)
-            ),
-            ('SoLocation2Event',
-             view.addEventCallback('SoLocation2Event', self.mouse_action)
-            ),
-            ('SoMouseButtonEvent',
-             view.addEventCallback('SoMouseButtonEvent', self.button_action)
-            )
-        ]
+        #self.callbacks['SoKeybaordEvent'] = \
+        #    self.view.addEventCallback('SoKeyboardEvent', self.key_action)
+
+        self.callbacks['SoLocation2Event'] = \
+            self.view.addEventCallback('SoLocation2Event', self.mouse_action)
+
+        self.callbacks['SoMouseButtonEvent'] = \
+            self.view.addEventCallback(
+                'SoMouseButtonEvent', self.button_action)
 
     def key_action(self, arg):
         """
@@ -170,15 +176,18 @@ class PiTracker(BaseTracker):
         _result = coin.SoGroup()
         _c = [list(_v.get()) for _v in self.gui_action['selected'].values()]
 
+        _count = len(_c)
+
         _coord = coin.SoCoordinate3()
-        _coord.setValues(0, len(_c), _c)
+        _coord.point.setValues(0, _count, _c)
 
-        _line = coin.SoLineSet()
-        _line.numVertices.setValue(len(_c))
-
-        _result.addChild(_c)
+        _result.addChild(_coord)
         _result.addChild(coin.SoMarkerSet())
-        _result.addChild(_line)
+
+        if _count > 1:
+            _line = coin.SoLineSet()
+            _line.numVertices.setValue(_count)
+            _result.addChild(_line)
 
         return _result
 
@@ -187,46 +196,65 @@ class PiTracker(BaseTracker):
         Return a SoGroup() object of trackers which connect to the drag select
         """
 
+        _trackers = self.trackers['NODE']
+
         #get list of sorted trackers
-        _selected = [
-            self.trackers[_k] for _k in sorted(self.gui_action['selected'])
+        _selected = [_trackers[_k] \
+            for _k in sorted(self.gui_action['selected'])
         ]
 
         #get index values for first and last selected elements
         _idx = [int(_selected[_i].name.split('-')[1]) for _i in [0, -1]]
-        _trackers = []
+        _conn = []
+
+        self.connect_idx = 0
 
         #if our starting node isn't the first, add the previous node
         if _idx[0] > 0:
-            _trackers.append(self.trackers['NODE-' + str(_idx[0] - 1)])
+            _conn.append(_trackers['NODE-' + str(_idx[0] - 1)])
+            self.connect_idx = 1
+
+        _conn.append(_selected[0])
+        self.drag_start = _selected[0].get()
 
         #if our ending node isn't the last, add the next node
-        if _idx[-1] < len(self.trackers) - 1:
-            _trackers.append(self.trackers['NODE-' + str(_idx[0] + 1)])
+        if _idx[-1] < len(_trackers) - 1:
+            _conn.append(_trackers['NODE-' + str(_idx[-1] + 1)])
 
         _result = coin.SoGroup()
 
-        #build separate groups for each connector, setting the coordiante to 
-        #be updates as the first coordinate in each group
-        for _v in _trackers:
+        _coord = coin.SoCoordinate3()
 
-            _marker = coin.SoMarkerSet()
+        for _i, _v in enumerate(_conn):
+            _coord.point.set1Value(_i, list(_v.get()))
 
-            _line = coin.SoLineSet()
-            _line.numVertices.setValue(2)
+        _marker = coin.SoMarkerSet()
 
-            _coord = coin.SoCoordinate3()
-            _coord.set1Value(0, list(_selected[0]).get())
-            _coord.set1Value(1, list(_v.get()))
+        _line = coin.SoLineSet()
+        _line.numVertices.setValue(_coord.point.getNum())
 
-            _node = coin.SoGroup()
-            _node.addChild(_coord)
-            _node.addChild(_marker)
-            _node.addChild(_line)
+        _node = coin.SoGroup()
+        _node.addChild(_coord)
+        _node.addChild(_marker)
+        _node.addChild(_line)
 
-            _result.addChild(_node)
+        _result.addChild(_node)
+
+        self.connect_coord = _coord
 
         return _result
+
+    def drag_callback(self, xform, pos):
+        """
+        Callback triggered when a drag tracker is updated to allow for geometry
+        updates that are related to dragging.
+        xform - transform applied to dragged geometry
+        pos - current mouse position
+        """
+
+        self.connect_coord.point.set1Value(
+            self.connect_idx, self.drag_start.add(Vector(xform))
+        )
 
     def start_drag(self, arg):
         """
@@ -260,7 +288,7 @@ class PiTracker(BaseTracker):
 
         self.gui_action['drag'] = _drag
 
-        self.insert_child(_drag.nodes['switch'])
+        self.insert_node(_drag.nodes['switch'], self.node)
 
     def end_drag(self):
         """
@@ -272,7 +300,7 @@ class PiTracker(BaseTracker):
         if not _drag:
             return
 
-        todo.delay(self.remove_child, _drag.nodes['switch'])
+        self.remove_node(_drag.nodes['switch'], self.node)
 
         result = _drag.get_transformed_coordinates()
 
@@ -499,6 +527,13 @@ class PiTracker(BaseTracker):
         """
 
         self.finalize_trackers()
+
+        if self.callbacks:
+
+            for _k, _v in self.callbacks.items():
+                self.view.removeEventCallback(_k, _v)
+
+            self.callbacks.clear()
 
         if not node:
             node = self.node

@@ -216,4 +216,4 @@ class NodeTracker(BaseTracker):
         Cleanup
         """
 
-        self.remove_node(self.node)
+        pass

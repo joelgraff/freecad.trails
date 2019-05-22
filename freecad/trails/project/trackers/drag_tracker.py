@@ -35,10 +35,12 @@ class DragTracker(BaseTracker):
     Tracker for dragging operations
     """
 
-    def __init__(self, view, names):
+    def __init__(self, view, names, base_node):
         """
         Constructor
         """
+
+        self.base_node = base_node
 
         self.viewport = \
             view.getViewer().getSoRenderManager().getViewportRegion()
@@ -49,15 +51,23 @@ class DragTracker(BaseTracker):
             'switch': coin.SoSwitch(),
             'transform': coin.SoTransform(),
         }
+
+        self.view = view
         self.start_path = None
-        self.trackers = None
+
+        self.gui_callbacks = {
+            'SoLocation2Event': \
+                view.addEventCallback('SoLocation2Event', self.mouse_action)
+        }
+
+        self.callbacks = []
 
         self.datums = {
-            _k: None for _k in ['origin', 'picked', 'start', 'trans_start']
+            _k: None for _k in ['origin', 'picked', 'start', 'drag_start']
         }
 
         self.datums['rotation'] = {
-            'center': None, 'ref_vec': None, 'angle': 0.0
+            'center': None, 'ref_vec': Vector(), 'angle': 0.0
         }
 
         names.append('DRAG TRACKER')
@@ -66,13 +76,36 @@ class DragTracker(BaseTracker):
             self.nodes['connector'], self.nodes['selected']
         ], False)
 
+        self.nodes['selected'].addChild(self.nodes['transform'])
         self.nodes['switch'].addChild(self.node)
 
         self.on(self.nodes['switch'])
 
-    def set_nodes(self, selected, connector):
+        self.insert_node(self.nodes['switch'], self.base_node)
+
+    def set_rotation_center(self, vector):
+        """
+        Set the center of rotation for drag operations
+        """
+
+        self.datums['rotation']['center'] = vector
+        self.nodes['transform'].center = coin.SbVec3f(tuple(vector))
+
+    def mouse_action(self, arg):
+        """
+        Mouse movement callback
+        """
+
+        world_pos = self.view.getPoint(self.view.getCursorPos())
+
+        self.update(world_pos, arg['AltDown'], arg['ShiftDown'])
+
+    def set_nodes(self, selected, connector, world_pos):
         """
         Set the trackes the drag tracker will use
+        selected - list of gourp nodes to be transformed entirely
+        connector - list of group nodes whose first coordinate only is updated
+        picked - initial cursor position at beginning of drag action
         """
 
         for _group in selected:
@@ -81,16 +114,8 @@ class DragTracker(BaseTracker):
         for _group in connector:
             self.nodes['connector'].addChild(_group)
 
-        self.trackers['picked'] = trackers[picked]
-
-        _p = trackers[picked].get()
-
-        self.datums['origin'] = datum
-        self.datums['picked'] = _p
-        self.datums['start'] = _p.sub(self.trackers['selected'][0].get())
-        self.datums['trans_start'] = _p
-
-        self.nodes['transform'].translation.setValue([0.0, 0.0, 0.0])
+        self.datums['drag_start'] = world_pos
+        self.update(world_pos)
 
     def get_transformed_coordinates(self):
         """
@@ -144,14 +169,23 @@ class DragTracker(BaseTracker):
 
         #non-continuous rotation case
         if not _ctr:
-            _ctr = self.trackers['selected'][0].get()
+
+            _ctr = self.datums['drag_start']
+
             datum['center'] = _ctr
 
-            _ref_vec = vector.sub(_ctr).normalize()
+            _ref_vec = vector.sub(_ctr)
+            
+            if _ref_vec != Vector():
+                _ref_vec.normalize()
+
             datum['ref_vec'] = _ref_vec
 
             self.nodes['transform'].center = coin.SbVec3f(tuple(_ctr))
 
+        _ctr = _ctr.add(
+            Vector(self.nodes['transform'].translation.getValue())
+        )
         #scale the rotation by one-tenth if shift is depressed
         _scale = 1.0
 
@@ -160,7 +194,11 @@ class DragTracker(BaseTracker):
 
         #calculate the direction of rotation between the current mouse position
         #vector and the previous.  Normalize and reverse sign on direction.z
-        _vec = vector.sub(_ctr).normalize()
+        _vec = vector.sub(_ctr)
+        
+        if _vec != Vector():
+            _vec.normalize()
+
         _dir = _vec.cross(_ref_vec).z
 
         if _dir != 0:
@@ -176,20 +214,20 @@ class DragTracker(BaseTracker):
         #return the +z axis rotation for the transformation
         return coin.SbRotation(coin.SbVec3f(0.0, 0.0, 1.0), _rot)
 
-    def update(self, vector, rotation=False, modify=True):
+    def update(self, world_pos, rotation=False, modify=True):
         """
         Update the transform with the passed position
         rotation - flag for drag rotations
-        modify - modify drag magnitudes
+        modify - modify drag magnitudes (slow  / precise motion)
         """
 
         #quit after handling rotation case
         if rotation:
 
             self.nodes['transform'].rotation = \
-                self.drag_rotation(vector, modify)
+                self.drag_rotation(world_pos, modify)
 
-            self.datums['trans_start'] = vector
+            self.datums['drag_start'] = world_pos
 
             return
 
@@ -198,23 +236,53 @@ class DragTracker(BaseTracker):
 
         #calculate the new translation, which is the distance the mouse has
         #moved from the previous position added to the existing translation
-        _xf = tuple(Vector(_xf).add(vector.sub(self.datums['trans_start'])))
+        _xf = Vector(_xf).add(world_pos.sub(self.datums['drag_start']))
 
         #save the current mouse position as the next translation start
-        self.datums['trans_start'] = vector
+        self.datums['drag_start'] = world_pos
 
         #apply the updated translation
-        self.nodes['transform'].translation.setValue(_xf)
+        self.nodes['transform'].translation.setValue(tuple(_xf))
 
-        #update the position of the connector node to the translation position
-        _con = self.trackers['selected'][0].get().add(Vector(_xf))
+        #_p = self.nodes['selected'].getChild(1).getChild(0).point
+       # _p2 = Vector(_p.getValues()[0].getValue()).add(Vector(_xf))
+       # _p.set1Value(0, tuple(_p2))
+        #print(_p2)
 
-        self.nodes['connector'].getChild(0).point.set1Value(1, tuple(_con))
+        #trigger tracker callbacks for updating the connecting geometry to the
+        #geometry being dragged
+        for _cb in self.callbacks:
+            _cb(tuple(_xf), world_pos)
 
     def finalize(self, node=None):
         """
         Shutdown
         """
 
+        if self.nodes:
+            self.remove_node(self.nodes['switch'], self.base_node)
+            self.nodes.clear()
+
+        if self.viewport:
+            self.viewport = None
+
+        if self.start_path:
+            self.start_path = None
+
+        if self.callbacks:
+            self.callbacks.clear()
+
+        if self.gui_callbacks:
+
+            for _k, _v in self.gui_callbacks.items():
+                self.view.removeEventCallback(_k, _v)
+
+            self.callbacks.clear()
+
+        if self.datums:
+            self.datums.clear()
+
         if not node:
-            node = self.nodes['switch']
+            node = self.node
+
+        super().finalize(node)
