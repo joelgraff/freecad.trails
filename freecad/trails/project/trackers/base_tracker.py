@@ -45,6 +45,7 @@ class BaseTracker:
         self.draw_style = coin.SoDrawStyle()
         self.names = names
         self.node = coin.SoSeparator()
+        self.parent = None
 
         if not children:
             children = []
@@ -87,67 +88,31 @@ class BaseTracker:
         switch.whichChild = -1
         self.visible = False
 
-    def insert_node(self, node, on_top = False):
+    def insert_node(self, node, parent=None, on_top=False):
         """
-        Convenince wrapper for _insert_node
+        Insert a node as a child of the passed node
         """
 
-        _fn = Draft.get3DView().getSceneGraph().addChild
+        if not parent:
+            parent = Draft.get3DView().getSceneGraph()
+
+        _fn = parent.addChild
 
         if on_top:
-            _fn = Draft.get3DView().getSceneGraph().insertChild
+            _fn = parent.insertChild
 
         todo.delay(_fn, node)
 
-    def remove_node(self, node):
+    def remove_node(self, node, parent=None):
         """
         Convenience wrapper for _remove_node
         """
 
-        if Draft.get3DView().getSceneGraph().findChild(node) >= 0:
-            todo.delay(Draft.get3DView().getSceneGraph().removeChild, node)
-
-    def _insert(self, node):
-        self.node.insertChild(node, 0)
-
-    def insert_child(self, node, on_top=False):
-        """
-        Convenience wrapper for _insert_child
-        """
-
-        if on_top:
-            todo.delay(self._insert, node)
-        else:
-            todo.delay(self.node.addChild, node)
-
-    def remove_child(self, node):
-        """
-        Convenience wrapper for _remove_child
-        """
-
-        if self.node.findChild(node) >= 0:
-            todo.delay(self.node.removeChild, node)
-
-    def _insert_node(self, node, parent, ontop=False):
-        """
-        Insert node into the scene graph.
-        Must not be called from an event handler (or other scene graph
-        traversal).
-        """
-
-        if ontop:
-            parent.insertChild(node, 0)
-        else:
-            parent.addChild(node)
-
-    def _remove_node(self, parent, node):
-        """
-        Remove self.switch from the scene graph.
-        Must not be called during scene graph traversal).
-        """
+        if not parent:
+            parent = Draft.get3DView().getSceneGraph()
 
         if parent.findChild(node) >= 0:
-            parent.removeChild(node)
+            todo.delay(parent.removeChild, node)
 
     def adjustTracker(self, node=None, to_top=True):
         """

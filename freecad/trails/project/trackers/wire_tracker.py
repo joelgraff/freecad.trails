@@ -180,4 +180,4 @@ class WireTracker(BaseTracker):
         Cleanup
         """
 
-        self.remove_node(self.node)
+        self.remove_node(self.node, self.node)
