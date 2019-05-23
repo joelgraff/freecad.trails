@@ -122,7 +122,7 @@ def get_bearing(vector):
 
     return angle
 
-def within_tolerance(lhs, rhs=None):
+def within_tolerance(lhs, rhs=None, tolerance=None):
     """
     Determine if two values are within a pre-defined tolerance
 
@@ -133,6 +133,9 @@ def within_tolerance(lhs, rhs=None):
     List comparisons check every value against every other
     and errors if any checks fail
     """
+
+    if tolerance is None:
+        tolerance = C.TOLERANCE
 
     #item list eliminates none types
     item_list = [_v for _v in [lhs, rhs] if _v]
@@ -178,7 +181,7 @@ def within_tolerance(lhs, rhs=None):
             abs(_i[0] - _i[1]) for _i in zip(items[0], items[1])
         ]
 
-    _truth = [abs(_i) <= C.TOLERANCE for _i in _delta]
+    _truth = [abs(_i) <= tolerance for _i in _delta]
 
     return all(_truth)
 
