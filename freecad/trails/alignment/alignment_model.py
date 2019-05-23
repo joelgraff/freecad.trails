@@ -161,11 +161,12 @@ class AlignmentModel:
 
                 #build the line using the provided parameters and add it
                 _geo_list.append(
-                    line.get_parameters({'Start': App.Vector(_prev_coord),
-                                         'End': App.Vector(_coord),
-                                         'BearingIn': _geo['BearingIn'],
-                                         'BearingOut': _geo['BearingOut'],
-                                         })
+                    line.get_parameters({
+                        'Start': App.Vector(_prev_coord),
+                        'End': App.Vector(_coord),
+                        'BearingIn': _geo['BearingIn'],
+                        'BearingOut': _geo['BearingOut'],
+                    })
                 )
 
             _geo_list.append(_geo)
@@ -539,3 +540,118 @@ class AlignmentModel:
             return arc.get_tangent_vector(curve, distance)
 
         return None
+
+    def discretize_geometry(self, interval=None, method='Segment', delta=10.0):
+        """
+        Discretizes the alignment geometry to a series of vector points
+        interval - the starting station and length of curve
+        method - method of discretization
+        delta - discretization interval parameter
+        """
+
+        geometry = self.data['geometry']
+        points = []
+        last_curve = None
+
+        #undefined = entire length
+        if not interval:
+            interval = [0.0, self.data['meta']['Length']]
+
+        #only one element = starting position
+        if len(interval) == 1:
+            interval.append(self.data['meta']['Length'])
+
+        #discretize each arc in the geometry list,
+        #store each point set as a sublist in the main points list
+        for curve in geometry:
+
+            if not curve:
+                continue
+
+            _sta = curve['InternalStation']
+
+            #skip out if not within the specifed interval
+            if interval:
+
+                #skip if curve end precedes start of interval
+                if _sta[1] < interval[0]:
+                    continue
+
+                #skip if curve start exceeds end of interval
+                if _sta[0] > interval[1]:
+                    continue
+
+                _start = _sta[0]
+
+                if _sta[0] < interval[0]:
+                    _start = interval[0]
+
+                _end = _sta[1]
+
+                if _sta[1] > interval[1]:
+                    _end = interval[1]
+
+                _arc_int = [_start - _sta[0], _end - _start]
+
+            if curve['Type'] == 'Curve':
+
+                _pts, _hsh = arc.get_points(
+                    curve, size=delta, method=method, interval=_arc_int
+                )
+
+                if _pts:
+                    points.append(_pts)
+
+            else:
+                _start_coord = line.get_coordinate(
+                    curve['Start'], curve['BearingIn'], _arc_int[0]
+                )
+
+                points.append(
+                    [
+                        _start_coord,
+                        line.get_coordinate(
+                            _start_coord, curve['BearingIn'], _arc_int[1])     
+                    ]
+                )
+
+            last_curve = curve
+
+        #store the last point of the first geometry for the next iteration
+        _prev = points[0][-1]
+        result = points[0]
+
+        if not (_prev and result):
+            return None
+
+        #iterate the point sets, adding them to the result set
+        #and eliminating any duplicate points
+        for item in points[1:]:
+
+            _v = item
+
+            #duplicate points are within a hundredth of a foot of each other
+            if _prev.sub(item[0]).Length < 0.01:
+                _v = item[1:]
+
+            result.extend(_v)
+            _prev = item[-1]
+
+        #add a line segment for the last tangent if it exists
+        last_tangent = abs(
+            self.data['meta']['Length'] - last_curve['InternalStation'][1]
+        )
+
+        if not support.within_tolerance(last_tangent):
+            _vec = support.vector_from_angle(last_curve['BearingOut'])\
+                .multiply(last_tangent)
+
+            last_point = result[-1]
+
+            result.append(last_point.add(_vec))
+
+        #set the end point
+        if not self.data['meta'].get('End'):
+            self.data['meta']['End'] = result[-1]
+
+        return result
