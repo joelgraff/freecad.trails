@@ -640,10 +640,9 @@ def get_coord_on_arc(start, radius, direction, distance):
 
     delta = distance / radius
 
-    return App.Vector(math.sin(delta), 1 - math.cos(delta), 0.0).multiply(radius) + start
-
-
-    return None
+    return App.Vector(
+        math.sin(delta), 1 - math.cos(delta), 0.0
+        ).multiply(radius) + start
 
 def get_ortho_vector(arc_dict, distance, side=''):
     """
@@ -723,7 +722,7 @@ def get_segments(bearing, deltas, direction, start, radius):
 
     return _points
 
-def get_points(arc_dict, interval, interval_type='Segment', layer=0.0):
+def get_points(arc_dict, size, method='Segment', layer=0.0, interval=None):
     """
     Discretize an arc into the specified segments.
     Resulting list of coordinates omits provided starting point and
@@ -736,13 +735,14 @@ def get_points(arc_dict, interval, interval_type='Segment', layer=0.0):
         BearingIn   - true north starting bearing in radians (0 to 2*pi)
         BearingOut  - true north ending bearing in radians (0 to 2*pi)
 
-    interval    - value for the interval type (non-zero, positive)
+    size        - size of discrete elements (non-zero, positive)
 
-    interval_type: (defaults to segment for invalid values)
-        'Segment'   - subdivide into n equal segments
+    method     (Method of discretization)
+        'Segment'   - subdivide into n equal segments (default)
         'Interval'  - subdivide into fixed length segments
         'Tolerance' - limit error between segment and curve
 
+    interval    - Start and distance along arc to discretize
     layer       - the z coordinate to apply to all points
 
     Points are returned references to start_coord
@@ -754,29 +754,52 @@ def get_points(arc_dict, interval, interval_type='Segment', layer=0.0):
     radius = arc_dict['Radius']
     start = arc_dict['Start']
 
-    result = [start]
+    if not interval:
+        interval = [0.0, 0.0]
+
+    _delta_angle = interval[0] / radius
+    _start_angle = bearing_in + (_delta_angle * direction)
+
+    #get the start coordinate at the actual starting point on the curve
+    if interval[0] > 0.0:
+
+        start = get_segments(
+            bearing_in, [_delta_angle], direction, start, radius
+        )[1]
+
+    #if the distance is specified, calcualte the central angle from that
+    #otehrwise, the new central angle is the old central angle less the delta
+    if interval[1] > 0.0:
+        angle = interval[1] / radius
+    else:
+        angle = angle - _delta_angle
 
     #define the incremental angle for segment calculations,
     #defaulting to 'Segment'
-    _delta = angle / interval
+    _delta = angle / size
 
-    _ratio = (interval * units.scale_factor()) / radius
+    _ratio = (size * units.scale_factor()) / radius
 
-    if interval_type == 'Interval':
+    if method == 'Interval':
         _delta = _ratio
 
-    elif interval_type == 'Tolerance':
+    elif method == 'Tolerance':
         _delta = 2.0 * math.acos(1 - _ratio)
 
     #pre-calculate the segment deltas,
     #increasing from zero to the central angle
+    if _delta == 0.0:
+        return None, None
+
     segment_deltas = [
         float(_i + 1) * _delta for _i in range(0, int(angle / _delta) + 1)
     ]
 
-    segment_deltas[-1] = angle
+    #segment_deltas[-1] = angle
 
-    points = get_segments(bearing_in, segment_deltas, direction, start, radius)
+    points = get_segments(
+        _start_angle, segment_deltas, direction, start, radius
+    )
 
     _forward = App.Vector(math.sin(bearing_in), math.cos(bearing_in), 0.0)
     _right = App.Vector(_forward.y, -_forward.x, 0.0)
