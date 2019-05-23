@@ -52,29 +52,30 @@ def create(geometry, object_name='', no_visual=False):
         print('No curve geometry supplied')
         return
 
-    _obj = None
     _name = _CLASS_NAME
 
     if object_name:
         _name = object_name
 
-    parent = alignment_group.create()
+    _obj = None
 
-    _obj = parent.Object.newObject(_TYPE, _name)
+    if no_visual:
+        _obj = App.ActiveDocument.addObject(_TYPE, _name)
+
+    else:
+        parent = alignment_group.create()
+        _obj = parent.Object.newObject(_TYPE, _name)
 
     result = Alignment(_obj, _name)
     result.set_geometry(geometry)
 
     if not no_visual:
+
         Draft._ViewProviderWire(_obj.ViewObject)
 
     App.ActiveDocument.recompute()
-    return result
 
-#Construction order:
-#Calc arc parameters
-#Sort arcs
-#calculate arc start coordinates by internal position and apply to arcs
+    return result
 
 class Alignment(Draft._Wire):
     """
@@ -319,7 +320,7 @@ class Alignment(Draft._Wire):
         if meta.get('StartStation'):
             obj.Start_Station = str(meta['StartStation']) + ' ft'
 
-    def discretize_geometry(self, interval=10.0, interval_type='Segment'):
+    def discretize_geometry(self, delta=10.0, interval_type='Segment'):
         """
         Discretizes the alignment geometry to a series of vector points
         """
@@ -340,7 +341,7 @@ class Alignment(Draft._Wire):
 
             if curve['Type'] == 'Curve':
 
-                _pts, _hsh = arc.get_points(curve, interval, interval_type)
+                _pts, _hsh = arc.get_points(curve, delta, interval_type)
 
                 points.append(_pts)
                 hashes = {**hashes,
@@ -408,7 +409,8 @@ class Alignment(Draft._Wire):
                 self.Object.Seg_Value = 200.0
 
             elif _prop == 'Tolerance':
-                self.Object.Seg_Value = int(1000.0 / units.scale_factor()) / 100.0
+                self.Object.Seg_Value = \
+                    int(1000.0 / units.scale_factor()) / 100.0
 
     def execute(self, obj):
         """
