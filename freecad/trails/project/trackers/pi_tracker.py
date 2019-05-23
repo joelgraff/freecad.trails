@@ -43,7 +43,7 @@ class PiTracker(BaseTracker):
     picking and editing
     """
 
-    def __init__(self, doc, view, object_name, node_name, points):
+    def __init__(self, doc, view, object_name, points):
         """
         Constructor
         """
@@ -67,13 +67,11 @@ class PiTracker(BaseTracker):
         self.drag_start = None
         self.drag_mode = False
 
-        _names = [doc.Name, object_name, node_name]
+        _names = [doc.Name, object_name, 'PI_TRACKER']
 
         self.build_trackers(points, _names)
 
-        super().__init__(
-            names=_names, select=False, group=True
-        )
+        super().__init__(names=_names, select=False, group=True)
 
         for _tracker in {
                 **self.trackers['NODE'],
@@ -154,7 +152,14 @@ class PiTracker(BaseTracker):
 
             self.gui_action['rollover'] = _tracker
 
-    def get_drag_selection(self):
+    def get_selected(self):
+        """
+        Returns the selected node coordinates as a list of vectors
+        """
+
+        return [_v.get() for _v in self.gui_action['selected'].values()]
+
+    def get_selection_group(self):
         """
         Return a SoGroup() object of trackers to be transformed by draf
         """
@@ -182,7 +187,7 @@ class PiTracker(BaseTracker):
 
         return _result
 
-    def get_drag_connection(self):
+    def get_connection_group(self):
         """
         Return a SoGroup() object of trackers which connect to the drag select
         """
