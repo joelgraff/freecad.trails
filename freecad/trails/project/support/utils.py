@@ -32,6 +32,8 @@ __url__ = "https://www.freecadweb.org"
 import math
 import uuid
 
+from PySide import QtGui
+
 import FreeCAD as App
 import DraftGui
 from Draft import _Wire, _ViewProviderWire
@@ -49,6 +51,18 @@ class Constants(Const):
     TOLERANCE = 0.0001              # tolerance for differences in measurements
     UP = App.Vector(0.0, 1.0, 0.0)  # Up vector
     Z_DEPTH = [0.0, 0.05, 0.1]      # Z values to provide rendering layers
+
+def getMainWindow():
+    """
+    Return reference to main window
+    """
+    top = QtGui.QApplication.topLevelWidgets()
+
+    for item in top:
+        if item.metaObject().className() == 'Gui::MainWindow':
+            return item
+
+    raise RuntimeError('No main window found')
 
 def get_uuid():
     """

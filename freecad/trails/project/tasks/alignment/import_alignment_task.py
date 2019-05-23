@@ -34,6 +34,7 @@ import FreeCADGui as Gui
 
 from . import import_xml_subtask #, ImportCsvSubtask
 
+from ...support import utils
 from .... import resources
 from ....alignment import alignment_group, alignment
 
@@ -176,7 +177,7 @@ class ImportAlignmentTask:
         """
         Initiailze the task window and controls
         """
-        _mw = self.getMainWindow()
+        _mw = utils.getMainWindow()
 
         form = _mw.findChild(QtGui.QWidget, 'TaskPanel')
 
@@ -186,15 +187,3 @@ class ImportAlignmentTask:
         form.file_path.textChanged.connect(self.examine_file)
 
         self.form = form
-
-    def getMainWindow(self):
-        """
-        Return reference to main window
-        """
-        top = QtGui.QApplication.topLevelWidgets()
-
-        for item in top:
-            if item.metaObject().className() == 'Gui::MainWindow':
-                return item
-
-        raise RuntimeError('No main window found')
