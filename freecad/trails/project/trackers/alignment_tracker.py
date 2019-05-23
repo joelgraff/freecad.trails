@@ -26,90 +26,75 @@ Tracker for alignment drafting
 
 from pivy import coin
 
-import FreeCAD as App
-import Part
-from DraftTrackers import Tracker
+from FreeCAD import Vector
 
-class AlignmentTracker(Tracker):
+from ...geometry import support
+from .base_tracker import BaseTracker
+
+class AlignmentTracker(BaseTracker):
     """
     Tracker class for alignment design
     """
 
-    def __init__(self, dotted=False, scolor=None, swidth=None, points=None):
+    def __init__(self, doc, view, object_name, model):
         """
         Constructor
         """
-        self.wire = None
-        self.points = points
-        self.trans = coin.SoTransform()
-        self.sep = coin.SoSeparator()
-        self.recompute()
 
-        Tracker.__init__(self, dotted, scolor, swidth,
-                         [self.trans, self.sep], name="AlignmentTracker")
+        self.model = model
+
+        _names = [doc.Name, object_name, 'ALIGNMENT_TRACKER']
+        super().__init__(names=_names, select=False, group=True)
+
+    def get_alignment_group(self, pi_coord):
+        """
+        Return a node of coordinates and lines which represents the
+        discretized alignment from the end of the curve at the specified
+        PI coordinate to the end of the alignment
+        """
+
+        _start_sta = 0.0
+
+        for _curve in self.model.data['geometry']:
+
+            _pi = _curve.get('PI')
+
+            if not _pi:
+                continue
+
+            if support.within_tolerance(_pi, pi_coord, 0.1):
+                _start_sta = _curve['InternalStation'][1]
+
+        _geo = self.model.discretize_geometry([_start_sta])
+
+        _group = coin.SoGroup()
+        _group.setName('ALIGNMENT_TRACKER')
+
+        _coord = coin.SoCoordinate3()
+        _coord.point.setValues(0, len(_geo), [list(_v) for _v in _geo])
+
+        _line = coin.SoLineSet()
+
+        _group.addChild(_coord)
+        _group.addChild(_line)
+
+        return _group
 
     def update(self, points):
         """
         Update the tracker points and recompute
         """
-        self.points = points
-        self.recompute()
 
-    def recompute(self):
+        pass
+
+    def finalize(self, node=None):
         """
-        Recompute geometry based on current points
+        Override of the parent method
         """
-        if not self.points:
-            return
 
-        if len(self.points) <= 1:
-            return
+        self.model = None
 
-        if self.wire:
-            self.sep.removeChild(self.wire)
+        if not node:
+            node = self.node
 
-        wire = Part.makePolygon(self.points)
-
-        buf = wire.writeInventor(2, 0.01)
-
-        try:
-            ivin = coin.SoInput()
-            ivin.setBuffer(buf)
-            ivob = coin.SoDB.readAll(ivin)
-
-        except:
-
-            import re
-
-            buf = buf.replace('\n', '')
-            pts = re.findall(r'point \[(.*?)\]', buf)[0]
-            pts = pts.split(',')
-            _pc = []
-
-            for _p in pts:
-                _v = _p.strip().split()
-                _pc.append([float(_v[0]), float(_v[1]), float(_v[2])])
-
-            coords = coin.SoCoordinate3()
-            coords.point.setValues(0, len(_pc, _pc))
-
-            line = coin.SoLineSet()
-            line.numVertices.setValue(-1)
-
-            self.wire = coin.SoSeparator()
-            self.wire.addChild(coords)
-
-            self.sep.addChild(self.wire)
-
-        else:
-            if ivob and ivob.getNumChildren() > 1:
-
-                self.wire = ivob.getChild(1).getChild(0)
-                self.wire.removeChild(self.wire.getChild(0))
-                self.wire.removeChild(self.wire.getChild(0))
-                self.sep.addChild(self.wire)
-
-            else:
-                App.Console.PrintWarning("""
-                    AlignmentTracker.recompute() failed to read Inventor string\n
-                """)
+        super().finalize(node)

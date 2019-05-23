@@ -36,6 +36,7 @@ from ...support.mouse_state import MouseState
 
 from ...trackers.pi_tracker import PiTracker
 from ...trackers.drag_tracker import DragTracker
+from ...trackers.alignment_tracker import AlignmentTracker
 
 from .draft_alignment_task import DraftAlignmentTask
 
@@ -71,6 +72,7 @@ class EditAlignmentTask:
         self.alignment.data = alignment_data
         self.pi_tracker = None
         self.drag_tracker = None
+        self.alignment_tracker = None
         self.callbacks = {}
         self.mouse = MouseState()
 
@@ -110,7 +112,11 @@ class EditAlignmentTask:
         _points = self.alignment.get_pi_coords()
 
         self.pi_tracker = PiTracker(
-            self.doc, self.view, self.obj.Name, 'PI_TRACKER', _points
+            self.doc, self.view, self.obj.Name, _points
+        )
+
+        self.alignment_tracker = AlignmentTracker(
+            self.doc, self.view, self.obj.Name, self.alignment
         )
 
         self.callbacks = {
@@ -160,11 +166,12 @@ class EditAlignmentTask:
         pos = self.view.getCursorPos()
         self.mouse.update(arg, pos)
 
-        #if tracker exists, but we're nut dragging, shut it down
+        #if tracker exists, but we're not dragging, shut it down
         if self.drag_tracker:
             self.end_drag(arg, self.view.getPoint(pos))
 
         elif _dragging:
+
             self.start_drag(arg, self.view.getPoint(pos))
 
     def end_drag(self, arg, world_pos):
@@ -191,22 +198,30 @@ class EditAlignmentTask:
             self.pi_tracker.node
         )
 
-        _selected = [self.pi_tracker.get_drag_selection()]
-        #_selected.append(self.alignment_tracker.get_drag_selection())
+        #get selected geometry from the pi tracker
+        _selected = [self.pi_tracker.get_selection_group()]
 
-        _connected = [self.pi_tracker.get_drag_connection()]
+        #get selected geometry from the alignment tracker
+        _selected.append(
+            self.alignment_tracker.get_alignment_group(
+                self.pi_tracker.get_selected()[0])
+        )
+
+        #get connection geometry from the pi tracker
+        _connected = [self.pi_tracker.get_connection_group()]
         #_connected.append(self.alignment_tracker.get_drag_connected())
 
         self.drag_tracker.set_nodes(_selected, _connected, world_pos)
 
         self.drag_tracker.set_rotation_center(
-            list(self.pi_tracker.gui_action['selected'].values())[0].get()
+            self.pi_tracker.get_selected()[0]
         )
 
         self.drag_tracker.callbacks.append(self.pi_tracker.drag_callback)
         #self.drag_tracker.callbacks.append
         #    self.alignment_tracker.drag_callback
         #)
+        print('start drag')
 
     def set_vobj_style(self, vobj, style):
         """
