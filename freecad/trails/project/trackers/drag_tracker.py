@@ -54,6 +54,7 @@ class DragTracker(BaseTracker):
 
         self.view = view
         self.start_path = None
+        
 
         self.gui_callbacks = {
             'SoLocation2Event': \
@@ -83,13 +84,14 @@ class DragTracker(BaseTracker):
 
         self.insert_node(self.nodes['switch'], self.base_node)
 
-    def set_rotation_center(self, vector):
+    def set_rotation_center(self, center):
         """
-        Set the center of rotation for drag operations
+        Set the center of rotation for drag operations. 
+        center - Vector of centerpoint
         """
 
-        self.datums['rotation']['center'] = vector
-        self.nodes['transform'].center = coin.SbVec3f(tuple(vector))
+        self.datums['rotation']['center'] = center
+        self.nodes['transform'].center = coin.SbVec3f(tuple(center))
 
     def mouse_action(self, arg):
         """
