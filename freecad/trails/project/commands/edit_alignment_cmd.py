@@ -109,6 +109,9 @@ class EditAlignmentCmd(DraftTool):
         self.edit_alignment_task = \
             edit_alignment_task.create(self.doc, self.view, data, obj)
 
+        Gui.Control.showDialog(self.edit_alignment_task)
+        self.edit_alignment_task.setup()
+
     def get_current_tracker(self, info):
         """
         Update tracker selection styles and states

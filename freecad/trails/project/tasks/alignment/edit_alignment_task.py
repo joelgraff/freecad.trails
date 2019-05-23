@@ -24,14 +24,18 @@
 """
 Task to edit an alignment
 """
+from PySide import QtGui
+
 import FreeCADGui as Gui
 
 import Draft
 import DraftTools
 
+from .... import resources
+
 from ....alignment import alignment_model
 
-from ...support import const
+from ...support import const, utils
 from ...support.mouse_state import MouseState
 
 from ...trackers.pi_tracker import PiTracker
@@ -75,6 +79,9 @@ class EditAlignmentTask:
         self.alignment_tracker = None
         self.callbacks = {}
         self.mouse = MouseState()
+        self.form = None
+        self.ui_path = resources.__path__[0] + '/ui/'
+        self.ui = self.ui_path + 'edit_alignment_task.ui'
 
         self.view_objects = {
             'selectables': [],
@@ -128,13 +135,41 @@ class EditAlignmentTask:
         for _k, _v in self.callbacks.items():
             self.view.addEventCallback(_k, _v)
 
-        panel = DraftAlignmentTask(self.clean_up)
-
-        Gui.Control.showDialog(panel)
-        #panel.setup()
-
         self.doc.recompute()
         DraftTools.redraw3DView()
+
+    def setup(self):
+        """
+        Initiailze the task window and controls
+        """
+        _mw = utils.getMainWindow()
+
+        form = _mw.findChild(QtGui.QWidget, 'TaskPanel')
+
+        #form.file_path = form.findChild(QtGui.QLineEdit, 'filename')
+        #form.pick_file = form.findChild(QtGui.QToolButton, 'pick_file')
+        #form.pick_file.clicked.connect(self.choose_file)
+        #form.file_path.textChanged.connect(self.examine_file)
+
+        self.form = form
+
+    def accept(self):
+        """
+        Accept the task parameters
+        """
+
+        self.finish()
+
+        return None
+
+    def reject(self):
+        """
+        Reject the task
+        """
+
+        self.finish()
+
+        return None
 
     def key_action(self, arg):
         """
@@ -203,25 +238,27 @@ class EditAlignmentTask:
 
         #get selected geometry from the alignment tracker
         _selected.append(
-            self.alignment_tracker.get_alignment_group(
-                self.pi_tracker.get_selected()[0])
+            self.alignment_tracker.get_selection_group(
+                self.pi_tracker.get_selected())
         )
 
         #get connection geometry from the pi tracker
         _connected = [self.pi_tracker.get_connection_group()]
-        #_connected.append(self.alignment_tracker.get_drag_connected())
+        _connected.append(
+            self.alignment_tracker.get_connection_group(
+                self.pi_tracker.get_selected()
+            )
+        )
 
         self.drag_tracker.set_nodes(_selected, _connected, world_pos)
-
         self.drag_tracker.set_rotation_center(
             self.pi_tracker.get_selected()[0]
         )
 
-        self.drag_tracker.callbacks.append(self.pi_tracker.drag_callback)
-        #self.drag_tracker.callbacks.append
-        #    self.alignment_tracker.drag_callback
-        #)
-        print('start drag')
+        self.drag_tracker.callbacks.extend([
+            self.pi_tracker.drag_callback,
+            self.alignment_tracker.drag_callback
+        ])
 
     def set_vobj_style(self, vobj, style):
         """
@@ -257,8 +294,7 @@ class EditAlignmentTask:
         self.view.getSceneGraph().getField("selectionRole").setValue(1)
 
         #close dialog
-        if not Draft.getParam('UiMode', 1):
-            Gui.Control.closeDialog()
+        Gui.Control.closeDialog()
 
         #remove the callback for action
         if self.callbacks:
