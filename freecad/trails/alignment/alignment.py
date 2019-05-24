@@ -337,22 +337,22 @@ class Alignment(Draft._Wire):
             if not curve:
                 continue
 
-            curve_hash = hash(tuple(curve['Start']) + tuple(curve['End']))
+            #curve_hash = hash(tuple(curve['Start']) + tuple(curve['End']))
 
             if curve['Type'] == 'Curve':
 
                 _pts, _hsh = arc.get_points(curve, delta, interval_type)
 
                 points.append(_pts)
-                hashes = {**hashes,
-                          **dict.fromkeys(set(_hsh), curve_hash)}
+                #hashes = {**hashes,
+                #          **dict.fromkeys(set(_hsh), curve_hash)}
 
             elif curve['Type'] == 'Line':
                 points.append([curve['Start'], curve['End']])
 
             last_curve = curve
 
-        self.hashes = hashes
+        #self.hashes = hashes
 
         #store the last point of the first geometry for the next iteration
         _prev = points[0][-1]
