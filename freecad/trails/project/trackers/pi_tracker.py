@@ -217,8 +217,6 @@ class PiTracker(BaseTracker):
         if _idx[-1] < len(_trackers) - 1:
             _conn.append(_trackers['NODE-' + str(_idx[-1] + 1)])
 
-        _result = coin.SoGroup()
-
         _coord = coin.SoCoordinate3()
 
         for _i, _v in enumerate(_conn):
@@ -234,11 +232,12 @@ class PiTracker(BaseTracker):
         _node.addChild(_marker)
         _node.addChild(_line)
 
-        _result.addChild(_node)
+        _node.setName('pi-connector')
+        #_result.addChild(_node)
 
         self.connect_coord = _coord
 
-        return _result
+        return _node
 
     def drag_callback(self, xform, pos):
         """
@@ -249,7 +248,7 @@ class PiTracker(BaseTracker):
         """
 
         self.connect_coord.point.set1Value(
-            self.connect_idx, self.drag_start.add(Vector(xform))
+            self.connect_idx, self.drag_start.add(xform)
         )
 
     def on_selection(self, arg, pos):

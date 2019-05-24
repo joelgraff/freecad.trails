@@ -82,7 +82,7 @@ class DragTracker(BaseTracker):
 
         self.on(self.nodes['switch'])
 
-        self.insert_node(self.nodes['switch'], self.base_node)
+        self.insert_node(self.nodes['switch'])
 
     def set_rotation_center(self, center):
         """
@@ -259,7 +259,7 @@ class DragTracker(BaseTracker):
         #trigger tracker callbacks for updating the connecting geometry to the
         #geometry being dragged
         for _cb in self.callbacks:
-            _cb(tuple(_xf), world_pos)
+            _cb(_xf, world_pos)
 
     def finalize(self, node=None):
         """
@@ -267,7 +267,7 @@ class DragTracker(BaseTracker):
         """
 
         if self.nodes:
-            self.remove_node(self.nodes['switch'], self.base_node)
+            self.remove_node(self.nodes['switch'])
             self.nodes.clear()
 
         if self.viewport:

@@ -88,18 +88,22 @@ class BaseTracker:
         switch.whichChild = -1
         self.visible = False
 
-    def insert_node(self, node, parent=None, on_top=False):
+    def _insert_sg(self, node):
+        """
+        Insert a node into the scenegraph at the top
+        """
+
+        Draft.get3DView().getSceneGraph().insertChild(node, 0)
+
+    def insert_node(self, node, parent=None):
         """
         Insert a node as a child of the passed node
         """
 
-        if not parent:
-            parent = Draft.get3DView().getSceneGraph()
+        _fn = self._insert_sg
 
-        _fn = parent.addChild
-
-        if on_top:
-            _fn = parent.insertChild
+        if parent:
+            _fn = parent.addChild
 
         todo.delay(_fn, node)
 

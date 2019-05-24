@@ -237,20 +237,19 @@ class EditAlignmentTask:
         _selected = [self.pi_tracker.get_selection_group()]
 
         #get selected geometry from the alignment tracker
-        _selected.append(
-            self.alignment_tracker.get_selection_group(
-                self.pi_tracker.get_selected())
-        )
+        #_selected.append(
+        #    self.alignment_tracker.get_selection_group(
+        #        self.pi_tracker.get_selected())
+        #)
 
         #get connection geometry from the pi tracker
         _connected = [self.pi_tracker.get_connection_group()]
-        _connected.append(
-            self.alignment_tracker.get_connection_group(
-                self.pi_tracker.get_selected()
-            )
+        _connected.append(self.alignment_tracker\
+            .get_connection_group(_selected[0].getChild(0))
         )
 
         self.drag_tracker.set_nodes(_selected, _connected, world_pos)
+
         self.drag_tracker.set_rotation_center(
             self.pi_tracker.get_selected()[0]
         )
@@ -309,3 +308,7 @@ class EditAlignmentTask:
             self.pi_tracker.finalize()
             self.pi_tracker = None
             Gui.Selection.addSelection(self.obj)
+
+        if self.drag_tracker:
+            self.drag_tracker.finalize()
+            self.drag_tracker = None
