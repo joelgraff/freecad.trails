@@ -284,10 +284,23 @@ def get_rotation(arc, vecs):
     _v1 = [_v for _v in vecs[0:3] if _v and _v != App.Vector()]
     _v2 = [_v for _v in vecs[3:] if _v and _v != App.Vector()]
 
-    if not (_v1 and _v2):
-        return {'Direction': arc.get('Direction')}
+    if _v1 and _v2:
+        _v1 = _v1[0]
+        _v2 = _v2[1]
 
-    return {'Direction': support.get_rotation(_v1[0], _v2[1])}
+    else:
+        _v1 = support.vector_from_angle(arc['BearingIn'])
+        _v2 = support.vector_from_angle(arc['BearingOut'])
+
+    _rot = None
+
+    if _v1 and _v2:
+        _rot = support.get_rotation(_v1, _v2)
+
+    else:
+        _rot = arc.get('Direction')
+
+    return {'Direction': _rot}
 
 def get_missing_parameters(arc, new_arc):
     """
@@ -698,7 +711,7 @@ def get_tangent_vector(arc_dict, distance):
 
     return coord, ortho
 
-def get_segments(bearing, deltas, direction, start, radius):
+def get_segments(bearing, deltas, direction, start, radius, _dtype=App.Vector):
     """
     Calculate the coordinates of the curve segments
 
@@ -711,18 +724,25 @@ def get_segments(bearing, deltas, direction, start, radius):
 
     _forward = App.Vector(math.sin(bearing), math.cos(bearing), 0.0)
     _right = App.Vector(_forward.y, -_forward.x, 0.0)
-    _points = [start]
+
+    _points = [_dtype(start)]
 
     for delta in deltas:
 
         _dfw = App.Vector(_forward).multiply(math.sin(delta))
         _drt = App.Vector(_right).multiply(direction * (1.0 - math.cos(delta)))
 
-        _points.append(start.add(_dfw.add(_drt).multiply(radius)))
+        _vec = start.add(_dfw.add(_drt).multiply(radius))
+
+        if _dtype is not App.Vector:
+            _vec = _dtype(_vec)
+
+        _points.append(_vec)
 
     return _points
 
-def get_points(arc_dict, size, method='Segment', layer=0.0, interval=None):
+def get_points(
+    arc, size=10.0, method='Segment', interval=None, _dtype=App.Vector):
     """
     Discretize an arc into the specified segments.
     Resulting list of coordinates omits provided starting point and
@@ -748,11 +768,11 @@ def get_points(arc_dict, size, method='Segment', layer=0.0, interval=None):
     Points are returned references to start_coord
     """
 
-    angle = arc_dict['Delta']
-    direction = arc_dict['Direction']
-    bearing_in = arc_dict['BearingIn']
-    radius = arc_dict['Radius']
-    start = arc_dict['Start']
+    angle = arc['Delta']
+    direction = arc['Direction']
+    bearing_in = arc['BearingIn']
+    radius = arc['Radius']
+    start = arc['Start']
 
     if not interval:
         interval = [0.0, 0.0]
@@ -798,23 +818,22 @@ def get_points(arc_dict, size, method='Segment', layer=0.0, interval=None):
     #segment_deltas[-1] = angle
 
     points = get_segments(
-        _start_angle, segment_deltas, direction, start, radius
+        _start_angle, segment_deltas, direction, start, radius, _dtype
     )
 
-    _forward = App.Vector(math.sin(bearing_in), math.cos(bearing_in), 0.0)
-    _right = App.Vector(_forward.y, -_forward.x, 0.0)
-    hashes = []
+    #_forward = App.Vector(math.sin(bearing_in), math.cos(bearing_in), 0.0)
+    #_right = App.Vector(_forward.y, -_forward.x, 0.0)
+    #hashes = []
 
     _prev = None
 
-    for _pt in points:
+    #for _pt in points:
 
         #store the hash of the starting and ending coordinates
         #aka - the segment hash
-        if _prev:
-            hashes.append(hash(tuple(_prev) + tuple(_pt)))
+    #    if _prev:
+    #        hashes.append(hash(tuple(_prev) + tuple(_pt)))
 
-        _pt.z = layer
-        _prev = _pt
+    #    _prev = _pt
 
-    return points, hashes
+    return points, None
