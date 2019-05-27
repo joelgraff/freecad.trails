@@ -787,8 +787,8 @@ def get_points(
             bearing_in, [_delta_angle], direction, start, radius
         )[1]
 
-    #if the distance is specified, calcualte the central angle from that
-    #otehrwise, the new central angle is the old central angle less the delta
+    #if the distance is specified, calculate the central angle from that
+    #otherwise, the new central angle is the old central angle less the delta
     if interval[1] > 0.0:
         angle = interval[1] / radius
     else:

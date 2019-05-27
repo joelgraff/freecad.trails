@@ -570,7 +570,7 @@ class AlignmentModel:
 
             _sta = curve['InternalStation']
 
-            #skip out if not within the specifed interval
+            #skip out if not within the specified interval
             if interval:
 
                 #skip if curve end precedes start of interval
