@@ -328,7 +328,7 @@ class _VerticalAlignment(Draft._Wire):
 
         equations = parent.Alignment_Equations
 
-        #default starting station unles otherwise specified
+        #default starting station unless otherwise specified
         start_sta = 0.0
         start_index = 0
 

@@ -313,7 +313,7 @@ class GenerateVerticalAlignment():
                 ref_coord = spline.Shape.discretize(Distance=ref_dist)[1]
                 ref_delta = ref_delta.add(points[0].sub(ref_coord))
 
-            #adjust the alginment points by the deltas
+            #adjust the alignment points by the deltas
             for _x in range(0, len(points)):
                 points[_x] = points[_x].add(ref_delta)
 

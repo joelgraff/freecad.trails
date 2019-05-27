@@ -231,7 +231,7 @@ class DragTracker(BaseTracker):
         #center is the first selected node
         _ctr = datum['center']
 
-        #ref_vec is the refernce vector from the previous mouse position
+        #ref_vec is the reference vector from the previous mouse position
         #used to calculate the change in rotation
         _ref_vec = datum['ref_vec']
 

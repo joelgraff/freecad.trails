@@ -170,7 +170,7 @@ def distance_bearing_to_coordinates(distance, bearing):
     Converts a distance and bearing (in degrees) to cartesian coordinates
     """
 
-    #convert the bearing to radians, ensuring it falls witin [0.0, 2 * pi)]
+    #convert the bearing to radians, ensuring it falls within [0.0, 2 * pi)]
     _b = math.radians(bearing) % Constants.two_pi
 
     return App.Vector(math.sin(_b), math.cos(_b), 0.0).multiply(distance)

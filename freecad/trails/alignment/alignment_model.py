@@ -275,7 +275,7 @@ class AlignmentModel:
             #assume geometry start if station delta is zero
             if delta:
 
-                #calcualte the start based on station delta
+                #calculate the start based on station delta
                 _datum['Start'] = _datum['Start'].sub(
                     support.vector_from_angle(
                         _geo['BearingIn']).multiply(delta)
@@ -305,7 +305,7 @@ class AlignmentModel:
         coordinate values. Fix them where possible, error otherwise
         """
 
-        #calculate distance bewteen curve start and end using
+        #calculate distance between curve start and end using
         #internal station and coordinate vectors
 
         _datum = self.data['meta']
@@ -570,7 +570,7 @@ class AlignmentModel:
 
             _sta = curve['InternalStation']
 
-            #skip out if not within the specifed interval
+            #skip out if not within the specified interval
             if interval:
 
                 #skip if curve end precedes start of interval
