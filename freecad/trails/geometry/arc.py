@@ -812,7 +812,7 @@ def get_points(
         return None, None
 
     segment_deltas = [
-        float(_i + 1) * _delta for _i in range(0, int(angle / _delta) + 1)
+        float(_i + 1) * _delta for _i in range(0, int(angle / _delta))
     ]
 
     #segment_deltas[-1] = angle
