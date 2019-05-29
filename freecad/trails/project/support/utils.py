@@ -103,6 +103,25 @@ def make_wire(points, wire_name=None, closed=False, support=None, depth=0.0):
 
     return obj
 
+def clamp(value, min_val=None, max_val=None):
+    """
+    Clamp a value to a specified range
+    """
+
+    if not (min_val is None or max_val is None):
+        if min_val < value < max_val:
+            return value
+
+    if min_val is not None:
+        if value < min_val:
+            return min_val
+
+    if max_val is not None:
+        if value > max_val:
+            return max_val
+
+    return value
+
 def to_float(value):
     """
     Return value as a float, if possible.
