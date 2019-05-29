@@ -43,7 +43,7 @@ class DragTracker(BaseTracker):
         self.base_node = base_node
 
         self.viewport = \
-            view.getViewer().getSoRenderManager().getViewportRegion()
+            view.getViewer().getSoRenderManager()
 
         self.nodes = {
             'connector': coin.SoGroup(),
@@ -133,16 +133,15 @@ class DragTracker(BaseTracker):
         _coords = _group.getChild(0)
 
         #define the search path if not defined
-        if not self.start_path:
+        #if not self.start_path:
+        _search = coin.SoSearchAction()
+        _search.setNode(_coords)
+        _search.apply(self.nodes['selected'])
 
-            _search = coin.SoSearchAction()
-            _search.setNode(_coords)
-            _search.apply(self.nodes['selected'])
-
-            self.start_path = _search.getPath()
+        self.start_path = _search.getPath()
 
         #get the matrix for the transformation
-        _matrix = coin.SoGetMatrixAction(self.viewport)
+        _matrix = coin.SoGetMatrixAction(self.viewport.getViewportRegion())
         _matrix.apply(self.start_path)
 
         _xf = _matrix.getMatrix()
@@ -152,7 +151,6 @@ class DragTracker(BaseTracker):
             coin.SbVec4f(_v.getValue() + (1.0,)) \
                 for _v in _coords.point.getValues()
             ]
-
         #multiply each coordinate by the transformation matrix and return
         #a list of the transformed coordinates, omitting the fourth value
         return [_xf.multVecMatrix(_v).getValue()[:3] for _v in _vecs]
@@ -228,38 +226,42 @@ class DragTracker(BaseTracker):
         modify - modify drag magnitudes (slow  / precise motion)
         """
 
+        _sel_node = self.nodes['selected']
+        _xf_node = self.nodes['transform']
+        _xf = Vector()
+
         #quit after handling rotation case
         if rotation:
 
-            self.nodes['transform'].rotation = \
-                self.drag_rotation(world_pos, modify)
+            _xf_node.rotation = self.drag_rotation(world_pos, modify)
 
-            self.datums['drag_start'] = world_pos
+        else:
 
-            return
+            #calculate distance mouse has moved from previous position
+            #added to the existing translation
+            _delta = world_pos.sub(self.datums['drag_start'])
 
-        #get the existing translation
-        _xf = self.nodes['transform'].translation.getValue()
+            if modify:
+                _delta.multiply(0.1)
 
-        #calculate the new translation, which is the distance the mouse has
-        #moved from the previous position added to the existing translation
-        _delta = world_pos.sub(self.datums['drag_start'])
+            #get the existing translation
+            _xf = Vector(_xf_node.translation.getValue()).add(_delta)
 
-        if modify:
-            _delta.multiply(0.1)
-
-        _xf = Vector(_xf).add(_delta)
+            #apply the updated translation
+            _xf_node.translation.setValue(tuple(_xf))
 
         #save the current mouse position as the next translation start
         self.datums['drag_start'] = world_pos
 
-        #apply the updated translation
-        self.nodes['transform'].translation.setValue(tuple(_xf))
-
         #trigger tracker callbacks for updating the connecting geometry to the
         #geometry being dragged
+
+        _search = coin.SoSearchAction()
+        _search.setNode(_sel_node.getByName('PI_TRACKER').getChild(0))
+        _search.apply(_sel_node)
+
         for _cb in self.callbacks:
-            _cb(_xf, world_pos)
+            _cb(_xf, _search.getPath(), world_pos)
 
     def finalize(self, node=None):
         """

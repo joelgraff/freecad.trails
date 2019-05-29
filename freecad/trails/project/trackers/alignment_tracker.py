@@ -30,11 +30,48 @@ from FreeCAD import Vector
 
 from ...geometry import support, arc
 from .base_tracker import BaseTracker
+from ..support import utils
 
 class AlignmentTracker(BaseTracker):
     """
     Tracker class for alignment design
     """
+
+    class CoinGroup():
+        """
+        Local class to facilitate tracking nodes in groups
+        """
+
+        def __init__(self, id, no_marker=False):
+            """
+            Constructor
+            """
+
+            self.group = coin.SoGroup()
+            self.coord = coin.SoCoordinate3()
+            self.marker = coin.SoMarkerSet()
+            self.line = coin.SoLineSet()
+
+            self.group.addChild(self.coord)
+
+            if not no_marker:
+                self.group.addChild(self.marker)
+
+            self.group.addChild(self.line)
+
+            self.group.setName(id)
+
+        def set_coordinates(self, coords):
+            """
+            Set the coordinate node values
+            """
+
+            _count = len(coords)
+
+            self.coord.point.setNum(_count)
+            self.coord.point.setValues(0, _count, [list(_v) for _v in coords])
+
+            self.line.numVertices.setValue(_count)
 
     def __init__(self, doc, view, object_name, model):
         """
@@ -42,13 +79,15 @@ class AlignmentTracker(BaseTracker):
         """
 
         self.model = model
-        self.pi_list = []
-        self.curve_list = []
-        self.start_pi = -1
-        self.coord_group = coin.SoGroup()
-        self.coord3 = coin.SoCoordinate3()
+        self.pi_list = model.get_pi_coords()
+        self.curves = []
+        self.start_pi = Vector()
+        self.conn_pi = []
         self.start_path = None
         self.drag_start = Vector()
+
+        self.conn_group = self.CoinGroup('ALIGNMENT_TRACKER_CONNECTION', True)
+        self.sel_group = self.CoinGroup('ALIGNMENT_TRACKER_SELECTION')
 
         self.viewport = \
             view.getViewer().getSoRenderManager().getViewportRegion()
@@ -64,10 +103,8 @@ class AlignmentTracker(BaseTracker):
         pi-coords = SoCoordinate3 of selected PI's
         """
 
-        if len(pi_coords.point.getValues()) < 2:
+        if len(pi_coords) < 2:
             return coin.SoGroup()
-
-        pi_coord = pi_coords.point.getValues()[0]
 
         _start_sta = 0.0
 
@@ -78,154 +115,153 @@ class AlignmentTracker(BaseTracker):
             if not _pi:
                 continue
 
-            if support.within_tolerance(_pi, pi_coord, 0.1):
+            if support.within_tolerance(_pi, pi_coords[0], 0.1):
                 _start_sta = _curve['InternalStation'][1]
 
         _geo = self.model.discretize_geometry([_start_sta])
 
-        _group = coin.SoGroup()
-        _group.setName('ALIGNMENT_TRACKER')
+        self.sel_group.set_coordinates(_geo)
 
-        _coord = coin.SoCoordinate3()
-        _coord.point.setValues(0, len(_geo), [list(_v) for _v in _geo])
-
-        _line = coin.SoLineSet()
-
-        _group.addChild(_coord)
-        _group.addChild(_line)
-
-        return _group
+        return self.sel_group.group
 
     def get_connection_group(self, selected):
         """
-        Build the connection group based on passed selected PI's
+        Build the connection group based on the passed selected PI's
         """
 
-        #abort for empty selection
-        if not selected:
-            return coin.SoGroup()
+        #when dragging, if only one node is selected, one PI is transformed
+        #and three cruves are re-calculated
+        #if multiple nodes are selected, two curves are recalculated
 
-        _pi_list = self.model.get_pi_coords()
-        _sel = -1
+        self.start_pi = -1
+        _count = len(selected.point.getValues())
+        _start_pi = Vector(selected.point.getValues()[0].getValue())
+        _start_pi.z = 0.0
 
-        sel_vec = Vector(selected.point.getValues()[0].getValue())
+        #get list of curves only (no lines)
+        _curves = [
+            _v for _v in self.model.data['geometry'] if _v['Type'] == 'Curve'
+        ]
 
-        #find selected pi index
-        for _i, _pi in enumerate(_pi_list):
-
-            if support.within_tolerance(_pi, sel_vec, 0.1):
-                _sel = _i
-                break
-
-        #abort if not found
-        if _sel == -1:
-            return coin.SoGroup()
-
-        sel_len = len(selected.point.getValues())
-
-        #get list of PI's
-        #first PI is the second PI preceding the selected one
-        #last PI is the seoncd PI following the selected,
-        #unless multiple PI's are selected, then only one
-        pi_range = [_sel-2, _sel + int(sel_len == 1) +  2]
-
-        if pi_range[0] < 0:
-            pi_range[0] = 0
-
-        if pi_range[1] > len(_pi_list):
-            pi_range[1] = len(_pi_list)
-
-        self.pi_list = [_v for _v in _pi_list[pi_range[0]: pi_range[1]]]
-
-        #get the index of the first selected PI w.r.t. the reduced list
+        #get the pi index for the selected pi
         for _i, _v in enumerate(self.pi_list):
 
-            if support.within_tolerance(_v, sel_vec, 0.1):
+            if support.within_tolerance(_v, _start_pi, 0.1):
                 self.start_pi = _i
                 break
 
-        _curves = []
-        _sta = []
+        #abort if we can't find the curve under the first selected PI
+        if self.start_pi == -1:
+            return coin.SoGroup()
 
-        #get list of curves
-        for _pi in self.pi_list[0:self.start_pi + 1]:
+        #get a list of curves to be updated
+        self.curves = [_curves[_i] \
+            if 0 <= _i < len(_curves) else None \
+                for _i in list(range(self.start_pi - 2, self.start_pi + 1))
+        ]
 
-            _c = None
+        #only the first two curves apply in multi-select cases,
+        #so just save the next PI as a fake curve
+        if _count > 1:
+            self.curves[2] = None
 
-            for _curve in self.model.data['geometry']:
-
-                if _curve['Type'] != 'Curve':
-                    continue
-
-                if support.within_tolerance(_pi, _curve['PI'], 0.1):
-                    _c = _curve
-                    break
-
-            _curves.append(_c)
-
-            #store valid stations for discretization range
-            if _c:
-                _sta.append(_c['InternalStation'])
+        _sta = [_v['InternalStation'] for _v in self.curves if _v]
 
         #build scenegraph nodes
         _coords = self.model.discretize_geometry([_sta[0][0], _sta[-1][1]])
 
-        self.coord_group.setName('ALIGNMENT_TRACKER')
+        self.conn_group.set_coordinates(_coords)
 
-        self.coord3.point.setValues(
-            0, len(_coords), [list(_v) for _v in _coords]
-        )
+        return self.conn_group.group
 
-        _line = coin.SoLineSet()
-        _line.numVertices.setValue(len(_coords))
+    def get_transformed_coordinates(self, path, vecs):
+        """
+        Return the transformed coordinates of the selected nodes based on the
+        transformations applied by the drag tracker
+        """
 
-        self.coord_group.addChild(self.coord3)
-        self.coord_group.addChild(coin.SoMarkerSet())
-        self.coord_group.addChild(_line)
+        #get the matrix for the transformation
+        _matrix = coin.SoGetMatrixAction(self.viewport)
+        _matrix.apply(path)
 
-        self.curve_list = _curves
+        _xf = _matrix.getMatrix()
 
-        return self.coord_group
+        #create the 4D vectors for the transformation
+        _vecs = [coin.SbVec4f(tuple(_v) + (1.0,)) for _v in vecs]
 
-    def drag_callback(self, xform, pos):
+        #multiply each coordinate by the transformation matrix and return
+        #a list of the transformed coordinates, omitting the fourth value
+        return [Vector(_xf.multVecMatrix(_v).getValue()[:3]) for _v in _vecs]
+
+    def drag_callback(self, xform, path, pos):
         """
         Callback for drag operations
         """
 
-        #iterate the list of PI's, getting the updated bearings
-        #and the updated start pi
-        #and recalculating the corresponding curves
+        _new_curves = [None]*3
 
-        _prev = None
-        _coords = []
+        _new_pi = self.pi_list[self.start_pi].add(xform)
 
-        #self.get_transformed_coordinates()
-
-        #self.curve_list[self.start_pi]['PI'] = \
-        #    self.curve_list[self.start_pi]['PI'].add(xform)
-
-        for _i, _v in enumerate(self.curve_list):
-
-            if _v is None:
-                continue
-
-            _b_in = support.get_bearing(_v['PI'].sub(self.pi_list[_i - 1]))
-            _b_out = support.get_bearing(self.pi_list[_i + 1].sub(_v['PI']))
-
-            curve = {
-                'PI': _v['PI'],
-                'BearingIn': _b_in,
-                'BearingOut': _b_out,
-                'Radius': self.curve_list[_i]['Radius']
+        if self.curves[0]:
+            self.curves[0] = {
+                'PI': self.curves[0]['PI'],
+                'Radius': self.curves[0]['Radius'],
+                'BearingIn': self.curves[0]['BearingIn'],
+                'BearingOut': support.get_bearing(
+                    _new_pi.sub(self.curves[0]['PI']))
             }
 
-            _parms = arc.get_parameters(curve)
-            _pts = arc.get_points(_parms, _dtype=tuple)[0]
+        if self.curves[1]:
 
+            _b_in = None
+            _b_out = None
+
+            if self.curves[0]:
+                _b_in = _new_pi.sub(self.curves[0]['PI'])
+
+            if self.curves[2]:
+                _b_out = self.curves[2]['PI'].sub(_new_pi)
+
+            else:
+                _xf_pi = self.pi_list[self.start_pi + 1]
+                _xf_pi = self.get_transformed_coordinates(path, [_xf_pi])[0]
+
+                _b_out = _xf_pi.sub(_new_pi)
+
+            #this should never happen
+            if not (_b_in or _b_out):
+                print('Drag error - selected curve not found.')
+                return
+
+            self.curves[1] = {
+                'PI': _new_pi,
+                'Radius': self.curves[1]['Radius'],
+                'BearingIn': support.get_bearing(_b_in),
+                'BearingOut': support.get_bearing(_b_out)
+            }
+
+        #test to ensure it's not a fake curve for multi-select cases
+        if self.curves[2]:
+            self.curves[2] = {
+                'PI': self.curves[2]['PI'],
+                'Radius': self.curves[2]['Radius'],
+                'BearingIn': support.get_bearing(
+                    self.curves[2]['PI'].sub(_new_pi)),
+                'BearingOut': self.curves[2]['BearingOut'],
+            }
+
+        _coords = []
+
+        for _v in self.curves:
+
+            if not _v:
+                continue
+
+            _v = arc.get_parameters(_v)
+            _pts = arc.get_points(_v, _dtype=tuple)[0]
             _coords.extend(_pts)
 
-        print(_coords)
-        self.coord3.point.setValues(0, len(_coords), _coords)
+        self.conn_group.set_coordinates(_coords)
 
     def update(self, points):
         """
@@ -245,33 +281,3 @@ class AlignmentTracker(BaseTracker):
             node = self.node
 
         super().finalize(node)
-
-    def get_transformed_coordinates(self):
-        """
-        Return the transformed coordinates of the selected nodes based on the
-        transformations applied by the drag tracker
-        """
-
-        #define the search path if not defined
-        if not self.start_path:
-
-            _search = coin.SoSearchAction()
-            _search.setNode(self.coord3)
-            _search.apply(self.coord_group)
-
-            self.start_path = _search.getPath()
-
-        #get the matrix for the transformation
-        _matrix = coin.SoGetMatrixAction(self.viewport)
-        _matrix.apply(self.start_path)
-
-        _xf = _matrix.getMatrix()
-
-        #create the 4D vectors for the transformation
-        _vecs = [coin.SbVec4f(tuple(_v) + (1.0,)) for _v in self.pi_list]
-
-        #multiply each coordinate by the transformation matrix and return
-        #a list of the transformed coordinates, omitting the fourth value
-        self.pi_list = [
-            Vector(_xf.multVecMatrix(_v).getValue()[:3]) for _v in _vecs
-        ]

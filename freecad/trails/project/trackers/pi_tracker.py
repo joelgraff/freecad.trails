@@ -239,7 +239,7 @@ class PiTracker(BaseTracker):
 
         return _node
 
-    def drag_callback(self, xform, pos):
+    def drag_callback(self, xform, path, pos):
         """
         Callback triggered when a drag tracker is updated to allow for geometry
         updates that are related to dragging.
