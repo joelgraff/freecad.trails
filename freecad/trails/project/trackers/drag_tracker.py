@@ -228,7 +228,7 @@ class DragTracker(BaseTracker):
 
         _sel_node = self.nodes['selected']
         _xf_node = self.nodes['transform']
-        _xf = Vector()
+        _xf = Vector(_xf_node.translation.getValue())
 
         #quit after handling rotation case
         if rotation:
@@ -245,7 +245,7 @@ class DragTracker(BaseTracker):
                 _delta.multiply(0.1)
 
             #get the existing translation
-            _xf = Vector(_xf_node.translation.getValue()).add(_delta)
+            _xf = _xf.add(_delta)
 
             #apply the updated translation
             _xf_node.translation.setValue(tuple(_xf))
