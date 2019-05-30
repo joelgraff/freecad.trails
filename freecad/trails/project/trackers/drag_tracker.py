@@ -253,11 +253,15 @@ class DragTracker(BaseTracker):
         #save the current mouse position as the next translation start
         self.datums['drag_start'] = world_pos
 
+        #abort if no child tracker groups have been added
+        if not _sel_node.getNumChildren():
+            return
+
         #trigger tracker callbacks for updating the connecting geometry to the
         #geometry being dragged
-
         _search = coin.SoSearchAction()
-        _search.setNode(_sel_node.getByName('PI_TRACKER').getChild(0))
+        _search.setNode(_sel_node.getChild(1))
+
         _search.apply(_sel_node)
 
         for _cb in self.callbacks:
