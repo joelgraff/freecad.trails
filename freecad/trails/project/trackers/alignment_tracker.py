@@ -81,7 +81,7 @@ class AlignmentTracker(BaseTracker):
         self.model = model
         self.pi_list = model.get_pi_coords()
         self.curves = []
-        self.start_pi = Vector()
+        self.start_pi = -1
         self.conn_pi = []
         self.start_path = None
         self.drag_start = Vector()
@@ -133,7 +133,6 @@ class AlignmentTracker(BaseTracker):
         #and three cruves are re-calculated
         #if multiple nodes are selected, two curves are recalculated
 
-        self.start_pi = -1
         _count = len(selected.point.getValues())
         _start_pi = Vector(selected.point.getValues()[0].getValue())
         _start_pi.z = 0.0
@@ -176,8 +175,8 @@ class AlignmentTracker(BaseTracker):
 
     def get_transformed_coordinates(self, path, vecs):
         """
-        Return the transformed coordinates of the selected nodes based on the
-        transformations applied by the drag tracker
+        Return the transformed coordinates of the selected nodes based
+        on the transformations applied by the drag tracker
         """
 
         #get the matrix for the transformation
@@ -189,8 +188,8 @@ class AlignmentTracker(BaseTracker):
         #create the 4D vectors for the transformation
         _vecs = [coin.SbVec4f(tuple(_v) + (1.0,)) for _v in vecs]
 
-        #multiply each coordinate by the transformation matrix and return
-        #a list of the transformed coordinates, omitting the fourth value
+        #multiply each coordinate by transformation matrix and return
+        #a list of the transformed coordinates, omitting fourth value
         return [Vector(_xf.multVecMatrix(_v).getValue()[:3]) for _v in _vecs]
 
     def drag_callback(self, xform, path, pos):
@@ -202,7 +201,11 @@ class AlignmentTracker(BaseTracker):
 
         _new_pi = self.pi_list[self.start_pi].add(xform)
 
+        if not self.curves:
+            return
+
         if self.curves[0]:
+
             self.curves[0] = {
                 'PI': self.curves[0]['PI'],
                 'Radius': self.curves[0]['Radius'],
@@ -242,6 +245,7 @@ class AlignmentTracker(BaseTracker):
 
         #test to ensure it's not a fake curve for multi-select cases
         if self.curves[2]:
+
             self.curves[2] = {
                 'PI': self.curves[2]['PI'],
                 'Radius': self.curves[2]['Radius'],
@@ -258,6 +262,7 @@ class AlignmentTracker(BaseTracker):
                 continue
 
             _v = arc.get_parameters(_v)
+
             _pts = arc.get_points(_v, _dtype=tuple)[0]
             _coords.extend(_pts)
 
