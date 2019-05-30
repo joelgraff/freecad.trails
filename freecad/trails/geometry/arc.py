@@ -148,7 +148,8 @@ def get_bearings(arc, mat, delta, rot):
     for _i in range(0, 6):
         bearings.append(_GEO.FUNC[6][_i](mat.A[6][_i], delta, rot))
 
-    _b = [_v % C.TWO_PI for _v in bearings[0:6] if utils.to_float(_v)]
+    _b = [abs(_v - int(_v / math.pi) * math.pi) \
+        for _v in bearings[0:6] if utils.to_float(_v)]
 
     if _b:
 
@@ -167,7 +168,10 @@ def get_bearings(arc, mat, delta, rot):
 
     #a negative rotation could push out bearing under pi
     #a positive rotation could push out bearing over 2pi
-    _b_out = bearing_in + (delta * rot)
+    _b_out = bearing_out
+
+    if not _b_out:
+        _b_out = bearing_in + (delta * rot)
 
     if _b_out < 0.0:
         _b_out += C.TWO_PI
@@ -261,19 +265,22 @@ def get_delta(arc, mat):
     #get the delta from the arc data as a default
     delta = arc.get('Delta')
 
+    #calculate the delta from the provided bearings, if they exist
     if not delta:
         if arc.get('BearingIn') and arc.get('BearingOut'):
             delta = abs(arc['BearingOut'] - arc['BearingIn'])
 
-    #find the first occurrence of the delta value
-    for _i in range(1, 6):
-        for _j in range(0, _i):
-            if utils.to_float(mat.A[_i][_j]):
-                delta = mat.A[_i][_j]
-                break
-
+    #find the first occurrence of the delta value in the matrix
     if not delta:
-        return None
+        for _i in range(1, 6):
+            for _j in range(0, _i):
+                if utils.to_float(mat.A[_i][_j]):
+                    delta = mat.A[_i][_j]
+                    break
+
+    #if delta exceeds PI radians, swap it for lesser angle
+    if delta:
+        delta = abs((int(delta > math.pi) * C.TWO_PI) - delta)
 
     return {'Delta':delta}
 
@@ -435,6 +442,7 @@ def get_parameters(arc):
         return None
 
     result.update(_p)
+
     _p = get_delta(arc, mat)
 
     if not _p:
@@ -815,14 +823,10 @@ def get_points(
         float(_i + 1) * _delta for _i in range(0, int(angle / _delta))
     ]
 
-    #segment_deltas[-1] = angle
-
     points = get_segments(
         _start_angle, segment_deltas, direction, start, radius, _dtype
     )
 
-    #_forward = App.Vector(math.sin(bearing_in), math.cos(bearing_in), 0.0)
-    #_right = App.Vector(_forward.y, -_forward.x, 0.0)
     #hashes = []
 
     _prev = None
