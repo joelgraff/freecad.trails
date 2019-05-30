@@ -237,10 +237,10 @@ class EditAlignmentTask:
         _selected = [self.pi_tracker.get_selection_group()]
 
         #get selected geometry from the alignment tracker
-        #_selected.append(
-        #    self.alignment_tracker.get_selection_group(
-        #        self.pi_tracker.get_selected())
-        #)
+        _selected.append(
+            self.alignment_tracker.get_selection_group(
+                self.pi_tracker.get_selected())
+        )
 
         #get connection geometry from the pi tracker
         _connected = [self.pi_tracker.get_connection_group()]
