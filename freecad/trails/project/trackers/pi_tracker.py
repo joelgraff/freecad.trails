@@ -36,6 +36,7 @@ from .wire_tracker import WireTracker
 
 from ..support.utils import Constants as C
 from ..support.mouse_state import MouseState
+from .coin_group import CoinGroup
 
 class PiTracker(BaseTracker):
     """
@@ -66,6 +67,9 @@ class PiTracker(BaseTracker):
         self.connect_idx = -1
         self.drag_start = None
         self.drag_mode = False
+
+        self.selection = CoinGroup('PI_TRACKER_SELECTION', True)
+        self.connection = CoinGroup('PI_TRACKER_CONNECTION', True)
 
         _names = [doc.Name, object_name, 'PI_TRACKER']
 
@@ -164,28 +168,11 @@ class PiTracker(BaseTracker):
         Return a SoGroup() object of trackers to be transformed by draf
         """
 
-        #coordinates, markers, lines, draw-styles, transforms, etc. to be
-        #rendered in a single SoGroup()
+        self.selection.set_coordinates(
+            [_v.get() for _v in self.gui_action['selected'].values()]
+        )
 
-        _result = coin.SoGroup()
-        _result.setName('PI_TRACKER')
-
-        _c = [list(_v.get()) for _v in self.gui_action['selected'].values()]
-
-        _count = len(_c)
-
-        _coord = coin.SoCoordinate3()
-        _coord.point.setValues(0, _count, _c)
-
-        _result.addChild(_coord)
-        _result.addChild(coin.SoMarkerSet())
-
-        if _count > 1:
-            _line = coin.SoLineSet()
-            _line.numVertices.setValue(_count)
-            _result.addChild(_line)
-
-        return _result
+        return self.selection.group
 
     def get_connection_group(self):
         """
@@ -207,37 +194,20 @@ class PiTracker(BaseTracker):
 
         #if our starting node isn't the first, add the previous node
         if _idx[0] > 0:
-            _conn.append(_trackers['NODE-' + str(_idx[0] - 1)])
+            _conn.append(_trackers['NODE-' + str(_idx[0] - 1)].get())
             self.connect_idx = 1
 
-        _conn.append(_selected[0])
-        self.drag_start = _selected[0].get()
+        _conn.append(_selected[0].get())
+
+        self.drag_start = _conn[-1]
 
         #if our ending node isn't the last, add the next node
         if _idx[-1] < len(_trackers) - 1:
-            _conn.append(_trackers['NODE-' + str(_idx[-1] + 1)])
+            _conn.append(_trackers['NODE-' + str(_idx[-1] + 1)].get())
 
-        _coord = coin.SoCoordinate3()
+        self.connection.set_coordinates(_conn)
 
-        for _i, _v in enumerate(_conn):
-            _coord.point.set1Value(_i, list(_v.get()))
-
-        _marker = coin.SoMarkerSet()
-
-        _line = coin.SoLineSet()
-        _line.numVertices.setValue(_coord.point.getNum())
-
-        _node = coin.SoGroup()
-        _node.addChild(_coord)
-        _node.addChild(_marker)
-        _node.addChild(_line)
-
-        _node.setName('pi-connector')
-        #_result.addChild(_node)
-
-        self.connect_coord = _coord
-
-        return _node
+        return self.connection.group
 
     def drag_callback(self, xform, path, pos):
         """
@@ -247,7 +217,7 @@ class PiTracker(BaseTracker):
         pos - current mouse position
         """
 
-        self.connect_coord.point.set1Value(
+        self.connection.coord.point.set1Value(
             self.connect_idx, self.drag_start.add(xform)
         )
 
