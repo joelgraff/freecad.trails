@@ -29,49 +29,14 @@ from pivy import coin
 from FreeCAD import Vector
 
 from ...geometry import support, arc
-from .base_tracker import BaseTracker
 from ..support import utils
+from .base_tracker import BaseTracker
+from .coin_group import CoinGroup
 
 class AlignmentTracker(BaseTracker):
     """
     Tracker class for alignment design
     """
-
-    class CoinGroup():
-        """
-        Local class to facilitate tracking nodes in groups
-        """
-
-        def __init__(self, id, no_marker=False):
-            """
-            Constructor
-            """
-
-            self.group = coin.SoGroup()
-            self.coord = coin.SoCoordinate3()
-            self.marker = coin.SoMarkerSet()
-            self.line = coin.SoLineSet()
-
-            self.group.addChild(self.coord)
-
-            if not no_marker:
-                self.group.addChild(self.marker)
-
-            self.group.addChild(self.line)
-
-            self.group.setName(id)
-
-        def set_coordinates(self, coords):
-            """
-            Set the coordinate node values
-            """
-
-            _count = len(coords)
-
-            self.coord.point.setNum(_count)
-            self.coord.point.setValues(0, _count, [list(_v) for _v in coords])
-
-            self.line.numVertices.setValue(_count)
 
     def __init__(self, doc, view, object_name, model):
         """
@@ -86,8 +51,8 @@ class AlignmentTracker(BaseTracker):
         self.start_path = None
         self.drag_start = Vector()
 
-        self.conn_group = self.CoinGroup('ALIGNMENT_TRACKER_CONNECTION', True)
-        self.sel_group = self.CoinGroup('ALIGNMENT_TRACKER_SELECTION')
+        self.conn_group = CoinGroup('ALIGNMENT_TRACKER_CONNECTION', True)
+        self.sel_group = CoinGroup('ALIGNMENT_TRACKER_SELECTION', True)
 
         self.viewport = \
             view.getViewer().getSoRenderManager().getViewportRegion()
