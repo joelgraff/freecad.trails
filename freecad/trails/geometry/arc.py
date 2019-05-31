@@ -148,8 +148,9 @@ def get_bearings(arc, mat, delta, rot):
     for _i in range(0, 6):
         bearings.append(_GEO.FUNC[6][_i](mat.A[6][_i], delta, rot))
 
-    _b = [abs(_v - int(_v / math.pi) * math.pi) \
-        for _v in bearings[0:6] if utils.to_float(_v)]
+    _b = [_v - C.TWO_PI * int(_v / C.TWO_PI) \
+            for _v in bearings[0:6] if utils.to_float(_v)
+         ]
 
     if _b:
 
@@ -170,8 +171,11 @@ def get_bearings(arc, mat, delta, rot):
     #a positive rotation could push out bearing over 2pi
     _b_out = bearing_out
 
+    #restrict start bearing to [0, PI]
+    _b_in = abs(bearing_in - int(bearing_in / math.pi) * math.pi)
+
     if not _b_out:
-        _b_out = bearing_in + (delta * rot)
+        _b_out = _b_in + (delta * rot)
 
     if _b_out < 0.0:
         _b_out += C.TWO_PI
