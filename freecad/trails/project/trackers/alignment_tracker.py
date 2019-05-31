@@ -38,21 +38,22 @@ class AlignmentTracker(BaseTracker):
     Tracker class for alignment design
     """
 
-    def __init__(self, doc, view, object_name, model):
+    def __init__(self, doc, view, object_name, alignment):
         """
         Constructor
         """
 
-        self.model = model
-        self.pi_list = model.get_pi_coords()
-        self.curves = []
-        self.start_pi = -1
+        self.alignment = alignment
+        self.pi_list = self.alignment.model.get_pi_coords()
+        self.curves = self.alignment.get_curves()
+        self.curve_idx = []
         self.conn_pi = []
         self.start_path = None
         self.drag_start = Vector()
+        self.stations = [-1.0, -1.0]
 
-        self.conn_group = CoinGroup('ALIGNMENT_TRACKER_CONNECTION', True)
-        self.sel_group = CoinGroup('ALIGNMENT_TRACKER_SELECTION', True)
+        self.connection = CoinGroup('ALIGNMENT_TRACKER_CONNECTION', True)
+        self.selection = CoinGroup('ALIGNMENT_TRACKER_SELECTION', True)
 
         self.viewport = \
             view.getViewer().getSoRenderManager().getViewportRegion()
@@ -60,36 +61,68 @@ class AlignmentTracker(BaseTracker):
         _names = [doc.Name, object_name, 'ALIGNMENT_TRACKER']
         super().__init__(names=_names, select=False, group=True)
 
-    def get_selection_group(self, pi_coords):
+    def build_selection_group(self, selected):
         """
-        Return a node of coordinates and lines which represents the
-        discretized alignment from the end of the curve at the specified
-        PI coordinate to the end of the alignment
-        pi-coords = SoCoordinate3 of selected PI's
+        Build the selection group based on the passed selected PI's
         """
 
-        if len(pi_coords) < 2:
-            return coin.SoGroup()
+        _start_sta = -1.0
 
-        _start_sta = 0.0
+        for _curve in self.alignment.get_curves():
 
-        for _curve in self.model.data['geometry']:
-
-            _pi = _curve.get('PI')
-
-            if not _pi:
-                continue
-
-            if support.within_tolerance(_pi, pi_coords[0], 0.1):
+            if support.within_tolerance(_curve['PI'], selected[0], 0.1):
                 _start_sta = _curve['InternalStation'][1]
+                break
 
-        _geo = self.model.discretize_geometry([_start_sta])
+        #abort if starting point not found
+        if _start_sta < 0.0:
+            return
 
-        self.sel_group.set_coordinates(_geo)
+        _geo = self.alignment.model.discretize_geometry([_start_sta])
 
-        return self.sel_group.group
+        self.selection.set_coordinates(_geo)
 
-    def get_connection_group(self, selected):
+    def build_connection_group(self, selected):
+
+        _pi_idx = -1
+
+        for _i, _v in enumerate(self.pi_list):
+            if support.within_tolerance(_v, _selected[0], 0.1):
+                _pi_idx = _i
+                break
+
+        if _pi_idx == -1:
+            return
+
+        num_pi = len(self.pi_list)
+
+        _pi_idx = []
+        _curve_list = []
+        #three nodes takes all, first or last selected takes all
+        if num_pi == 3 or _pi_idx == 0:
+            _pi_list = self.pi_list
+            _curve_list = [self.curves[0]]
+        elif _pi_idx == len(self.pi_list):
+            _pi_list = self.pi_list[-3:]
+            _curve_list = [self.curves[-1]]
+
+        #otherwise four nodes, second from start or end, or multi-select
+        elif num_pi == 4 or _pi_idx == 1:
+            _pi_list = self.pi_list
+            _curve_list = self.curves[0:2]
+        elif _pi_idx == num_pi - 2:
+            _pi_list = self.pi_list[-4:]
+            _curve_list = self.curves[-2:]
+        elif len(selected) > 1:
+            _pi_list = self.pi_list[_pi_idx-2:_pi_idx+2]
+            _curve_list = self.curves[_pi_idx-2:_pi_idx-1]
+
+        #otherwise five nodes with index two or more from either end:
+        else:
+            _pi_list = self.pi_list[_pi_idx-2:_pi_idx+3]
+            _curve_list = self.curves[_pi_idx-2:pi_idx]
+
+    def build_connection_group_dep(self, selected):
         """
         Build the connection group based on the passed selected PI's
         """
@@ -98,14 +131,8 @@ class AlignmentTracker(BaseTracker):
         #and three cruves are re-calculated
         #if multiple nodes are selected, two curves are recalculated
 
-        _count = len(selected.point.getValues())
-        _start_pi = Vector(selected.point.getValues()[0].getValue())
-        _start_pi.z = 0.0
-
-        #get list of curves only (no lines)
-        _curves = [
-            _v for _v in self.model.data['geometry'] if _v['Type'] == 'Curve'
-        ]
+        _count = len(selected)
+        _start_pi = selected[0]
 
         #get the pi index for the selected pi
         for _i, _v in enumerate(self.pi_list):
@@ -138,6 +165,7 @@ class AlignmentTracker(BaseTracker):
 
         return self.conn_group.group
 
+
     def get_transformed_coordinates(self, path, vecs):
         """
         Return the transformed coordinates of the selected nodes based
@@ -162,36 +190,37 @@ class AlignmentTracker(BaseTracker):
         Callback for drag operations
         """
 
-        _new_curves = [None]*3
+        _new_curves = [
+            self.curves[_i] if _i else None for _i in self.curve_idx
+        ]
 
-        _new_pi = self.pi_list[self.start_pi].add(xform)
+        #curve at index 1 will always be defined
+        _new_pi = _new_curves[1]['PI'].add(xform)
 
-        if not self.curves:
-            return
+        if _new_curves[0]:
 
-        if self.curves[0]:
-
-            self.curves[0] = {
-                'PI': self.curves[0]['PI'],
-                'Radius': self.curves[0]['Radius'],
-                'BearingIn': self.curves[0]['BearingIn'],
+            _new_curves[0] = {
+                'PI': _new_curves[0]['PI'],
+                'Radius': _new_curves[0]['Radius'],
+                'BearingIn': _new_curves[0]['BearingIn'],
                 'BearingOut': support.get_bearing(
-                    _new_pi.sub(self.curves[0]['PI']))
+                    _new_pi.sub(_new_curves[0]['PI']))
             }
 
-        if self.curves[1]:
+        if _new_curves[1]:
 
             _b_in = None
             _b_out = None
 
-            if self.curves[0]:
-                _b_in = _new_pi.sub(self.curves[0]['PI'])
+            if _new_curves[0]:
+                _b_in = _new_pi.sub(_new_curves[0]['PI'])
 
-            if self.curves[2]:
-                _b_out = self.curves[2]['PI'].sub(_new_pi)
+            if _new_curves[2]:
+                _b_out = _new_curves[2]['PI'].sub(_new_pi)
 
             else:
-                _xf_pi = self.pi_list[self.start_pi + 1]
+                #get the PI following the selected curve for the bearing
+                _xf_pi = self.pi_list[self.curve_idx[1] + 1]
                 _xf_pi = self.get_transformed_coordinates(path, [_xf_pi])[0]
 
                 _b_out = _xf_pi.sub(_new_pi)
@@ -201,22 +230,22 @@ class AlignmentTracker(BaseTracker):
                 print('Drag error - selected curve not found.')
                 return
 
-            self.curves[1] = {
+            _new_curves[1] = {
                 'PI': _new_pi,
-                'Radius': self.curves[1]['Radius'],
+                'Radius': _new_curves[1]['Radius'],
                 'BearingIn': support.get_bearing(_b_in),
                 'BearingOut': support.get_bearing(_b_out)
             }
 
         #test to ensure it's not a fake curve for multi-select cases
-        if self.curves[2]:
+        if _new_curves[2]:
 
-            self.curves[2] = {
-                'PI': self.curves[2]['PI'],
-                'Radius': self.curves[2]['Radius'],
+            _new_curves[2] = {
+                'PI': _new_curves[2]['PI'],
+                'Radius': _new_curves[2]['Radius'],
                 'BearingIn': support.get_bearing(
-                    self.curves[2]['PI'].sub(_new_pi)),
-                'BearingOut': self.curves[2]['BearingOut'],
+                    _new_curves[2]['PI'].sub(_new_pi)),
+                'BearingOut': _new_curves[2]['BearingOut'],
             }
 
         _coords = []
@@ -226,17 +255,32 @@ class AlignmentTracker(BaseTracker):
             if not _v:
                 continue
 
-            _v = arc.get_parameters(_v)
+            print('getting parameters for arc ', _v)
+            _v[1] = arc.get_parameters(_v[1])
 
-            _pts = arc.get_points(_v, _dtype=tuple)[0]
+            _pts = arc.get_points(_v[1], _dtype=tuple)[0]
             _coords.extend(_pts)
 
-        self.conn_group.set_coordinates(_coords)
+        self.connection.set_coordinates(_coords)
 
-    def update(self, points):
+    def begin_drag(self, selected):
         """
-        Update the tracker points and recompute
+        Initialize for dragging operations, initializing selected portion
+        of the alignment
         """
+
+        #abort if only one PI is selected
+        if len(selected) < 2:
+            return
+
+        self.build_selection_group(selected)
+        self.build_connection_group(selected)
+
+    def end_drag(self, path):
+        """
+        Cleanup after dragging operations
+        """
+
 
         pass
 
@@ -245,7 +289,7 @@ class AlignmentTracker(BaseTracker):
         Override of the parent method
         """
 
-        self.model = None
+        self.alignment = None
 
         if not node:
             node = self.node

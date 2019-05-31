@@ -44,7 +44,7 @@ class PiTracker(BaseTracker):
     picking and editing
     """
 
-    def __init__(self, doc, view, object_name, points):
+    def __init__(self, doc, view, object_name, alignment):
         """
         Constructor
         """
@@ -67,15 +67,14 @@ class PiTracker(BaseTracker):
         self.connect_idx = -1
         self.drag_start = None
         self.drag_mode = False
-
+        self.alignment = alignment
         self.selection = CoinGroup('PI_TRACKER_SELECTION', True)
         self.connection = CoinGroup('PI_TRACKER_CONNECTION', True)
+        self.names = [doc.Name, object_name, 'PI_TRACKER']
 
-        _names = [doc.Name, object_name, 'PI_TRACKER']
+        self.build_trackers(self.alignment.get_pi_coords(), self.names)
 
-        self.build_trackers(points, _names)
-
-        super().__init__(names=_names, select=False, group=True)
+        super().__init__(names=self.names, select=False, group=True)
 
         for _tracker in {
                 **self.trackers['NODE'],
@@ -105,6 +104,16 @@ class PiTracker(BaseTracker):
         self.callbacks['SoMouseButtonEvent'] = \
             self.view.addEventCallback(
                 'SoMouseButtonEvent', self.button_action)
+
+    def begin_drag(self):
+        """
+        Initialization for dragging operations
+        """
+
+        self.drag_mode = True
+        self.build_trackers(self.alignment.get_pi_coords(), self.names)
+        self.selection.set_coordinates(self.get_selected())
+        self.build_connection_group()
 
     def key_action(self, arg):
         """
@@ -163,18 +172,7 @@ class PiTracker(BaseTracker):
 
         return [_v.get() for _v in self.gui_action['selected'].values()]
 
-    def get_selection_group(self):
-        """
-        Return a SoGroup() object of trackers to be transformed by draf
-        """
-
-        self.selection.set_coordinates(
-            [_v.get() for _v in self.gui_action['selected'].values()]
-        )
-
-        return self.selection.group
-
-    def get_connection_group(self):
+    def build_connection_group(self):
         """
         Return a SoGroup() object of trackers which connect to the drag select
         """
@@ -186,11 +184,14 @@ class PiTracker(BaseTracker):
             _trackers[_k] for _k in sorted(self.gui_action['selected'])
         ]
 
-        #get index values for first and last selected elements
-        _idx = [int(_selected[_i].name.split('-')[1]) for _i in [0, -1]]
-        _conn = []
+        self.drag_start = _selected[0].get()
 
         self.connect_idx = 0
+
+        _conn = []
+
+        #get index values for first and last selected elements
+        _idx = [int(_selected[_i].name.split('-')[1]) for _i in [0, -1]]
 
         #if our starting node isn't the first, add the previous node
         if _idx[0] > 0:
@@ -199,15 +200,11 @@ class PiTracker(BaseTracker):
 
         _conn.append(_selected[0].get())
 
-        self.drag_start = _conn[-1]
-
         #if our ending node isn't the last, add the next node
         if _idx[-1] < len(_trackers) - 1:
             _conn.append(_trackers['NODE-' + str(_idx[-1] + 1)].get())
 
         self.connection.set_coordinates(_conn)
-
-        return self.connection.group
 
     def drag_callback(self, xform, path, pos):
         """
@@ -327,17 +324,20 @@ class PiTracker(BaseTracker):
             'selected': {},
         }
 
-    def update(self, points):
+    def end_drag(self):
         """
         Updates existing coordinates
         """
 
-        for _i, _node in enumerate(self.gui_action['selected'].values()):
-            _node.update(points[_i])
-            _node.on()
+        self.drag_mode = False
 
-        for _wire in self.trackers['WIRE'].values():
-            _wire.update()
+        self.build_trackers(self.alignment.get_pi_coords(), self.names)
+#        for _i, _node in enumerate(self.gui_action['selected'].values()):
+#            _node.update(points[_i])
+#            _node.on()
+
+#        for _wire in self.trackers['WIRE'].values():
+#            _wire.update()
 
     def build_trackers(self, points, names):
         """
@@ -391,6 +391,11 @@ class PiTracker(BaseTracker):
                     _tracker.finalize()
 
             self.trackers.clear()
+
+        self.trackers = {
+            'NODE':{},
+            'WIRE':{}
+        }
 
     def finalize(self, node=None):
         """
