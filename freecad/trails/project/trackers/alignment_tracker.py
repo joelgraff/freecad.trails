@@ -87,7 +87,7 @@ class AlignmentTracker(BaseTracker):
         _pi_idx = -1
 
         for _i, _v in enumerate(self.pi_list):
-            if support.within_tolerance(_v, _selected[0], 0.1):
+            if support.within_tolerance(_v, selected[0], 0.1):
                 _pi_idx = _i
                 break
 
@@ -98,6 +98,7 @@ class AlignmentTracker(BaseTracker):
 
         _pi_idx = []
         _curve_list = []
+
         #three nodes takes all, first or last selected takes all
         if num_pi == 3 or _pi_idx == 0:
             _pi_list = self.pi_list
@@ -117,10 +118,15 @@ class AlignmentTracker(BaseTracker):
             _pi_list = self.pi_list[_pi_idx-2:_pi_idx+2]
             _curve_list = self.curves[_pi_idx-2:_pi_idx-1]
 
-        #otherwise five nodes with index two or more from either end:
+        #otherwise five nodes with index two or more from either end
+        #get the middle three and corresponding curves
         else:
-            _pi_list = self.pi_list[_pi_idx-2:_pi_idx+3]
-            _curve_list = self.curves[_pi_idx-2:pi_idx]
+            _pi_list = self.pi_list[_pi_idx-1:_pi_idx+2]
+            _curve_list = self.curves[_pi_idx-2:_pi_idx]
+
+        self.pi_index = _pi_idx
+        self.udpate_curves = _curve_list
+        self.update_pis = _pi_list
 
     def build_connection_group_dep(self, selected):
         """
