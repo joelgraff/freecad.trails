@@ -264,6 +264,21 @@ class Alignment(Draft._Wire):
 
         return deepcopy(self.model.data)
 
+    def get_length(self):
+        """
+        Return the alignment length
+        """
+
+        return self.model.data['meta']['Length']
+
+    def get_curves(self):
+        """
+        Return a list of only the curves
+        """
+
+        return [_v for _v in self.model.data['geometry'] \
+            if _v['Type'] == 'Curve']
+
     def get_geometry(self, curve_hash=None):
         """
         Return the geometry of the curve matching the specified hash
