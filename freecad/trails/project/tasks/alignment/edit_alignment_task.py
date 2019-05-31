@@ -33,7 +33,7 @@ import DraftTools
 
 from .... import resources
 
-from ....alignment import alignment_model
+from ....alignment import alignment
 
 from ...support import const, utils
 from ...support.mouse_state import MouseState
@@ -72,8 +72,7 @@ class EditAlignmentTask:
         self.view = view
         self.doc = doc
         self.obj = obj
-        self.alignment = alignment_model.AlignmentModel()
-        self.alignment.data = alignment_data
+        self.alignment = alignment.create(alignment_data, 'TEMP', True)
         self.pi_tracker = None
         self.drag_tracker = None
         self.alignment_tracker = None
@@ -116,10 +115,8 @@ class EditAlignmentTask:
         #deselect existing selections
         Gui.Selection.clearSelection()
 
-        _points = self.alignment.get_pi_coords()
-
         self.pi_tracker = PiTracker(
-            self.doc, self.view, self.obj.Name, _points
+            self.doc, self.view, self.obj.Name, self.alignment
         )
 
         self.alignment_tracker = AlignmentTracker(
@@ -214,12 +211,10 @@ class EditAlignmentTask:
         End drag operations with drag tracker
         """
 
-        _coords = self.drag_tracker.get_transformed_coordinates('PI_TRACKER')
-
-        self.pi_tracker.update(_coords)
+        self.alignment_tracker.end_drag()
+        self.pi_tracker.end_drag()
 
         self.drag_tracker.finalize()
-        self.pi_tracker.drag_mode = False
         self.drag_tracker = None
 
     def start_drag(self, arg, world_pos):
@@ -227,26 +222,25 @@ class EditAlignmentTask:
         Begin drag operations with drag tracker
         """
 
+        self.pi_tracker.begin_drag()
+        self.alignment_tracker.begin_drag(self.pi_tracker.get_selected())
+
         self.drag_tracker = DragTracker(
             self.view,
-            [self.doc.Name, self.obj.Name, 'DRAG_TRACKER'],
-            self.pi_tracker.node
+            [self.doc.Name, self.obj.Name, 'DRAG_TRACKER']
         )
 
         #get selected geometry from the pi tracker
-        _selected = [self.pi_tracker.get_selection_group()]
-
-        #get selected geometry from the alignment tracker
-        _selected.append(
-            self.alignment_tracker.get_selection_group(
-                self.pi_tracker.get_selected())
-        )
+        _selected = [
+            self.pi_tracker.selection.group,
+            self.alignment_tracker.selection.group
+        ]
 
         #get connection geometry from the pi tracker
-        _connected = [self.pi_tracker.get_connection_group()]
-        _connected.append(self.alignment_tracker\
-            .get_connection_group(_selected[0].getChild(0))
-        )
+        _connected = [
+            self.pi_tracker.connection.group,
+            self.alignment_tracker.connection.group
+        ]
 
         self.drag_tracker.set_nodes(_selected, _connected, world_pos)
 

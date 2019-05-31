@@ -75,15 +75,6 @@ class AlignmentModel:
 
         return result
 
-    def get_alignment_wires(self):
-        """
-        Return wire (discrete) representations of the curves which
-        comprise the alignment, subdivided by the method and interval
-        parameters.  Returns a dict keyed to each PI internal station
-        """
-
-        pass
-
     def construct_geometry(self, geometry):
         """
         Assign geometry to the alignment object
@@ -570,28 +561,32 @@ class AlignmentModel:
 
             _sta = curve['InternalStation']
 
-            #skip out if not within the specified interval
-            if interval:
+            #skip if curve end precedes start of interval
+            if _sta[1] < interval[0]:
+                continue
 
-                #skip if curve end precedes start of interval
-                if _sta[1] < interval[0]:
-                    continue
+            #skip if curve start exceeds end of interval
+            if _sta[0] > interval[1]:
+                continue
 
-                #skip if curve start exceeds end of interval
-                if _sta[0] > interval[1]:
-                    continue
+            _start = _sta[0]
 
-                _start = _sta[0]
+            #if curve starts bfore interval, use start of interval
+            if _sta[0] < interval[0]:
+                _start = interval[0]
 
-                if _sta[0] < interval[0]:
-                    _start = interval[0]
+            _end = _sta[1]
 
-                _end = _sta[1]
+            #if curve ends past the interval, stop at end of interval
+            if _sta[1] > interval[1]:
+                _end = interval[1]
 
-                if _sta[1] > interval[1]:
-                    _end = interval[1]
+            #calculate start position on arc and length to discretize
+            _arc_int = [_start - _sta[0], _end - _start]
 
-                _arc_int = [_start - _sta[0], _end - _start]
+            #just in case, skip for zero or negative lengths
+            if _arc_int[1] <= 0.0:
+                continue
 
             if curve['Type'] == 'Curve':
 

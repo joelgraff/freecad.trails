@@ -35,13 +35,10 @@ class DragTracker(BaseTracker):
     Tracker for dragging operations
     """
 
-    def __init__(self, view, names, base_node):
+    def __init__(self, view, names):
         """
         Constructor
         """
-
-        self.base_node = base_node
-
         self.viewport = \
             view.getViewer().getSoRenderManager()
 
