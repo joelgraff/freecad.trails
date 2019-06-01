@@ -110,9 +110,14 @@ class PiTracker(BaseTracker):
         Initialization for dragging operations
         """
 
+        _selected = self.get_selected()
+
+        if not _selected:
+            return
+
         self.drag_mode = True
         self.build_trackers(self.alignment.get_pi_coords(), self.names)
-        self.selection.set_coordinates(self.get_selected())
+        self.selection.set_coordinates(_selected)
         self.build_connection_group()
 
     def key_action(self, arg):
@@ -349,7 +354,7 @@ class PiTracker(BaseTracker):
         for _i, _pt in enumerate(points):
 
             #set z value on top
-            _pt.z = C.Z_DEPTH[2]
+            #_pt.z = C.Z_DEPTH[2]
 
             #build node trackers
             _tr = NodeTracker(

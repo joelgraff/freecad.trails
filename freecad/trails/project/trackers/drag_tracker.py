@@ -51,7 +51,7 @@ class DragTracker(BaseTracker):
 
         self.view = view
         self.start_path = None
-        
+
 
         self.gui_callbacks = {
             'SoLocation2Event': \
@@ -83,7 +83,7 @@ class DragTracker(BaseTracker):
 
     def set_rotation_center(self, center):
         """
-        Set the center of rotation for drag operations. 
+        Set the center of rotation for drag operations.
         center - Vector of centerpoint
         """
 

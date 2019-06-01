@@ -87,6 +87,7 @@ class AlignmentTracker(BaseTracker):
         _pi_idx = -1
 
         for _i, _v in enumerate(self.pi_list):
+
             if support.within_tolerance(_v, selected[0], 0.1):
                 _pi_idx = _i
                 break
@@ -96,37 +97,36 @@ class AlignmentTracker(BaseTracker):
 
         num_pi = len(self.pi_list)
 
-        _pi_idx = []
         _curve_list = []
 
-        #three nodes takes all, first or last selected takes all
-        if num_pi == 3 or _pi_idx == 0:
-            _pi_list = self.pi_list
-            _curve_list = [self.curves[0]]
-        elif _pi_idx == len(self.pi_list):
-            _pi_list = self.pi_list[-3:]
-            _curve_list = [self.curves[-1]]
+        _pi_list = self.pi_list[:]
+        _pi_list[_pi_idx] = None
 
-        #otherwise four nodes, second from start or end, or multi-select
-        elif num_pi == 4 or _pi_idx == 1:
-            _pi_list = self.pi_list
-            _curve_list = self.curves[0:2]
-        elif _pi_idx == num_pi - 2:
-            _pi_list = self.pi_list[-4:]
-            _curve_list = self.curves[-2:]
-        elif len(selected) > 1:
-            _pi_list = self.pi_list[_pi_idx-2:_pi_idx+2]
-            _curve_list = self.curves[_pi_idx-2:_pi_idx-1]
+        if len(selected) > 1:
+            _pi_list[_pi_idx + 1] = None
 
-        #otherwise five nodes with index two or more from either end
-        #get the middle three and corresponding curves
+        if len(selected) == 1:
+            if _pi_idx > 0 and _pi_idx < num_pi - 1:
+                _curve_list = self.curves[
+                    utils.clamp(_pi_idx - 2, 0):
+                    utils.clamp(_pi_idx + 1, max_val=num_pi)
+                    ]
+            else:
+                print(utils.clamp(_pi_idx - 2, 0))
+                _curve_list = self.curves[utils.clamp(_pi_idx - 2, 0)]
         else:
-            _pi_list = self.pi_list[_pi_idx-1:_pi_idx+2]
-            _curve_list = self.curves[_pi_idx-2:_pi_idx]
+            _curve_list = self.curves[
+                utils.clamp(_pi_idx - 2, 0):
+                utils.clamp(_pi_idx, max_val=num_pi)
+            ]
+
+        if not isinstance(_curve_list, list):
+            _curve_list = [_curve_list]
 
         self.pi_index = _pi_idx
-        self.udpate_curves = _curve_list
-        self.update_pis = _pi_list
+        self.curve_update = _curve_list
+        self.pi_update = _pi_list
+
 
     def build_connection_group_dep(self, selected):
         """
@@ -275,14 +275,16 @@ class AlignmentTracker(BaseTracker):
         of the alignment
         """
 
-        #abort if only one PI is selected
-        if len(selected) < 2:
+        if not selected:
             return
 
-        self.build_selection_group(selected)
-        self.build_connection_group(selected)
+        if len(selected) > 1:
+            self.build_selection_group(selected)
 
-    def end_drag(self, path):
+        if len(selected) < len(self.pi_list):
+            self.build_connection_group(selected)
+
+    def end_drag(self, path=None):
         """
         Cleanup after dragging operations
         """

@@ -48,6 +48,7 @@ def create(doc, view, alignment_data, object_name):
     """
     Class factory method
     """
+
     return EditAlignmentTask(doc, view, alignment_data, object_name)
 
 class EditAlignmentTask:
@@ -139,14 +140,10 @@ class EditAlignmentTask:
         """
         Initiailze the task window and controls
         """
+
         _mw = utils.getMainWindow()
 
         form = _mw.findChild(QtGui.QWidget, 'TaskPanel')
-
-        #form.file_path = form.findChild(QtGui.QLineEdit, 'filename')
-        #form.pick_file = form.findChild(QtGui.QToolButton, 'pick_file')
-        #form.pick_file.clicked.connect(self.choose_file)
-        #form.file_path.textChanged.connect(self.examine_file)
 
         self.form = form
 
@@ -222,6 +219,11 @@ class EditAlignmentTask:
         Begin drag operations with drag tracker
         """
 
+        _selected = self.pi_tracker.get_selected()
+
+        if not _selected:
+            return
+
         self.pi_tracker.begin_drag()
         self.alignment_tracker.begin_drag(self.pi_tracker.get_selected())
 
@@ -233,13 +235,13 @@ class EditAlignmentTask:
         #get selected geometry from the pi tracker
         _selected = [
             self.pi_tracker.selection.group,
-            self.alignment_tracker.selection.group
+            #self.alignment_tracker.selection.group
         ]
 
         #get connection geometry from the pi tracker
         _connected = [
             self.pi_tracker.connection.group,
-            self.alignment_tracker.connection.group
+            #self.alignment_tracker.connection.group
         ]
 
         self.drag_tracker.set_nodes(_selected, _connected, world_pos)
@@ -250,7 +252,7 @@ class EditAlignmentTask:
 
         self.drag_tracker.callbacks.extend([
             self.pi_tracker.drag_callback,
-            self.alignment_tracker.drag_callback
+            #self.alignment_tracker.drag_callback
         ])
 
     def set_vobj_style(self, vobj, style):
