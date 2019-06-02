@@ -46,8 +46,10 @@ class AlignmentTracker(BaseTracker):
         self.alignment = alignment
         self.pi_list = self.alignment.model.get_pi_coords()
         self.curves = self.alignment.get_curves()
-        self.curve_idx = []
-        self.conn_pi = []
+        self.curve_update = []
+        self.pi_update = []
+        self.pi_index = -1
+
         self.start_path = None
         self.drag_start = Vector()
         self.stations = [-1.0, -1.0]
@@ -97,80 +99,39 @@ class AlignmentTracker(BaseTracker):
 
         num_pi = len(self.pi_list)
 
-        _curve_list = []
+        #PI's = #curves + 2 (start and end points)
+        _curve_list = [None]*num_pi - 2
 
-        _pi_list = self.pi_list[:]
-        _pi_list[_pi_idx] = None
+        _pi_list = [None]*num_pi
+        _pi_list[_pi_idx] = self.pi_list[_pi_idx]
 
-        if len(selected) > 1:
-            _pi_list[_pi_idx + 1] = None
+        #always start at the curve previous to the current PI, clamped
+        _start = utils.clamp(_pi_idx - 2, 0)
 
+        #end for single-select case, first or last node,
+        _end = _start + 1
+
+        #single-select case
         if len(selected) == 1:
+
+            #last curve is the curve under the next PI
             if _pi_idx > 0 and _pi_idx < num_pi - 1:
-                _curve_list = self.curves[
-                    utils.clamp(_pi_idx - 2, 0):
-                    utils.clamp(_pi_idx + 1, max_val=num_pi)
-                    ]
-            else:
-                print(utils.clamp(_pi_idx - 2, 0))
-                _curve_list = self.curves[utils.clamp(_pi_idx - 2, 0)]
+                _end = utils.clamp(_pi_idx + 1, max_val=num_pi)
+
+        #multi-select - set the next PI to None so it's recalculated,
+        #last curve is the curve under the previous PI
         else:
-            _curve_list = self.curves[
-                utils.clamp(_pi_idx - 2, 0):
-                utils.clamp(_pi_idx, max_val=num_pi)
-            ]
+            _pi_list[_pi_idx + 1] = self.pi_list[_pi_idx + 1]
+            _end = _pi_idx
+
+        #build the curve list
+        #all curves None, except the ones to be recalculated
+        _curve_list[_start:_end] = self.curves[_start:_end]
 
         if not isinstance(_curve_list, list):
             _curve_list = [_curve_list]
 
-        self.pi_index = _pi_idx
-        self.curve_update = _curve_list
         self.pi_update = _pi_list
-
-
-    def build_connection_group_dep(self, selected):
-        """
-        Build the connection group based on the passed selected PI's
-        """
-
-        #when dragging, if only one node is selected, one PI is transformed
-        #and three cruves are re-calculated
-        #if multiple nodes are selected, two curves are recalculated
-
-        _count = len(selected)
-        _start_pi = selected[0]
-
-        #get the pi index for the selected pi
-        for _i, _v in enumerate(self.pi_list):
-
-            if support.within_tolerance(_v, _start_pi, 0.1):
-                self.start_pi = _i
-                break
-
-        #abort if we can't find the curve under the first selected PI
-        if self.start_pi == -1:
-            return coin.SoGroup()
-
-        #get a list of curves to be updated
-        self.curves = [_curves[_i] \
-            if 0 <= _i < len(_curves) else None \
-                for _i in list(range(self.start_pi - 2, self.start_pi + 1))
-        ]
-
-        #only the first two curves apply in multi-select cases,
-        #so just save the next PI as a fake curve
-        if _count > 1:
-            self.curves[2] = None
-
-        _sta = [_v['InternalStation'] for _v in self.curves if _v]
-
-        #build scenegraph nodes
-        _coords = self.model.discretize_geometry([_sta[0][0], _sta[-1][1]])
-
-        self.conn_group.set_coordinates(_coords)
-
-        return self.conn_group.group
-
 
     def get_transformed_coordinates(self, path, vecs):
         """
@@ -192,6 +153,13 @@ class AlignmentTracker(BaseTracker):
         return [Vector(_xf.multVecMatrix(_v).getValue()[:3]) for _v in _vecs]
 
     def drag_callback(self, xform, path, pos):
+        """
+        Callback for drag operations
+        """
+
+        pass
+
+    def drag_callback_dep(self, xform, path, pos):
         """
         Callback for drag operations
         """
