@@ -98,6 +98,33 @@ class DragTracker(BaseTracker):
         world_pos = self.view.getPoint(self.view.getCursorPos())
         self.update(world_pos, arg['AltDown'], arg['ShiftDown'])
 
+    def get_matrix(self, group_name):
+        """
+        Return the transformation matrix for the selection nodes
+        """
+
+        #retrieve the group to transform by name
+        _group = self.nodes['selected'].getByName(group_name)
+
+        if not _group:
+            return
+
+        _coords = _group.getChild(0)
+
+        #define the search path if not defined
+        #if not self.start_path:
+        _search = coin.SoSearchAction()
+        _search.setNode(_coords)
+        _search.apply(self.nodes['selected'])
+
+        self.start_path = _search.getPath()
+
+        #get the matrix for the transformation
+        _matrix = coin.SoGetMatrixAction(self.viewport.getViewportRegion())
+        _matrix.apply(self.start_path)
+
+        return _matrix.getMatrix()
+
     def set_nodes(self, selected, connector, world_pos):
         """
         Set the trackes the drag tracker will use
@@ -121,27 +148,7 @@ class DragTracker(BaseTracker):
         transformations applied by the drag tracker
         """
 
-        #retrieve the group to transform by name
-        _group = self.nodes['selected'].getByName(group_name)
-
-        if not _group:
-            return
-
-        _coords = _group.getChild(0)
-
-        #define the search path if not defined
-        #if not self.start_path:
-        _search = coin.SoSearchAction()
-        _search.setNode(_coords)
-        _search.apply(self.nodes['selected'])
-
-        self.start_path = _search.getPath()
-
-        #get the matrix for the transformation
-        _matrix = coin.SoGetMatrixAction(self.viewport.getViewportRegion())
-        _matrix.apply(self.start_path)
-
-        _xf = _matrix.getMatrix()
+        _xf = self.get_matrix(group_name)
 
         #create the 4D vectors for the transformation
         _vecs = [

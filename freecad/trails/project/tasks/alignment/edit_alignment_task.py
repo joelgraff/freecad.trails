@@ -208,7 +208,11 @@ class EditAlignmentTask:
         End drag operations with drag tracker
         """
 
-        self.alignment_tracker.end_drag()
+        _path = self.pi_tracker.get_search_path(
+            self.pi_tracker.selection.coord
+        )
+
+        self.alignment_tracker.end_drag(_path)
         self.pi_tracker.end_drag()
 
         self.drag_tracker.finalize()

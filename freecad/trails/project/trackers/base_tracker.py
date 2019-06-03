@@ -88,6 +88,19 @@ class BaseTracker:
         switch.whichChild = -1
         self.visible = False
 
+    def get_search_path(self, node):
+        """
+        Return the search path for the specified node
+        """
+
+        #define the search path if not defined
+        #if not self.start_path:
+        _search = coin.SoSearchAction()
+        _search.setNode(node)
+        _search.apply(self.node)
+
+        return _search.getPath()
+
     def _insert_sg(self, node):
         """
         Insert a node into the scenegraph at the top

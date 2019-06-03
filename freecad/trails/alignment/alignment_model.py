@@ -105,7 +105,8 @@ class AlignmentModel:
 
         self.validate_coordinates()
 
-        self.validate_alignment()
+        if not self.validate_alignment():
+            return False
 
         #call once more to catch geometry added by validate_alignment()
         self.validate_stationing()
@@ -165,6 +166,29 @@ class AlignmentModel:
 
         _length = 0.0
 
+        if not self.data['meta'].get('Length'):
+
+            _end = self.data['meta']['End']
+
+            if not _end:
+                print('Unable to validate alignment')
+                return False
+
+            _prev = _geo_list[-1]
+
+            if _prev['End'].distanceToPoint(_end) > 0.0:
+
+                _geo_list.append(
+                    line.get_parameters({
+                        'Start': _prev['End'],
+                        'End': _end,
+                        'BearingIn': _prev['BearingOut'],
+                        'BearingOut': _prev['BearingOut']
+                    })
+                )
+
+            self.data['meta']['Length'] = 0.0
+
         for _geo in _geo_list:
             _length += _geo['Length']
 
@@ -193,6 +217,8 @@ class AlignmentModel:
                 )
 
         self.data['geometry'] = _geo_list
+
+        return True
 
     def validate_datum(self):
         """
@@ -311,7 +337,8 @@ class AlignmentModel:
             if not _geo:
                 continue
 
-            #get the vector between the two gemetries
+            print('previous geo coordianteS: ', _prev_geo)
+            #get the vector between the two geometries
             #and the station distance
             _vector = _geo['Start'].sub(_prev_geo['End'])
             _sta_len = abs(

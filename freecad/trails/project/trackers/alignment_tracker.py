@@ -285,6 +285,16 @@ class AlignmentTracker(BaseTracker):
         #update connection coordinates
         self.connection.set_coordinates(_coords)
 
+        #save updated curves to the alignment tracker curves list
+        if self.connection.style != CoinStyle.ERROR:
+
+            for _i, _v in enumerate(_new_curves):
+
+                if not _v:
+                    continue
+
+                self.curve_update[_i] = _v
+
     def begin_drag(self, selected):
         """
         Initialize for dragging operations, initializing selected portion
@@ -302,11 +312,39 @@ class AlignmentTracker(BaseTracker):
 
     def end_drag(self, path=None):
         """
-        Cleanup after dragging operations
+        Cleanup after dragging operations, write changes to model
         """
 
+        _pi = [self.pi_list[self.pi_update[0]]]
 
-        pass
+        if self.pi_update[1]:
+            _pi = self.pi_list[self.pi_update[1]:]
+
+        #update the selected PI
+        self.pi_list[self.pi_update[0]] = \
+            self.get_transformed_coordinates(path, _pi)[0]
+
+        #update the rest of the PI's, if multi-select happened
+        if self.pi_update[1]:
+
+            self.pi_list[self.pi_update[1]:] = \
+                self.get_transformed_coordinates(
+                    path, self.pi_list[self.pi_update[1]:]
+                )[0]
+
+        model = {
+            'meta': {
+                'Start': self.pi_list[0],
+                'StartStation':
+                    self.alignment.model.data['meta']['StartStation'],
+                'End': self.pi_list[-1]
+            },
+            'geometry': self.curves,
+            'station': self.alignment.model.data['station']
+        }
+
+        #write the curves to the model and update
+        self.alignment.model.construct_geometry(model)
 
     def finalize(self, node=None):
         """
