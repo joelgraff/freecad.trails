@@ -29,6 +29,7 @@ from pivy import coin
 from FreeCAD import Vector
 import FreeCADGui as Gui
 
+from .coin_style import CoinStyle
 from .base_tracker import BaseTracker
 from ..support.const import Const
 
@@ -127,7 +128,7 @@ class NodeTracker(BaseTracker):
 
         group = coin.SoGroup()
 
-        for style in [self.STYLE.ROLL_INNER, self.STYLE.ROLL_OUTER]:
+        for style in [CoinStyle.ROLL_INNER, CoinStyle.ROLL_OUTER]:
 
             marker = coin.SoMarkerSet()
 
@@ -151,7 +152,7 @@ class NodeTracker(BaseTracker):
         Create the default node tracker
         """
 
-        style = self.STYLE.DEFAULT
+        style = CoinStyle.DEFAULT
 
         marker = coin.SoMarkerSet()
 
@@ -176,7 +177,7 @@ class NodeTracker(BaseTracker):
         """
 
         for _child in self.groups['default']:
-            _child.color.rgb = self.STYLE.DEFAULT['color']
+            _child.color.rgb = CoinStyle.DEFAULT['color']
 
         if self.switch.whichChild:
             self.switch.whichChild = 0
@@ -187,7 +188,7 @@ class NodeTracker(BaseTracker):
         """
 
         for _child in self.groups['default']:
-            _child.color.rgb = self.STYLE.SELECTED['color']
+            _child.color.rgb = CoinStyle.SELECTED['color']
 
         if self.switch.whichChild:
             self.switch.whichChild = 0

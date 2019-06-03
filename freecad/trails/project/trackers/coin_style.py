@@ -21,66 +21,59 @@
 #*                                                                     *
 #***********************************************************************
 """
-Support class for managing Coin3D SoGroup nodes
+Support class for managing Coin3D node styles
 """
-
-import FreeCADGui as Gui
 
 from pivy import coin
 
-from .coin_style import CoinStyle
+from ..support.const import Const
 
-class CoinGroup():
+class CoinStyle(Const):
     """
-    Local class to facilitate tracking nodes in groups
+    Useful math constants
     """
 
-    def __init__(self, id, no_marker=False):
-        """
-        Constructor
-        """
+    DEFAULT = {
+        'id': 'default',
+        'shape': 'default',
+        'line width': None,
+        'line style': coin.SoDrawStyle.LINES,
+        'line weight': 3,
+        'line pattern': None,
+        'size': 9,
+        'color': (0.8, 0.8, 0.8),
+        'select': True
+    }
 
-        self.group = coin.SoGroup()
-        self.coord = coin.SoCoordinate3()
-        self.marker = coin.SoMarkerSet()
-        self.line = coin.SoLineSet()
-        self.color = coin.SoBaseColor()
+    ROLL_OUTER = {
+        'id': 'roll_outer',
+        'shape': 'circle',
+        'size': 9,
+        'color': (0.4, 0.8, 0.4),
+        'select': True
+    }
 
-        self.style = CoinStyle.DEFAULT
+    ROLL_INNER = {
+        'id': 'roll_inner',
+        'shape': 'cross',
+        'size': 5,
+        'color': (0.4, 0.8, 0.4),
+        'select': True
+    }
 
-        self.group.addChild(self.coord)
-        self.group.addChild(self.color)
+    SELECTED = {
+        'id': 'selected',
+        'shape': 'default',
+        'size': 9,
+        'color': (1.0, 0.9, 0.0),
+        'select': True
+    }
+    
 
-        if not no_marker:
-            self.group.addChild(self.marker)
-
-        self.group.addChild(self.line)
-
-        self.group.setName(id)
-
-    def set_style(self, style):
-        """
-        Set the geometry styles based on the passed CoinStyle structure
-        """
-
-        if self.style == style:
-            return
-
-        self.color.rgb = style['color']
-        self.marker.markerIndex = \
-            Gui.getMarkerIndex(style['shape'], style['size'])
-
-        self.style = style
-
-
-    def set_coordinates(self, coords):
-        """
-        Set the coordinate node values
-        """
-
-        _count = len(coords)
-
-        self.coord.point.setNum(_count)
-        self.coord.point.setValues(0, _count, [list(_v) for _v in coords])
-
-        self.line.numVertices.setValue(_count)
+    ERROR = {
+        'id': 'error',
+        'shape': 'default',
+        'size': 9,
+        'color': (1.0, 0.0, 0.0),
+        'select': True
+    }
