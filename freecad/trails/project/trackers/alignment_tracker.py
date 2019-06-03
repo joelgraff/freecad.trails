@@ -99,8 +99,9 @@ class AlignmentTracker(BaseTracker):
 
         num_pi = len(self.pi_list)
 
+
         #PI's = #curves + 2 (start and end points)
-        _curve_list = [None]*num_pi - 2
+        _curve_list = [None]*(num_pi-2)
 
         _pi_list = [None]*num_pi
         _pi_list[_pi_idx] = self.pi_list[_pi_idx]
@@ -132,6 +133,7 @@ class AlignmentTracker(BaseTracker):
             _curve_list = [_curve_list]
 
         self.pi_update = _pi_list
+        self.curve_update = _curve_list
 
     def get_transformed_coordinates(self, path, vecs):
         """
@@ -157,7 +159,77 @@ class AlignmentTracker(BaseTracker):
         Callback for drag operations
         """
 
-        pass
+        _new_curves = [None]*len(self.curve_update)
+
+        print(_new_curves)
+        print(self.curve_update)
+        for _i, _v in enumerate(self.curve_update):
+
+            if not _v:
+                continue
+
+            _curve = {
+                'BearingIn': _v['BearingIn'],
+                'BearingOut': _v['BearingOut'],
+                'PI': _v['PI'],
+                'Radius': _v['Radius']
+            }
+
+            #test the current PI and next PI to see which bearing changes.
+            #one of them will change.
+
+            _bearings = [None, None]
+
+            if not self.pi_update[_i]:
+
+                _bearings[0] = self.pi_update[_i + 1].sub(xform.add(self.pi_list[_i]))
+
+            elif not self.pi_update[_i + 1]:
+
+                _bearings[0] = xform.add(
+                    self.pi_list[_i + 1]).sub(self.pi_update[_i]
+                )
+
+                if (self.pi_update[_i + 2]):
+                    _bearings[1] = \
+                        self.pi_update[_i+2].sub(xform.add(self.pi_list[_i+1]))
+
+                else:
+                    _bearings[1] = self.get_transformed_coordinates(
+                        path, self.pi_list[_i + 2]
+                    )[0]
+
+            elif not self.pi_update[_i + 2]:
+
+                _bearings[1] = xform.add(
+                    self.pi_list[_i + 2]).sub(self.pi_update[_i]
+                )
+
+            if _bearings[0]:
+                _curve['BearingIn'] = support.get_bearing(_bearings[0])
+
+            if _bearings[1]:
+                _curve['BearingOut'] = support.get_bearing(_bearings[1])
+
+            _new_curves[_i] = _curve
+
+        print('new curve = ', _new_curves)
+        _coords = []
+
+        for _v in _new_curves:
+
+            if not _v:
+                continue
+
+            print('getting parameters for arc ', _v)
+            _v[1] = arc.get_parameters(_v[1])
+
+            _pts = arc.get_points(_v[1], _dtype=tuple)[0]
+            _coords.extend(_pts)
+
+        self.connection.set_coordinates(_coords)
+
+        print('coordinates = ', _coords)
 
     def drag_callback_dep(self, xform, path, pos):
         """
@@ -232,7 +304,7 @@ class AlignmentTracker(BaseTracker):
             print('getting parameters for arc ', _v)
             _v[1] = arc.get_parameters(_v[1])
 
-            _pts = arc.get_points(_v[1], _dtype=tuple)[0]
+            _pts = arc.getself.pi_update(_v[1], _dtype=tuple)[0]
             _coords.extend(_pts)
 
         self.connection.set_coordinates(_coords)

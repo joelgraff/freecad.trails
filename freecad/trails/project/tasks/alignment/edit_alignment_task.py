@@ -235,13 +235,13 @@ class EditAlignmentTask:
         #get selected geometry from the pi tracker
         _selected = [
             self.pi_tracker.selection.group,
-            #self.alignment_tracker.selection.group
+            self.alignment_tracker.selection.group
         ]
 
         #get connection geometry from the pi tracker
         _connected = [
             self.pi_tracker.connection.group,
-            #self.alignment_tracker.connection.group
+            self.alignment_tracker.connection.group
         ]
 
         self.drag_tracker.set_nodes(_selected, _connected, world_pos)
@@ -252,7 +252,7 @@ class EditAlignmentTask:
 
         self.drag_tracker.callbacks.extend([
             self.pi_tracker.drag_callback,
-            #self.alignment_tracker.drag_callback
+            self.alignment_tracker.drag_callback
         ])
 
     def set_vobj_style(self, vobj, style):
