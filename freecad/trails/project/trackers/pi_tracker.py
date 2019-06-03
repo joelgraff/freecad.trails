@@ -121,6 +121,13 @@ class PiTracker(BaseTracker):
             self.gui_action['rollover'].whichChild = 0
             self.gui_action['rollover'] = None
 
+    def rebuild(self):
+        """
+        Rebuild after model updates
+        """
+
+        pass
+
     def on_rollover(self, pos):
         """
         Manage element highlighting

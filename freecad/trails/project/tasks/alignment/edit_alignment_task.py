@@ -214,6 +214,7 @@ class EditAlignmentTask:
 
         self.alignment_tracker.end_drag(_path)
         self.pi_tracker.end_drag()
+        self.pi_tracker.rebuild()
 
         self.drag_tracker.finalize()
         self.drag_tracker = None
