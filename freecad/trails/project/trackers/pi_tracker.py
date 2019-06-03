@@ -105,21 +105,6 @@ class PiTracker(BaseTracker):
             self.view.addEventCallback(
                 'SoMouseButtonEvent', self.button_action)
 
-    def begin_drag(self):
-        """
-        Initialization for dragging operations
-        """
-
-        _selected = self.get_selected()
-
-        if not _selected:
-            return
-
-        self.drag_mode = True
-        self.build_trackers(self.alignment.get_pi_coords(), self.names)
-        self.selection.set_coordinates(_selected)
-        self.build_connection_group()
-
     def key_action(self, arg):
         """
         Keypress actions
@@ -145,12 +130,14 @@ class PiTracker(BaseTracker):
 
         roll_node = self.gui_action['rollover']
 
+        _valid_info = self.validate_info(info)
+
         #if we rolled over nothing or an invalid object,
         #unhighlight the existing node
-        if not self.validate_info(info):
+        if not _valid_info:
 
             if roll_node:
-                roll_node.switch.whichChild = 0
+                roll_node.default()
 
             self.gui_action['rollover'] = None
 
@@ -164,9 +151,9 @@ class PiTracker(BaseTracker):
 
             #unhighlight existing node
             if roll_node and roll_node.name != component:
-                roll_node.switch.whichChild = 0
+                roll_node.default()
 
-            _tracker.switch.whichChild = 1
+            _tracker.selected()
 
             self.gui_action['rollover'] = _tracker
 
@@ -329,6 +316,24 @@ class PiTracker(BaseTracker):
             'selected': {},
         }
 
+    def begin_drag(self):
+        """
+        Initialization for dragging operations
+        """
+
+        _selected = self.get_selected()
+
+        if not _selected:
+            return
+
+        if self.gui_action['rollover']:
+            self.gui_action['rollover'].default()
+
+        self.drag_mode = True
+        #self.build_trackers(self.alignment.get_pi_coords(), self.names)
+        self.selection.set_coordinates(_selected)
+        self.build_connection_group()
+
     def end_drag(self):
         """
         Updates existing coordinates
@@ -336,7 +341,7 @@ class PiTracker(BaseTracker):
 
         self.drag_mode = False
 
-        self.build_trackers(self.alignment.get_pi_coords(), self.names)
+#        self.build_trackers(self.alignment.get_pi_coords(), self.names)
 #        for _i, _node in enumerate(self.gui_action['selected'].values()):
 #            _node.update(points[_i])
 #            _node.on()

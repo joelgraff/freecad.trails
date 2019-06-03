@@ -32,6 +32,7 @@ from ...geometry import support, arc
 from ..support import utils
 from .base_tracker import BaseTracker
 from .coin_group import CoinGroup
+from .coin_style import CoinStyle
 
 class AlignmentTracker(BaseTracker):
     """
@@ -99,31 +100,28 @@ class AlignmentTracker(BaseTracker):
 
         num_pi = len(self.pi_list)
 
-
         #PI's = #curves + 2 (start and end points)
         _curve_list = [None]*(num_pi-2)
 
-        _pi_list = [None]*num_pi
-        _pi_list[_pi_idx] = self.pi_list[_pi_idx]
+        #first index is the PI that is being dragged / updated
+        #second index, if not zero, indicates multi-selection
+        _pi_list = [_pi_idx, 0]
 
         #always start at the curve previous to the current PI, clamped
         _start = utils.clamp(_pi_idx - 2, 0)
 
-        #end for single-select case, first or last node,
+        #end for single-select case, first or last node (default case)
         _end = _start + 1
 
-        #single-select case
-        if len(selected) == 1:
+        #multi-select - set the next PI so it gets recaluculated
+        if len(selected) > 1:
 
-            #last curve is the curve under the next PI
-            if _pi_idx > 0 and _pi_idx < num_pi - 1:
-                _end = utils.clamp(_pi_idx + 1, max_val=num_pi)
-
-        #multi-select - set the next PI to None so it's recalculated,
-        #last curve is the curve under the previous PI
-        else:
-            _pi_list[_pi_idx + 1] = self.pi_list[_pi_idx + 1]
+            _pi_list[1] = _pi_idx + 1
             _end = _pi_idx
+
+        #single-select case, pi selected that isn't start / end
+        elif 0 < _pi_idx < num_pi - 1:
+                _end = utils.clamp(_pi_idx + 1, max_val=num_pi)
 
         #build the curve list
         #all curves None, except the ones to be recalculated
@@ -134,6 +132,15 @@ class AlignmentTracker(BaseTracker):
 
         self.pi_update = _pi_list
         self.curve_update = _curve_list
+
+        _s = [_v['InternalStation'] for _v in _curve_list if _v]
+
+        #create connection geometry nodes
+        _sta = [_s[0][0], _s[-1][1]]
+
+        _geo = self.alignment.model.discretize_geometry(_sta)
+
+        self.connection.set_coordinates(_geo)
 
     def get_transformed_coordinates(self, path, vecs):
         """
@@ -161,152 +168,121 @@ class AlignmentTracker(BaseTracker):
 
         _new_curves = [None]*len(self.curve_update)
 
-        print(_new_curves)
-        print(self.curve_update)
         for _i, _v in enumerate(self.curve_update):
 
             if not _v:
                 continue
 
-            _curve = {
+            _new_curves[_i] = {
                 'BearingIn': _v['BearingIn'],
                 'BearingOut': _v['BearingOut'],
                 'PI': _v['PI'],
                 'Radius': _v['Radius']
             }
 
-            #test the current PI and next PI to see which bearing changes.
-            #one of them will change.
-
+            _curve = _new_curves[_i]
             _bearings = [None, None]
 
-            if not self.pi_update[_i]:
+            #define selected pi (transformed) and pi immediately after
+            _start = xform.add(self.pi_list[self.pi_update[0]])
 
-                _bearings[0] = self.pi_update[_i + 1].sub(xform.add(self.pi_list[_i]))
+            #update preceeds the current curve (bearing in only)
+            if self.pi_update[0] == _i:
+                _bearings[0] = self.pi_list[_i + 1].sub(_start)
 
-            elif not self.pi_update[_i + 1]:
+            #update is the PI of the current curve (PI and bearings)
+            elif self.pi_update[0] == _i + 1:
 
-                _bearings[0] = xform.add(
-                    self.pi_list[_i + 1]).sub(self.pi_update[_i]
-                )
+                _curve['PI'] = _start
+                _bearings[0] = _start.sub(self.pi_list[_i])
 
-                if (self.pi_update[_i + 2]):
-                    _bearings[1] = \
-                        self.pi_update[_i+2].sub(xform.add(self.pi_list[_i+1]))
+                _v = self.pi_list[self.pi_update[0] + 1]
 
-                else:
-                    _bearings[1] = self.get_transformed_coordinates(
-                        path, self.pi_list[_i + 2]
-                    )[0]
+                #transform second pi with rotation (multi-selection)
+                if self.pi_update[1]:
+                    _v = self.get_transformed_coordinates(path, [_v])[0]
 
-            elif not self.pi_update[_i + 2]:
+                _bearings[1] = _v.sub(_start)
 
-                _bearings[1] = xform.add(
-                    self.pi_list[_i + 2]).sub(self.pi_update[_i]
-                )
+            #update bearings and PI's
+            elif self.pi_update[0] == _i + 2:
 
-            if _bearings[0]:
-                _curve['BearingIn'] = support.get_bearing(_bearings[0])
+                _bearings[1] = _start.sub(self.pi_list[_i + 1])
 
-            if _bearings[1]:
-                _curve['BearingOut'] = support.get_bearing(_bearings[1])
+            #update curve bearing angles from the calculated vectors
+            for _i, _v in enumerate(['BearingIn', 'BearingOut']):
 
-            _new_curves[_i] = _curve
-
-        print('new curve = ', _new_curves)
-        _coords = []
-
-        for _v in _new_curves:
-
-            if not _v:
-                continue
-
-            print('getting parameters for arc ', _v)
-            _v[1] = arc.get_parameters(_v[1])
-
-            _pts = arc.get_points(_v[1], _dtype=tuple)[0]
-            _coords.extend(_pts)
-
-        self.connection.set_coordinates(_coords)
-
-        print('coordinates = ', _coords)
-
-    def drag_callback_dep(self, xform, path, pos):
-        """
-        Callback for drag operations
-        """
-
-        _new_curves = [
-            self.curves[_i] if _i else None for _i in self.curve_idx
-        ]
-
-        #curve at index 1 will always be defined
-        _new_pi = _new_curves[1]['PI'].add(xform)
-
-        if _new_curves[0]:
-
-            _new_curves[0] = {
-                'PI': _new_curves[0]['PI'],
-                'Radius': _new_curves[0]['Radius'],
-                'BearingIn': _new_curves[0]['BearingIn'],
-                'BearingOut': support.get_bearing(
-                    _new_pi.sub(_new_curves[0]['PI']))
-            }
-
-        if _new_curves[1]:
-
-            _b_in = None
-            _b_out = None
-
-            if _new_curves[0]:
-                _b_in = _new_pi.sub(_new_curves[0]['PI'])
-
-            if _new_curves[2]:
-                _b_out = _new_curves[2]['PI'].sub(_new_pi)
-
-            else:
-                #get the PI following the selected curve for the bearing
-                _xf_pi = self.pi_list[self.curve_idx[1] + 1]
-                _xf_pi = self.get_transformed_coordinates(path, [_xf_pi])[0]
-
-                _b_out = _xf_pi.sub(_new_pi)
-
-            #this should never happen
-            if not (_b_in or _b_out):
-                print('Drag error - selected curve not found.')
-                return
-
-            _new_curves[1] = {
-                'PI': _new_pi,
-                'Radius': _new_curves[1]['Radius'],
-                'BearingIn': support.get_bearing(_b_in),
-                'BearingOut': support.get_bearing(_b_out)
-            }
-
-        #test to ensure it's not a fake curve for multi-select cases
-        if _new_curves[2]:
-
-            _new_curves[2] = {
-                'PI': _new_curves[2]['PI'],
-                'Radius': _new_curves[2]['Radius'],
-                'BearingIn': support.get_bearing(
-                    _new_curves[2]['PI'].sub(_new_pi)),
-                'BearingOut': _new_curves[2]['BearingOut'],
-            }
+                if _bearings[_i]:
+                    _curve[_v] = support.get_bearing(_bearings[_i])
 
         _coords = []
 
-        for _v in self.curves:
+        self.connection.set_style(CoinStyle.DEFAULT)
+
+        #recalculate curves
+        for _i, _v in enumerate(_new_curves):
 
             if not _v:
+                _last_tan = self.curves[_i]['Tangent']
                 continue
 
-            print('getting parameters for arc ', _v)
-            _v[1] = arc.get_parameters(_v[1])
+            _v = arc.get_parameters(_v)
 
-            _pts = arc.getself.pi_update(_v[1], _dtype=tuple)[0]
+            _new_curves[_i] = _v
+            _pts = arc.get_points(_v, _dtype=tuple)[0]
             _coords.extend(_pts)
 
+        #check for errors, first between the curves
+        _prev_tan = 0.0
+        _prev_pi = self.pi_list[0]
+
+        for _i, _v in enumerate(_new_curves):
+
+            if not _v:
+                _prev_tan = self.curves[_i]['Tangent']
+                _prev_pi = self.curves[_i]['PI']
+                continue
+
+            if _prev_tan + _v['Tangent'] \
+                > _v['PI'].distanceToPoint(_prev_pi):
+
+                self.connection.set_style(CoinStyle.ERROR)
+                break
+
+            _prev_tan = _v['Tangent']
+            _prev_pi = _v['PI']
+
+        #check for errors next between the last curve and end,
+        if self.connection.style != CoinStyle.ERROR:
+
+            _c = _new_curves[-1]
+
+            if _c:
+
+                _p = self.pi_list[-1]
+
+                if self.pi_update[0] == len(self.pi_list) - 1:
+                    _p = _start
+
+                if _c['Tangent'] > _c['PI'].distanceToPoint(_p):
+                    self.connection.set_style(CoinStyle.ERROR)
+
+        #check for errors next between the last curve and end,
+        if self.connection.style != CoinStyle.ERROR:
+
+            _c = _new_curves[0]
+
+            if _c:
+
+                _p = self.pi_list[0]
+
+                if self.pi_update[0] == 0:
+                    _p = _start
+
+                if _c['Tangent'] > _c['PI'].distanceToPoint(_p):
+                    self.connection.set_style(CoinStyle.ERROR)
+
+        #update connection coordinates
         self.connection.set_coordinates(_coords)
 
     def begin_drag(self, selected):
