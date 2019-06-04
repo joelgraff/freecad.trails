@@ -62,15 +62,21 @@ class KeyMaps(Const):
 
     #map of LandXML tags to internal Python dictionary
     XML_MAP = {
-        'chord': 'Chord', 'crvType': 'CurveType', 'delta': 'Delta',
-        'desc': 'Description', 'dir': 'BearingIn', 'dirEnd': 'BearingOut',
-        'dirStart': 'BearingIn', 'external': 'External', 'length': 'Length',
-        'midOrd': 'MiddleOrdinate', 'name': 'ID', 'note': 'Note',
-        'oID': 'ObjectID', 'radius': 'Radius', 'radiusStart': 'StartRadius',
-        'radiusEnd': 'EndRadius', 'rot': 'Direction', 'spiType': 'SpiralType',
-        'staAhead': 'Ahead', 'staBack': 'Back', 'staIncrement': 'Direction',
-        'staInternal': 'Position', 'staStart': 'StartStation',
-        'staEnd': 'EndStation', 'state': 'Status', 'tangent': 'Tangent',
+        'chord': 'Chord', 'constant': 'Constant', 'crvType': 'CurveType',
+        'delta': 'Delta', 'desc': 'Description', 'dir': 'BearingIn',
+        'dirEnd': 'BearingOut', 'dirStart': 'BearingIn',
+        'external': 'External',
+        'length': 'Length',
+        'midOrd': 'MiddleOrdinate',
+        'name': 'ID', 'note': 'Note',
+        'oID': 'ObjectID',
+        'radius': 'Radius', 'radiusStart': 'StartRadius', 
+        'radiusEnd': 'EndRadius', 'rot': 'Direction',
+        'spiType': 'SpiralType', 'staAhead': 'Ahead', 'staBack': 'Back',
+        'staIncrement': 'Direction', 'staInternal': 'Position',
+        'staStart': 'StartStation', 'staEnd': 'EndStation', 'state': 'Status',
+        'tangent': 'Tangent', 'tanLong': 'TanLong', 'tanShort': 'TanShort',
+        'theta': 'Theta', 'totalX': 'TotalX', 'totalY': 'TotalY',
         'version': 'Version'
     }
 
@@ -113,7 +119,7 @@ class KeyMaps(Const):
             ['length', 'radiusEnd', 'radiusStart', 'rot', 'spiType'],
             ['chord', 'constant', 'desc', 'dirEnd', 'dirStart', 'external',
              'length', 'midOrd', 'name', 'note', 'oID', 'radius', 'staStart',
-             'state', 'tangent']
+             'state', 'tanLong', 'tanShort', 'theta', 'totalX', 'totalY']
         ],
         'StaEquation': [
             ['staAhead', 'staInternal'],
