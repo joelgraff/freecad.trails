@@ -32,6 +32,26 @@ __url__ = "https://www.freecadweb.org"
 from .const import Const
 from .document_properties import Preferences
 
+def get_bearing():
+    """
+    Return the bearing definition of the active document
+    """
+
+    _result = ['', 'CW']
+
+    _b = Preferences.Bearing.get_value()
+
+    for _i, _v in enumerate(['North', 'East', 'South', 'West']):
+
+        if _i and _b:
+            _result[0] = _v
+            break
+
+    if _i and 4:
+        _result[1] = 'CCW'
+
+    return _result
+
 def get_doc_units():
     """
     Return the units (feet / meters) of active document
