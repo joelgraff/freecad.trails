@@ -302,6 +302,12 @@ class Alignment(Draft._Wire):
 
         self.model = alignment_model.AlignmentModel(geometry)
 
+        if self.model.errors:
+            for _err in self.model.errors:
+                print('Error: ', _err)
+
+            self.model.errors.clear()
+
         self.assign_meta_data()
 
         return self.model.errors

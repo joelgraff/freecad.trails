@@ -54,7 +54,8 @@ class AlignmentModel:
         self.data = []
 
         if geometry:
-            self.construct_geometry(geometry)
+            if not self.construct_geometry(geometry):
+                print('Errors encounterd generating alignment model')
 
     def get_datum(self):
         """
@@ -171,7 +172,6 @@ class AlignmentModel:
             _end = self.data['meta']['End']
 
             if not _end:
-                print('Unable to validate alignment')
                 return False
 
             _prev = _geo_list[-1]
@@ -388,6 +388,7 @@ class AlignmentModel:
             return True
 
         if geo_data[0] is None:
+            self.errors.append('Undefined geometry in bearing validation')
             return False
 
         prev_bearing = geo_data[0]['BearingOut']
