@@ -99,7 +99,7 @@ def get_ortho(vector, rot):
 
     return App.Vector(result.y, -result.x, 0.0).normalize().multiply(rot)
 
-def get_bearing(vector):
+def get_bearing(vector, reference=C.UP):
     """
     Returns the absolute bearing of the passed vector.
     Bearing is measured clockwise from +y 'north' (0,1,0)
@@ -114,8 +114,8 @@ def get_bearing(vector):
     if not isinstance(vector, App.Vector):
         return None
 
-    rot = get_rotation(C.UP, result)
-    angle = rot * C.UP.getAngle(result)
+    rot = get_rotation(reference, result)
+    angle = rot * reference.getAngle(result)
 
     if angle < 0.0:
         angle += C.TWO_PI
