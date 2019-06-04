@@ -78,22 +78,42 @@ class Preferences():
 
     class Units():
         """
-        Units management
+        Units preference
         """
 
         @staticmethod
         def set_value(value):
             """
-            Set the thumnail document property value
+            Set the unit property value
             """
             DocumentProperty._set_int('Units', 'UserSchema', value)
 
         @staticmethod
         def get_value():
             """
-            Return the thumbnail document property value
+            Return the unit property value
             """
             return DocumentProperty._get_int('Units', 'UserSchema')
+
+    class Bearing():
+        """
+        Bearing preference
+        """
+
+        @staticmethod
+        def set_value(value):
+            """
+            Set the bearing property value
+            """
+            DocumentProperty._set_int('Units', 'UserSchema', value)
+
+        @staticmethod
+        def get_value():
+            """
+            Return the bearing property value
+            """
+            return DocumentProperty._get_int('Units', 'UserSchema')
+
 
     class SaveThumbnail():
         """
