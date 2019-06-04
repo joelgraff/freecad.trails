@@ -121,7 +121,7 @@ class AlignmentTracker(BaseTracker):
 
         #single-select case, pi selected that isn't start / end
         elif 0 < _pi_idx < num_pi - 1:
-                _end = utils.clamp(_pi_idx + 1, max_val=num_pi)
+            _end = utils.clamp(_pi_idx + 1, max_val=num_pi)
 
         #build the curve list
         #all curves None, except the ones to be recalculated
@@ -331,6 +331,12 @@ class AlignmentTracker(BaseTracker):
                 self.get_transformed_coordinates(
                     path, self.pi_list[self.pi_update[1]:]
                 )[0]
+
+        #update curve list with curve changes
+        for _i, _v in enumerate(self.curve_update):
+
+            if _v:
+                self.curves[_i] = _v
 
         model = {
             'meta': {
