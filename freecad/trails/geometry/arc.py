@@ -148,7 +148,10 @@ def get_bearings(arc, mat, delta, rot):
     for _i in range(0, 6):
         bearings.append(_GEO.FUNC[6][_i](mat.A[6][_i], delta, rot))
 
-    _b = [_v - C.TWO_PI * int(_v / C.TWO_PI) \
+    #normalize bearings within [0, 2 * PI]
+    #this is accomlpished by reducing bearings in excess of 2PI and converting
+    #negative bearings to positives
+    _b = [_v - (C.TWO_PI * int(_v / C.TWO_PI)) + (C.TWO_PI * int(_v < 0.0)) \
             for _v in bearings[0:6] if utils.to_float(_v)
          ]
 
@@ -461,6 +464,7 @@ def get_parameters(arc):
         return None
 
     result.update(_p)
+
     _p = get_bearings(arc, mat, result['Delta'], result['Direction'])
 
     if not _p:
