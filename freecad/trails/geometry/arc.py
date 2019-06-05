@@ -98,7 +98,7 @@ def get_scalar_matrix(vecs):
     result = mat * mat.T
 
     #abort for non-square matrices
-    if result.shape[0] != result.shape[1] != 6:
+    if (result.shape[0] != result.shape[1]) or (result.shape[0] != 7):
         return None
 
     #calculate the magnitudes first (minus the UP vector)
