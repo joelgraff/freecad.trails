@@ -24,9 +24,9 @@
 Support class for managing Coin3D SoGroup nodes
 """
 
-import FreeCADGui as Gui
-
 from pivy import coin
+
+import FreeCADGui as Gui
 
 from .coin_style import CoinStyle
 
@@ -35,7 +35,7 @@ class CoinGroup():
     Local class to facilitate tracking nodes in groups
     """
 
-    def __init__(self, id, no_marker=False):
+    def __init__(self, node_id, no_marker=False):
         """
         Constructor
         """
@@ -56,7 +56,7 @@ class CoinGroup():
 
         self.group.addChild(self.line)
 
-        self.group.setName(id)
+        self.group.setName(node_id)
 
     def set_style(self, style):
         """
