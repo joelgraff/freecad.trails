@@ -35,10 +35,12 @@ class KeyMaps(Const):
     XML_TAGS = {
         'length':
             ['radius', 'radiusStart', 'radiusEnd', 'chord', 'external',
-             'midOrd', 'tangent', 'length'],
+             'midOrd', 'tangent', 'length', 'tanShort', 'tanLong', 'totalX',
+             'totalY'
+            ],
 
         'angle':
-            ['delta', 'dir', 'dirStart', 'dirEnd'],
+            ['delta', 'dir', 'dirStart', 'dirEnd', 'theta'],
 
         'coordinate':
             ['Start', 'End', 'Center', 'PI']

@@ -164,6 +164,8 @@ class ImportXmlSubtask:
         Return the model data
         """
 
+        print(self.data)
+
         return self.parser.import_file(self.filepath)
 
     def test_bearing(self, bearing, start_pt, end_pt, pi, truth):
