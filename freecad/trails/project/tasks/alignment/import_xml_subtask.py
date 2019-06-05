@@ -99,7 +99,7 @@ class ImportXmlSubtask:
             for st_eq in subset['station']:
                 sta_model.append([st_eq['Back'], st_eq['Ahead']])
 
-        _widget = widget_model.create(sta_model, ['Back'], ['Ahead'])
+        _widget = widget_model.create(sta_model, ['Back', 'Ahead'])
 
         self.panel.staEqTableView.setModel(_widget)
 
@@ -107,14 +107,18 @@ class ImportXmlSubtask:
         _truth = [True]*8
 
         for curve in subset['geometry']:
-            
+
             _vals = [curve[_k] if curve.get(_k) else 0.0 for _k in
                      ['Direction', 'StartStation',
                       'BearingIn', 'BearingOut', 'Radius',
                       'Start', 'End', 'PI']
                     ]
 
-            self.test_bearing(_vals[2], _vals[5], _vals[6], _vals[7], _truth)
+            #test bearing if a bearing is found
+            if _vals[2]:
+                self.test_bearing(
+                    _vals[2], _vals[5], _vals[6], _vals[7], _truth
+                )
 
             row = '{0:s}, {1:f}, {2:.2f}, {3:.2f}, {4:.2f}, {5:.2f}'.format(
                 curve['Type'], _vals[0], _vals[1], _vals[2], _vals[3], _vals[4]
@@ -129,16 +133,14 @@ class ImportXmlSubtask:
         self.panel.curveTableView.setModel(widget_model_2)
         self.panel.curveTableView.resizeColumnsToContents()
 
-        _v = [_i for _i, _v in enumerate(_truth)]
+        _bearing_ref = [_i for _i, _v in enumerate(_truth) if _v]
 
-        if not _v:
+        if not _bearing_ref:
             self.errors.append(
                 'Inconsistent angle directions - unable to determine bearing reference'
             )
-        else:
-            self.bearing_reference = _v[0]
+            return
 
-        _bearing_ref = [_i for _i, _v in enumerate(_truth) if _v][0]
         _dir = 'North'
         _rot = 'CW'
 
