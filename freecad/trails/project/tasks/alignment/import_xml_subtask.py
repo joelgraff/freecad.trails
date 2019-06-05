@@ -31,6 +31,7 @@ from ...support import widget_model, units
 from ...support.document_properties import Preferences
 from ...support.utils import Constants as C
 from ....geometry import support
+from ...xml.key_maps import KeyMaps as maps
 
 def create(panel, filepath):
     """
@@ -46,10 +47,9 @@ class ImportXmlSubtask:
     def __init__(self, panel, filepath):
 
         self.panel = panel
-
+        self.filepath = filepath
         self.parser = AlignmentImporter()
         self.data = self.parser.import_file(filepath)
-        self.bearing_reference = 0
 
         if self.parser.errors:
             for _err in self.parser.errors:
@@ -138,22 +138,48 @@ class ImportXmlSubtask:
         else:
             self.bearing_reference = _v[0]
 
+        _bearing_ref = [_i for _i, _v in enumerate(_truth) if _v][0]
+        _dir = 'North'
+        _rot = 'CW'
+
+        if _bearing_ref:
+
+            if _bearing_ref and 4:
+                _rot = 'CCW'
+
+            for _i, _v in enumerate(['North', 'East', 'South', 'West']):
+
+                if _bearing_ref and _i:
+                    _dir = _v
+
+        self.panel.errorLabel.setText(
+            'Bearing reference detected as ' + _rot + ' ' + _dir)
+
+        self.parser.bearing_reference = _bearing_ref
+
     def import_model(self):
         """
         Return the model data
         """
 
-        return self.data
+        return self.parser.import_file(self.filepath)
 
     def test_bearing(self, bearing, start_pt, end_pt, pi, truth):
         """
         Test the bearing direction to verify it's definition
         """
 
+        if not isinstance(start_pt, Vector):
+            return [True] + [False]*7
+
         if not isinstance(pi, float):
             _vec = pi.sub(start_pt)
-        else:
+
+        elif isinstance(end_pt, Vector):
             _vec = end_pt.sub(start_pt)
+
+        else:
+            return [True] + [False]*7
 
         #CW CALCS
         _b = [

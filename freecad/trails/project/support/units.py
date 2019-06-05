@@ -29,28 +29,44 @@ __title__ = "units.py"
 __author__ = "Joel Graff"
 __url__ = "https://www.freecadweb.org"
 
+import math
+
 from .const import Const
 from .document_properties import Preferences
 
-def get_bearing():
+def validate_bearing(bearing, reference):
     """
-    Return the bearing definition of the active document
+    Ensure the bearing is converted to CW-NORTH reference
     """
 
-    _result = ['', 'CW']
+    if not reference:
+        return bearing
 
-    _b = Preferences.Bearing.get_value()
+    _two_pi = math.pi * 2.0
 
-    for _i, _v in enumerate(['North', 'East', 'South', 'West']):
+    #normalize to [0, 2*pi]
+    _b = abs(bearing - int(bearing / _two_pi) * _two_pi)
+    _sign = 1.0
 
-        if _i and _b:
-            _result[0] = _v
-            break
+    if reference in [4, 5, 6, 7]:
+        _sign = -1.0
 
-    if _i and 4:
-        _result[1] = 'CCW'
+    #translate bearing to North reference
+    if reference in [1, 5]:
+        _b += _sign * 0.5 * math.pi
 
-    return _result
+    elif reference in [2, 6]:
+        _b += _sign * math.pi
+
+    elif reference in [3, 7]:
+        _b += _sign * 0.75 * math.pi
+
+    #convert CCW to CW
+    if reference in [4, 5, 6, 7]:
+        _b = _two_pi - _b
+
+    #normalize to [0, 2*pi]
+    return abs(_b - int(_b / _two_pi) * _two_pi)
 
 def get_doc_units():
     """

@@ -44,6 +44,7 @@ class AlignmentImporter(object):
     def __init__(self):
 
         self.errors = []
+        self.bearing_reference = 0
 
     def _validate_units(self, _units):
         """
@@ -160,6 +161,12 @@ class AlignmentImporter(object):
 
                 if attr_val:
                     attr_val = math.radians(attr_val)
+
+                    if _tag in ['dir', 'dirStart', 'dirEnd']:
+
+                        attr_val = units.validate_bearing(
+                            attr_val, self.bearing_reference
+                        )
 
             #test for lengths to convert to mm
             elif _tag in maps.XML_TAGS['length']:
