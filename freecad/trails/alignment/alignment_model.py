@@ -28,7 +28,7 @@ Class for managing 2D Horizontal Alignment data
 import FreeCAD as App
 
 from ..project.support import units
-from ..geometry import arc, line, support
+from ..geometry import arc, line, spiral, support
 
 _CLASS_NAME = 'AlignmentModel'
 _TYPE = 'AlignmentModel'
@@ -90,6 +90,9 @@ class AlignmentModel:
 
             elif _geo['Type'] == 'Line':
                 _geo = line.get_parameters(_geo)
+
+            elif _geo['Type'] == 'Spiral':
+                _geo = spiral.get_parameters(_geo)
 
             else:
                 self.errors.append('Undefined geometry: ' + str(_geo))
@@ -229,6 +232,7 @@ class AlignmentModel:
         _datum = self.data['meta']
         _geo = self.data['geometry'][0]
 
+        print(_datum, _geo)
         if not _geo or not _datum:
             print('Unable to validate alignment datum')
             return
