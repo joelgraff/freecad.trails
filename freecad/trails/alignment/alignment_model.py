@@ -83,13 +83,15 @@ class AlignmentModel:
 
         self.data = geometry
 
+        _geometry = []
+
         for _i, _geo in enumerate(self.data['geometry']):
 
             if _geo['Type'] == 'Curve':
                 _geo = arc.get_parameters(_geo)
 
             elif _geo['Type'] == 'Line':
-                _geo = line.get_parameters(_geo)
+                continue
 
             elif _geo['Type'] == 'Spiral':
                 _geo = spiral.get_parameters(_geo)
@@ -98,7 +100,9 @@ class AlignmentModel:
                 self.errors.append('Undefined geometry: ' + str(_geo))
                 continue
 
-            self.data['geometry'][_i] = _geo
+            _geometry.append(_geo)
+
+        self.data['geometry'] = _geometry
 
         self.validate_datum()
 
@@ -152,8 +156,9 @@ class AlignmentModel:
                 continue
 
             _coord = _geo['Start']
+            _d = abs(_coord.Length - _prev_coord.Length)
 
-            if not support.within_tolerance(_coord.Length, _prev_coord.Length):
+            if not support.within_tolerance(_d, tolerance=0.01):
 
                 #build the line using the provided parameters and add it
                 _geo_list.append(
@@ -232,7 +237,6 @@ class AlignmentModel:
         _datum = self.data['meta']
         _geo = self.data['geometry'][0]
 
-        print(_datum, _geo)
         if not _geo or not _datum:
             print('Unable to validate alignment datum')
             return
@@ -250,6 +254,9 @@ class AlignmentModel:
         if all(_datum_truth):
             return
 
+        #----------------------------
+        #Parameter Initialization
+        #----------------------------
         _geo_station = 0
         _geo_start = App.Vector()
 
@@ -341,7 +348,6 @@ class AlignmentModel:
             if not _geo:
                 continue
 
-            print('previous geo coordianteS: ', _prev_geo)
             #get the vector between the two geometries
             #and the station distance
             _vector = _geo['Start'].sub(_prev_geo['End'])
@@ -567,7 +573,7 @@ class AlignmentModel:
     def discretize_geometry(self, interval=None, method='Segment', delta=10.0):
         """
         Discretizes the alignment geometry to a series of vector points
-        interval - the starting station and length of curve
+        interval - the starting internal station and length of curve
         method - method of discretization
         delta - discretization interval parameter
         """
