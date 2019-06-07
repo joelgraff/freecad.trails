@@ -440,8 +440,9 @@ class Alignment(Draft._Wire):
         if hasattr(self, 'no_execute'):
             return
 
-        points = self.discretize_geometry(
-            self.Object.Seg_Value, self.Object.Method)
+        points = self.model.discretize_geometry(
+            [0.0], self.Object.Method, self.Object.Seg_Value
+        )
 
         if not points:
             return
