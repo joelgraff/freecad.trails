@@ -99,6 +99,22 @@ def get_ortho(vector, rot):
 
     return App.Vector(result.y, -result.x, 0.0).normalize().multiply(rot)
 
+def get_quadrant(vector):
+    """
+    Returns the quadrant of the vector:
+    0 = 0-90
+    1 = 90-180
+    2 = 180-270
+    3 = 270-360
+
+    zero values will read positive, defaulting to right / upper halves
+    """
+
+    _v = int(vector.y < 0.0)
+    _h = int(vector.x < 0.0)
+
+    return [[0, 1], [3, 2]][_h][_v]
+
 def get_bearing(vector, reference=C.UP):
     """
     Returns the absolute bearing of the passed vector.
