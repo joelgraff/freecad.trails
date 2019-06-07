@@ -138,7 +138,7 @@ def within_tolerance(lhs, rhs=None, tolerance=None):
         tolerance = C.TOLERANCE
 
     #item list eliminates none types
-    item_list = [_v for _v in [lhs, rhs] if _v]
+    item_list = [_v for _v in [lhs, rhs] if _v is not None]
 
     if not item_list:
         print('utils.within_tolerance() - empty item list')
