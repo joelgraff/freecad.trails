@@ -133,7 +133,7 @@ class ImportXmlSubtask:
         self.panel.curveTableView.setModel(widget_model_2)
         self.panel.curveTableView.resizeColumnsToContents()
 
-        _bearing_ref = [_i for _i, _v in enumerate(_truth) if _v]
+        _bearing_ref = [_i for _i, _v in enumerate(_truth) if _v][0]
 
         if not _bearing_ref:
             self.errors.append(
@@ -163,9 +163,6 @@ class ImportXmlSubtask:
         """
         Return the model data
         """
-
-        print(self.data)
-
         return self.parser.import_file(self.filepath)
 
     def test_bearing(self, bearing, start_pt, end_pt, pi, truth):
