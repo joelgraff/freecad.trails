@@ -60,14 +60,14 @@ def _calc_total_x(theta):
     Compute the totalX value by series expansion
     """
 
-    return  1 - _calc_expansion(theta, SpiralConst.TX_EXPANSION)
+    return  1 - _calc_expansion(math.degrees(theta), SpiralConst.TX_EXPANSION)
 
 def _calc_total_y(theta):
     """
     Compute the totalY value by series expansion
     """
 
-    _v = (1/3) + _calc_expansion(theta, SpiralConst.TY_EXPANSION)
+    _v = (1/3) + _calc_expansion(math.degrees(theta), SpiralConst.TY_EXPANSION)
 
     return _v * theta
 
@@ -116,10 +116,16 @@ def _solve_by_absolute(spiral):
     Solve by absolute position (3 coordiantes defined)
     """
 
+    #require 3 coordinates and radius
+
     #calc theta, bearing in / out, and tangent lengths using matrix
+    #validate theta and calc radius and length
     #solve TotalX / TotalY (LT / ST, theta)
-    #solve length (totalX / totalY, theta)
-    #solve R (theta, length)
+
+    _rlt = [spiral.get(_v) for _v in ['Radius', 'Start', 'PI', 'End']]
+
+    if len([_v for _v in _rlt if _v is not None]) != 4:
+        return None
 
     #build matrix
     _vecs = [
@@ -138,6 +144,10 @@ def _solve_by_absolute(spiral):
     #calculate the tangent magnitudes
     _tangents = [math.sqrt(_result.A[0][0]), math.sqrt(_result.A[1][1])]
 
+    #swap tangents if the short tangent starts
+    if spiral['EndRadius'] == 'inf':
+        _tangents[0], _tangents[1] = _tangents[1], _tangents[0]
+
     #validate tangent lengths
     spiral['TanShort'] = _test_tolerance(spiral.get('TanShort'), _tangents[0])
     spiral['TanLong'] = _test_tolerance(spiral.get('TanLong'), _tangents[1])
@@ -146,27 +156,27 @@ def _solve_by_absolute(spiral):
     spiral['BearingIn'] = math.acos(_result.A[2][0] / _tangents[0])
     spiral['BearingOut'] = math.acos(_result.A[2][1] / _tangents[1])
 
-    #calc theta
+    #adjust by 2pi if dX < 0 (leftward vector)
+    if support.get_quadrant(Vector(_vecs[0])) > 1:
+        spiral['BearingIn'] = C.TWO_PI - spiral['BearingIn']
+
+    if support.get_quadrant(Vector(_vecs[1])) > 1:
+        spiral['BearingOut'] = C.TWO_PI - spiral['BearingOut']
+
+    #calc theta as dot product of bearing vectors
     _theta = math.acos(_result.A[1][0] / (_tangents[0] * _tangents[1]))
     spiral['Theta'] = _test_tolerance(spiral.get('Theta'), _theta)
 
-    #calc TotalX / TotalY
-    _ty = _calc_total_y(spiral['Theta'])
-    spiral['TotalY'] = _test_tolerance(spiral.get('TotalY'), _ty)
-
-    _tx = _calc_total_x(spiral['Theta'])
-    spiral['TotalX'] = _test_tolerance(spiral.get('TotalX'), _tx)
-
     #calc length
-    _len = (100.0 * spiral['TotalX']) \
-        / (100.0 - (0.0030462 * spiral['Theta']))
-
+    _len = spiral['Radius'] * spiral['Theta'] * 2.0
     spiral['Length'] = _test_tolerance(spiral.get('Length'), _len)
 
-    #calc radius
-    _rad = (90.0 * spiral['Length']) / (math.pi * spiral['Theta'])
+    #calc TotalX / TotalY
+    _ty = _calc_total_y(spiral['Theta']) * spiral['Length']
+    spiral['TotalY'] = _test_tolerance(spiral.get('TotalY'), _ty)
 
-    spiral['Radius'] = _test_tolerance(spiral.get('Radius'), _rad)
+    _tx = _calc_total_x(spiral['Theta']) * spiral['Length']
+    spiral['TotalX'] = _test_tolerance(spiral.get('TotalX'), _tx)
 
     return spiral
 
@@ -262,12 +272,22 @@ def get_parameters(spiral_dict):
     Validate the spiral that is passed, supplementing missing parameters
     """
 
+    if spiral_dict.get('StartRadius'):
+        if spiral_dict['StartRadius'] != math.inf:
+            spiral_dict['Radius'] = spiral_dict['StartRadius']
+
+    if spiral_dict.get('EndRadius'):
+        if spiral_dict['EndRadius'] != math.inf:
+            spiral_dict['Radius'] = spiral_dict['EndRadius']
+
     #test for missing points. branch accordingly
-    if all([spiral_dict.get(_k) for _k in ['Start', 'End', 'PI']]):
+    if all([spiral_dict.get(_k) for _k in ['Start', 'End', 'PI', 'Radius']]):
         return _solve_by_absolute(spiral_dict)
     #else:
     #   _solve_by_relative(spiral_dict)
 
+    print('Unable to solve spiral')
+    return None
 
 def get_segments(spiral, deltas, _dtype=Vector):
     """
