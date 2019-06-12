@@ -241,7 +241,13 @@ def get_lengths(arc, mat):
 
         #if both were calculated and they aren't the same, quit
         if all(_s) and not support.within_tolerance(_s[0], _s[1]):
-            return None
+
+            _attribs = ['radius', 'Start-Center-End']
+
+            if _i == 1:
+                _attribs = ['tangent', 'Start-PI-End']
+
+            App.Console.PrintWarning('\nArc {0} length and {1} distance mismatch by {2:f} mm. Using calculated value of {3:f} mm'.format(_attribs[0], _attribs[1], abs(_s[1] - _s[0]), _s[0]))
 
         if _s[0] and support.within_tolerance(_s[0], params[_i]):
             continue
