@@ -120,9 +120,8 @@ class KeyMaps(Const):
         'Spiral': [
             ['length', 'radiusEnd', 'radiusStart', 'rot', 'spiType'],
             ['chord', 'constant', 'desc', 'dirEnd', 'dirStart', 'external',
-             'length', 'midOrd', 'name', 'note', 'oID', 'radiusStart',
-             'radiusEnd', 'staStart', 'state', 'tanLong', 'tanShort', 'theta',
-             'totalX', 'totalY']
+             'length', 'midOrd', 'name', 'note', 'oID', 'staStart', 'state',
+             'tanLong', 'tanShort', 'theta', 'totalX', 'totalY']
         ],
         'StaEquation': [
             ['staAhead', 'staInternal'],
