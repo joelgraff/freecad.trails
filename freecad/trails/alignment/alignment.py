@@ -304,7 +304,9 @@ class Alignment(Draft._Wire):
 
         if self.model.errors:
             for _err in self.model.errors:
-                print('Error: ', _err)
+                print('Error in alignment {0}: {1}'\
+                    .format(self.Object.Label, _err)
+                )
 
             self.model.errors.clear()
 

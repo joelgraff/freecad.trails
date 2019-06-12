@@ -444,8 +444,9 @@ def get_parameters(arc):
 
     if not _p:
         print("""
-        Invalid curve definition: cannot determine radius / tangent lengths
-        """)
+        Invalid curve definition: cannot determine radius / tangent lengths.
+        Arc:
+        """, arc)
         return None
 
     result.update(_p)
@@ -453,14 +454,16 @@ def get_parameters(arc):
     _p = get_delta(arc, mat)
 
     if not _p:
-        print('Invalid curve definition: cannot determine central angle')
+        print('Invalid curve definition: cannot determine central angle.',
+        '\nArc:\n',arc)
         return None
 
     result.update(_p)
     _p = get_rotation(arc, vecs)
 
     if not _p:
-        print('Invalid curve definition: cannot determine curve direction')
+        print('Invalid curve definition: cannot determine curve direction.',
+        '\nArc:\n', arc)
         return None
 
     result.update(_p)
@@ -468,14 +471,16 @@ def get_parameters(arc):
     _p = get_bearings(arc, mat, result['Delta'], result['Direction'])
 
     if not _p:
-        print('Invalid curve definition: cannot determine curve bearings')
+        print('Invalid curve definition: cannot determine curve bearings.',
+        '\nArc:\n', arc)
         return None
 
     result.update(_p)
     _p = get_missing_parameters(result, result)
 
     if not _p:
-        print('Invalid curve definition: cannot calculate all parameters')
+        print('Invalid curve definition: cannot calculate all parameters.',
+        '\nArc:\n', arc)
         return None
 
     result.update(_p)
