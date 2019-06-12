@@ -455,7 +455,7 @@ def get_parameters(arc):
 
     if not _p:
         print('Invalid curve definition: cannot determine central angle.',
-        '\nArc:\n',arc)
+              '\nArc:\n', arc)
         return None
 
     result.update(_p)
@@ -463,7 +463,7 @@ def get_parameters(arc):
 
     if not _p:
         print('Invalid curve definition: cannot determine curve direction.',
-        '\nArc:\n', arc)
+              '\nArc:\n', arc)
         return None
 
     result.update(_p)
@@ -472,7 +472,7 @@ def get_parameters(arc):
 
     if not _p:
         print('Invalid curve definition: cannot determine curve bearings.',
-        '\nArc:\n', arc)
+              '\nArc:\n', arc)
         return None
 
     result.update(_p)
@@ -480,7 +480,7 @@ def get_parameters(arc):
 
     if not _p:
         print('Invalid curve definition: cannot calculate all parameters.',
-        '\nArc:\n', arc)
+              '\nArc:\n', arc)
         return None
 
     result.update(_p)
@@ -763,7 +763,7 @@ def get_segments(bearing, deltas, direction, start, radius, _dtype=App.Vector):
     return _points
 
 def get_points(
-    arc, size=10.0, method='Segment', interval=None, _dtype=App.Vector):
+        arc, size=10.0, method='Segment', interval=None, _dtype=App.Vector):
     """
     Discretize an arc into the specified segments.
     Resulting list of coordinates omits provided starting point and

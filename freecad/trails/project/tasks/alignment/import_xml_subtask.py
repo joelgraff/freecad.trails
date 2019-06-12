@@ -28,10 +28,8 @@ from FreeCAD import Vector
 
 from ...xml.alignment_importer import AlignmentImporter
 from ...support import widget_model, units
-from ...support.document_properties import Preferences
 from ...support.utils import Constants as C
 from ....geometry import support
-from ...xml.key_maps import KeyMaps as maps
 
 def create(panel, filepath):
     """

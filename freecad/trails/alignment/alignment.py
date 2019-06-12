@@ -306,7 +306,7 @@ class Alignment(Draft._Wire):
             for _err in self.model.errors:
                 print('Error in alignment {0}: {1}'\
                     .format(self.Object.Label, _err)
-                )
+                     )
 
             self.model.errors.clear()
 
@@ -351,7 +351,7 @@ class Alignment(Draft._Wire):
         geometry = self.model.data['geometry']
         points = [[App.Vector()]]
         last_curve = None
-        hashes = {}
+        #hashes = {}
 
         #discretize each arc in the geometry list,
         #store each point set as a sublist in the main points list

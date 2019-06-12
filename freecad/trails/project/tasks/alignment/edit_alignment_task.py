@@ -28,7 +28,6 @@ from PySide import QtGui
 
 import FreeCADGui as Gui
 
-import Draft
 import DraftTools
 
 from .... import resources
@@ -41,8 +40,6 @@ from ...support.mouse_state import MouseState
 from ...trackers.pi_tracker import PiTracker
 from ...trackers.drag_tracker import DragTracker
 from ...trackers.alignment_tracker import AlignmentTracker
-
-from .draft_alignment_task import DraftAlignmentTask
 
 def create(doc, view, alignment_data, object_name):
     """

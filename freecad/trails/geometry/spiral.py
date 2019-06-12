@@ -35,7 +35,9 @@ from ..project.support.const import Const
 from . import support
 
 class SpiralConst(Const):
-
+    """
+    Constants used in spiral calculations
+    """
     TX_EXPANSION = [1.0/85440.0, -1.0/9360.0, 1.0/216.0, -1.0/10.0]
     TY_EXPANSION = [-1.0/75600.0, 1.0/1320.0, -1.0/42.0]
     RLT = 90.0 / math.pi
@@ -97,7 +99,7 @@ def _calc_rlt(radius, length, theta):
     Given two of the three parameters, return the third
     """
 
-    if len ([_v for _v in [radius, length, theta] if not _v is None]) < 2:
+    if len([_v for _v in [radius, length, theta] if not _v is None]) < 2:
         return None
 
     if not radius:
@@ -191,7 +193,7 @@ def _solve_by_relative(spiral):
     if not _c:
         return None
 
-    #abort if only one coordinate specified and 
+    #abort if only one coordinate specified and
     #either no bearings are provided or one bearing with no direction
     _bearings = [spiral.get(['BearingIn']), spiral.get('BearingOut')]
 
@@ -263,7 +265,7 @@ def _solve_by_relative(spiral):
         if spiral.get('PI') and spiral.get['End']:
             _tan[1] = spiral['End'].sub(spiral['Pi'])
 
-    
+
     #calc PI from start / end and direction
     #solve using absolute
 
@@ -335,7 +337,7 @@ def get_segments(spiral, deltas, _dtype=Vector):
     return _points
 
 def get_points(
-    spiral, size=10.0, method='Segment', interval=None, _dtype=Vector):
+        spiral, size=10.0, method='Segment', interval=None, _dtype=Vector):
     """
     Discretize a spiral into the specified segments.
     Resulting list of coordinates omits provided starting point and
@@ -375,9 +377,10 @@ def get_points(
     _start_angle = bearing_in + (_delta_angle * direction)
 
     #get the start coordinate at the actual starting point on the curve
-    if interval[0] > 0.0:
+    ### CURRENTLY DISABLED ###
+    #if interval[0] > 0.0:
 
-        start = get_segments(spiral, [_delta_angle])[1]
+        #start = get_segments(spiral, [_delta_angle])[1]
 
     #if the distance is specified, calculate the central angle from that
     #otherwise, the new central angle is the old central angle less the delta

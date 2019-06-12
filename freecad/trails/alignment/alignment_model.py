@@ -647,7 +647,7 @@ class AlignmentModel:
                     [
                         _start_coord,
                         line.get_coordinate(
-                            _start_coord, curve['BearingIn'], _arc_int[1])     
+                            _start_coord, curve['BearingIn'], _arc_int[1])
                     ]
                 )
 

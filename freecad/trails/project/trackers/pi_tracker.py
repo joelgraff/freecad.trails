@@ -24,17 +24,12 @@
 Customized wire tracker for PI alignments
 """
 
-from pivy import coin
-
-from FreeCAD import Vector
-
 import DraftTools
 
 from .base_tracker import BaseTracker
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
 
-from ..support.utils import Constants as C
 from ..support.mouse_state import MouseState
 from .coin_group import CoinGroup
 

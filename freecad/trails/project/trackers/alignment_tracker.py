@@ -86,7 +86,10 @@ class AlignmentTracker(BaseTracker):
         self.selection.set_coordinates(_geo)
 
     def build_connection_group(self, selected):
-
+        """
+        Generate SoGroup containing geometry conncting selected alignment
+        elements to the unselected elements for dragging operations
+        """
         _pi_idx = -1
 
         for _i, _v in enumerate(self.pi_list):
