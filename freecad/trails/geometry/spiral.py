@@ -302,9 +302,8 @@ def get_segments(spiral, deltas, _dtype=Vector):
     radius - arc radius
     """
 
-    print('\ncalculating segments for ', spiral, '\n', deltas)
-
     _bearing = spiral['BearingIn']
+    _vec = spiral['PI'].sub(spiral['Start']).normalize()
     _start = spiral['Start']
     _length = spiral['Length']
     _radius = spiral['Radius']
@@ -312,27 +311,37 @@ def get_segments(spiral, deltas, _dtype=Vector):
 
     _reverse = spiral['EndRadius'] == math.inf
 
+    #if short tangent leads, we need to calculate from the other end
+    #toward the start of the spiral
+    if _reverse:
+        _vec = spiral['PI'].sub(spiral['End']).normalize()
+        _bearing = support.get_bearing(_vec)
+        _start = spiral['End']
+        _direction *= -1
+
     _forward = Vector(math.sin(_bearing), math.cos(_bearing), 0.0)
     _right = Vector(_forward.y, -_forward.x, 0.0)
 
     _points = [_dtype(_start)]
-    _vec = support.vector_from_angle(_bearing)
 
-    for delta in deltas:
+    for _delta in deltas:
+
+        #calculate length of curve at the current delta
+        _seg_len = math.sqrt(2.0 * _radius * _length * _delta)
 
         #calculate positions along curve at delta offset
-        _x = (delta * _length) / 3.0
-        _y = _length - ((delta * _length**3) / 20 * _radius)
+        _x = _seg_len**3 / (6.0 * _radius * _length)
 
-        #swap if we're on the outbound side of a spiral curve
-        if _reverse:
-            _x, _y = _y, _x
+        _y = _seg_len - ((_seg_len**5) / (40 * _radius**2 * _length**2))
 
         #calculate vector coordinates
-        _dx = _vec.multiply(_x)
-        _dy = Vector(_vec.y, -_vec.x, 0.0).multiply(_direction).multiply(_y)
+        _dy = Vector(_vec).multiply(_y)
+        _dx = Vector(_vec.y, -_vec.x, 0.0).multiply(_direction).multiply(_x)
 
-        _points.append(_start.add(_dy.add(_dx)))
+        _points.append(_dtype(_start.add(_dy.add(_dx))))
+
+    if _reverse:
+        _points = _points[::-1]
 
     return _points
 
@@ -362,8 +371,6 @@ def get_points(
 
     Points are returned references to start_coord
     """
-
-    print('calculating points for ', spiral)
 
     angle = spiral['Theta']
     direction = spiral['Direction']
