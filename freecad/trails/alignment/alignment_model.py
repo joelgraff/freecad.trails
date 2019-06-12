@@ -90,7 +90,14 @@ class AlignmentModel:
             if _geo['Type'] == 'Curve':
                 _geo = arc.get_parameters(_geo)
 
+            #skip serialized lines unless it begins the alignment.
+            #In that case, set the tangent's start coordiante as
+            #alignment datum before continuing
             elif _geo['Type'] == 'Line':
+
+                if _i == 0:
+                    self.data['meta']['Start'] = _geo['Start']
+
                 continue
 
             elif _geo['Type'] == 'Spiral':
@@ -638,6 +645,8 @@ class AlignmentModel:
             elif curve['Type'] == 'Spiral':
                 _pts = spiral.get_points(curve, size=delta, method=method)
 
+                if _pts:
+                    points.append(_pts)
             else:
                 _start_coord = line.get_coordinate(
                     curve['Start'], curve['BearingIn'], _arc_int[0]
