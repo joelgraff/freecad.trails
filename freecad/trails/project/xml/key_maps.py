@@ -72,7 +72,7 @@ class KeyMaps(Const):
         'midOrd': 'MiddleOrdinate',
         'name': 'ID', 'note': 'Note',
         'oID': 'ObjectID',
-        'radius': 'Radius', 'radiusStart': 'StartRadius', 
+        'radius': 'Radius', 'radiusStart': 'StartRadius',
         'radiusEnd': 'EndRadius', 'rot': 'Direction',
         'spiType': 'SpiralType', 'staAhead': 'Ahead', 'staBack': 'Back',
         'staIncrement': 'Direction', 'staInternal': 'Position',
@@ -120,8 +120,9 @@ class KeyMaps(Const):
         'Spiral': [
             ['length', 'radiusEnd', 'radiusStart', 'rot', 'spiType'],
             ['chord', 'constant', 'desc', 'dirEnd', 'dirStart', 'external',
-             'length', 'midOrd', 'name', 'note', 'oID', 'radius', 'staStart',
-             'state', 'tanLong', 'tanShort', 'theta', 'totalX', 'totalY']
+             'length', 'midOrd', 'name', 'note', 'oID', 'radiusStart',
+             'radiusEnd', 'staStart', 'state', 'tanLong', 'tanShort', 'theta',
+             'totalX', 'totalY']
         ],
         'StaEquation': [
             ['staAhead', 'staInternal'],
