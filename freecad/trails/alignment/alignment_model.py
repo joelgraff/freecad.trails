@@ -635,6 +635,9 @@ class AlignmentModel:
                 if _pts:
                     points.append(_pts)
 
+            elif curve['Type'] == 'Spiral':
+                _pts = spiral.get_points(curve, size=delta, method=method)
+
             else:
                 _start_coord = line.get_coordinate(
                     curve['Start'], curve['BearingIn'], _arc_int[0]

@@ -145,8 +145,8 @@ def _solve_by_absolute(spiral):
     _tangents = [math.sqrt(_result.A[0][0]), math.sqrt(_result.A[1][1])]
 
     #swap tangents if the short tangent starts
-    if spiral['EndRadius'] == 'inf':
-        _tangents[0], _tangents[1] = _tangents[1], _tangents[0]
+    #if spiral['EndRadius'] == math.inf:
+    #    _tangents[0], _tangents[1] = _tangents[1], _tangents[0]
 
     #validate tangent lengths
     spiral['TanShort'] = _test_tolerance(spiral.get('TanShort'), _tangents[0])
@@ -209,12 +209,12 @@ def _solve_by_relative(spiral):
 
     spiral['Radius'] = spiral.get('RadiusStart')
 
-    if not spiral['Radius'] or spiral['Radius'] == 'inf':
+    if not spiral['Radius'] or spiral['Radius'] == math.inf:
 
         if not spiral.get('RadiusEnd'):
             spiral['Radius'] = None
 
-        elif spiral['RadiusEnd'] != 'inf':
+        elif spiral['RadiusEnd'] != math.inf:
             spiral['Radius'] = spiral['RadiusEnd']
 
     #abort if at least two of the three parameters are not provided
@@ -300,13 +300,15 @@ def get_segments(spiral, deltas, _dtype=Vector):
     radius - arc radius
     """
 
+    print('\ncalculating segments for ', spiral, '\n', deltas)
+
     _bearing = spiral['BearingIn']
     _start = spiral['Start']
     _length = spiral['Length']
     _radius = spiral['Radius']
     _direction = spiral['Direction']
 
-    _reverse = spiral['RadiusEnd'] == 'inf'
+    _reverse = spiral['EndRadius'] == math.inf
 
     _forward = Vector(math.sin(_bearing), math.cos(_bearing), 0.0)
     _right = Vector(_forward.y, -_forward.x, 0.0)
@@ -318,7 +320,7 @@ def get_segments(spiral, deltas, _dtype=Vector):
 
         #calculate positions along curve at delta offset
         _x = (delta * _length) / 3.0
-        _y = _length - ((delta * len**3) / 20 * _radius)
+        _y = _length - ((delta * _length**3) / 20 * _radius)
 
         #swap if we're on the outbound side of a spiral curve
         if _reverse:
@@ -358,6 +360,8 @@ def get_points(
 
     Points are returned references to start_coord
     """
+
+    print('calculating points for ', spiral)
 
     angle = spiral['Theta']
     direction = spiral['Direction']
