@@ -309,8 +309,8 @@ def get_rotation(arc, vecs):
         _v2 = _v2[1]
 
     else:
-        _v1 = support.vector_from_angle(arc['BearingIn'])
-        _v2 = support.vector_from_angle(arc['BearingOut'])
+        _v1 = support.vector_from_angle(arc.get('BearingIn'))
+        _v2 = support.vector_from_angle(arc.get('BearingOut'))
 
     _rot = None
 
