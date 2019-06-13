@@ -146,10 +146,6 @@ def _solve_by_absolute(spiral):
     #calculate the tangent magnitudes
     _tangents = [math.sqrt(_result.A[0][0]), math.sqrt(_result.A[1][1])]
 
-    #swap tangents if the short tangent starts
-    #if spiral['EndRadius'] == math.inf:
-    #    _tangents[0], _tangents[1] = _tangents[1], _tangents[0]
-
     #validate tangent lengths
     spiral['TanShort'] = _test_tolerance(spiral.get('TanShort'), _tangents[0])
     spiral['TanLong'] = _test_tolerance(spiral.get('TanLong'), _tangents[1])
@@ -348,9 +344,7 @@ def get_segments(spiral, deltas, _dtype=Vector):
 def get_points(
         spiral, size=10.0, method='Segment', interval=None, _dtype=Vector):
     """
-    Discretize a spiral into the specified segments.
-    Resulting list of coordinates omits provided starting point and
-    concludes with end point
+    Discretize a spiral into the specified segments. Resulting list of coordinates omits provided starting point and concludes with end point
 
     spiral    - A dictionary containing key elements:
         Direction   - non-zero.  <0 = ccw, >0 = cw
@@ -419,3 +413,52 @@ def get_points(
     ]
 
     return get_segments(spiral, segment_deltas, _dtype)
+
+def calc_ortho_vector(spiral_dict, distance, side):
+    """
+    Calculate the vector orthogonal to the spiral for the given distance and direction
+    """
+
+    _dir = spiral_dict['Direction']
+    _bearing = spiral_dict['BearingIn']
+    _radius = spiral_dict['Radius']
+    _start = spiral_dict['Start']
+    _length = spiral_dict['Length']
+
+    _side = side.lower()
+    _x = 1.0
+
+    if (_dir < 0.0 and _side in ['r', 'rt', 'right']) or \
+       (_dir > 0.0 and _side in ['l', 'lt', 'left']):
+
+        _x = -1.0
+
+    _delta = distance**2 / (2.0 * _radius * _length)
+
+    _coord = get_segments(_bearing, [_delta])[1]
+
+    if not _coord:
+        return None, None
+
+    _ortho = Vector(spiral_dict['Center']).sub(_coord).multiply(_x).normalize()
+
+    return _coord, _ortho
+
+def calc_tangent_vector(spiral_dict, distance):
+    """
+    Calculate the vector tangent to the spiral for the given distance
+    """
+
+    _side = 'r'
+    _multiplier = 1.0
+
+    if spiral_dict < 0.0:
+        _side = 'l'
+        _multiplier = -1.0
+
+    _coord, _ortho = get_ortho_vector(spiral_dict, distance, _side)
+
+    _ortho.x, _ortho.y = -_ortho.y, _ortho.x
+    _ortho.multiply(_multiplier)
+
+    return _coord, _ortho

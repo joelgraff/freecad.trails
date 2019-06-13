@@ -556,11 +556,14 @@ class AlignmentModel:
 
         distance = int_sta - curve['InternalStation'][0]
 
-        if curve['Type'] == 'Line':
-            return line.get_ortho_vector(curve, distance, side)
+        _fn = {
+            'Line': line,
+            'Curve': arc,
+            'Spiral': spiral,
+        }
 
-        if curve['Type'] == 'Curve':
-            return arc.get_ortho_vector(curve, distance, side)
+        if curve['Type'] in _fn:
+            return _fn[curve['Type']].get_ortho_vector(curve, distance, side)
 
         return None
 
@@ -578,11 +581,14 @@ class AlignmentModel:
 
         distance = int_sta - curve['InternalStation'][0]
 
-        if curve['Type'] == 'Line':
-            return line.get_tangent_vector(curve, distance)
+        _fn = {
+            'Line': line,
+            'Curve': arc,
+            'Spiral': spiral,
+        }
 
-        if curve['Type'] == 'Curve':
-            return arc.get_tangent_vector(curve, distance)
+        if curve['Type'] in _fn:
+            return _fn[curve['Type']].get_tangent_vector(curve, distance)
 
         return None
 
