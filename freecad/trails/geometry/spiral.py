@@ -414,17 +414,12 @@ def get_points(
 
     return get_segments(spiral, segment_deltas, _dtype)
 
-def get_ortho_vector(spiral_dict, distance, side):
+def get_ortho_vector(spiral, distance, side):
     """
     Calculate the vector orthogonal to the spiral for the given distance and direction
     """
 
-    _dir = spiral_dict['Direction']
-    _bearing = spiral_dict['BearingIn']
-    _radius = spiral_dict['Radius']
-    _start = spiral_dict['Start']
-    _length = spiral_dict['Length']
-
+    _dir = spiral['Direction']
     _side = side.lower()
     _x = 1.0
 
@@ -433,32 +428,29 @@ def get_ortho_vector(spiral_dict, distance, side):
 
         _x = -1.0
 
-    _delta = distance**2 / (2.0 * _radius * _length)
+    _coord, _vec = get_tangent_vector(spiral, distance)
+    _vec.x, _vec.y = -_vec.y, _vec.x
+    _vec.multiply(_x).normalize()
 
-    _coord = get_segments(_bearing, [_delta])[1]
+    return _coord, _vec
 
-    if not _coord:
-        return None, None
-
-    _ortho = Vector(spiral_dict['Center']).sub(_coord).multiply(_x).normalize()
-
-    return _coord, _ortho
-
-def get_tangent_vector(spiral_dict, distance):
+def get_tangent_vector(spiral, distance):
     """
     Calculate the vector tangent to the spiral for the given distance
     """
 
-    _side = 'r'
-    _multiplier = 1.0
+    _tan_start = spiral['PI'].sub(spiral['Start']).normalize()
 
-    if spiral_dict < 0.0:
-        _side = 'l'
-        _multiplier = -1.0
+    _delta = \
+        distance**2 / (2.0*spiral['Radius']*spiral['Length'])
 
-    _coord, _ortho = get_ortho_vector(spiral_dict, distance, _side)
+    _delta_bearing = spiral['BearingIn'] + (_delta*spiral['Direction'])
 
-    _ortho.x, _ortho.y = -_ortho.y, _ortho.x
-    _ortho.multiply(_multiplier)
+    _coord = get_segments(spiral, [_delta])[1]
 
-    return _coord, _ortho
+    if not _coord:
+        return None, None
+
+    _tangent = support.vector_from_angle(_delta_bearing)
+
+    return _coord, _tangent
