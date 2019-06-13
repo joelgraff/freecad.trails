@@ -29,7 +29,7 @@ from . import ICONPATH
 
 from .project.commands \
     import new_project_cmd, import_alignment_cmd, edit_alignment_cmd, \
-    test_cmd, test_cmd_2
+    spiral_test
 
 from .corridor.template import ViewTemplateLibrary
 
@@ -78,7 +78,7 @@ class TrailsWorkbench(Gui.Workbench):
             #},
             'Test': {
                 'gui': self.menu,
-                'cmd': ['Command', 'Command2']
+                'cmd': ['SpiralTest']
             }
         }
 
