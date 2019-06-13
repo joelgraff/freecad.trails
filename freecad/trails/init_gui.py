@@ -77,7 +77,7 @@ class TrailsWorkbench(Gui.Workbench):
             #'cmd': ['EditIntervals']
             #},
             'Test': {
-                'gui': self.menu,
+                'gui': self.menu + self.toolbar,
                 'cmd': ['SpiralTest']
             }
         }
