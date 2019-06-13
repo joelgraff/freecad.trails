@@ -149,8 +149,8 @@ def get_bearings(arc, mat, delta, rot):
         bearings.append(_GEO.FUNC[6][_i](mat.A[6][_i], delta, rot))
 
     #normalize bearings within [0, 2 * PI]
-    #this is accomlpished by reducing bearings in excess of 2PI and converting
-    #negative bearings to positives
+    #this is accomlpished by reducing bearings in excess of 2PI and
+    #converting negative bearings to positives
     _b = [_v - (C.TWO_PI * int(_v / C.TWO_PI)) + (C.TWO_PI * int(_v < 0.0)) \
             for _v in bearings[0:6] if utils.to_float(_v)
          ]
@@ -453,7 +453,8 @@ def get_parameters(arc):
         Invalid curve definition: cannot determine radius / tangent lengths.
         Arc:
         """, arc)
-        return None
+        arc['Radius'] = 0.0
+        return arc
 
     result.update(_p)
 
@@ -800,6 +801,9 @@ def get_points(
     bearing_in = arc['BearingIn']
     radius = arc['Radius']
     start = arc['Start']
+
+    if not radius:
+        return [arc['PI']], None
 
     if not interval:
         interval = [0.0, 0.0]

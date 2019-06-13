@@ -415,21 +415,30 @@ class AlignmentModel:
             if not _geo:
                 continue
 
+            #don't validate bearings on a zero-radius arc
+            if _geo['Type'] == 'Curve' and not _geo['Radius']:
+                continue
+
             _b = _geo.get('BearingIn')
 
-            if _b is None:
-                self.errors.append(
-                    'Invalid bearings ({0:.4f}, {1:.4f}) at curve {2}'\
-                        .format(prev_bearing, _b, _geo)
-                )
-                return False
+            #if bearings are missing or not within tolerance of the
+            #previous geometry bearings, reduce to zero-radius arc
+            _err = [_b is None, not support.within_tolerance(_b, prev_bearing)]
 
-            if not support.within_tolerance(_b, prev_bearing):
-                self.errors.append(
-                    'Bearing mismatch ({0:.4f}, {1:.4f}) at curve {2}'\
-                        .format(prev_bearing, _b, _geo)
-                )
-                return False
+            _err_msg = '({0:.4f}, {1:.4f}) at curve {2}'\
+                .format(prev_bearing, _b, _geo)
+
+            if any(_err):
+
+                if _geo['Type'] == 'Curve':
+                    _geo['Radius'] == 0.0
+
+                if _err[0]:
+                    _err_msg = 'Invalid bearings ' + _err_msg
+                else:
+                    _err_msg = 'Bearing mismatch ' + _err_msg
+
+                self.errors.append(_err_msg)
 
             prev_bearing = _geo.get('BearingOut')
 
