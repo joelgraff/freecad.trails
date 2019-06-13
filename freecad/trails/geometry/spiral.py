@@ -414,7 +414,7 @@ def get_points(
 
     return get_segments(spiral, segment_deltas, _dtype)
 
-def calc_ortho_vector(spiral_dict, distance, side):
+def get_ortho_vector(spiral_dict, distance, side):
     """
     Calculate the vector orthogonal to the spiral for the given distance and direction
     """
@@ -444,7 +444,7 @@ def calc_ortho_vector(spiral_dict, distance, side):
 
     return _coord, _ortho
 
-def calc_tangent_vector(spiral_dict, distance):
+def get_tangent_vector(spiral_dict, distance):
     """
     Calculate the vector tangent to the spiral for the given distance
     """
