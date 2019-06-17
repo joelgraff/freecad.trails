@@ -423,7 +423,7 @@ def get_ortho_vector(spiral, distance, side):
     _side = side.lower()
     _x = -1.0
 
-    if _side in ['r', 'rt', 'right']:
+    if _side in ['l', 'lt', 'left']:
         _x = 1.0
 
     _coord, _vec = get_tangent_vector(spiral, distance)
