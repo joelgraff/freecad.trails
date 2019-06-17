@@ -201,8 +201,13 @@ class Alignment(Draft._Wire):
         """
 
         if not stations:
-            stations = [0.0, self.model.data['meta']['Length'] / 1000.0]
+            stations = [
+                self.model.data['meta']['StartStation'],
+                self.model.data['meta']['StartStation'] \
+                    + self.model.data['meta']['Length'] / 1000.0
+            ]
 
+        print ('station range: ', stations)
         _pos = stations[0]
         _items = []
 
@@ -216,6 +221,7 @@ class Alignment(Draft._Wire):
 
             _pos += interval
 
+        print('items = ', _items)
         for _v in _items:
 
             _start = _v[0]
