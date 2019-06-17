@@ -454,7 +454,6 @@ def get_tangent_vector(spiral, distance):
 
     _delta_bearing = _tan_start + (_delta*_dir)
 
-    print('\n--->Tangent parameters = \n\t', _tan_start, _delta_bearing)
     _coords = get_segments(spiral, [_delta])
 
     if not _coords:
