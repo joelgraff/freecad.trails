@@ -191,6 +191,54 @@ class Alignment(Draft._Wire):
 
         self.build_curve_edge_dict()
 
+    def _plot_vectors(self, stations, interval=1.0, is_ortho=True):
+        """
+        Testing function to plot coordiantes and vectors between specified
+        stations.
+
+        stations - tuple / list of startnig / ending stations
+        is_ortho - bool, False plots tangent, True plots orthogonal
+        """
+
+        _pos = stations[0]
+        _items = []
+
+        while _pos < stations[1]:
+
+            if is_ortho:
+                _items.append(tuple(self.model.get_orthogonal(_pos, 'Left')))
+
+            else:
+                _items.append(tuple(self.model.get_tangent(_pos)))
+
+            _pos += interval
+
+            print('item = ', _items[-1])
+            print('pos = ', _pos)
+
+        #_pl = FreeCAD.Placement()
+        #_pl.Rotation.Q=(0.0, 0.0, 0.0, 1.0)
+
+        for _v in _items:
+
+            _start = _v[0]
+            _end = _start + _v[1] * 100000.0
+
+            print('\n[',_start,_end,']')
+
+            _pt = [self.model.data['meta']['Start']]*2
+            _pt[0] = _pt[0].add(_start)
+            _pt[1] = _pt[1].add(_end)
+
+            print ('\t',_pt)
+
+            line = Draft.makeWire(_pt,closed=False, face=False, support=None)
+
+            Draft.autogroup(line)
+
+        App.ActiveDocument.recompute()
+
+
     def build_curve_edge_dict(self):
         """
         Build the dictionary which correlates edges to their corresponding

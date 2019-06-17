@@ -421,12 +421,12 @@ def get_ortho_vector(spiral, distance, side):
 
     _dir = spiral['Direction']
     _side = side.lower()
-    _x = 1.0
+    _x = -1.0
 
     if (_dir < 0.0 and _side in ['r', 'rt', 'right']) or \
        (_dir > 0.0 and _side in ['l', 'lt', 'left']):
 
-        _x = -1.0
+        _x = 1.0
 
     _coord, _vec = get_tangent_vector(spiral, distance)
     _vec.x, _vec.y = -_vec.y, _vec.x
@@ -439,18 +439,23 @@ def get_tangent_vector(spiral, distance):
     Calculate the vector tangent to the spiral for the given distance
     """
 
-    _tan_start = spiral['PI'].sub(spiral['Start']).normalize()
+    _tan_start = spiral['BearingIn']
+    _dist_squared = distance**2
 
     _delta = \
-        distance**2 / (2.0*spiral['Radius']*spiral['Length'])
+        _dist_squared / (2.0*spiral['Radius']*spiral['Length'])
 
-    _delta_bearing = spiral['BearingIn'] + (_delta*spiral['Direction'])
+    _delta_bearing = _tan_start + (_delta*spiral['Direction'])
 
-    _coord = get_segments(spiral, [_delta])[1]
+    _coords = get_segments(spiral, [_delta])
 
-    if not _coord:
+    if not _coords:
         return None, None
 
     _tangent = support.vector_from_angle(_delta_bearing)
 
-    return _coord, _tangent
+    #returns zero if false, 1 if true, corresponding to the index
+    #of the coordinate returned from get_segments()
+    _is_forward = int(spiral['StartRadius'] == math.inf)
+
+    return _coords[_is_forward], _tangent
