@@ -523,7 +523,6 @@ class AlignmentModel:
         if support.within_tolerance(position):
             position = 0.0
 
-        print('int sta = ', position, station, start_sta)
         return position * units.scale_factor()
 
     def locate_curve(self, station):
@@ -540,7 +539,6 @@ class AlignmentModel:
 
         for _geo in self.data['geometry']:
 
-            print('testing geo station = ',_geo['InternalStation'])
             if _geo['InternalStation'][0] > int_station:
                 break
 

@@ -221,13 +221,10 @@ class Alignment(Draft._Wire):
 
             _pos += interval
 
-        print('items = ', _items)
         for _v in _items:
 
             _start = _v[0]
             _end = _start + _v[1] * 100000.0
-
-            print('\n[',_start,_end,']')
 
             _pt = [self.model.data['meta']['Start']]*2
             _pt[0] = _pt[0].add(_start)
