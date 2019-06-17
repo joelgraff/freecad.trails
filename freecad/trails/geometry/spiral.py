@@ -270,6 +270,8 @@ def get_parameters(spiral_dict):
     Validate the spiral that is passed, supplementing missing parameters
     """
 
+    spiral_dict['Radius'] = None
+
     if spiral_dict.get('StartRadius'):
         if spiral_dict['StartRadius'] != math.inf:
             spiral_dict['Radius'] = spiral_dict['StartRadius']
@@ -439,12 +441,20 @@ def get_tangent_vector(spiral, distance):
 
     _tan_start = spiral['BearingIn']
     _dist_squared = distance**2
+    _dir = spiral['Direction']
+
+    if spiral['EndRadius'] > spiral['StartRadius']:
+        _dist_squared = (spiral['Length'] -  distance)**2
+        _tan_start = spiral['BearingOut']
+        _dir *= -1.0
+
 
     _delta = \
         _dist_squared / (2.0*spiral['Radius']*spiral['Length'])
 
-    _delta_bearing = _tan_start + (_delta*spiral['Direction'])
+    _delta_bearing = _tan_start + (_delta*_dir)
 
+    print('\n--->Tangent parameters = \n\t', _tan_start, _delta_bearing)
     _coords = get_segments(spiral, [_delta])
 
     if not _coords:

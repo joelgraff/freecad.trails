@@ -200,6 +200,9 @@ class Alignment(Draft._Wire):
         is_ortho - bool, False plots tangent, True plots orthogonal
         """
 
+        if not stations:
+            stations = [0.0, self.model.data['meta']['Length'] / 1000.0]
+
         _pos = stations[0]
         _items = []
 
@@ -213,12 +216,6 @@ class Alignment(Draft._Wire):
 
             _pos += interval
 
-            print('item = ', _items[-1])
-            print('pos = ', _pos)
-
-        #_pl = FreeCAD.Placement()
-        #_pl.Rotation.Q=(0.0, 0.0, 0.0, 1.0)
-
         for _v in _items:
 
             _start = _v[0]
@@ -229,8 +226,6 @@ class Alignment(Draft._Wire):
             _pt = [self.model.data['meta']['Start']]*2
             _pt[0] = _pt[0].add(_start)
             _pt[1] = _pt[1].add(_end)
-
-            print ('\t',_pt)
 
             line = Draft.makeWire(_pt,closed=False, face=False, support=None)
 

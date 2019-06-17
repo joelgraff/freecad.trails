@@ -520,6 +520,9 @@ class AlignmentModel:
         #add final distance to position
         position += station - start_sta
 
+        if support.within_tolerance(position):
+            position = 0.0
+
         return position * units.scale_factor()
 
     def locate_curve(self, station):
@@ -552,6 +555,7 @@ class AlignmentModel:
         int_sta = self.get_internal_station(station)
 
         if (curve is None) or (int_sta is None):
+            print('unable to locate station ', station, 'on curve ', curve)
             return None
 
         distance = int_sta - curve['InternalStation'][0]

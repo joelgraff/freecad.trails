@@ -126,12 +126,12 @@ def get_ortho_vector(line_dict, distance, side=''):
     provided position
     """
 
-    direction = -1.0
+    _dir = 1.0
 
     _side = side.lower()
 
-    if _side in ['l', 'lt', 'left']:
-        direction = 1.0
+    if _side in ['r', 'rt', 'right']:
+        _dir = -1.0
 
     start = line_dict['Start']
     end = line_dict['End']
@@ -139,20 +139,11 @@ def get_ortho_vector(line_dict, distance, side=''):
     if (start is None) or (end is None):
         return None, None
 
-    slope = App.Vector(-(end.y-start.y), end.x - start.x).normalize()
-    coord = get_coordinate(
+    _delta = end.sub(start).normalize()
+    _left = App.Vector(-_delta.y, _delta.x, 0.0)
+
+    _coord = get_coordinate(
         line_dict['Start'], line_dict['BearingIn'], distance
-        ).add(slope)
+    )
 
-    #determine which side of the line the slope projects from
-    _dir = (
-        ((end.x - start.x)*(coord.y - start.y)) \
-            - ((end.y - start.y)*(coord.x - start.x))
-        )
-
-    #if it doesn't match the desired side, switch it
-    if _side:
-        if direction != math.copysign(1, _dir):
-            slope.multiply(-1.0)
-
-    return coord, slope
+    return _coord, _left.multiply(_dir)
