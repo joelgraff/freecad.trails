@@ -27,6 +27,7 @@ Command to edit an alignment
 import FreeCAD as App
 import FreeCADGui as Gui
 
+import DraftTools
 from DraftTools import DraftTool
 
 from ..support import utils
@@ -34,9 +35,9 @@ from ..support import utils
 from ... import resources
 from ...alignment import alignment as hz_align
 
-from ..tasks.alignment import edit_alignment_task 
+from ..tasks.alignment import edit_alignment_task
 
-class EditAlignmentCmd(DraftTool):
+class EditAlignmentCmd():
     """
     Initiates and manages drawing activities for alignment creation
     """
@@ -98,7 +99,7 @@ class EditAlignmentCmd(DraftTool):
         obj = Gui.Selection.getSelection()[0]
         data = obj.Proxy.get_data_copy()
 
-        DraftTool.Activated(self, name=utils.translate('Alignment'))
+        #DraftTool.Activated(self, name=utils.translate('Alignment'))
 
         self.doc = App.ActiveDocument
         self.view = Gui.ActiveDocument.ActiveView
@@ -111,35 +112,5 @@ class EditAlignmentCmd(DraftTool):
 
         Gui.Control.showDialog(self.edit_alignment_task)
         self.edit_alignment_task.setup()
-
-    def get_current_tracker(self, info):
-        """
-        Update tracker selection styles and states
-        """
-
-        if info:
-            obj_name = info['Component']
-
-            _it = iter(self.trackers)
-
-            if 'Tracker' in obj_name:
-                val = next(_x for _x in _it if _x == obj_name)
-                return val, _it
-
-        return None, None
-
-    def finish(self, closed=False, cont=False):
-        """
-        Finish drawing the alignment object
-        """
-
-        if self.edit_alignment_task:
-            self.edit_alignment_task.finish()
-            self.edit_alignment_task = None
-
-        if self.call:
-            self.view.removeEventCallback('SoEvent', self.action)
-
-        self.is_activated = False
 
 Gui.addCommand('EditAlignmentCmd', EditAlignmentCmd())

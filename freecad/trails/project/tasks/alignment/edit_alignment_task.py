@@ -26,6 +26,7 @@ Task to edit an alignment
 """
 from PySide import QtGui
 
+import FreeCAD as App
 import FreeCADGui as Gui
 
 import DraftTools
@@ -278,13 +279,17 @@ class EditAlignmentTask:
         Task cleanup
         """
 
-        #reset line colors
-        for _v in self.view_objects['line_colors']:
-            _v[0].LineColor = _v[1]
+        if self.view_objects:
 
-        #reenable object selctables
-        for _v in self.view_objects['selectable']:
-            _v[0].Selectable = _v[1]
+            #reset line colors
+            for _v in self.view_objects['line_colors']:
+                _v[0].LineColor = _v[1]
+
+            #reenable object selctables
+            for _v in self.view_objects['selectable']:
+                _v[0].Selectable = _v[1]
+
+            self.view_objects.clear()
 
         #re-enable selection
         self.view.getSceneGraph().getField("selectionRole").setValue(1)
@@ -299,6 +304,11 @@ class EditAlignmentTask:
                 self.view.removeEventCallback(_k, _v)
 
             self.callbacks.clear()
+
+        #delete the alignment object
+        if self.alignment:
+            self.doc.removeObject(self.alignment.Object.Name)
+            self.alignment = None
 
         #shut down the tracker and re-select the object
         if self.pi_tracker:
