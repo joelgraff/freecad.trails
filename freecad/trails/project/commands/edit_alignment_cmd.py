@@ -27,13 +27,7 @@ Command to edit an alignment
 import FreeCAD as App
 import FreeCADGui as Gui
 
-import DraftTools
-from DraftTools import DraftTool
-
-from ..support import utils
-
 from ... import resources
-from ...alignment import alignment as hz_align
 
 from ..tasks.alignment import edit_alignment_task
 

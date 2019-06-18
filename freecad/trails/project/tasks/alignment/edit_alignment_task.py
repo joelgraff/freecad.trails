@@ -26,7 +26,6 @@ Task to edit an alignment
 """
 from PySide import QtGui
 
-import FreeCAD as App
 import FreeCADGui as Gui
 
 import DraftTools
@@ -100,7 +99,7 @@ class EditAlignmentTask:
         for _v in self.view_objects['line_colors']:
             self.set_vobj_style(_v[0], self.STYLES.DISABLED)
 
-        #get all objects in the scene that are selecctable.
+        #get all objects in the scene that are selectable.
         self.view_objects['selectable'] = [
             (_v.ViewObject, _v.ViewObject.Selectable)
             for _v in self.doc.findObjects()
@@ -132,6 +131,7 @@ class EditAlignmentTask:
             self.view.addEventCallback(_k, _v)
 
         self.doc.recompute()
+
         DraftTools.redraw3DView()
 
     def setup(self):
@@ -198,7 +198,6 @@ class EditAlignmentTask:
             self.end_drag(arg, self.view.getPoint(pos))
 
         elif _dragging:
-
             self.start_drag(arg, self.view.getPoint(pos))
 
     def end_drag(self, arg, world_pos):
@@ -206,6 +205,7 @@ class EditAlignmentTask:
         End drag operations with drag tracker
         """
 
+        print(self.pi_tracker.selection.coord.point.getValues()[0].getValue())
         _path = self.pi_tracker.get_search_path(
             self.pi_tracker.selection.coord
         )

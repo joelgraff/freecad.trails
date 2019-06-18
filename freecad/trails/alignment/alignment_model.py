@@ -70,9 +70,16 @@ class AlignmentModel:
         as a list of vectors
         """
 
-        result = [App.Vector()]
-        result += [_v['PI'] for _v in self.data['geometry'] if _v.get('PI')]
-        result.append(self.data['meta']['End'])
+        _start = self.data['meta']['Start']
+
+        _pi = [_v for _v in self.data['geometry'] if _v.get('PI')]
+
+        result = [_start]
+        result += [_v['PI'].add(_start)\
+            for _v in self.data['geometry'] if _v.get('PI')
+                  ]
+
+        result.append(self.data['meta']['End'].add(_start))
 
         return result
 
@@ -82,6 +89,7 @@ class AlignmentModel:
         """
 
         self.data = geometry
+        do_zero_ref = True
 
         _geometry = []
 
@@ -96,7 +104,13 @@ class AlignmentModel:
             elif _geo['Type'] == 'Line':
 
                 if _i == 0:
-                    self.data['meta']['Start'] = _geo['Start']
+
+                    if not self.data['meta']['Start']:
+                        self.data['meta']['Start'] = _geo['Start']
+
+                    else:
+                        do_zero_ref =\
+                            _geo['Start'] != App.Vector()
 
                 continue
 
@@ -126,13 +140,17 @@ class AlignmentModel:
         #call once more to catch geometry added by validate_alignment()
         self.validate_stationing()
 
-        self.zero_reference_coordinates()
+        if do_zero_ref:
+            self.zero_reference_coordinates()
+
+        #run discretization to force coordinate transformation updates
+        #self.discretize_geometry()
 
         return True
 
     def zero_reference_coordinates(self):
         """
-        Reference the coordinates to the origin (0,0,0)
+        Reference the coordinates to the start point
         by adjustuing by the datum
         """
 
