@@ -160,8 +160,13 @@ class AlignmentTracker(BaseTracker):
         #create the 4D vectors for the transformation
         _vecs = [coin.SbVec4f(tuple(_v) + (1.0,)) for _v in vecs]
 
+        print('transform vectors = \n', _vecs[0].getValue())
+
         #multiply each coordinate by transformation matrix and return
         #a list of the transformed coordinates, omitting fourth value
+
+        print([Vector(_xf.multVecMatrix(_v).getValue()[:3]) for _v in _vecs])
+
         return [Vector(_xf.multVecMatrix(_v).getValue()[:3]) for _v in _vecs]
 
     def drag_callback(self, xform, path, pos):
@@ -320,6 +325,7 @@ class AlignmentTracker(BaseTracker):
 
         _pi = [self.pi_list[self.pi_update[0]]]
 
+        #grab every PI to the end if more than one is selected for updates
         if self.pi_update[1]:
             _pi = self.pi_list[self.pi_update[1]:]
 

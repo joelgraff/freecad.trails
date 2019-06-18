@@ -345,10 +345,8 @@ class PiTracker(BaseTracker):
 
         _points = self.alignment.get_pi_coords()
 
-#        self.build_trackers(self.alignment.get_pi_coords(), self.names)
         for _i, _node in enumerate(self.trackers['NODE'].values()):
             _node.update(_points[_i])
-#            _node.on()
 
         for _wire in self.trackers['WIRE'].values():
             _wire.update()
