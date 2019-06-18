@@ -431,7 +431,7 @@ class AlignmentModel:
             if any(_err):
 
                 if _geo['Type'] == 'Curve':
-                    _geo['Radius'] == 0.0
+                    _geo['Radius'] = 0.0
 
                 if _err[0]:
                     _err_msg = 'Invalid bearings ' + _err_msg

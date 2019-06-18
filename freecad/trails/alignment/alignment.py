@@ -207,7 +207,6 @@ class Alignment(Draft._Wire):
                     + self.model.data['meta']['Length'] / 1000.0
             ]
 
-        print ('station range: ', stations)
         _pos = stations[0]
         _items = []
 
@@ -230,7 +229,7 @@ class Alignment(Draft._Wire):
             _pt[0] = _pt[0].add(_start)
             _pt[1] = _pt[1].add(_end)
 
-            line = Draft.makeWire(_pt,closed=False, face=False, support=None)
+            line = Draft.makeWire(_pt, closed=False, face=False, support=None)
 
             Draft.autogroup(line)
 

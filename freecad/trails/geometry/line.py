@@ -25,8 +25,6 @@
 Line generation tools
 """
 
-import math
-
 import FreeCAD as App
 from . import support
 
