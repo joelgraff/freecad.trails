@@ -130,7 +130,7 @@ class ImportXmlSubtask:
         self.panel.curveTableView.setModel(widget_model_2)
         self.panel.curveTableView.resizeColumnsToContents()
 
-        _bearing_ref = [_i for _i, _v in enumerate(_truth) if _v][0]
+        _bearing_ref = [_i for _i, _v in enumerate(_truth) if _v]
 
         if not _bearing_ref:
             self.errors.append(
@@ -141,20 +141,18 @@ class ImportXmlSubtask:
         _dir = 'North'
         _rot = 'CW'
 
-        if _bearing_ref:
+        if _bearing_ref[0] and 4:
+            _rot = 'CCW'
 
-            if _bearing_ref and 4:
-                _rot = 'CCW'
+        for _i, _v in enumerate(['North', 'East', 'South', 'West']):
 
-            for _i, _v in enumerate(['North', 'East', 'South', 'West']):
-
-                if _bearing_ref and _i:
-                    _dir = _v
+            if _bearing_ref[0] and _i:
+                _dir = _v
 
         self.panel.errorLabel.setText(
             'Bearing reference detected as ' + _rot + ' ' + _dir)
 
-        self.parser.bearing_reference = _bearing_ref
+        self.parser.bearing_reference = _bearing_ref[0]
 
     def import_model(self):
         """
@@ -167,9 +165,12 @@ class ImportXmlSubtask:
         Test the bearing direction to verify it's definition
         """
 
+        #if the start point isn't a vector, default to true for N-CW
         if not isinstance(start_pt, Vector):
             return [True] + [False]*7
 
+        #calculate the vector from the PI where possible, otherwise
+        #use the end point.  If both fail, default to N-CW
         if not isinstance(pi, float):
             _vec = pi.sub(start_pt)
 
@@ -178,6 +179,9 @@ class ImportXmlSubtask:
 
         else:
             return [True] + [False]*7
+
+        #calculate the bearings of the vector against each axis
+        #direction, both clockwise and counter-clockwise
 
         #CW CALCS
         _b = [
@@ -190,7 +194,10 @@ class ImportXmlSubtask:
         #CCW CALCS
         _b += [C.TWO_PI - _v for _v in _b]
 
+        #compare each calculation against the original bearing, storing
+        #whether or not it's within tolerance for the axis / direction
         _b = [support.within_tolerance(_v, bearing, 0.01) for _v in _b]
 
+        #Update truth table, invalidating bearings that don't compare
         for _i, _v in enumerate(_b):
             truth[_i] = truth[_i] and _v
