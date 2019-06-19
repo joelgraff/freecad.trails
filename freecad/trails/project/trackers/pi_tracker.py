@@ -200,7 +200,7 @@ class PiTracker(BaseTracker):
 
         self.connection.set_coordinates(_conn)
 
-    def drag_callback(self, xform, path, pos):
+    def drag_callback(self, xform, matrix, pos):
         """
         Callback triggered when a drag tracker is updated to allow for geometry
         updates that are related to dragging.
@@ -338,7 +338,7 @@ class PiTracker(BaseTracker):
 
     def end_drag(self):
         """
-        Updates existing coordinates
+        Updates existing SoGRoup node coordinates with the model coordinates
         """
 
         self.drag_mode = False

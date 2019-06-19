@@ -79,6 +79,7 @@ class AlignmentModel:
             for _v in self.data['geometry'] if _v.get('PI')
                   ]
 
+        print(self.data['meta']['End'])
         result.append(self.data['meta']['End'].add(_start))
 
         return result
@@ -634,6 +635,7 @@ class AlignmentModel:
         if len(interval) == 1:
             interval.append(self.data['meta']['Length'])
 
+        print('interval = ', interval)
         #discretize each arc in the geometry list,
         #store each point set as a sublist in the main points list
         for curve in geometry:

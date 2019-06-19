@@ -85,29 +85,9 @@ class WireTracker(BaseTracker):
 
         nodes += [self.coord, self.line]
 
-        #for _node in nodes:
-        #    self.switch.addChild(_node)
-
         super().__init__(names=names, children=nodes, select=style['select'])
 
         self.update()
-        #self.on()
-
-    def off(self):
-        """
-        Override for base tracker function
-        """
-        #super().off(self.switch)
-
-        return
-
-    def on(self):
-        """
-        Override for base tracker function
-        """
-        #super().on(self.switch)
-
-        return
 
     def update(self, points=None, placement=None):
         """

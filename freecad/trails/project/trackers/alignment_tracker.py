@@ -145,31 +145,23 @@ class AlignmentTracker(BaseTracker):
 
         self.connection.set_coordinates(_geo)
 
-    def get_transformed_coordinates(self, path, vecs):
+    def get_transformed_coordinates(self, matrix, vecs):
         """
         Return the transformed coordinates of the selected nodes based
         on the transformations applied by the drag tracker
         """
 
-        #get the matrix for the transformation
-        _matrix = coin.SoGetMatrixAction(self.viewport)
-        _matrix.apply(path)
-
-        _xf = _matrix.getMatrix()
-
         #create the 4D vectors for the transformation
         _vecs = [coin.SbVec4f(tuple(_v) + (1.0,)) for _v in vecs]
-
-        print('transform vectors = \n', _vecs[0].getValue())
 
         #multiply each coordinate by transformation matrix and return
         #a list of the transformed coordinates, omitting fourth value
 
-        print([Vector(_xf.multVecMatrix(_v).getValue()[:3]) for _v in _vecs])
+        return [
+            Vector(matrix.multVecMatrix(_v).getValue()[:3]) for _v in _vecs
+        ]
 
-        return [Vector(_xf.multVecMatrix(_v).getValue()[:3]) for _v in _vecs]
-
-    def drag_callback(self, xform, path, pos):
+    def drag_callback(self, xform, matrix, pos):
         """
         Callback for drag operations
         """
@@ -208,7 +200,7 @@ class AlignmentTracker(BaseTracker):
 
                 #transform second pi with rotation (multi-selection)
                 if self.pi_update[1]:
-                    _v = self.get_transformed_coordinates(path, [_v])[0]
+                    _v = self.get_transformed_coordinates(matrix, [_v])[0]
 
                 _bearings[1] = _v.sub(_start)
 
@@ -318,7 +310,7 @@ class AlignmentTracker(BaseTracker):
         if len(selected) < len(self.pi_list):
             self.build_connection_group(selected)
 
-    def end_drag(self, path=None):
+    def end_drag(self, matrix):
         """
         Cleanup after dragging operations, write changes to model
         """
@@ -331,22 +323,32 @@ class AlignmentTracker(BaseTracker):
 
         #update the selected PI
         self.pi_list[self.pi_update[0]] = \
-            self.get_transformed_coordinates(path, _pi)[0]
+            self.get_transformed_coordinates(matrix, _pi)[0]
+
+        print('alignment PI update = ', self.pi_list[self.pi_update[0]])
+        print(self.pi_update)
 
         #update the rest of the PI's, if multi-select happened
         if self.pi_update[1]:
 
+            update_list = self.get_transformed_coordinates(
+                    matrix, self.pi_list[self.pi_update[1]:]
+                )
+
+            print(update_list)
             self.pi_list[self.pi_update[1]:] = \
                 self.get_transformed_coordinates(
-                    path, self.pi_list[self.pi_update[1]:]
-                )[0]
+                    matrix, self.pi_list[self.pi_update[1]:]
+                )
 
+        print('new PI = ', self.pi_list)
         #update curve list with curve changes
         for _i, _v in enumerate(self.curve_update):
 
             if _v:
                 self.curves[_i] = _v
 
+        print('new curves = \n', self.curves)
         model = {
             'meta': {
                 'Start': self.pi_list[0],

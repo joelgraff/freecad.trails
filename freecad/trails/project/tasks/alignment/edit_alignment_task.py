@@ -39,7 +39,7 @@ from ...support.mouse_state import MouseState
 
 from ...trackers.pi_tracker import PiTracker
 from ...trackers.drag_tracker import DragTracker
-from ...trackers.alignment_tracker import AlignmentTracker
+from ...trackers.alignment_tracker_2 import AlignmentTracker2
 
 def create(doc, view, alignment_data, object_name):
     """
@@ -113,11 +113,11 @@ class EditAlignmentTask:
         #deselect existing selections
         Gui.Selection.clearSelection()
 
-        self.pi_tracker = PiTracker(
-            self.doc, self.view, self.obj.Name, self.alignment
-        )
+        #self.pi_tracker = PiTracker(
+        #    self.doc, self.view, self.obj.Name, self.alignment
+        #)
 
-        self.alignment_tracker = AlignmentTracker(
+        self.alignment_tracker = AlignmentTracker2(
             self.doc, self.view, self.obj.Name, self.alignment
         )
 
@@ -127,8 +127,8 @@ class EditAlignmentTask:
             'SoLocation2Event': self.mouse_action
         }
 
-        for _k, _v in self.callbacks.items():
-            self.view.addEventCallback(_k, _v)
+        #for _k, _v in self.callbacks.items():
+        #    self.view.addEventCallback(_k, _v)
 
         self.doc.recompute()
 
@@ -205,12 +205,8 @@ class EditAlignmentTask:
         End drag operations with drag tracker
         """
 
-        print(self.pi_tracker.selection.coord.point.getValues()[0].getValue())
-        _path = self.pi_tracker.get_search_path(
-            self.pi_tracker.selection.coord
-        )
-
-        self.alignment_tracker.end_drag(_path)
+        return
+        self.alignment_tracker.end_drag(self.drag_tracker.get_matrix())
         self.pi_tracker.end_drag()
 
         self.drag_tracker.finalize()
@@ -221,6 +217,7 @@ class EditAlignmentTask:
         Begin drag operations with drag tracker
         """
 
+        return
         _selected = self.pi_tracker.get_selected()
 
         if not _selected:
