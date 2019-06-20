@@ -104,9 +104,13 @@ class AlignmentTracker2(BaseTracker):
 
             _points = _result['Nodes'][_i:_i + 2]
 
-            _result['Wires'].append(WireTracker(
+            _wt = WireTracker(view=self.view,
                 names=_names + ['WIRE-' + str(_i - 1)], points=_points
-            ))
+            )
+
+            _wt.selectable = False
+
+            _result['Wires'].append(_wt)
 
         self.trackers = _result
 

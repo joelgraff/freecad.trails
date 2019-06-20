@@ -40,7 +40,6 @@ class BaseTracker:
         Constructor
         """
         self.visible = False
-        self.select = select
         self.color = coin.SoBaseColor()
         self.draw_style = coin.SoDrawStyle()
         self.names = names
@@ -53,14 +52,15 @@ class BaseTracker:
         if group:
             self.node = coin.SoGroup()
 
-        if self.select:
+        self.node = \
+            coin.SoType.fromName("SoFCSelection").createInstance()
 
-            self.node = \
-                coin.SoType.fromName("SoFCSelection").createInstance()
+        self.node.documentName.setValue(self.names[0])
+        self.node.objectName.setValue(self.names[1])
+        self.node.subElementName.setValue(self.names[2])
 
-            self.node.documentName.setValue(self.names[0])
-            self.node.objectName.setValue(self.names[1])
-            self.node.subElementName.setValue(self.names[2])
+        if select:
+            self.node.selectionMode.setValue(False)
 
         for child in [self.draw_style, self.color] + children:
             self.node.addChild(child)

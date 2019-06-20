@@ -132,6 +132,7 @@ class NodeTracker(BaseTracker):
             Gui.getMarkerIndex(style['shape'], style['size'])
 
         self.coin_style = style
+        self.enabled = style['select']
 
     def update(self, coord):
         """

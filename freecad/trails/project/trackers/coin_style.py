@@ -45,6 +45,14 @@ class CoinStyle(Const):
         'select': True
     }
 
+    EDIT = {
+        'line width': None,
+        'line style': coin.SoDrawStyle.LINES,
+        'line weight': 3,
+        'line pattern': 0x0f0f, #oxaaa
+        'select': False
+    }
+
     ROLL_OUTER = {
         'id': 'roll_outer',
         'shape': 'circle',
@@ -64,6 +72,10 @@ class CoinStyle(Const):
     SELECTED = {
         'id': 'selected',
         'shape': 'default',
+        'line width': None,
+        'line style': coin.SoDrawStyle.LINES,
+        'line weight': 3,
+        'line pattern': None,
         'size': 9,
         'color': (1.0, 0.9, 0.0),
         'select': True

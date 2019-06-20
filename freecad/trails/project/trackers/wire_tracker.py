@@ -28,7 +28,7 @@ from pivy import coin
 
 from ..support.const import Const
 from .base_tracker import BaseTracker
-
+from .coin_style import CoinStyle
 
 class WireTracker(BaseTracker):
     """
@@ -66,7 +66,7 @@ class WireTracker(BaseTracker):
             'select': True
         }
 
-    def __init__(self, names, nodes=None, points=None, style=STYLE.DEFAULT):
+    def __init__(self, view, names, nodes=None, points=None):
         """
         Constructor
         """
@@ -76,6 +76,11 @@ class WireTracker(BaseTracker):
         self.name = names[2]
         self.coord = coin.SoCoordinate3()
         self.points = points
+        self.view = view
+        self.enabled = True
+        self.selected = False
+        self.selectable = False
+        self.style = CoinStyle.DEFAULT
 
         if not nodes:
             nodes = []
@@ -85,7 +90,13 @@ class WireTracker(BaseTracker):
 
         nodes += [self.coord, self.line]
 
-        super().__init__(names=names, children=nodes, select=style['select'])
+        super().__init__(
+            names=names, children=nodes, select=self.style['select'])
+
+        self.callbacks = [
+            self.view.addEventCallback('SoLocation2Event', self.mouse_event),
+            self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
+        ]
 
         self.update()
 
@@ -127,18 +138,12 @@ class WireTracker(BaseTracker):
 
         self.color.rgb = self.STYLE.DEFAULT['color']
 
-        #if self.switch.whichChild:
-        #    self.switch.whichChild = 0
-
-    def selected(self):
+    def select(self):
         """
         Set wire to select style
         """
 
         self.color.rgb = self.STYLE.SELECTED['color']
-
-        #if self.switch.whichChild:
-        #    self.switch.whichChild = 0
 
     def set_style(self, style):
         """
@@ -154,6 +159,55 @@ class WireTracker(BaseTracker):
         if style['line pattern']:
             self.draw_style.linePattern = style['line pattern']
 
+        self.color.rgb = style['color']
+
+    def button_event(self, arg):
+        """
+        Mouse button actions
+        """
+
+        #test to see if the adjacent nodes have been selected.
+        #only valid if a multi-selection occurs
+        if arg['AltDown'] and not self.selected:
+            if all([_v.selected for _v in self.points]):
+                self.set_style(CoinStyle.SELECTED)
+                self.selected = True
+
+        #if selected and any of the nodes are deselected, then deselect
+        elif self.selected:
+            if not all([_v.selected for _v in self.points]):
+                self.set_style(CoinStyle.DEFAULT)
+                self.selected = False
+
+    def mouse_event(self, arg):
+        """
+        Mouse movement actions
+        """
+
+        #skip if currently disabled for various actions
+        if not self.enabled:
+            return
+
+        #no mouseover processing if the element can't be selected
+        if not self.selectable:
+            return
+
+        #no mouseover porcessing if the node is currently selected
+        if self.selected:
+            return
+
+        #test to see if this node is under the cursor
+        _info = self.view.getObjectInfo(self.view.getCursorPos())
+
+        if not _info:
+            self.set_style(CoinStyle.DEFAULT)
+            return
+
+        if not self.name in _info['Component']:
+            self.set_style(CoinStyle.DEFAULT)
+            return
+
+        self.set_style(CoinStyle.SELECTED)
 
     def finalize(self):
         """
