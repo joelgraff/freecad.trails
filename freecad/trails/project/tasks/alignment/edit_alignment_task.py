@@ -316,3 +316,7 @@ class EditAlignmentTask:
         if self.drag_tracker:
             self.drag_tracker.finalize()
             self.drag_tracker = None
+
+        if self.alignment_tracker:
+            self.alignment_tracker.finalize()
+            self.alignment_tracker = None

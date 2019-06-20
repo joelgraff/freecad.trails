@@ -66,7 +66,7 @@ class WireTracker(BaseTracker):
             'select': True
         }
 
-    def __init__(self, view, names, nodes=None, points=None):
+    def __init__(self, view, names, nodes=None):
         """
         Constructor
         """
@@ -75,12 +75,12 @@ class WireTracker(BaseTracker):
         self.line = coin.SoLineSet()
         self.name = names[2]
         self.coord = coin.SoCoordinate3()
-        self.points = points
+        self.points = None
         self.view = view
         self.enabled = True
         self.selected = False
-        self.selectable = False
-        self.style = CoinStyle.DEFAULT
+        self.coin_style = None
+        self.selection_nodes = None
 
         if not nodes:
             nodes = []
@@ -91,64 +91,54 @@ class WireTracker(BaseTracker):
         nodes += [self.coord, self.line]
 
         super().__init__(
-            names=names, children=nodes, select=self.style['select'])
+            names=names, children=nodes)
 
-        self.callbacks = [
+        self.set_style(CoinStyle.DEFAULT)
+
+        self.callbacks = {
+            'SoLocation2Event':
             self.view.addEventCallback('SoLocation2Event', self.mouse_event),
+
+            'SoMouseButtonEvent':
             self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
-        ]
+        }
 
-        self.update()
-
-    def update(self, points=None, placement=None):
+    def set_selection_nodes(self, nodes):
         """
-        Update
+        Set the list of node trackers that control wire selection
         """
 
-        _tuples = [tuple(_v.get()) for _v in self.points]
+        self.selection_nodes = nodes
 
-        self.coord.point.setValues(0, len(_tuples), _tuples)
-        self.line.numVertices.setValue(len(_tuples))
-
-    def update_points(self, points):
+    def update_points(self, points=None):
         """
         Update the wire tracker coordinates based on passed list of
         SoCoordinate3 references
         """
 
-        _p = points
+        if not points:
+            points = self.points
+
+        if not points:
+            return
+
+        _p = points[:]
 
         if not isinstance(points[0], tuple):
-            _p = [tuple(_v) for _v in points]
+            _p = [tuple(_v) for _v in _p]
 
         self.coord.point.setValues(0, len(points), _p)
         self.line.numVertices.setValue(len(points))
 
-    def update_placement(self, placement):
-        """
-        Updates the placement for the wire and the trackers
-        """
-
-        return
-
-    def default(self):
-        """
-        Set wire to default style
-        """
-
-        self.color.rgb = self.STYLE.DEFAULT['color']
-
-    def select(self):
-        """
-        Set wire to select style
-        """
-
-        self.color.rgb = self.STYLE.SELECTED['color']
+        self.points = _p
 
     def set_style(self, style):
         """
         Update the tracker style
         """
+
+        if self.coin_style == style:
+            return
 
         if style['line width']:
             self.draw_style.lineWidth = style['line width']
@@ -161,6 +151,10 @@ class WireTracker(BaseTracker):
 
         self.color.rgb = style['color']
 
+        self.set_selectability(style['select'])
+
+        self.coin_style = style
+
     def button_event(self, arg):
         """
         Mouse button actions
@@ -169,13 +163,13 @@ class WireTracker(BaseTracker):
         #test to see if the adjacent nodes have been selected.
         #only valid if a multi-selection occurs
         if arg['AltDown'] and not self.selected:
-            if all([_v.selected for _v in self.points]):
+            if all([_v.selected for _v in self.selection_nodes]):
                 self.set_style(CoinStyle.SELECTED)
                 self.selected = True
 
         #if selected and any of the nodes are deselected, then deselect
         elif self.selected:
-            if not all([_v.selected for _v in self.points]):
+            if not all([_v.selected for _v in self.selection_nodes]):
                 self.set_style(CoinStyle.DEFAULT)
                 self.selected = False
 
@@ -189,7 +183,7 @@ class WireTracker(BaseTracker):
             return
 
         #no mouseover processing if the element can't be selected
-        if not self.selectable:
+        if not self.is_selectable():
             return
 
         #no mouseover porcessing if the node is currently selected
@@ -209,9 +203,15 @@ class WireTracker(BaseTracker):
 
         self.set_style(CoinStyle.SELECTED)
 
-    def finalize(self):
+    def finalize(self, parent=None):
         """
         Cleanup
         """
 
-        self.remove_node(self.node, self.node)
+        if self.callbacks:
+            for _k, _v in self.callbacks.items():
+                self.view.removeEventCallback(_k, _v)
+
+        self.callbacks.clear()
+
+        super().finalize(self.node, parent)

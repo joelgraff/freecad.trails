@@ -35,7 +35,7 @@ class BaseTracker:
     A custom base Draft Tracker
     """
 
-    def __init__(self, names, children=None, select=True, group=False):
+    def __init__(self, names, children=None, group=False):
         """
         Constructor
         """
@@ -45,6 +45,7 @@ class BaseTracker:
         self.names = names
         self.node = coin.SoSeparator()
         self.parent = None
+        self.picker = coin.SoPickStyle()
 
         if not children:
             children = []
@@ -59,18 +60,33 @@ class BaseTracker:
         self.node.objectName.setValue(self.names[1])
         self.node.subElementName.setValue(self.names[2])
 
-        if select:
-            self.node.selectionMode.setValue(False)
-
-        for child in [self.draw_style, self.color] + children:
+        for child in [self.picker, self.draw_style, self.color] + children:
             self.node.addChild(child)
 
-    def finalize(self, node):
+    def is_selectable(self):
+        """
+        Return the selectability of the node based on the picker state
+        """
+
+        return self.picker.style.getValue() != coin.SoPickStyle.UNPICKABLE
+
+    def set_selectability(self, is_selectable):
+        """
+        Set the selectability of the node using the SoPickStyle node
+        """
+        _state = coin.SoPickStyle.UNPICKABLE
+
+        if is_selectable:
+            _state = coin.SoPickStyle.SHAPE
+
+        self.picker.style.setValue(_state)
+
+    def finalize(self, node, parent=None):
         """
         Node destruction / cleanup
         """
 
-        self.remove_node(node)
+        self.remove_node(node, parent)
 
     def on(self, switch, which_child=0):
         """
@@ -126,9 +142,11 @@ class BaseTracker:
         """
 
         if not parent:
+            print('parent is root')
             parent = Draft.get3DView().getSceneGraph()
 
         if parent.findChild(node) >= 0:
+            print('removing ', node)
             todo.delay(parent.removeChild, node)
 
     def adjustTracker(self, node=None, to_top=True):

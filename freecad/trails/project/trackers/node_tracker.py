@@ -35,54 +35,8 @@ from ..support.const import Const
 
 class NodeTracker(BaseTracker):
     """
-    A custom edit tracker
+    Tracker object for nodes
     """
-
-
-    class STYLE(Const):
-        """
-        Style constants for nodes
-        """
-
-        DEFAULT = {
-            'id': 'default',
-            'shape': 'default',
-            'size': 9,
-            'color': (0.8, 0.8, 0.8),
-            'select': True
-        }
-
-        ROLL_OUTER = {
-            'id': 'roll_outer',
-            'shape': 'circle',
-            'size': 9,
-            'color': (0.4, 0.8, 0.4),
-            'select': True
-        }
-
-        ROLL_INNER = {
-            'id': 'roll_inner',
-            'shape': 'cross',
-            'size': 5,
-            'color': (0.4, 0.8, 0.4),
-            'select': True
-        }
-
-        SELECTED = {
-            'id': 'selected',
-            'shape': 'default',
-            'size': 9,
-            'color': (1.0, 0.9, 0.0),
-            'select': True
-        }
-
-        CROSS = {
-            'id': 'cross',
-            'shape': 'cross',
-            'size': 5,
-            'color': (0.8, 0.8, 0.8),
-            'select': False
-        }
 
     def __init__(self, view, names, point, nodes=None):
         """
@@ -98,9 +52,7 @@ class NodeTracker(BaseTracker):
 
         self.selected = False
         self.enabled = True
-
         self.coin_style = None
-
         self.view = view
         self.name = names[2]
 
@@ -108,15 +60,19 @@ class NodeTracker(BaseTracker):
         self.coord = coin.SoCoordinate3()
         self.marker = coin.SoMarkerSet()
 
-        super().__init__(names=names, children=[self.coord, self.marker],
-                         select=False, group=True)
+        super().__init__(
+            names=names, children=[self.coord, self.marker],group=True
+        )
 
         self.set_style(CoinStyle.DEFAULT)
 
-        self.callbacks = [
+        self.callbacks = {
+            'SoLocation2Event':
             self.view.addEventCallback('SoLocation2Event', self.mouse_event),
+
+            'SoMouseButtonEvent':
             self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
-        ]
+        }
 
     def set_style(self, style):
         """
@@ -131,8 +87,9 @@ class NodeTracker(BaseTracker):
         self.marker.markerIndex = \
             Gui.getMarkerIndex(style['shape'], style['size'])
 
+        self.set_selectability(style['select'])
+
         self.coin_style = style
-        self.enabled = style['select']
 
     def update(self, coord):
         """
@@ -160,6 +117,10 @@ class NodeTracker(BaseTracker):
   
         #skip if currently disabled for various actions
         if not self.enabled:
+            return
+
+        #skip if the node can't be selected
+        if not self.is_selectable():
             return
 
         #no mouseover porcessing if the node is currently selected
@@ -210,10 +171,15 @@ class NodeTracker(BaseTracker):
         self.set_style(CoinStyle.SELECTED)
         self.selected = True
 
-    def finalize(self):
+    def finalize(self, parent=None):
         """
         Cleanup
         """
 
         if self.callbacks:
-            self.callbacks.clear()
+            for _k, _v in self.callbacks.items():
+                self.view.removeEventCallback(_k, _v)
+
+        self.callbacks.clear()
+
+        super().finalize(self.node, parent)

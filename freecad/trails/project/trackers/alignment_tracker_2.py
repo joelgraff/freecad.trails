@@ -45,6 +45,7 @@ class AlignmentTracker2(BaseTracker):
         """
         Constructor
         """
+    
         self.alignment = alignment
         self.callbacks = {}
         self.doc = doc
@@ -54,19 +55,43 @@ class AlignmentTracker2(BaseTracker):
         self.viewport = \
             view.getViewer().getSoRenderManager().getViewportRegion()
 
+        self.trackers = None
+
         #generate inital node trackers and wire trackers for mouse interaction
         self.build_trackers()
 
-        super().__init__(names=self.names, select=False, group=True)
+        super().__init__(names=self.names, group=True)
 
         #add the tracker geometry to the scenegraph
-        for _v in self.trackers['Nodes'] + self.trackers['Wires']:
+        for _v in self.trackers['Nodes'] + self.trackers['Wires'] +\
+            self.trackers['Curves']:
+
             self.insert_node(_v.node, self.node)
 
         #insert in the scenegraph root
         self.insert_node(self.node)
 
-        #self.setup_callbacks()
+        self.callbacks = {
+            'SoLocation2Event':
+            self.view.addEventCallback('SoLocation2Event', self.mouse_event),
+
+            'SoMouseButtonEvent':
+            self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
+        }
+
+    def mouse_event(self, arg):
+        """
+        Manage mouse actions affecting multiple nodes / wires
+        """
+
+        pass
+
+    def button_event(self, arg):
+        """
+        Manage button actions affecting multiple nodes / wires
+        """
+
+        pass
 
     def build_trackers(self):
         """
@@ -87,44 +112,79 @@ class AlignmentTracker2(BaseTracker):
 
         #build the trackers
         _names = self.names[:2]
-        _result = {'Nodes': [], 'Wires': []}
+        _result = {'Nodes': [], 'Wires': [], 'Curves': []}
 
         #node trackers
         for _i, _pt in enumerate(_nodes):
 
             _tr = NodeTracker(
-                view=self.view, names=_names + ['NODE-' + str(_i)], point=_pt
+                view=self.view,
+                names=_names + ['NODE-' + str(_i)], point=_pt
             )
             _tr.update(_pt)
 
             _result['Nodes'].append(_tr)
 
-        #wire trackers
+        #wire trackers - Tangents
         for _i in range(0, len(_result['Nodes']) - 1):
 
-            _points = _result['Nodes'][_i:_i + 2]
+            _nodes = _result['Nodes'][_i:_i + 2]
 
-            _wt = WireTracker(view=self.view,
-                names=_names + ['WIRE-' + str(_i - 1)], points=_points
+            _result['Wires'].append(
+                self._build_wire_tracker(
+                    wire_name=_names + ['WIRE-' + str(_i)],
+                    nodes=_nodes,
+                    points=[_v.get() for _v in _nodes]
+                )
             )
 
-            _wt.selectable = False
+        _curves = self.alignment.get_curves()
 
-            _result['Wires'].append(_wt)
+        #wire trackers - Curves
+        for _i in range(0, len(_result['Wires']) - 1):
+
+            _nodes = _result['Nodes'][_i:_i + 3]
+
+            _points, _x = arc.get_points(_curves[_i])
+
+            _result['Curves'].append(
+                self._build_wire_tracker(
+                    _names + ['CURVE-' + str(_i)], _nodes, _points, True
+                )
+            )
 
         self.trackers = _result
 
-    def setup_callbacks(self):
+    def _build_wire_tracker(self, wire_name, nodes, points, select=False):
         """
-        Setup event handling callbacks and return as a list
+        Convenience function for WireTracker construction
         """
 
-        #self.callbacks['SoKeybaordEvent'] = \
-        #    self.view.addEventCallback('SoKeyboardEvent', self.key_action)
+        _wt = WireTracker(view=self.view, names=wire_name)
 
-        self.callbacks['SoLocation2Event'] = \
-            self.view.addEventCallback('SoLocation2Event', self.mouse_action)
+        _wt.set_selectability(select)
+        _wt.set_selection_nodes(nodes)
+        _wt.update_points(points)
 
-        self.callbacks['SoMouseButtonEvent'] = \
-            self.view.addEventCallback(
-                'SoMouseButtonEvent', self.button_action)
+        return _wt
+
+    def finalize(self, node=None):
+        """
+        Override of the parent method
+        """
+
+        self.alignment = None
+
+        if not node:
+            node = self.node
+
+        for _v in self.trackers['Nodes'] + self.trackers['Wires']:
+            _v.finalize(self.node)
+
+        self.trackers.clear()
+
+        if self.callbacks:
+            for _k, _v in self.callbacks.items():
+                self.view.removeEventCallback(_k, _v)
+
+        super().finalize(node)
