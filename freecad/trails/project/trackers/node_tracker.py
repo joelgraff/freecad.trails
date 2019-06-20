@@ -32,6 +32,7 @@ import FreeCADGui as Gui
 from .coin_style import CoinStyle
 from .base_tracker import BaseTracker
 from ..support.const import Const
+from ..support.mouse_state import MouseState
 
 class NodeTracker(BaseTracker):
     """
@@ -55,6 +56,7 @@ class NodeTracker(BaseTracker):
         self.coin_style = None
         self.view = view
         self.name = names[2]
+        self.mouse = MouseState()
 
         #build node structure for the node tracker
         self.coord = coin.SoCoordinate3()
@@ -114,7 +116,7 @@ class NodeTracker(BaseTracker):
         """
         Mouse movement actions
         """
-  
+
         #skip if currently disabled for various actions
         if not self.enabled:
             return
@@ -128,7 +130,7 @@ class NodeTracker(BaseTracker):
             return
 
         #test to see if this node is under the cursor
-        _info = self.view.getObjectInfo(self.view.getCursorPos())
+        _info = self.view.getObjectInfo(self.mouse.pos)
 
         if not _info:
             self.set_style(CoinStyle.DEFAULT)
@@ -150,7 +152,7 @@ class NodeTracker(BaseTracker):
 
         self.selected = False
 
-        _info = self.view.getObjectInfo(self.view.getCursorPos())
+        _info = self.view.getObjectInfo(self.mouse.pos)
 
         if not _info:
             self.set_style(CoinStyle.DEFAULT)

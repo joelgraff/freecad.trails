@@ -33,6 +33,8 @@ from ..support import utils
 from .base_tracker import BaseTracker
 from .coin_group import CoinGroup
 from .coin_style import CoinStyle
+
+from ..support.mouse_state import MouseState
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
 
@@ -50,17 +52,40 @@ class AlignmentTracker2(BaseTracker):
         self.callbacks = {}
         self.doc = doc
         self.names = [doc.Name, object_name, 'ALIGNMENT_TRACKER']
+        self.mouse = MouseState()
 
         self.view = view
         self.viewport = \
             view.getViewer().getSoRenderManager().getViewportRegion()
 
+        self.groups = {
+            'edit': coin.SoGroup(),
+            'drag': coin.SoGroup(),
+            'transition': coin.SoGroup(),
+            'transform': coin.SoGroup(),
+        }
+
+        super().__init__(names=self.names, group=True)
+
+        self.callbacks = {
+            'SoLocation2Event':
+            self.view.addEventCallback('SoLocation2Event', self.mouse_event),
+
+            'SoMouseButtonEvent':
+            self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
+        }
+
+        #scenegraph node structure for editing and dragging operations
+        self.groups['drag'].addChild(self.groups['transition'])
+        self.groups['drag'].addChild(self.groups['transform'])
+
+        self.node.addChild(self.groups['edit'])
+        self.node.addChild(self.groups['drag'])
+
         self.trackers = None
 
         #generate inital node trackers and wire trackers for mouse interaction
         self.build_trackers()
-
-        super().__init__(names=self.names, group=True)
 
         #add the tracker geometry to the scenegraph
         for _v in self.trackers['Nodes'] + self.trackers['Wires'] +\
@@ -71,27 +96,33 @@ class AlignmentTracker2(BaseTracker):
         #insert in the scenegraph root
         self.insert_node(self.node)
 
-        self.callbacks = {
-            'SoLocation2Event':
-            self.view.addEventCallback('SoLocation2Event', self.mouse_event),
-
-            'SoMouseButtonEvent':
-            self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
-        }
-
     def mouse_event(self, arg):
         """
         Manage mouse actions affecting multiple nodes / wires
         """
 
-        pass
+        self.mouse.update(arg, self.view.getCursorPos())
 
     def button_event(self, arg):
         """
         Manage button actions affecting multiple nodes / wires
         """
 
-        pass
+        _dragging = self.mouse.button1.dragging or self.mouse.button1.pressed
+
+        #exclusive or - abort if both are true or false
+        if not (self.drag_tracker is not None) ^ _dragging:
+            return
+
+        pos = self.view.getCursorPos()
+        self.mouse.update(arg, pos)
+
+        #if tracker exists, but we're not dragging, shut it down
+        if self.drag_tracker:
+            self.end_drag(arg, self.view.getPoint(pos))
+
+        elif _dragging:
+            self.start_drag(arg, self.view.getPoint(pos))
 
     def build_trackers(self):
         """
@@ -168,6 +199,38 @@ class AlignmentTracker2(BaseTracker):
 
         return _wt
 
+    def start_drag(self):
+        """
+        Set up the scene graph for dragging operations
+        """
+
+        #get the transitional and transform geometry
+        #populate the SoGroup nodes with data points
+        #set dragging flags
+
+        _groups = [coin.SoGroup()]*2
+
+        for _v in self.trackers['Nodes'] + self.trackers['Wires'] + \
+            self.trackers['Curves']:
+
+            if _v.is_selected():
+                _groups[0].addChild(_v.copy())
+
+            elif _v.is_partial():
+                _groups[1].addChild(_v.copy())
+
+    def on_drag(self):
+        """
+        Update method during drag operations
+        """
+
+        pass
+
+    def end_drag(self):
+        """
+        Cleanup method for drag operations
+        """
+
     def finalize(self, node=None):
         """
         Override of the parent method
@@ -178,13 +241,18 @@ class AlignmentTracker2(BaseTracker):
         if not node:
             node = self.node
 
+        if self.callbacks:
+            for _k, _v in self.callbacks.items():
+                self.view.removeEventCallback(_k, _v)
+
         for _v in self.trackers['Nodes'] + self.trackers['Wires']:
             _v.finalize(self.node)
 
         self.trackers.clear()
 
-        if self.callbacks:
-            for _k, _v in self.callbacks.items():
-                self.view.removeEventCallback(_k, _v)
+        self.remove_node(self.groups['edit'])
+        self.remove_node(self.groups['drag'])
+
+        self.groups.clear()
 
         super().finalize(node)

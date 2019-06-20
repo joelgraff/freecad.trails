@@ -20,13 +20,15 @@
 #* USA                                                                 *
 #*                                                                     *
 #***********************************************************************
-
 """
-Useful mosue support functions
+Mouse state class
 """
-import FreeCAD as App
 
-class MouseState():
+from FreeCAD import Vector
+
+from .singleton import Singleton
+
+class MouseState(metaclass=Singleton):
     """
     Class to track the current state of the mouse based on
     passed Coin3D SoEvent parameters
@@ -42,7 +44,7 @@ class MouseState():
             """
             self.state = ''
             self.pressed = False
-            self.pos = App.Vector()
+            self.pos = ()
             self.dragging = False
             self.last = ''
 
@@ -95,7 +97,7 @@ class MouseState():
         MouseState construction
         """
 
-        self.pos = App.Vector()
+        self.pos = ()
         self.last = ''
 
         self.buttons = {
@@ -115,7 +117,7 @@ class MouseState():
         Update the current mouse state
         """
 
-        self.pos = App.Vector(_p + (0.0,))
+        self.pos = _p + (0.0,)
 
         button = arg.get('Button')
         state = arg.get('State')

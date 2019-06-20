@@ -104,6 +104,16 @@ class BaseTracker:
         switch.whichChild = -1
         self.visible = False
 
+    def copy(self, node=None):
+        """
+        Return a copy of the tracker node
+        """
+
+        if not node:
+            node = self.node
+
+        return node.copy()
+
     def get_search_path(self, node):
         """
         Return the search path for the specified node

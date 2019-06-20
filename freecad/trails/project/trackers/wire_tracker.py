@@ -27,6 +27,8 @@ Customized wire tracker from DraftTrackers.wireTracker
 from pivy import coin
 
 from ..support.const import Const
+from ..support.mouse_state import MouseState
+
 from .base_tracker import BaseTracker
 from .coin_style import CoinStyle
 
@@ -71,7 +73,6 @@ class WireTracker(BaseTracker):
         Constructor
         """
 
-        #self.switch = coin.SoSwitch()
         self.line = coin.SoLineSet()
         self.name = names[2]
         self.coord = coin.SoCoordinate3()
@@ -81,6 +82,7 @@ class WireTracker(BaseTracker):
         self.selected = False
         self.coin_style = None
         self.selection_nodes = None
+        self.mouse = MouseState()
 
         if not nodes:
             nodes = []
@@ -163,12 +165,14 @@ class WireTracker(BaseTracker):
         #test to see if the adjacent nodes have been selected.
         #only valid if a multi-selection occurs
         if arg['AltDown'] and not self.selected:
+
             if all([_v.selected for _v in self.selection_nodes]):
                 self.set_style(CoinStyle.SELECTED)
                 self.selected = True
 
         #if selected and any of the nodes are deselected, then deselect
         elif self.selected:
+
             if not all([_v.selected for _v in self.selection_nodes]):
                 self.set_style(CoinStyle.DEFAULT)
                 self.selected = False
@@ -191,7 +195,8 @@ class WireTracker(BaseTracker):
             return
 
         #test to see if this node is under the cursor
-        _info = self.view.getObjectInfo(self.view.getCursorPos())
+        
+        _info = self.view.getObjectInfo(self.mouse.pos)
 
         if not _info:
             self.set_style(CoinStyle.DEFAULT)
