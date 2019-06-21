@@ -79,7 +79,8 @@ class WireTracker(BaseTracker):
         self.points = None
         self.view = view
         self.enabled = True
-        self.selected = False
+        self.state = 'UNSELECTED'
+
         self.coin_style = None
         self.selection_nodes = None
         self.mouse = MouseState()
@@ -112,7 +113,7 @@ class WireTracker(BaseTracker):
 
         self.selection_nodes = nodes
 
-    def update_points(self, points=None):
+    def update(self, points=None):
         """
         Update the wire tracker coordinates based on passed list of
         SoCoordinate3 references
@@ -133,6 +134,11 @@ class WireTracker(BaseTracker):
         self.line.numVertices.setValue(len(points))
 
         self.points = _p
+
+    def transform_points(self, points, matrix):
+        """
+        Update the points with the apprpriate transformation and return
+        """
 
     def set_style(self, style):
         """
@@ -162,20 +168,42 @@ class WireTracker(BaseTracker):
         Mouse button actions
         """
 
-        #test to see if the adjacent nodes have been selected.
-        #only valid if a multi-selection occurs
-        if arg['AltDown'] and not self.selected:
+        #if the wire is not selected, or we're not multi-selected, abort
+#        if not (self.state == 'SELECTED' or arg['AltDown']):
+#            return
 
-            if all([_v.selected for _v in self.selection_nodes]):
-                self.set_style(CoinStyle.SELECTED)
-                self.selected = True
+        #get selection state of the selectable nodes
+        _sel_state = [_v.state == 'SELECTED' for _v in self.selection_nodes]
+
+        self.state = 'UNSELECTED'
+
+        #set selection states of the wrire
+        if all(_sel_state):
+            self.state = 'SELECTED'
+
+        elif any(_sel_state):
+            self.state = 'PARTIAL'
+
+        #set selection style
+        if self.state == 'SELECTED':
+            self.set_style(CoinStyle.SELECTED)
+        else:
+            self.set_style(CoinStyle.DEFAULT)
+
+        #
+#        if arg['AltDown']:
+
+#            if self.state:
+#                self.set_style(CoinStyle.SELECTED)
 
         #if selected and any of the nodes are deselected, then deselect
-        elif self.selected:
+#        else: self.state:
 
-            if not all([_v.selected for _v in self.selection_nodes]):
-                self.set_style(CoinStyle.DEFAULT)
-                self.selected = False
+#            _sel_state = [_v.selected for _v in self.selection_nodes]
+
+#            if not all([_v.selected for _v in self.selection_nodes]):
+#                self.set_style(CoinStyle.DEFAULT)
+#                self.state = False
 
     def mouse_event(self, arg):
         """
@@ -191,7 +219,7 @@ class WireTracker(BaseTracker):
             return
 
         #no mouseover porcessing if the node is currently selected
-        if self.selected:
+        if self.state:
             return
 
         #test to see if this node is under the cursor

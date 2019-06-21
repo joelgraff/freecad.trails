@@ -51,7 +51,8 @@ class NodeTracker(BaseTracker):
         elif not isinstance(nodes, list):
             nodes = [nodes]
 
-        self.selected = False
+        self.state = 'UNSELECTED'
+
         self.enabled = True
         self.coin_style = None
         self.view = view
@@ -126,7 +127,7 @@ class NodeTracker(BaseTracker):
             return
 
         #no mouseover porcessing if the node is currently selected
-        if self.selected:
+        if self.state == 'SELECTED':
             return
 
         #test to see if this node is under the cursor
@@ -150,7 +151,7 @@ class NodeTracker(BaseTracker):
         if not self.enabled:
             return
 
-        self.selected = False
+        self.state = 'UNSELECTED'
 
         _info = self.view.getObjectInfo(self.mouse.pos)
 
@@ -171,7 +172,7 @@ class NodeTracker(BaseTracker):
             return
 
         self.set_style(CoinStyle.SELECTED)
-        self.selected = True
+        self.state = 'SELECTED'
 
     def finalize(self, parent=None):
         """

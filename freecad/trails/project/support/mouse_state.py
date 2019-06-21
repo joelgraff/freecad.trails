@@ -46,7 +46,7 @@ class MouseState(metaclass=Singleton):
             self.pressed = False
             self.pos = ()
             self.dragging = False
-            self.last = ''
+            self.drag_start = ()
 
         def __str__(self):
             """
@@ -64,8 +64,8 @@ class MouseState(metaclass=Singleton):
                 'state': self.state,
                 'pressed': self.pressed,
                 'pos': self.pos,
-                'drag': self.dragging,
-                'last': self.last,
+                'dragging': self.dragging,
+                'drag start': self.drag_start
                 })
 
         def update(self, state, pos):
@@ -76,7 +76,6 @@ class MouseState(metaclass=Singleton):
             #update state on a state change only
             if state and (self.state != state):
 
-                self.last = (self.state, self.pos)
                 self.state = state
                 self.pressed = state == 'DOWN'
 
@@ -84,11 +83,22 @@ class MouseState(metaclass=Singleton):
                 if self.pressed:
                     self.pos = pos
 
-            #true if button is down and state did not change before this call
-            self.dragging = self.pressed and (self.pos != pos)
+            #if we're already dragging, continue only if the button
+            #hasn't been released
+            if self.dragging:
+                self.dragging = self.pressed and (self.state != 'UP')
+
+            #otherwise, start only if the button is pressed and the
+            #mouse has moved
+            else:
+                if self.pressed and (self.pos != pos):
+                    self.dragging = True
+                    self.drag_start = pos
 
             if self.dragging:
                 self.state = 'DRAG'
+            else:
+                self.drag_start = ()
 
             self.pos = pos
 
@@ -98,8 +108,7 @@ class MouseState(metaclass=Singleton):
         """
 
         self.pos = ()
-        self.last = ''
-
+ 
         self.buttons = {
             'BUTTON1': self.ButtonState(),
             'BUTTON2': self.ButtonState(),
@@ -109,6 +118,8 @@ class MouseState(metaclass=Singleton):
         self.button1 = self.buttons['BUTTON1']
         self.button2 = self.buttons['BUTTON2']
         self.button3 = self.buttons['BUTTON3']
+
+        self.drag_start = ()
 
         self.state = [self.buttons, self.pos]
 
@@ -123,17 +134,21 @@ class MouseState(metaclass=Singleton):
         state = arg.get('State')
         buttons = []
 
+        #define button list and update pressed state
         if button:
+            self.buttons[button].pressed = (state != 'UP')
             buttons = [self.buttons[button]]
 
         #abort unless one or more buttons are pressed
         if not buttons or not state:
             buttons = [_x for _x in self.buttons.values() if _x.pressed]
 
+        #if still no button state, abort
         if not buttons:
             return
 
         for _btn in buttons:
             _btn.update(state, self.pos)
 
-        self.state = [self.buttons, self.pos]
+
+        #self.state = [self.buttons, self.pos, self.drag_start]

@@ -53,20 +53,16 @@ class AlignmentTracker2(BaseTracker):
         self.doc = doc
         self.names = [doc.Name, object_name, 'ALIGNMENT_TRACKER']
         self.mouse = MouseState()
-
+        self.user_dragging = False
+        self.drag_nodes = []
+        self.drag_curves = []
         self.view = view
         self.viewport = \
             view.getViewer().getSoRenderManager().getViewportRegion()
 
-        self.groups = {
-            'edit': coin.SoGroup(),
-            'drag': coin.SoGroup(),
-            'transition': coin.SoGroup(),
-            'transform': coin.SoGroup(),
-        }
-
         super().__init__(names=self.names, group=True)
 
+        #input callback assignments
         self.callbacks = {
             'SoLocation2Event':
             self.view.addEventCallback('SoLocation2Event', self.mouse_event),
@@ -76,21 +72,30 @@ class AlignmentTracker2(BaseTracker):
         }
 
         #scenegraph node structure for editing and dragging operations
-        self.groups['drag'].addChild(self.groups['transition'])
-        self.groups['drag'].addChild(self.groups['transform'])
+        self.groups = {
+            'EDIT': coin.SoGroup(),
+            'DRAG': coin.SoGroup(),
+            'SELECTED': coin.SoGroup(),
+            'PARTIAL': coin.SoGroup(),
+        }
 
-        self.node.addChild(self.groups['edit'])
-        self.node.addChild(self.groups['drag'])
+        self.drag_transform = coin.SoTransform()
 
-        self.trackers = None
+        self.groups['SELECTED'].addChild(self.drag_transform)
+
+        self.groups['DRAG'].addChild(self.groups['SELECTED'])
+        self.groups['DRAG'].addChild(self.groups['PARTIAL'])
+
+        self.node.addChild(self.groups['EDIT'])
+        self.node.addChild(self.groups['DRAG'])
 
         #generate inital node trackers and wire trackers for mouse interaction
+        #and add them to the scenegraph
+        self.trackers = None
+
         self.build_trackers()
 
-        #add the tracker geometry to the scenegraph
-        for _v in self.trackers['Nodes'] + self.trackers['Wires'] +\
-            self.trackers['Curves']:
-
+        for _v in self.trackers.values():
             self.insert_node(_v.node, self.node)
 
         #insert in the scenegraph root
@@ -103,26 +108,33 @@ class AlignmentTracker2(BaseTracker):
 
         self.mouse.update(arg, self.view.getCursorPos())
 
+        if self.mouse.button1.dragging:
+
+            if self.user_dragging:
+                self.on_drag()
+
+            else:
+                self.start_drag()
+                self.user_dragging = True
+
+        #should not be necessary, but included here in case
+        #an event gets missed
+        elif self.user_dragging:
+
+            self.end_drag()
+            self.user_dragging = False
+
     def button_event(self, arg):
         """
         Manage button actions affecting multiple nodes / wires
         """
 
-        _dragging = self.mouse.button1.dragging or self.mouse.button1.pressed
+        self.mouse.update(arg, self.view.getCursorPos())
 
-        #exclusive or - abort if both are true or false
-        if not (self.drag_tracker is not None) ^ _dragging:
-            return
-
-        pos = self.view.getCursorPos()
-        self.mouse.update(arg, pos)
-
-        #if tracker exists, but we're not dragging, shut it down
-        if self.drag_tracker:
-            self.end_drag(arg, self.view.getPoint(pos))
-
-        elif _dragging:
-            self.start_drag(arg, self.view.getPoint(pos))
+        #terminate dragging if button is released
+        if self.user_dragging and not self.mouse.button1.dragging:
+            self.end_drag()
+            self.user_dragging = False
 
     def build_trackers(self):
         """
@@ -143,7 +155,7 @@ class AlignmentTracker2(BaseTracker):
 
         #build the trackers
         _names = self.names[:2]
-        _result = {'Nodes': [], 'Wires': [], 'Curves': []}
+        _result = {'Nodes': [], 'Tangents': [], 'Curves': []}
 
         #node trackers
         for _i, _pt in enumerate(_nodes):
@@ -161,7 +173,7 @@ class AlignmentTracker2(BaseTracker):
 
             _nodes = _result['Nodes'][_i:_i + 2]
 
-            _result['Wires'].append(
+            _result['Tangents'].append(
                 self._build_wire_tracker(
                     wire_name=_names + ['WIRE-' + str(_i)],
                     nodes=_nodes,
@@ -172,7 +184,7 @@ class AlignmentTracker2(BaseTracker):
         _curves = self.alignment.get_curves()
 
         #wire trackers - Curves
-        for _i in range(0, len(_result['Wires']) - 1):
+        for _i in range(0, len(_result['Tangents']) - 1):
 
             _nodes = _result['Nodes'][_i:_i + 3]
 
@@ -204,32 +216,80 @@ class AlignmentTracker2(BaseTracker):
         Set up the scene graph for dragging operations
         """
 
-        #get the transitional and transform geometry
-        #populate the SoGroup nodes with data points
-        #set dragging flags
+        #create list of selected and partially-selected wires
+        _wires = [
+            _v for _v in self.trackers['Tangents'] + self.trackers['Curves']\
+                if _v != 'UNSELECTED'
+        ]
 
-        _groups = [coin.SoGroup()]*2
+        #iterate, adding scene nodes to appropriate groups
+        #and storng a list of selected nodes in partially-selected wires
+        for _w in _wires:
+            self.groups[_w.state].addChild(_w.copy())
 
-        for _v in self.trackers['Nodes'] + self.trackers['Wires'] + \
-            self.trackers['Curves']:
+        #create list of nodes which are being dragged
+        for _t in self.trackers['Tangents']:
+            if _t.state == 'PARTIAL':
 
-            if _v.is_selected():
-                _groups[0].addChild(_v.copy())
-
-            elif _v.is_partial():
-                _groups[1].addChild(_v.copy())
+                self.drag_nodes += [
+                    _u for _u in _t.selection_nodes if _u.state == 'SELECTED'
+                ]
 
     def on_drag(self):
         """
         Update method during drag operations
         """
 
-        pass
+        _xf = self.get_matrix()
+
+        #create the 4D vectors for the transformation
+        _vecs = [
+            coin.SbVec4f(tuple(_v) + (1.0,)) for _v in self.drag_nodes.get()
+        ]
+
+        #transform the coordinates
+        _coords = [_xf.multVecMatrix(_v).getValue()[:3] for _v in _vecs]
+
+        #update the drag nodes for partially-selected geometry
+        for _i, _v in enumerate(self.drag_nodes):
+            _v.update(_coords[_i])
+
+        _curves = self.alignment.get_curves()
+
+        #re-compute the transitional curve geometry
+        for _i, _v in enumerate(self.drag_curves):
+
+            _c = _curves[_i]
+
+            _new_curve = {
+                'Start': _c['Start'],
+                'End': _c['End'],
+                'PI': _c['PI'],
+                'Radius': _c['Radius']
+            }
 
     def end_drag(self):
         """
         Cleanup method for drag operations
         """
+
+        pass
+
+    def get_matrix(self):
+        """
+        Return the transformation matrix for the provided node
+        """
+
+        #define the search path
+        _search = coin.SoSearchAction()
+        _search.setNode(self.groups['SELECTED'])
+        _search.apply(self.view.getSceneGraph())
+
+        #get the matrix for the transformation
+        _matrix = coin.SoGetMatrixAction(self.viewport.getViewportRegion())
+        _matrix.apply(_search.getPath())
+
+        return _matrix.getMatrix()
 
     def finalize(self, node=None):
         """
@@ -245,14 +305,16 @@ class AlignmentTracker2(BaseTracker):
             for _k, _v in self.callbacks.items():
                 self.view.removeEventCallback(_k, _v)
 
-        for _v in self.trackers['Nodes'] + self.trackers['Wires']:
-            _v.finalize(self.node)
+        if self.trackers:
+            for _v in self.trackers.values():
+                _v.finalize(self.node)
 
-        self.trackers.clear()
+            self.trackers.clear()
 
-        self.remove_node(self.groups['edit'])
-        self.remove_node(self.groups['drag'])
+        if self.groups:
+            for _v in self.groups.values():
+                self.remove_node(_v)
 
-        self.groups.clear()
+            self.groups.clear()
 
         super().finalize(node)
