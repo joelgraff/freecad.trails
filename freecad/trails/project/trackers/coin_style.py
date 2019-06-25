@@ -80,11 +80,14 @@ class CoinStyle(Const):
         'color': (1.0, 0.9, 0.0),
         'select': True
     }
-    
 
     ERROR = {
         'id': 'error',
         'shape': 'default',
+        'line width': None,
+        'line style': coin.SoDrawStyle.LINES,
+        'line weight': 3,
+        'line pattern': None,
         'size': 9,
         'color': (1.0, 0.0, 0.0),
         'select': True

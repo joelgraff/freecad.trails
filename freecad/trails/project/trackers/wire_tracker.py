@@ -37,37 +37,6 @@ class WireTracker(BaseTracker):
     Customized wire tracker
     """
 
-
-    class STYLE(Const):
-        """
-        Const Style class
-        """
-
-        DEFAULT = {
-            'line width': None,
-            'line style': coin.SoDrawStyle.LINES,
-            'line weight': 3,
-            'line pattern': None,
-            'color': (0.8, 0.8, 0.8),
-            'select': True
-        }
-
-        EDIT = {
-            'line width': None,
-            'line style': coin.SoDrawStyle.LINES,
-            'line weight': 3,
-            'line pattern': 0x0f0f, #oxaaa
-            'select': False
-        }
-
-        SELECTED = {
-            'id': 'selected',
-            'shape': 'default',
-            'size': 9,
-            'color': (1.0, 0.9, 0.0),
-            'select': True
-        }
-
     def __init__(self, view, names, nodes=None):
         """
         Constructor
@@ -167,7 +136,6 @@ class WireTracker(BaseTracker):
         """
         Mouse button actions
         """
-
         #if the wire is not selected, or we're not multi-selected, abort
 #        if not (self.state == 'SELECTED' or arg['AltDown']):
 #            return
