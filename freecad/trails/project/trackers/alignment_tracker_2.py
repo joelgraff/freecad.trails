@@ -54,8 +54,11 @@ class AlignmentTracker2(BaseTracker):
         self.names = [doc.Name, object_name, 'ALIGNMENT_TRACKER']
         self.mouse = MouseState()
         self.user_dragging = False
-        self.drag_nodes = []
-        self.drag_curves = []
+        self.drag_geometry = {
+            'Nodes': [],
+            'Curves':[],
+        }
+
         self.view = view
         self.viewport = \
             view.getViewer().getSoRenderManager().getViewportRegion()
@@ -92,11 +95,13 @@ class AlignmentTracker2(BaseTracker):
         #generate inital node trackers and wire trackers for mouse interaction
         #and add them to the scenegraph
         self.trackers = None
-
         self.build_trackers()
 
-        for _v in self.trackers.values():
-            self.insert_node(_v.node, self.node)
+        _trackers = []
+        [_trackers.extend(_v) for _v in self.trackers.values()]
+
+        for _v in _trackers:
+            self.insert_node(_v.node, self.groups['EDIT'])
 
         #insert in the scenegraph root
         self.insert_node(self.node)
@@ -112,6 +117,7 @@ class AlignmentTracker2(BaseTracker):
 
             if self.user_dragging:
                 self.on_drag()
+                self.view.redraw()
 
             else:
                 self.start_drag()
@@ -120,7 +126,6 @@ class AlignmentTracker2(BaseTracker):
         #should not be necessary, but included here in case
         #an event gets missed
         elif self.user_dragging:
-
             self.end_drag()
             self.user_dragging = False
 
@@ -207,7 +212,7 @@ class AlignmentTracker2(BaseTracker):
 
         _wt.set_selectability(select)
         _wt.set_selection_nodes(nodes)
-        _wt.update_points(points)
+        _wt.update(points)
 
         return _wt
 
@@ -219,7 +224,7 @@ class AlignmentTracker2(BaseTracker):
         #create list of selected and partially-selected wires
         _wires = [
             _v for _v in self.trackers['Tangents'] + self.trackers['Curves']\
-                if _v != 'UNSELECTED'
+                if _v.state != 'UNSELECTED'
         ]
 
         #iterate, adding scene nodes to appropriate groups
@@ -227,66 +232,144 @@ class AlignmentTracker2(BaseTracker):
         for _w in _wires:
             self.groups[_w.state].addChild(_w.copy())
 
-        #create list of nodes which are being dragged
-        for _t in self.trackers['Tangents']:
-            if _t.state == 'PARTIAL':
+        #create list of nodes which are 'connecting' geometry to non-selected
+        #geometry
+        _curves = self.alignment.get_curves()
 
-                self.drag_nodes += [
-                    _u for _u in _t.selection_nodes if _u.state == 'SELECTED'
-                ]
+        _idx = []
+
+        #iterate tangents, selecting only the partial ones
+        for _i, _v in enumerate(self.trackers['Tangents']):
+
+            if _v.state != 'PARTIAL':
+                continue
+
+            #add the tangent and select the curves on either side of it
+            self.drag_geometry['Nodes'].append(_v)
+
+            _l = [_i - 1, _i]
+
+            if _i == 0:
+                _l = [_l[1]]
+
+            elif _i == len(self.trackers['Tangents']) - 1:
+                _l = [_l[0]]
+
+            _idx.extend([_i for _i in _l if _i not in _idx])
+
+        self.drag_geometry['Curves'] = [
+            (_i, _curves[_i]['Radius']) for _i in _idx
+        ]
+
+        print(self.drag_geometry['Curves'])
 
     def on_drag(self):
         """
         Update method during drag operations
         """
 
-        _xf = self.get_matrix()
+        #update nodes that connect selected elements back to unslected
+        _world_pos = self.view.getPoint(self.mouse.pos)
 
-        #create the 4D vectors for the transformation
-        _vecs = [
-            coin.SbVec4f(tuple(_v) + (1.0,)) for _v in self.drag_nodes.get()
-        ]
+        for _v in self.drag_geometry['Nodes']:
 
-        #transform the coordinates
-        _coords = [_xf.multVecMatrix(_v).getValue()[:3] for _v in _vecs]
+            for _w in \
+                [_w for _w in _v.selection_nodes if _w.state == 'SELECTED']:
 
-        #update the drag nodes for partially-selected geometry
-        for _i, _v in enumerate(self.drag_nodes):
-            _v.update(_coords[_i])
+                _w.update(_world_pos)
 
-        _curves = self.alignment.get_curves()
+            _v.update([_w.get() for _w in _v.selection_nodes])
 
-        #re-compute the transitional curve geometry
-        for _i, _v in enumerate(self.drag_curves):
+        _nodes = self.trackers['Nodes']
+        _new_curves = []
 
-            _c = _curves[_i]
+        #update the curve geometry
+        for _i, _t in enumerate(self.drag_geometry['Curves']):
 
-            _new_curve = {
-                'Start': _c['Start'],
-                'End': _c['End'],
-                'PI': _c['PI'],
-                'Radius': _c['Radius']
-            }
+            _tst = _nodes[_t[0] + 1].get().sub(_nodes[_t[0]].get())
+            _tend = _nodes[_t[0] + 2].get().sub(_nodes[_t[0] + 1].get())
+
+            _curve = arc.get_parameters (
+                {
+                    'BearingIn': support.get_bearing(_tst),
+                    'BearingOut': support.get_bearing(_tend),
+                    'PI': _nodes[_t[0] + 1].get(),
+                    'Radius': _t[1],
+                }
+            )
+
+            _points, _x = arc.get_points(_curve)
+
+            self.trackers['Curves'][_i].update(_points)
+
+            _new_curves.append(_curve)
+
+        #check for errors, first between the curves
+        _pairs = [[_i, _i + 1] for _i in range(0, len(_new_curves) - 1)]
+
+        #if the sum of the curve tangent lengths eceeds the distance between
+        #the points, then they overlap
+        _t_curves = self.trackers['Curves']
+        _t_states = [CoinStyle.DEFAULT]*len(_t_curves)
+
+        for _i in _pairs:
+
+            _p = [_new_curves[_j] for _j in _i]
+
+            if (_p[0]['Tangent'] + _p[1]['Tangent'])\
+                > (_p[0]['PI'].distanceToPoint(_p[1]['PI'])):
+
+                for _j in _i:
+                    _t_states[_j] = CoinStyle.ERROR
+
+        #test for error in end curves and points
+        for _i in [0, -1]:
+
+            _c = _new_curves[_i]
+            _p = self.trackers['Nodes'][_i].get()
+
+            if _t_states[_i] != CoinStyle.ERROR:
+
+                if _c['Tangent'] > _c['PI'].distanceToPoint(_p):
+                    _t_states[_i] = CoinStyle.ERROR
+
+
+        #update styles
+        for _i, _v in enumerate(_t_states):
+            _t_curves[_i].set_style(_v)
 
     def end_drag(self):
         """
         Cleanup method for drag operations
         """
 
-        pass
+        self.drag_geometry = {'Nodes': [], 'Curves': []}
+
+        _rng = range(1, self.groups['SELECTED'].getNumChildren())
+
+        for _i in _rng:
+            self.groups['SELECTED'].removeChild(_i)
+
+        self.groups['PARTIAL'].removeAllChildren()
 
     def get_matrix(self):
         """
         Return the transformation matrix for the provided node
         """
 
+        _sel_group = self.groups['SELECTED']
+
+        #only one child node means no geometry
+        if _sel_group.getNumChildren() < 2:
+            return None
+
         #define the search path
         _search = coin.SoSearchAction()
-        _search.setNode(self.groups['SELECTED'])
+        _search.setNode(_sel_group.getChild(2))
         _search.apply(self.view.getSceneGraph())
 
         #get the matrix for the transformation
-        _matrix = coin.SoGetMatrixAction(self.viewport.getViewportRegion())
+        _matrix = coin.SoGetMatrixAction(self.viewport)
         _matrix.apply(_search.getPath())
 
         return _matrix.getMatrix()
@@ -306,7 +389,10 @@ class AlignmentTracker2(BaseTracker):
                 self.view.removeEventCallback(_k, _v)
 
         if self.trackers:
-            for _v in self.trackers.values():
+            _t = []
+            [_t.extend(_v) for _v in self.trackers.values()]
+
+            for _v in _t:
                 _v.finalize(self.node)
 
             self.trackers.clear()

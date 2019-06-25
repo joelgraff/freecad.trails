@@ -53,14 +53,17 @@ class BaseTracker:
         if group:
             self.node = coin.SoGroup()
 
-        self.node = \
+        self.sel_node = \
             coin.SoType.fromName("SoFCSelection").createInstance()
 
-        self.node.documentName.setValue(self.names[0])
-        self.node.objectName.setValue(self.names[1])
-        self.node.subElementName.setValue(self.names[2])
+        self.sel_node.documentName.setValue(self.names[0])
+        self.sel_node.objectName.setValue(self.names[1])
+        self.sel_node.subElementName.setValue(self.names[2])
 
-        for child in [self.picker, self.draw_style, self.color] + children:
+        for child in [
+            self.sel_node, self.picker, self.draw_style, self.color
+            ] + children:
+
             self.node.addChild(child)
 
     def is_selectable(self):
@@ -152,11 +155,9 @@ class BaseTracker:
         """
 
         if not parent:
-            print('parent is root')
             parent = Draft.get3DView().getSceneGraph()
 
         if parent.findChild(node) >= 0:
-            print('removing ', node)
             todo.delay(parent.removeChild, node)
 
     def adjustTracker(self, node=None, to_top=True):
