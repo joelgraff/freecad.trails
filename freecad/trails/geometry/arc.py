@@ -62,6 +62,15 @@ def _create_geo_func():
     _fn[5][2] = _fn[4][0]
     _fn[5][3] = _fn[4][0]
 
+    #-------------------------------------------------------------------
+    #   bearing lambdas for the curve's vector dot products:
+    #       0 - Radius Start    (START - CENTER)
+    #       1 - Radius End      (END - CENTER)
+    #       2 - Tangent Start   (PI - START)
+    #       3 - Tangent End     (END - PI)
+    #       4 - Middle Ordinate (PI - CENTER)
+    #       5 - Chord           (END - START)
+    #-------------------------------------------------------------------
     _fn[6][0] = lambda _x, _delta, _rot: _x + _rot*C.HALF_PI
     _fn[6][1] = lambda _x, _delta, _rot: _x + _rot*(-_delta+C.HALF_PI)
     _fn[6][2] = lambda _x, _delta, _rot: _x
@@ -83,6 +92,19 @@ def get_scalar_matrix(vecs):
     Calculate the square matrix of scalars
     for the provided vectors
     """
+
+    #-------------------------------
+    #matrix format:
+    #
+    #   |  RST
+    #   |        REND
+    #   |                TST
+    #   |                        TEND
+    #   |                                MORD
+    #   |                                       CHORD
+    #   |                                                UP
+    #--------------------------------
+
     #ensure list is a list of lists (not vectors)
     #and create the matrix
     mat_list = [list(_v) if _v else [0, 0, 0] for _v in vecs]
@@ -139,6 +161,8 @@ def get_bearings(arc, mat, delta, rot):
     """
     Calculate the bearings from the matrix and delta value
     """
+    if rot is None:
+        rot = 0.0
 
     bearing_in = arc.get('BearingIn')
     bearing_out = arc.get('BearingOut')
@@ -206,6 +230,15 @@ def get_bearings(arc, mat, delta, rot):
 
     if not utils.to_float(_int[1]):
         _int[1] = _rad[0] + rot * ((math.pi + delta) / 2.0)
+
+    if _rad is None:
+        _rad = arc['Radius']
+
+    if _tan is None:
+        _tan = arc['Tangent']
+
+    if _int is None:
+        _int = arc['Delta']
 
     mat_bearings = {
         'Radius': _rad,
