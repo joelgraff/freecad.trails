@@ -99,6 +99,10 @@ class NodeTracker(BaseTracker):
         Update the coordinate position
         """
 
+        #if we have a list of points, pick the first
+        if isinstance(coord, list):
+            coord = coord[0]
+
         _c = coord
 
         if not isinstance(coord, tuple):

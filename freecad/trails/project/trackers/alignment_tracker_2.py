@@ -51,11 +51,14 @@ class AlignmentTracker2(BaseTracker):
         self.alignment = alignment
         self.callbacks = {}
         self.doc = doc
+        self.curves = []
         self.names = [doc.Name, object_name, 'ALIGNMENT_TRACKER']
         self.mouse = MouseState()
         self.user_dragging = False
         self.drag_geometry = {
+            'Indices': [],
             'Nodes': [],
+            'Wires': [],
             'Curves':[],
         }
 
@@ -228,128 +231,79 @@ class AlignmentTracker2(BaseTracker):
         ]
 
         #iterate, adding scene nodes to appropriate groups
-        #and storng a list of selected nodes in partially-selected wires
         for _w in _wires:
             self.groups[_w.state].addChild(_w.copy())
 
-        #create list of nodes which are 'connecting' geometry to non-selected
-        #geometry
-        _curves = self.alignment.get_curves()
+        self.curves = self.alignment.get_curves()
 
         _idx = []
 
-        #iterate tangents, selecting only the partial ones
-        for _i, _v in enumerate(self.trackers['Tangents']):
-
-            if _v.state != 'PARTIAL':
-                continue
-
-            #add the tangent and select the curves on either side of it
-            self.drag_geometry['Nodes'].append(_v)
-
-            _l = [_i - 1, _i]
-
-            if _i == 0:
-                _l = [_l[1]]
-
-            elif _i == len(self.trackers['Tangents']) - 1:
-                _l = [_l[0]]
-
-            _idx.extend([_i for _i in _l if _i not in _idx])
-
-        self.drag_geometry['Curves'] = [
-            (_i, _curves[_i]['Radius']) for _i in _idx
+        #store the wire tracker and it's index
+        _partial = [
+            _i for _i, _v in enumerate(self.trackers['Tangents'])\
+                if _v.state == 'PARTIAL'
         ]
 
-        print(self.drag_geometry['Curves'])
+        #if only an endpoint was picked, add the adjacent tangent
+        if len(_partial) == 1:
+
+            if _partial[0] == 0:
+                _partial.append(1)
+
+            else:
+                _partial.insert(0, _partial[0] - 1)
+
+        #otherwise, add the preceeding and following tangents
+        else:
+
+            if _partial[0] > 0:
+                _partial.insert(0, _partial[0] - 1)
+
+            if _partial[-1] < len(self.trackers['Tangents']) - 1:
+                _partial.append(_partial[-1] + 1)
+
+        print(_partial)
+
+        #save the tangents that are used to update the affected curves
+        self.drag_geometry['Wires'] =\
+            self.trackers['Tangents'][_partial[0]:_partial[-1] + 1]
+
+        #save the list of tangent indices
+        self.drag_geometry['Indices'] = _partial
+
+        #save the node trackers
+        self.drag_geometry['Nodes'] = [
+            _w for _v in self.drag_geometry['Wires']\
+                for _w in _v.selection_nodes if _w.state == 'SELECTED'
+        ]
+
+        #store the entire list of curve goemetry for efficiency
+        self.drag_geometry['Curves'] = self.alignment.get_curves()
 
     def on_drag(self):
         """
         Update method during drag operations
         """
 
-        #update nodes that connect selected elements back to unslected
-        _world_pos = self.view.getPoint(self.mouse.pos)
+        self._update_pi_nodes()
 
-        for _v in self.drag_geometry['Nodes']:
+        _curves = self._generate_curves()
 
-            for _w in \
-                [_w for _w in _v.selection_nodes if _w.state == 'SELECTED']:
-
-                _w.update(_world_pos)
-
-            _v.update([_w.get() for _w in _v.selection_nodes])
-
-        _nodes = self.trackers['Nodes']
-        _new_curves = []
-
-        #update the curve geometry
-        for _i, _t in enumerate(self.drag_geometry['Curves']):
-
-            _tst = _nodes[_t[0] + 1].get().sub(_nodes[_t[0]].get())
-            _tend = _nodes[_t[0] + 2].get().sub(_nodes[_t[0] + 1].get())
-
-            _curve = arc.get_parameters (
-                {
-                    'BearingIn': support.get_bearing(_tst),
-                    'BearingOut': support.get_bearing(_tend),
-                    'PI': _nodes[_t[0] + 1].get(),
-                    'Radius': _t[1],
-                }
-            )
-
-            _points, _x = arc.get_points(_curve)
-
-            self.trackers['Curves'][_i].update(_points)
-
-            _new_curves.append(_curve)
-
-        #check for errors, first between the curves
-        _pairs = [[_i, _i + 1] for _i in range(0, len(_new_curves) - 1)]
-
-        #if the sum of the curve tangent lengths eceeds the distance between
-        #the points, then they overlap
-        _t_curves = self.trackers['Curves']
-        _t_states = [CoinStyle.DEFAULT]*len(_t_curves)
-
-        for _i in _pairs:
-
-            _p = [_new_curves[_j] for _j in _i]
-
-            if (_p[0]['Tangent'] + _p[1]['Tangent'])\
-                > (_p[0]['PI'].distanceToPoint(_p[1]['PI'])):
-
-                for _j in _i:
-                    _t_states[_j] = CoinStyle.ERROR
-
-        #test for error in end curves and points
-        for _i in [0, -1]:
-
-            _c = _new_curves[_i]
-            _p = self.trackers['Nodes'][_i].get()
-
-            if _t_states[_i] != CoinStyle.ERROR:
-
-                if _c['Tangent'] > _c['PI'].distanceToPoint(_p):
-                    _t_states[_i] = CoinStyle.ERROR
-
-
-        #update styles
-        for _i, _v in enumerate(_t_states):
-            _t_curves[_i].set_style(_v)
+        self._validate_curves(_curves)
 
     def end_drag(self):
         """
         Cleanup method for drag operations
         """
 
-        self.drag_geometry = {'Nodes': [], 'Curves': []}
+        #clear the drag_geometry dict
+        [_v.clear() for _v in self.drag_geometry.values()]
 
-        _rng = range(1, self.groups['SELECTED'].getNumChildren())
+        #remove child nodes from the selected group
+        [self.groups['SELECTED'].removeChild(_i)\
+             for _i in range(1, self.groups['SELECTED'].getNumChildren())]
 
-        for _i in _rng:
-            self.groups['SELECTED'].removeChild(_i)
-
+        #remove child nodes from the partial group
         self.groups['PARTIAL'].removeAllChildren()
 
     def get_matrix(self):
@@ -373,6 +327,120 @@ class AlignmentTracker2(BaseTracker):
         _matrix.apply(_search.getPath())
 
         return _matrix.getMatrix()
+
+    def _update_pi_nodes(self):
+        """
+        Internal function - Update points of intersection
+        """
+
+        #update nodes that connect selected elements back to unslected
+        _world_pos = self.view.getPoint(self.mouse.pos)
+
+        for _v in self.drag_geometry['Nodes']:
+            _v.update(_world_pos)
+
+        for _v in self.drag_geometry['Wires']:
+            _v.update([_w.get() for _w in _v.selection_nodes])
+
+    def _generate_curves(self):
+        """
+        Internal function - Generate curves based on existing curves and nodes
+        """
+
+        _curves = self.drag_geometry['Curves']
+        _tangents = self.drag_geometry['Wires']
+        _indices = self.drag_geometry['Indices']
+        _result = []
+
+        _rng = range(0, len(_tangents) - 1)
+
+        print(_rng)
+        print(_curves)
+        for _i in _rng:
+
+            _n_start = _tangents[_i].selection_nodes
+            _n_end = _tangents[_i + 1].selection_nodes
+
+            _pi = _n_start[1].get()
+            _tst = _pi.sub(_n_start[0].get())
+            _tend = _n_end[1].get().sub(_pi)
+
+            _idx = _indices[_i]
+
+            _curve = arc.get_parameters (
+                {
+                    'BearingIn': support.get_bearing(_tst),
+                    'BearingOut': support.get_bearing(_tend),
+                    'PI': _pi,
+                    'Radius': _curves[_idx]['Radius'],
+                }
+            )
+
+            _points, _x = arc.get_points(_curve)
+
+            #save a reference to the tracker for later validation and update
+            _curve['tracker'] = self.trackers['Curves'][_idx]
+            _curve['tracker'].update(_points)
+
+            _result.append(_curve)
+
+        #add extra curve if only one curve is being updated
+        if _rng.stop - _rng.start == 1:
+
+            if len(_curves) > 1:
+
+                _i = _indices[0]
+
+                if _i == 0:
+                    _i = _indices[1]
+
+                _c = _curves[_i]
+                _c['tracker'] = self.trackers['Curves'][_i]
+
+                _result.append(_c)
+
+        return _result
+
+    def _validate_curves(self, curves):
+        """
+        Internal function - Validate curves, set styles to indicate errors
+        """
+
+        #1. Create a list of pairs, starting at the curve preceeding the
+        #   first new curve
+
+        #2. Iterate the pairs testing for distance between PI's exceeding
+        #   sum of adjoining curve tangents, or single curve tangent exceeding
+        #   distance between PI and start / end of alignment, if applicable
+
+        _indices = self.drag_geometry['Indices']
+
+        _styles = [CoinStyle.DEFAULT]*len(curves)
+
+        for _i in range(0, len(curves) - 1):
+
+            _c = [curves[_i], curves[_i + 1]]
+
+            if (_c[0]['Tangent'] + _c[1]['Tangent'])\
+                > (_c[0]['PI'].distanceToPoint(_c[1]['PI'])):
+
+                print('error index = ', _i)
+                _styles[_i - 1] = CoinStyle.ERROR
+                _styles[_i] = CoinStyle.ERROR
+
+        #test for error in end curves and points
+        for _i in [0, -1]:
+
+            _c = curves[_i]
+            _p = self.trackers['Nodes'][_i].get()
+
+            if _styles[_i] != CoinStyle.ERROR:
+
+                if _c['Tangent'] > _c['PI'].distanceToPoint(_p):
+                    _styles[_i] = CoinStyle.ERROR
+
+        for _i, _c in enumerate(curves):
+            _c['tracker'].set_style(_styles[_i])
 
     def finalize(self, node=None):
         """
