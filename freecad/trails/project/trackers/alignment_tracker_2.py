@@ -27,6 +27,7 @@ Tracker for alignment editing
 from pivy import coin
 
 from FreeCAD import Vector
+import FreeCADGui as Gui
 
 from ...geometry import support, arc
 from ..support import utils
@@ -55,6 +56,9 @@ class AlignmentTracker2(BaseTracker):
         self.names = [doc.Name, object_name, 'ALIGNMENT_TRACKER']
         self.mouse = MouseState()
         self.user_dragging = False
+        self.is_valid = True
+        self.status_bar = Gui.getMainWindow().statusBar()
+
         self.drag_geometry = {
             'Indices': [],
             'Nodes': [],
@@ -109,12 +113,31 @@ class AlignmentTracker2(BaseTracker):
         #insert in the scenegraph root
         self.insert_node(self.node)
 
+    def _update_status_bar(self, info):
+        """
+        Update the status bar with the latest mouseover data
+        """
+
+        _id = ''
+
+        if info:
+            _id = info['Component']
+
+        _msg = _id + ' ' + str(tuple(self.view.getPoint(self.mouse.pos)))
+
+        #self.status_bar.clearMessage()
+        self.status_bar.showMessage(_msg)
+
     def mouse_event(self, arg):
         """
         Manage mouse actions affecting multiple nodes / wires
         """
 
-        self.mouse.update(arg, self.view.getCursorPos())
+        _p = self.view.getCursorPos()
+
+        self.mouse.update(arg, _p)
+
+        self._update_status_bar(self.view.getObjectInfo(_p))
 
         if self.mouse.button1.dragging:
 
@@ -296,6 +319,9 @@ class AlignmentTracker2(BaseTracker):
         Cleanup method for drag operations
         """
 
+        if self.is_valid:
+            self.alignment.update_curves(self.drag_geometry['Curves'])
+
         #clear the drag_geometry dict
         [_v.clear() for _v in self.drag_geometry.values()]
 
@@ -305,6 +331,7 @@ class AlignmentTracker2(BaseTracker):
 
         #remove child nodes from the partial group
         self.groups['PARTIAL'].removeAllChildren()
+
 
     def get_matrix(self):
         """
@@ -354,8 +381,6 @@ class AlignmentTracker2(BaseTracker):
 
         _rng = range(0, len(_tangents) - 1)
 
-        print(_rng)
-        print(_curves)
         for _i in _rng:
 
             _n_start = _tangents[_i].selection_nodes
@@ -382,21 +407,21 @@ class AlignmentTracker2(BaseTracker):
             _curve['tracker'] = self.trackers['Curves'][_idx]
             _curve['tracker'].update(_points)
 
+            self.drag_geometry['Curves'][_idx] = _curve
+
             _result.append(_curve)
 
-        #add extra curve if only one curve is being updated
-        if _rng.stop - _rng.start == 1:
+        #add adjoining curve if only one curve is being updated in a
+        #multi-curve alignment (first or last curve is being updated)
+        if (_rng.stop - _rng.start == 1) and  len(_curves) > 1:
 
-            if len(_curves) > 1:
+            _c = _curves[1]
+            _c['tracker'] = self.trackers['Curves'][-2]
 
-                _i = _indices[0]
-
-                if _i == 0:
-                    _i = _indices[1]
-
-                _c = _curves[_i]
-                _c['tracker'] = self.trackers['Curves'][_i]
-
+            if _indices[0] != 0:
+                _c = _curves[-2]
+                _result.insert(0, _c)
+            else:
                 _result.append(_c)
 
         return _result
@@ -424,12 +449,22 @@ class AlignmentTracker2(BaseTracker):
             if (_c[0]['Tangent'] + _c[1]['Tangent'])\
                 > (_c[0]['PI'].distanceToPoint(_c[1]['PI'])):
 
-                print('error index = ', _i)
-                _styles[_i - 1] = CoinStyle.ERROR
+                _styles[_i + 1] = CoinStyle.ERROR
                 _styles[_i] = CoinStyle.ERROR
 
-        #test for error in end curves and points
-        for _i in [0, -1]:
+        #if only two tangents are being used, we need to do endpoint 
+        #checks as this can only happen if the endpoint is selected,
+        #or the alignment only has two tangents
+
+        _idx = []
+        
+        if _indices[0] == 0:
+            _idx.append(0)
+
+        if _indices[-1] == len(self.trackers['Nodes']) - 2:
+            _idx.append(-1)
+
+        for _i in _idx:
 
             _c = curves[_i]
             _p = self.trackers['Nodes'][_i].get()
@@ -441,6 +476,8 @@ class AlignmentTracker2(BaseTracker):
 
         for _i, _c in enumerate(curves):
             _c['tracker'].set_style(_styles[_i])
+
+        self.is_valid = all([_v != CoinStyle.ERROR for _v in _styles])
 
     def finalize(self, node=None):
         """

@@ -340,6 +340,24 @@ class Alignment(Draft._Wire):
 
         return None
 
+    def update_curves(self, curves):
+        """
+        Assign updated alignment curves to the model.
+        """
+
+        _model = {
+            'meta': {
+                'Start': self.model.data['meta']['Start'],
+                'StartStation':
+                    self.model.data['meta']['StartStation'],
+                'End': self.model.data['meta']['End']
+            },
+            'geometry': curves,
+            'station': self.model.data['station']
+        }
+
+        self.set_geometry(_model)
+
     def set_geometry(self, geometry):
         """
         Assign geometry to the alignment object
