@@ -26,6 +26,8 @@ Tracker for alignment editing
 
 from pivy import coin
 
+from FreeCAD import Vector
+
 import FreeCADGui as Gui
 
 from ...geometry import support, arc
@@ -58,6 +60,7 @@ class AlignmentTracker(BaseTracker):
         self.status_bar = Gui.getMainWindow().statusBar()
 
         self.drag_geometry = {
+            'Start': Vector(),
             'Indices': [],
             'Nodes': [],
             'Wires': [],
@@ -83,8 +86,8 @@ class AlignmentTracker(BaseTracker):
         self.groups = {
             'EDIT': coin.SoGroup(),
             'DRAG': coin.SoGroup(),
-            'SELECTED': coin.SoGroup(),
-            'PARTIAL': coin.SoGroup(),
+            'SELECTED': coin.SoSeparator(),
+            'PARTIAL': coin.SoSeparator(),
         }
 
         self.drag_transform = coin.SoTransform()
@@ -246,6 +249,8 @@ class AlignmentTracker(BaseTracker):
         Set up the scene graph for dragging operations
         """
 
+        self.drag_geometry['Start'] = self.view.getPoint(self.mouse.pos)
+
         #create list of selected and partially-selected wires
         _wires = [
             _v for _v in self.trackers['Tangents'] + self.trackers['Curves']\
@@ -266,6 +271,14 @@ class AlignmentTracker(BaseTracker):
                 if _v.state == 'PARTIAL'
         ]
 
+        _selected = [
+            _i for _i, _v in enumerate(self.trackers['Tangents'])\
+                if _v.state == 'SELECTED'
+        ]
+
+        print('parital = ', _partial)
+        print('selected = ', _selected)
+
         #if only an endpoint was picked, add the adjacent tangent
         if len(_partial) == 1:
 
@@ -284,7 +297,6 @@ class AlignmentTracker(BaseTracker):
             if _partial[-1] < len(self.trackers['Tangents']) - 1:
                 _partial.append(_partial[-1] + 1)
 
-        print(_partial)
 
         #save the tangents that are used to update the affected curves
         self.drag_geometry['Wires'] =\
@@ -307,7 +319,11 @@ class AlignmentTracker(BaseTracker):
         Update method during drag operations
         """
 
-        self._update_pi_nodes()
+        _world_pos = self.view.getPoint(self.mouse.pos)
+
+        self._update_transform(_world_pos)
+
+        self._update_pi_nodes(_world_pos)
 
         _curves = self._generate_curves()
 
@@ -323,15 +339,18 @@ class AlignmentTracker(BaseTracker):
 
         #clear the drag_geometry dict
         for _v in self.drag_geometry.values():
-            _v.clear()
+
+            if isinstance(_v, Vector):
+                _v =Vector()
+            else:
+                _v.clear()
 
         #remove child nodes from the selected group
-        for _i in range(1, self.groups['SELECTED'].getNumChildren()):
-            self.groups['SELECTED'].removeChild(_i)
+        self.groups['SELECTED'].removeAllChildren()
+        self.groups['SELECTED'].addChild(self.drag_transform)
 
         #remove child nodes from the partial group
         self.groups['PARTIAL'].removeAllChildren()
-
 
     def get_matrix(self):
         """
@@ -355,19 +374,46 @@ class AlignmentTracker(BaseTracker):
 
         return _matrix.getMatrix()
 
-    def _update_pi_nodes(self):
+    def _update_transform(self, pos):
+        """
+        Update the transform node for selected geometry
+        """
+
+        _pos = tuple(pos.sub(self.drag_geometry['Start']))
+
+        self.drag_transform.translation.setValue(_pos)
+
+    def _update_pi_nodes(self, world_pos):
         """
         Internal function - Update points of intersection
         """
 
         #update nodes that connect selected elements back to unslected
-        _world_pos = self.view.getPoint(self.mouse.pos)
-
         for _v in self.drag_geometry['Nodes']:
-            _v.update(_world_pos)
+            _v.update(world_pos)
 
         for _v in self.drag_geometry['Wires']:
             _v.update([_w.get() for _w in _v.selection_nodes])
+
+    def _transform_nodes(self, nodes):
+        """
+        Transform selected nodes by the transformation matrix
+        """
+
+        _matrix = self.get_matrix()
+        _result = []
+
+        for _n in nodes:
+
+            _v = tuple(_n.get())
+
+            if _n.state == 'SELECTED':
+                _v = coin.SbVec4f(_v + (1.0,))
+                _v = _matrix.multVecMatrix(_v).getValue()[:3]
+
+            _result.append(Vector(_v))
+
+        return _result
 
     def _generate_curves(self):
         """
@@ -375,20 +421,28 @@ class AlignmentTracker(BaseTracker):
         """
 
         _curves = self.drag_geometry['Curves']
-        _tangents = self.drag_geometry['Wires']
+        _tgts = self.drag_geometry['Wires']
         _indices = self.drag_geometry['Indices']
         _result = []
 
-        _rng = range(0, len(_tangents) - 1)
+        _rng = range(0, len(_tgts) - 1)
 
         for _i in _rng:
 
-            _n_start = _tangents[_i].selection_nodes
-            _n_end = _tangents[_i + 1].selection_nodes
+            #must transform nodes of fully-selected tangents!
 
-            _pi = _n_start[1].get()
-            _tst = _pi.sub(_n_start[0].get())
-            _tend = _n_end[1].get().sub(_pi)
+            _start = _tgts[_i].selection_nodes[0].get()
+            _pi = _tgts[_i].selection_nodes[1].get()
+            _end = _tgts[_i + 1].selection_nodes[1].get()
+
+            #_nodes = self._transform_nodes( [_pi, _end]
+            #    _tgts[_i].selection_nodes[1:] + _tgts[_i + 1].selection_nodes,
+            #)
+
+            #print(_nodes)
+
+            _tst = _pi.sub(_start)
+            _tend = _end.sub(_pi)
 
             _idx = _indices[_i]
 
