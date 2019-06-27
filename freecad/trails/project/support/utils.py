@@ -71,7 +71,7 @@ def get_uuid():
 
     return str(uuid.uuid4())
 
-def translate(text, context = 'trails'):
+def translate(text, context='trails'):
     """
     Translate convenience fn for the DraftGui.translate() convenience fn
     """
@@ -233,8 +233,6 @@ def station_to_distance(station, equations):
     convert the station to the distance from the start of the alignment
     """
 
-    _s = station
-
     try:
         _s = float(station)
 
@@ -243,7 +241,6 @@ def station_to_distance(station, equations):
         return 0
 
     start_sta = -1
-    end_sta = -1
     distance = 0.0
 
     for eqn in equations:

@@ -178,93 +178,6 @@ def _solve_by_absolute(spiral):
 
     return spiral
 
-def _solve_by_relative(spiral):
-    """
-    Solve by relative features (theta, radius, length, 1-2 coordinates defined)
-    """
-
-    _c = [spiral[_k] for _k in ['Start', 'End', 'PI'] if spiral.get(_k)]
-
-    #abort if no coordinates specified
-    if not _c:
-        return None
-
-    #abort if only one coordinate specified and
-    #either no bearings are provided or one bearing with no direction
-    _bearings = [spiral.get(['BearingIn']), spiral.get('BearingOut')]
-
-    if len(_c) == 1:
-
-        _b = [_v for _v in _bearings if not _v is None]
-
-        if not _b:
-            return None
-
-        if len(_b) == 1:
-
-            if spiral.get('Direction') is None:
-                return None
-
-    spiral['Radius'] = spiral.get('RadiusStart')
-
-    if not spiral['Radius'] or spiral['Radius'] == math.inf:
-
-        if not spiral.get('RadiusEnd'):
-            spiral['Radius'] = None
-
-        elif spiral['RadiusEnd'] != math.inf:
-            spiral['Radius'] = spiral['RadiusEnd']
-
-    #abort if at least two of the three parameters are not provided
-    if len([spiral.get(_k) for _k in ['Theta', 'Radius', 'Length']]) < 2:
-        return None
-
-    #determine missing (theta, radius, length)
-    if not spiral.get('Theta'):
-        spiral['Theta'] = _calc_rlt(spiral['Radius'], spiral['Length'], None)
-
-    elif not spiral.get('Radius'):
-        spiral['Radius'] = _calc_rlt(None, spiral['Length'], spiral['Theta'])
-
-    elif not spiral.get('Length'):
-        spiral['Length'] = _calc_rlt(spiral['Radius'], None, spiral['Length'])
-
-    #solve TotalX / TotalY using theta, length
-    _tx = _calc_total_x(spiral['Theta'])
-    spiral['TotalX'] = _test_tolerance(_tx, spiral.get('TotalX'))
-
-    _ty = _calc_total_y(spiral['Theta'])
-    spiral['TotalY'] = _test_tolerance(_ty, spiral.get('TotalY'))
-
-    #calc bearing vectors
-    _tan = [spiral.get('BearingIn'), spiral.get('BearingOut')]
-    _tan = [support.vector_from_angle(_v) if _v else None for _v in _tan]
-
-    if not all(_tan):
-        if _tan[1]:
-            _tan[0] = \
-                _tan[1].sub(spiral['Theta'] * spiral['Direction'])
-        else:
-            _tan[1] = _tan[0].add(spiral['Theta'] * spiral['Direction'])
-
-    #calc start/end coords
-    if spiral.get('Start'):
-
-        if not spiral.get('End'):
-            _xc = spiral['Start'].add()
-
-    if not _tan[0]:
-        if spiral.get('Start') and spiral.get('PI'):
-            _tan[0] = spiral['PI'].sub(spiral['Start'])
-
-    if not _tan[1]:
-        if spiral.get('PI') and spiral.get['End']:
-            _tan[1] = spiral['End'].sub(spiral['Pi'])
-
-
-    #calc PI from start / end and direction
-    #solve using absolute
-
 def get_parameters(spiral_dict):
     """
     Validate the spiral that is passed, supplementing missing parameters
@@ -317,9 +230,6 @@ def get_segments(spiral, deltas, _dtype=Vector):
         _start = spiral['End']
         _direction *= -1
 
-    _forward = Vector(math.sin(_bearing), math.cos(_bearing), 0.0)
-    _right = Vector(_forward.y, -_forward.x, 0.0)
-
     _points = [_dtype(_start)]
 
     for _delta in deltas:
@@ -346,7 +256,8 @@ def get_segments(spiral, deltas, _dtype=Vector):
 def get_points(
         spiral, size=10.0, method='Segment', interval=None, _dtype=Vector):
     """
-    Discretize a spiral into the specified segments. Resulting list of coordinates omits provided starting point and concludes with end point
+    Discretize a spiral into the specified segments. Resulting list of
+    coordinates omits provided starting point and concludes with end point
 
     spiral    - A dictionary containing key elements:
         Direction   - non-zero.  <0 = ccw, >0 = cw
@@ -369,15 +280,12 @@ def get_points(
     """
 
     angle = spiral['Theta']
-    direction = spiral['Direction']
-    bearing_in = spiral['BearingIn']
     radius = spiral['Radius']
 
     if not interval:
         interval = [0.0, 0.0]
 
     _delta_angle = interval[0] / radius
-    _start_angle = bearing_in + (_delta_angle * direction)
 
     #get the start coordinate at the actual starting point on the curve
     ### CURRENTLY DISABLED ###
@@ -421,7 +329,6 @@ def get_ortho_vector(spiral, distance, side):
     Calculate the vector orthogonal to the spiral for the given distance and direction
     """
 
-    _dir = spiral['Direction']
     _side = side.lower()
     _x = -1.0
 

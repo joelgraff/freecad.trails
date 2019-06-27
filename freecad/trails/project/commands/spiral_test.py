@@ -20,7 +20,9 @@
 # *  USA                                                                   *
 # *                                                                        *
 # **************************************************************************
-
+"""
+Spiral test class
+"""
 import math
 
 import FreeCAD as App
@@ -28,7 +30,7 @@ import FreeCADGui as Gui
 
 from DraftTools import Modifier
 from ..support.const import Const
-from ...geometry import support
+
 from ...geometry import arc
 
 class Fresnel(Const):
@@ -82,11 +84,15 @@ class SpiralTest(Modifier):
     Command Description
     """
     def __init__(self):
-
+        """
+        Constructor
+        """
         pass
 
     def GetResources(self):
-
+        """
+        Resource supplier
+        """
         return {'Pixmap'  : '',
                 'Accel'   : '',
                 'MenuText': '',

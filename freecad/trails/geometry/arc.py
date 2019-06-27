@@ -280,7 +280,8 @@ def get_lengths(arc, mat):
             if _i == 1:
                 _attribs = ['tangent', 'Start-PI-End']
 
-            App.Console.PrintWarning('\nArc {0} length and {1} distance mismatch by {2:f} mm. Using calculated value of {3:f} mm'.format(_attribs[0], _attribs[1], abs(_s[1] - _s[0]), _s[0]))
+            App.Console.PrintWarning('\nArc {0} length and {1} distance mismatch by {2:f} mm. Using calculated value of {3:f} mm'\
+                .format(_attribs[0], _attribs[1], abs(_s[1] - _s[0]), _s[0]))
 
         if _s[0] and support.within_tolerance(_s[0], params[_i]):
             continue
@@ -885,7 +886,7 @@ def get_points(
 
     #hashes = []
 
-    _prev = None
+    #_prev = None
 
     #for _pt in points:
 

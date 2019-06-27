@@ -37,8 +37,6 @@ from ....alignment import alignment
 from ...support import const, utils
 from ...support.mouse_state import MouseState
 
-from ...trackers.pi_tracker import PiTracker
-from ...trackers.drag_tracker import DragTracker
 from ...trackers.alignment_tracker import AlignmentTracker
 
 def create(doc, view, alignment_data, object_name):
@@ -113,22 +111,15 @@ class EditAlignmentTask:
         #deselect existing selections
         Gui.Selection.clearSelection()
 
-        #self.pi_tracker = PiTracker(
-        #    self.doc, self.view, self.obj.Name, self.alignment
-        #)
-
         self.alignment_tracker = AlignmentTracker(
             self.doc, self.view, self.obj.Name, self.alignment
         )
 
         self.callbacks = {
             'SoKeyboardEvent': self.key_action,
-            'SoMouseButtonEvent': self.button_action,
-            'SoLocation2Event': self.mouse_action
+            #    'SoMouseButtonEvent': self.button_action,
+            #    'SoLocation2Event': self.mouse_action
         }
-
-        #for _k, _v in self.callbacks.items():
-        #    self.view.addEventCallback(_k, _v)
 
         self.doc.recompute()
 
@@ -170,89 +161,6 @@ class EditAlignmentTask:
 
         if arg['Key'] == 'ESCAPE':
             self.finish()
-
-    def button_action(self, arg):
-        """
-        SoLocation2Event callback for mouse / keyboard handling
-        """
-
-        pos = self.view.getCursorPos()
-        self.mouse.update(arg, pos)
-
-    def mouse_action(self, arg):
-        """
-        Mouse movement actions
-        """
-
-        _dragging = self.mouse.button1.dragging or self.mouse.button1.pressed
-
-        #exclusive or - abort if both are true or false
-        if not (self.drag_tracker is not None) ^ _dragging:
-            return
-
-        pos = self.view.getCursorPos()
-        self.mouse.update(arg, pos)
-
-        #if tracker exists, but we're not dragging, shut it down
-        if self.drag_tracker:
-            self.end_drag(arg, self.view.getPoint(pos))
-
-        elif _dragging:
-            self.start_drag(arg, self.view.getPoint(pos))
-
-    def end_drag(self, arg, world_pos):
-        """
-        End drag operations with drag tracker
-        """
-
-        return
-        self.alignment_tracker.end_drag(self.drag_tracker.get_matrix())
-        self.pi_tracker.end_drag()
-
-        self.drag_tracker.finalize()
-        self.drag_tracker = None
-
-    def start_drag(self, arg, world_pos):
-        """
-        Begin drag operations with drag tracker
-        """
-
-        return
-        _selected = self.pi_tracker.get_selected()
-
-        if not _selected:
-            return
-
-        self.pi_tracker.begin_drag()
-        self.alignment_tracker.begin_drag(self.pi_tracker.get_selected())
-
-        self.drag_tracker = DragTracker(
-            self.view,
-            [self.doc.Name, self.obj.Name, 'DRAG_TRACKER']
-        )
-
-        #get selected geometry from the pi tracker
-        _selected = [
-            self.pi_tracker.selection.group,
-            self.alignment_tracker.selection.group
-        ]
-
-        #get connection geometry from the pi tracker
-        _connected = [
-            self.pi_tracker.connection.group,
-            self.alignment_tracker.connection.group
-        ]
-
-        self.drag_tracker.set_nodes(_selected, _connected, world_pos)
-
-        self.drag_tracker.set_rotation_center(
-            self.pi_tracker.get_selected()[0]
-        )
-
-        self.drag_tracker.callbacks.extend([
-            self.pi_tracker.drag_callback,
-            self.alignment_tracker.drag_callback
-        ])
 
     def set_vobj_style(self, vobj, style):
         """

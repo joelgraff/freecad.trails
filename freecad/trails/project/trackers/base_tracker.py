@@ -61,7 +61,7 @@ class BaseTracker:
         self.sel_node.subElementName.setValue(self.names[2])
 
         for child in [
-            self.sel_node, self.picker, self.draw_style, self.color
+                self.sel_node, self.picker, self.draw_style, self.color
             ] + children:
 
             self.node.addChild(child)
@@ -77,10 +77,20 @@ class BaseTracker:
 
         self.picker.style.setValue(_state)
 
+    def is_selectable(self):
+        """
+        Return a bool indicating whether or not the node may be selected
+        """
+
+        return self.picker.style.getValue() != coin.SoPickStyle.UNPICKABLE
+
     def finalize(self, node, parent=None):
         """
         Node destruction / cleanup
         """
+
+        if node is None:
+            node = self.node
 
         self.remove_node(node, parent)
 

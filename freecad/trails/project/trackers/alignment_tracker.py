@@ -26,20 +26,18 @@ Tracker for alignment editing
 
 from pivy import coin
 
-from FreeCAD import Vector
 import FreeCADGui as Gui
 
 from ...geometry import support, arc
-from ..support import utils
+
 from .base_tracker import BaseTracker
-from .coin_group import CoinGroup
 from .coin_style import CoinStyle
 
 from ..support.mouse_state import MouseState
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
 
-class AlignmentTracker2(BaseTracker):
+class AlignmentTracker(BaseTracker):
     """
     Tracker class for alignment design
     """
@@ -48,7 +46,7 @@ class AlignmentTracker2(BaseTracker):
         """
         Constructor
         """
-    
+
         self.alignment = alignment
         self.callbacks = {}
         self.doc = doc
@@ -105,7 +103,8 @@ class AlignmentTracker2(BaseTracker):
         self.build_trackers()
 
         _trackers = []
-        [_trackers.extend(_v) for _v in self.trackers.values()]
+        for _v in self.trackers.values():
+            _trackers.extend(_v)
 
         for _v in _trackers:
             self.insert_node(_v.node, self.groups['EDIT'])
@@ -323,11 +322,12 @@ class AlignmentTracker2(BaseTracker):
             self.alignment.update_curves(self.drag_geometry['Curves'])
 
         #clear the drag_geometry dict
-        [_v.clear() for _v in self.drag_geometry.values()]
+        for _v in self.drag_geometry.values():
+            _v.clear()
 
         #remove child nodes from the selected group
-        [self.groups['SELECTED'].removeChild(_i)\
-             for _i in range(1, self.groups['SELECTED'].getNumChildren())]
+        for _i in range(1, self.groups['SELECTED'].getNumChildren()):
+            self.groups['SELECTED'].removeChild(_i)
 
         #remove child nodes from the partial group
         self.groups['PARTIAL'].removeAllChildren()
@@ -392,7 +392,7 @@ class AlignmentTracker2(BaseTracker):
 
             _idx = _indices[_i]
 
-            _curve = arc.get_parameters (
+            _curve = arc.get_parameters(
                 {
                     'BearingIn': support.get_bearing(_tst),
                     'BearingOut': support.get_bearing(_tend),
@@ -452,12 +452,12 @@ class AlignmentTracker2(BaseTracker):
                 _styles[_i + 1] = CoinStyle.ERROR
                 _styles[_i] = CoinStyle.ERROR
 
-        #if only two tangents are being used, we need to do endpoint 
+        #if only two tangents are being used, we need to do endpoint
         #checks as this can only happen if the endpoint is selected,
         #or the alignment only has two tangents
 
         _idx = []
-        
+
         if _indices[0] == 0:
             _idx.append(0)
 
@@ -479,7 +479,7 @@ class AlignmentTracker2(BaseTracker):
 
         self.is_valid = all([_v != CoinStyle.ERROR for _v in _styles])
 
-    def finalize(self, node=None):
+    def finalize(self, node=None, parent=None):
         """
         Override of the parent method
         """
@@ -495,7 +495,9 @@ class AlignmentTracker2(BaseTracker):
 
         if self.trackers:
             _t = []
-            [_t.extend(_v) for _v in self.trackers.values()]
+
+            for _v in self.trackers.values():
+                _t.extend(_v)
 
             for _v in _t:
                 _v.finalize(self.node)
@@ -508,4 +510,4 @@ class AlignmentTracker2(BaseTracker):
 
             self.groups.clear()
 
-        super().finalize(node)
+        super().finalize(node, parent)

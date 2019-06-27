@@ -31,7 +31,7 @@ import FreeCADGui as Gui
 
 from .coin_style import CoinStyle
 from .base_tracker import BaseTracker
-from ..support.const import Const
+
 from ..support.mouse_state import MouseState
 
 class NodeTracker(BaseTracker):
@@ -64,7 +64,7 @@ class NodeTracker(BaseTracker):
         self.marker = coin.SoMarkerSet()
 
         super().__init__(
-            names=names, children=[self.coord, self.marker],group=True
+            names=names, children=[self.coord, self.marker] + nodes, group=True
         )
 
         self.set_style(CoinStyle.DEFAULT)
@@ -178,7 +178,7 @@ class NodeTracker(BaseTracker):
         self.set_style(CoinStyle.SELECTED)
         self.state = 'SELECTED'
 
-    def finalize(self, parent=None):
+    def finalize(self, node=None, parent=None):
         """
         Cleanup
         """

@@ -72,14 +72,11 @@ class AlignmentModel:
 
         _start = self.data['meta']['Start']
 
-        _pi = [_v for _v in self.data['geometry'] if _v.get('PI')]
-
         result = [_start]
         result += [_v['PI'].add(_start)\
             for _v in self.data['geometry'] if _v.get('PI')
                   ]
 
-        print(self.data['meta']['End'])
         result.append(self.data['meta']['End'].add(_start))
 
         return result
