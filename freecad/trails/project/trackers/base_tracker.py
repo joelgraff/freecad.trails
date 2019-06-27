@@ -66,13 +66,6 @@ class BaseTracker:
 
             self.node.addChild(child)
 
-    def is_selectable(self):
-        """
-        Return the selectability of the node based on the picker state
-        """
-
-        return self.picker.style.getValue() != coin.SoPickStyle.UNPICKABLE
-
     def set_selectability(self, is_selectable):
         """
         Set the selectability of the node using the SoPickStyle node

@@ -39,7 +39,7 @@ from ...support.mouse_state import MouseState
 
 from ...trackers.pi_tracker import PiTracker
 from ...trackers.drag_tracker import DragTracker
-from ...trackers.alignment_tracker_2 import AlignmentTracker2
+from ...trackers.alignment_tracker import AlignmentTracker
 
 def create(doc, view, alignment_data, object_name):
     """
@@ -117,7 +117,7 @@ class EditAlignmentTask:
         #    self.doc, self.view, self.obj.Name, self.alignment
         #)
 
-        self.alignment_tracker = AlignmentTracker2(
+        self.alignment_tracker = AlignmentTracker(
             self.doc, self.view, self.obj.Name, self.alignment
         )
 
