@@ -113,10 +113,10 @@ class SpiralTest(Modifier):
         arc1 = arc.get_parameters(arc1)
 
         arc2 = {
-            'BearingIn': ,
+            'BearingIn': 10.0,
             'Radius': 1750.0,
             'Delta': math.radians(16.074936823812),
-            'Start':,
+            'Start': App.Vector(),
             'Direction': -1
         }
 
