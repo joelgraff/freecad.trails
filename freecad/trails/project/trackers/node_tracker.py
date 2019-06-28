@@ -31,52 +31,15 @@ import FreeCADGui as Gui
 
 from .coin_style import CoinStyle
 from .base_tracker import BaseTracker
-from ..support.const import Const
+
+from ..support.mouse_state import MouseState
 
 class NodeTracker(BaseTracker):
     """
-    A custom edit tracker
+    Tracker object for nodes
     """
 
-
-    class STYLE(Const):
-        """
-        Style constants for nodes
-        """
-
-        DEFAULT = {
-            'id': 'default',
-            'shape': 'default',
-            'size': 9,
-            'color': (0.8, 0.8, 0.8),
-            'select': True
-        }
-
-        ROLL_OUTER = {
-            'id': 'roll_outer',
-            'shape': 'circle',
-            'size': 9,
-            'color': (0.4, 0.8, 0.4),
-            'select': True
-        }
-
-        ROLL_INNER = {
-            'id': 'roll_inner',
-            'shape': 'cross',
-            'size': 5,
-            'color': (0.4, 0.8, 0.4),
-            'select': True
-        }
-
-        SELECTED = {
-            'id': 'selected',
-            'shape': 'default',
-            'size': 9,
-            'color': (1.0, 0.9, 0.0),
-            'select': True
-        }
-
-    def __init__(self, names, point, nodes=None):
+    def __init__(self, view, names, point, nodes=None):
         """
         Constructor
         """
@@ -88,115 +51,57 @@ class NodeTracker(BaseTracker):
         elif not isinstance(nodes, list):
             nodes = [nodes]
 
-        self.groups = {
-            'default': [],
-            'rollover': []
+        self.state = 'UNSELECTED'
+
+        self.enabled = True
+        self.coin_style = None
+        self.view = view
+        self.name = names[2]
+        self.mouse = MouseState()
+
+        #build node structure for the node tracker
+        self.coord = coin.SoCoordinate3()
+        self.marker = coin.SoMarkerSet()
+
+        super().__init__(
+            names=names, children=[self.coord, self.marker] + nodes, group=True
+        )
+
+        self.set_style(CoinStyle.DEFAULT)
+
+        self.callbacks = {
+            'SoLocation2Event':
+            self.view.addEventCallback('SoLocation2Event', self.mouse_event),
+
+            'SoMouseButtonEvent':
+            self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
         }
 
-        self.switch = coin.SoSwitch() # this is the on/off switch
-        self.coord = coin.SoCoordinate3()
-        self.name = names[2]
-
-        self.switch.setName(self.name)
-
-        self.switch.addChild(self.create_default(names))
-        self.switch.addChild(self.create_rollover(names))
-
-        super().__init__(names=names, children=nodes + [self.switch],
-                         select=False, group=True)
-
-        self.on()
-
-    def off(self):
+    def set_style(self, style):
         """
-        Override for base tracker function
+        Set the node style
         """
 
-        super().off(self.switch)
+        if self.coin_style == style:
+            return
 
-    def on(self):
-        """
-        Override for base tracker function
-        """
+        self.color.rgb = style['color']
 
-        super().on(self.switch)
+        self.marker.markerIndex = \
+            Gui.getMarkerIndex(style['shape'], style['size'])
 
-    def create_rollover(self, names):
-        """
-        Create the rollover node tracker
-        """
+        self.set_selectability(style['select'])
 
-        group = coin.SoGroup()
-
-        for style in [CoinStyle.ROLL_INNER, CoinStyle.ROLL_OUTER]:
-
-            marker = coin.SoMarkerSet()
-
-            marker.markerIndex = \
-                Gui.getMarkerIndex(style['shape'], style['size'])
-
-            nam = names[:]
-            nam[2] += '.' +style['id']
-
-            child = BaseTracker(nam, [self.coord, marker], style['select'])
-            child.color.rgb = style['color']
-
-            group.addChild(child.node)
-
-            self.groups['rollover'].append(child)
-
-        return group
-
-    def create_default(self, names):
-        """
-        Create the default node tracker
-        """
-
-        style = CoinStyle.DEFAULT
-
-        marker = coin.SoMarkerSet()
-
-        marker.markerIndex = Gui.getMarkerIndex(style['shape'], style['size'])
-
-        nam = names[:]
-        nam[2] += '.' +style['id']
-
-        child = BaseTracker(nam, [self.coord, marker], style['select'])
-        child.color.rgb = style['color']
-
-        group = coin.SoGroup()
-        group.addChild(child.node)
-
-        self.groups['default'].append(child)
-
-        return group
-
-    def default(self):
-        """
-        Set node to default style
-        """
-
-        for _child in self.groups['default']:
-            _child.color.rgb = CoinStyle.DEFAULT['color']
-
-        if self.switch.whichChild:
-            self.switch.whichChild = 0
-
-    def selected(self):
-        """
-        Set node to select style
-        """
-
-        for _child in self.groups['default']:
-            _child.color.rgb = CoinStyle.SELECTED['color']
-
-        if self.switch.whichChild:
-            self.switch.whichChild = 0
+        self.coin_style = style
 
     def update(self, coord):
         """
         Update the coordinate position
         """
+
+        #if we have a list of points, pick the first
+        if isinstance(coord, list):
+            coord = coord[0]
 
         _c = coord
 
@@ -212,9 +117,76 @@ class NodeTracker(BaseTracker):
 
         return Vector(self.coord.point.getValues()[0].getValue())
 
-    def finalize(self):
+    def mouse_event(self, arg):
+        """
+        Mouse movement actions
+        """
+
+        #skip if currently disabled for various actions
+        if not self.enabled:
+            return
+
+        #skip if the node can't be selected
+        if not self.is_selectable():
+            return
+
+        #no mouseover porcessing if the node is currently selected
+        if self.state == 'SELECTED':
+            return
+
+        #test to see if this node is under the cursor
+        _info = self.view.getObjectInfo(self.mouse.pos)
+
+        if not _info:
+            self.set_style(CoinStyle.DEFAULT)
+            return
+
+        if not self.name in _info['Component']:
+            self.set_style(CoinStyle.DEFAULT)
+            return
+
+        self.set_style(CoinStyle.SELECTED)
+
+    def button_event(self, arg):
+        """
+        Button click trapping
+        """
+
+        if not self.enabled:
+            return
+
+        self.state = 'UNSELECTED'
+
+        _info = self.view.getObjectInfo(self.mouse.pos)
+
+        if not _info:
+            self.set_style(CoinStyle.DEFAULT)
+            return
+
+        _name = _info['Component']
+
+        if arg['AltDown']:
+
+            if int(_name.split('-')[1]) > int(self.name.split('-')[1]):
+                self.set_style(CoinStyle.DEFAULT)
+                return
+
+        elif not self.name in _name:
+            self.set_style(CoinStyle.DEFAULT)
+            return
+
+        self.set_style(CoinStyle.SELECTED)
+        self.state = 'SELECTED'
+
+    def finalize(self, node=None, parent=None):
         """
         Cleanup
         """
 
-        pass
+        if self.callbacks:
+            for _k, _v in self.callbacks.items():
+                self.view.removeEventCallback(_k, _v)
+
+        self.callbacks.clear()
+
+        super().finalize(self.node, parent)

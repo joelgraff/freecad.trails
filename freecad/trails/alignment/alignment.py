@@ -191,6 +191,51 @@ class Alignment(Draft._Wire):
 
         self.build_curve_edge_dict()
 
+    def _plot_vectors(self, stations, interval=1.0, is_ortho=True):
+        """
+        Testing function to plot coordiantes and vectors between specified
+        stations.
+
+        stations - tuple / list of startnig / ending stations
+        is_ortho - bool, False plots tangent, True plots orthogonal
+        """
+
+        if not stations:
+            stations = [
+                self.model.data['meta']['StartStation'],
+                self.model.data['meta']['StartStation'] \
+                    + self.model.data['meta']['Length'] / 1000.0
+            ]
+
+        _pos = stations[0]
+        _items = []
+
+        while _pos < stations[1]:
+
+            if is_ortho:
+                _items.append(tuple(self.model.get_orthogonal(_pos, 'Left')))
+
+            else:
+                _items.append(tuple(self.model.get_tangent(_pos)))
+
+            _pos += interval
+
+        for _v in _items:
+
+            _start = _v[0]
+            _end = _start + _v[1] * 100000.0
+
+            _pt = [self.model.data['meta']['Start']]*2
+            _pt[0] = _pt[0].add(_start)
+            _pt[1] = _pt[1].add(_end)
+
+            line = Draft.makeWire(_pt, closed=False, face=False, support=None)
+
+            Draft.autogroup(line)
+
+        App.ActiveDocument.recompute()
+
+
     def build_curve_edge_dict(self):
         """
         Build the dictionary which correlates edges to their corresponding
@@ -294,6 +339,24 @@ class Alignment(Draft._Wire):
                 return _geo
 
         return None
+
+    def update_curves(self, curves):
+        """
+        Assign updated alignment curves to the model.
+        """
+
+        _model = {
+            'meta': {
+                'Start': self.model.data['meta']['Start'],
+                'StartStation':
+                    self.model.data['meta']['StartStation'],
+                'End': self.model.data['meta']['End']
+            },
+            'geometry': curves,
+            'station': self.model.data['station']
+        }
+
+        self.set_geometry(_model)
 
     def set_geometry(self, geometry):
         """

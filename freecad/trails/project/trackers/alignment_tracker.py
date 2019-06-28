@@ -21,18 +21,23 @@
 #*                                                                     *
 #***********************************************************************
 """
-Tracker for alignment drafting
+Tracker for alignment editing
 """
 
 from pivy import coin
 
 from FreeCAD import Vector
 
+import FreeCADGui as Gui
+
 from ...geometry import support, arc
-from ..support import utils
+
 from .base_tracker import BaseTracker
-from .coin_group import CoinGroup
 from .coin_style import CoinStyle
+
+from ..support.mouse_state import MouseState
+from .node_tracker import NodeTracker
+from .wire_tracker import WireTracker
 
 class AlignmentTracker(BaseTracker):
     """
@@ -45,317 +50,490 @@ class AlignmentTracker(BaseTracker):
         """
 
         self.alignment = alignment
-        self.pi_list = self.alignment.model.get_pi_coords()
-        self.curves = self.alignment.get_curves()
-        self.curve_update = []
-        self.pi_update = []
-        self.pi_index = -1
+        self.callbacks = {}
+        self.doc = doc
+        self.curves = []
+        self.names = [doc.Name, object_name, 'ALIGNMENT_TRACKER']
+        self.mouse = MouseState()
+        self.user_dragging = False
+        self.is_valid = True
+        self.status_bar = Gui.getMainWindow().statusBar()
 
-        self.start_path = None
-        self.drag_start = Vector()
-        self.stations = [-1.0, -1.0]
+        self.drag_geometry = {
+            'Start': Vector(),
+            'Indices': [],
+            'Nodes': [],
+            'Wires': [],
+            'Curves':[],
+        }
 
-        self.connection = CoinGroup('ALIGNMENT_TRACKER_CONNECTION', True)
-        self.selection = CoinGroup('ALIGNMENT_TRACKER_SELECTION', True)
-
+        self.view = view
         self.viewport = \
             view.getViewer().getSoRenderManager().getViewportRegion()
 
-        _names = [doc.Name, object_name, 'ALIGNMENT_TRACKER']
-        super().__init__(names=_names, select=False, group=True)
+        super().__init__(names=self.names, group=True)
 
-    def build_selection_group(self, selected):
+        #input callback assignments
+        self.callbacks = {
+            'SoLocation2Event':
+            self.view.addEventCallback('SoLocation2Event', self.mouse_event),
+
+            'SoMouseButtonEvent':
+            self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
+        }
+
+        #scenegraph node structure for editing and dragging operations
+        self.groups = {
+            'EDIT': coin.SoGroup(),
+            'DRAG': coin.SoGroup(),
+            'SELECTED': coin.SoSeparator(),
+            'PARTIAL': coin.SoSeparator(),
+        }
+
+        self.drag_transform = coin.SoTransform()
+
+        self.groups['SELECTED'].addChild(self.drag_transform)
+
+        self.groups['DRAG'].addChild(self.groups['SELECTED'])
+        self.groups['DRAG'].addChild(self.groups['PARTIAL'])
+
+        self.node.addChild(self.groups['EDIT'])
+        self.node.addChild(self.groups['DRAG'])
+
+        #generate inital node trackers and wire trackers for mouse interaction
+        #and add them to the scenegraph
+        self.trackers = None
+        self.build_trackers()
+
+        _trackers = []
+        for _v in self.trackers.values():
+            _trackers.extend(_v)
+
+        for _v in _trackers:
+            self.insert_node(_v.node, self.groups['EDIT'])
+
+        #insert in the scenegraph root
+        self.insert_node(self.node)
+
+    def _update_status_bar(self, info):
         """
-        Build the selection group based on the passed selected PI's
+        Update the status bar with the latest mouseover data
         """
 
-        _start_sta = -1.0
+        _id = ''
 
-        for _curve in self.alignment.get_curves():
+        if info:
+            _id = info['Component']
 
-            if support.within_tolerance(_curve['PI'], selected[0], 0.1):
-                _start_sta = _curve['InternalStation'][1]
-                break
+        _msg = _id + ' ' + str(tuple(self.view.getPoint(self.mouse.pos)))
 
-        #abort if starting point not found
-        if _start_sta < 0.0:
-            return
+        #self.status_bar.clearMessage()
+        self.status_bar.showMessage(_msg)
 
-        _geo = self.alignment.model.discretize_geometry([_start_sta])
-
-        self.selection.set_coordinates(_geo)
-
-    def build_connection_group(self, selected):
+    def mouse_event(self, arg):
         """
-        Generate SoGroup containing geometry conncting selected alignment
-        elements to the unselected elements for dragging operations
+        Manage mouse actions affecting multiple nodes / wires
         """
-        _pi_idx = -1
 
-        for _i, _v in enumerate(self.pi_list):
+        _p = self.view.getCursorPos()
 
-            if support.within_tolerance(_v, selected[0], 0.1):
-                _pi_idx = _i
-                break
+        self.mouse.update(arg, _p)
 
-        if _pi_idx == -1:
-            return
+        self._update_status_bar(self.view.getObjectInfo(_p))
 
-        num_pi = len(self.pi_list)
+        if self.mouse.button1.dragging:
 
-        #PI's = #curves + 2 (start and end points)
-        _curve_list = [None]*(num_pi-2)
+            if self.user_dragging:
+                self.on_drag()
+                self.view.redraw()
 
-        #first index is the PI that is being dragged / updated
-        #second index, if not zero, indicates multi-selection
-        _pi_list = [_pi_idx, 0]
+            else:
+                self.start_drag()
+                self.user_dragging = True
 
-        #always start at the curve previous to the current PI, clamped
-        _start = utils.clamp(_pi_idx - 2, 0)
+        #should not be necessary, but included here in case
+        #an event gets missed
+        elif self.user_dragging:
+            self.end_drag()
+            self.user_dragging = False
 
-        #end for single-select case, first or last node (default case)
-        _end = _start + 1
-
-        #multi-select - set the next PI so it gets recaluculated
-        if len(selected) > 1:
-
-            _pi_list[1] = _pi_idx + 1
-            _end = _pi_idx
-
-        #single-select case, pi selected that isn't start / end
-        elif 0 < _pi_idx < num_pi - 1:
-            _end = utils.clamp(_pi_idx + 1, max_val=num_pi)
-
-        #build the curve list
-        #all curves None, except the ones to be recalculated
-        _curve_list[_start:_end] = self.curves[_start:_end]
-
-        if not isinstance(_curve_list, list):
-            _curve_list = [_curve_list]
-
-        self.pi_update = _pi_list
-        self.curve_update = _curve_list
-
-        _s = [_v['InternalStation'] for _v in _curve_list if _v]
-
-        #create connection geometry nodes
-        _sta = [_s[0][0], _s[-1][1]]
-
-        _geo = self.alignment.model.discretize_geometry(_sta)
-
-        self.connection.set_coordinates(_geo)
-
-    def get_transformed_coordinates(self, path, vecs):
+    def button_event(self, arg):
         """
-        Return the transformed coordinates of the selected nodes based
-        on the transformations applied by the drag tracker
+        Manage button actions affecting multiple nodes / wires
         """
+
+        self.mouse.update(arg, self.view.getCursorPos())
+
+        #terminate dragging if button is released
+        if self.user_dragging and not self.mouse.button1.dragging:
+            self.end_drag()
+            self.user_dragging = False
+
+    def build_trackers(self):
+        """
+        Build the node and wire trackers that represent the selectable portions of the alignment geometry
+        """
+
+        _model = self.alignment.model.data
+
+        #build a list of coordinates from curves in the geometry
+        _nodes = [_model['meta']['Start']]
+
+        for _geo in _model['geometry']:
+
+            if _geo['Type'] == 'Curve':
+                _nodes += [_geo['PI']]
+
+        _nodes += [_model['meta']['End']]
+
+        #build the trackers
+        _names = self.names[:2]
+        _result = {'Nodes': [], 'Tangents': [], 'Curves': []}
+
+        #node trackers
+        for _i, _pt in enumerate(_nodes):
+
+            _tr = NodeTracker(
+                view=self.view,
+                names=_names + ['NODE-' + str(_i)], point=_pt
+            )
+            _tr.update(_pt)
+
+            _result['Nodes'].append(_tr)
+
+        #wire trackers - Tangents
+        for _i in range(0, len(_result['Nodes']) - 1):
+
+            _nodes = _result['Nodes'][_i:_i + 2]
+
+            _result['Tangents'].append(
+                self._build_wire_tracker(
+                    wire_name=_names + ['WIRE-' + str(_i)],
+                    nodes=_nodes,
+                    points=[_v.get() for _v in _nodes]
+                )
+            )
+
+        _curves = self.alignment.get_curves()
+
+        #wire trackers - Curves
+        for _i in range(0, len(_result['Tangents']) - 1):
+
+            _nodes = _result['Nodes'][_i:_i + 3]
+
+            _points, _x = arc.get_points(_curves[_i])
+
+            _result['Curves'].append(
+                self._build_wire_tracker(
+                    _names + ['CURVE-' + str(_i)], _nodes, _points, True
+                )
+            )
+
+        self.trackers = _result
+
+    def _build_wire_tracker(self, wire_name, nodes, points, select=False):
+        """
+        Convenience function for WireTracker construction
+        """
+
+        _wt = WireTracker(view=self.view, names=wire_name)
+
+        _wt.set_selectability(select)
+        _wt.set_selection_nodes(nodes)
+        _wt.update(points)
+
+        return _wt
+
+    def start_drag(self):
+        """
+        Set up the scene graph for dragging operations
+        """
+
+        self.drag_geometry['Start'] = self.view.getPoint(self.mouse.pos)
+
+        #create list of selected and partially-selected wires
+        _wires = [
+            _v for _v in self.trackers['Tangents'] + self.trackers['Curves']\
+                if _v.state != 'UNSELECTED'
+        ]
+
+        #iterate, adding scene nodes to appropriate groups
+        for _w in _wires:
+            self.groups[_w.state].addChild(_w.copy())
+
+        self.curves = self.alignment.get_curves()
+
+        _idx = []
+
+        #store the wire tracker and it's index
+        _partial = [
+            _i for _i, _v in enumerate(self.trackers['Tangents'])\
+                if _v.state == 'PARTIAL'
+        ]
+
+        _selected = [
+            _i for _i, _v in enumerate(self.trackers['Tangents'])\
+                if _v.state == 'SELECTED'
+        ]
+
+        print('parital = ', _partial)
+        print('selected = ', _selected)
+
+        #if only an endpoint was picked, add the adjacent tangent
+        if len(_partial) == 1:
+
+            if _partial[0] == 0:
+                _partial.append(1)
+
+            else:
+                _partial.insert(0, _partial[0] - 1)
+
+        #otherwise, add the preceeding and following tangents
+        else:
+
+            if _partial[0] > 0:
+                _partial.insert(0, _partial[0] - 1)
+
+            if _partial[-1] < len(self.trackers['Tangents']) - 1:
+                _partial.append(_partial[-1] + 1)
+
+
+        #save the tangents that are used to update the affected curves
+        self.drag_geometry['Wires'] =\
+            self.trackers['Tangents'][_partial[0]:_partial[-1] + 1]
+
+        #save the list of tangent indices
+        self.drag_geometry['Indices'] = _partial
+
+        #save the node trackers
+        self.drag_geometry['Nodes'] = [
+            _w for _v in self.drag_geometry['Wires']\
+                for _w in _v.selection_nodes if _w.state == 'SELECTED'
+        ]
+
+        #store the entire list of curve goemetry for efficiency
+        self.drag_geometry['Curves'] = self.alignment.get_curves()
+
+    def on_drag(self):
+        """
+        Update method during drag operations
+        """
+
+        _world_pos = self.view.getPoint(self.mouse.pos)
+
+        self._update_transform(_world_pos)
+
+        self._update_pi_nodes(_world_pos)
+
+        _curves = self._generate_curves()
+
+        self._validate_curves(_curves)
+
+    def end_drag(self):
+        """
+        Cleanup method for drag operations
+        """
+
+        if self.is_valid:
+            self.alignment.update_curves(self.drag_geometry['Curves'])
+
+        #clear the drag_geometry dict
+        for _v in self.drag_geometry.values():
+
+            if isinstance(_v, Vector):
+                _v =Vector()
+            else:
+                _v.clear()
+
+        #remove child nodes from the selected group
+        self.groups['SELECTED'].removeAllChildren()
+        self.groups['SELECTED'].addChild(self.drag_transform)
+
+        #remove child nodes from the partial group
+        self.groups['PARTIAL'].removeAllChildren()
+
+    def get_matrix(self):
+        """
+        Return the transformation matrix for the provided node
+        """
+
+        _sel_group = self.groups['SELECTED']
+
+        #only one child node means no geometry
+        if _sel_group.getNumChildren() < 2:
+            return None
+
+        #define the search path
+        _search = coin.SoSearchAction()
+        _search.setNode(_sel_group.getChild(2))
+        _search.apply(self.view.getSceneGraph())
 
         #get the matrix for the transformation
         _matrix = coin.SoGetMatrixAction(self.viewport)
-        _matrix.apply(path)
+        _matrix.apply(_search.getPath())
 
-        _xf = _matrix.getMatrix()
+        return _matrix.getMatrix()
 
-        #create the 4D vectors for the transformation
-        _vecs = [coin.SbVec4f(tuple(_v) + (1.0,)) for _v in vecs]
-
-        #multiply each coordinate by transformation matrix and return
-        #a list of the transformed coordinates, omitting fourth value
-        return [Vector(_xf.multVecMatrix(_v).getValue()[:3]) for _v in _vecs]
-
-    def drag_callback(self, xform, path, pos):
+    def _update_transform(self, pos):
         """
-        Callback for drag operations
+        Update the transform node for selected geometry
         """
 
-        _new_curves = [None]*len(self.curve_update)
+        _pos = tuple(pos.sub(self.drag_geometry['Start']))
 
-        for _i, _v in enumerate(self.curve_update):
+        self.drag_transform.translation.setValue(_pos)
 
-            if not _v:
-                continue
+    def _update_pi_nodes(self, world_pos):
+        """
+        Internal function - Update points of intersection
+        """
 
-            _new_curves[_i] = {
-                'BearingIn': _v['BearingIn'],
-                'BearingOut': _v['BearingOut'],
-                'PI': _v['PI'],
-                'Radius': _v['Radius']
-            }
+        #update nodes that connect selected elements back to unslected
+        for _v in self.drag_geometry['Nodes']:
+            _v.update(world_pos)
 
-            _curve = _new_curves[_i]
-            _bearings = [None, None]
+        for _v in self.drag_geometry['Wires']:
+            _v.update([_w.get() for _w in _v.selection_nodes])
 
-            #define selected pi (transformed) and pi immediately after
-            _start = xform.add(self.pi_list[self.pi_update[0]])
+    def _transform_nodes(self, nodes):
+        """
+        Transform selected nodes by the transformation matrix
+        """
 
-            #update preceeds the current curve (bearing in only)
-            if self.pi_update[0] == _i:
-                _bearings[0] = self.pi_list[_i + 1].sub(_start)
+        _matrix = self.get_matrix()
+        _result = []
 
-            #update is the PI of the current curve (PI and bearings)
-            elif self.pi_update[0] == _i + 1:
+        for _n in nodes:
 
-                _curve['PI'] = _start
-                _bearings[0] = _start.sub(self.pi_list[_i])
+            _v = tuple(_n.get())
 
-                _v = self.pi_list[self.pi_update[0] + 1]
+            if _n.state == 'SELECTED':
+                _v = coin.SbVec4f(_v + (1.0,))
+                _v = _matrix.multVecMatrix(_v).getValue()[:3]
 
-                #transform second pi with rotation (multi-selection)
-                if self.pi_update[1]:
-                    _v = self.get_transformed_coordinates(path, [_v])[0]
+            _result.append(Vector(_v))
 
-                _bearings[1] = _v.sub(_start)
+        return _result
 
-            #update bearings and PI's
-            elif self.pi_update[0] == _i + 2:
+    def _generate_curves(self):
+        """
+        Internal function - Generate curves based on existing curves and nodes
+        """
 
-                _bearings[1] = _start.sub(self.pi_list[_i + 1])
+        _curves = self.drag_geometry['Curves']
+        _tgts = self.drag_geometry['Wires']
+        _indices = self.drag_geometry['Indices']
+        _result = []
 
-            #update curve bearing angles from the calculated vectors
-            for _i, _v in enumerate(['BearingIn', 'BearingOut']):
+        _rng = range(0, len(_tgts) - 1)
 
-                if _bearings[_i]:
-                    _curve[_v] = support.get_bearing(_bearings[_i])
+        for _i in _rng:
 
-        _coords = []
+            #must transform nodes of fully-selected tangents!
 
-        self.connection.set_style(CoinStyle.DEFAULT)
+            _start = _tgts[_i].selection_nodes[0].get()
+            _pi = _tgts[_i].selection_nodes[1].get()
+            _end = _tgts[_i + 1].selection_nodes[1].get()
 
-        #recalculate curves
-        for _i, _v in enumerate(_new_curves):
+            #_nodes = self._transform_nodes( [_pi, _end]
+            #    _tgts[_i].selection_nodes[1:] + _tgts[_i + 1].selection_nodes,
+            #)
 
-            if not _v:
-                _last_tan = self.curves[_i]['Tangent']
-                continue
+            #print(_nodes)
 
-            _v = arc.get_parameters(_v)
+            _tst = _pi.sub(_start)
+            _tend = _end.sub(_pi)
 
-            _new_curves[_i] = _v
-            _pts = arc.get_points(_v, _dtype=tuple)[0]
-            _coords.extend(_pts)
+            _idx = _indices[_i]
 
-        #check for errors, first between the curves
-        _prev_tan = 0.0
-        _prev_pi = self.pi_list[0]
+            _curve = arc.get_parameters(
+                {
+                    'BearingIn': support.get_bearing(_tst),
+                    'BearingOut': support.get_bearing(_tend),
+                    'PI': _pi,
+                    'Radius': _curves[_idx]['Radius'],
+                }
+            )
 
-        for _i, _v in enumerate(_new_curves):
+            _points, _x = arc.get_points(_curve)
 
-            if not _v:
-                _prev_tan = self.curves[_i]['Tangent']
-                _prev_pi = self.curves[_i]['PI']
-                continue
+            #save a reference to the tracker for later validation and update
+            _curve['tracker'] = self.trackers['Curves'][_idx]
+            _curve['tracker'].update(_points)
 
-            if _prev_tan + _v['Tangent'] \
-                > _v['PI'].distanceToPoint(_prev_pi):
+            self.drag_geometry['Curves'][_idx] = _curve
 
-                self.connection.set_style(CoinStyle.ERROR)
-                break
+            _result.append(_curve)
 
-            _prev_tan = _v['Tangent']
-            _prev_pi = _v['PI']
+        #add adjoining curve if only one curve is being updated in a
+        #multi-curve alignment (first or last curve is being updated)
+        if (_rng.stop - _rng.start == 1) and  len(_curves) > 1:
 
-        #check for errors next between the last curve and end,
-        if self.connection.style != CoinStyle.ERROR:
+            _c = _curves[1]
+            _c['tracker'] = self.trackers['Curves'][-2]
 
-            _c = _new_curves[-1]
+            if _indices[0] != 0:
+                _c = _curves[-2]
+                _result.insert(0, _c)
+            else:
+                _result.append(_c)
 
-            if _c:
+        return _result
 
-                _p = self.pi_list[-1]
+    def _validate_curves(self, curves):
+        """
+        Internal function - Validate curves, set styles to indicate errors
+        """
 
-                if self.pi_update[0] == len(self.pi_list) - 1:
-                    _p = _start
+        #1. Create a list of pairs, starting at the curve preceeding the
+        #   first new curve
+
+        #2. Iterate the pairs testing for distance between PI's exceeding
+        #   sum of adjoining curve tangents, or single curve tangent exceeding
+        #   distance between PI and start / end of alignment, if applicable
+
+        _indices = self.drag_geometry['Indices']
+
+        _styles = [CoinStyle.DEFAULT]*len(curves)
+
+        for _i in range(0, len(curves) - 1):
+
+            _c = [curves[_i], curves[_i + 1]]
+
+            if (_c[0]['Tangent'] + _c[1]['Tangent'])\
+                > (_c[0]['PI'].distanceToPoint(_c[1]['PI'])):
+
+                _styles[_i + 1] = CoinStyle.ERROR
+                _styles[_i] = CoinStyle.ERROR
+
+        #if only two tangents are being used, we need to do endpoint
+        #checks as this can only happen if the endpoint is selected,
+        #or the alignment only has two tangents
+
+        _idx = []
+
+        if _indices[0] == 0:
+            _idx.append(0)
+
+        if _indices[-1] == len(self.trackers['Nodes']) - 2:
+            _idx.append(-1)
+
+        for _i in _idx:
+
+            _c = curves[_i]
+            _p = self.trackers['Nodes'][_i].get()
+
+            if _styles[_i] != CoinStyle.ERROR:
 
                 if _c['Tangent'] > _c['PI'].distanceToPoint(_p):
-                    self.connection.set_style(CoinStyle.ERROR)
+                    _styles[_i] = CoinStyle.ERROR
 
-        #check for errors next between the last curve and end,
-        if self.connection.style != CoinStyle.ERROR:
+        for _i, _c in enumerate(curves):
+            _c['tracker'].set_style(_styles[_i])
 
-            _c = _new_curves[0]
+        self.is_valid = all([_v != CoinStyle.ERROR for _v in _styles])
 
-            if _c:
-
-                _p = self.pi_list[0]
-
-                if self.pi_update[0] == 0:
-                    _p = _start
-
-                if _c['Tangent'] > _c['PI'].distanceToPoint(_p):
-                    self.connection.set_style(CoinStyle.ERROR)
-
-        #update connection coordinates
-        self.connection.set_coordinates(_coords)
-
-        #save updated curves to the alignment tracker curves list
-        if self.connection.style != CoinStyle.ERROR:
-
-            for _i, _v in enumerate(_new_curves):
-
-                if not _v:
-                    continue
-
-                self.curve_update[_i] = _v
-
-    def begin_drag(self, selected):
-        """
-        Initialize for dragging operations, initializing selected portion
-        of the alignment
-        """
-
-        if not selected:
-            return
-
-        if len(selected) > 1:
-            self.build_selection_group(selected)
-
-        if len(selected) < len(self.pi_list):
-            self.build_connection_group(selected)
-
-    def end_drag(self, path=None):
-        """
-        Cleanup after dragging operations, write changes to model
-        """
-
-        _pi = [self.pi_list[self.pi_update[0]]]
-
-        if self.pi_update[1]:
-            _pi = self.pi_list[self.pi_update[1]:]
-
-        #update the selected PI
-        self.pi_list[self.pi_update[0]] = \
-            self.get_transformed_coordinates(path, _pi)[0]
-
-        #update the rest of the PI's, if multi-select happened
-        if self.pi_update[1]:
-
-            self.pi_list[self.pi_update[1]:] = \
-                self.get_transformed_coordinates(
-                    path, self.pi_list[self.pi_update[1]:]
-                )[0]
-
-        #update curve list with curve changes
-        for _i, _v in enumerate(self.curve_update):
-
-            if _v:
-                self.curves[_i] = _v
-
-        model = {
-            'meta': {
-                'Start': self.pi_list[0],
-                'StartStation':
-                    self.alignment.model.data['meta']['StartStation'],
-                'End': self.pi_list[-1]
-            },
-            'geometry': self.curves,
-            'station': self.alignment.model.data['station']
-        }
-
-        #write the curves to the model and update
-        self.alignment.model.construct_geometry(model)
-
-    def finalize(self, node=None):
+    def finalize(self, node=None, parent=None):
         """
         Override of the parent method
         """
@@ -365,4 +543,25 @@ class AlignmentTracker(BaseTracker):
         if not node:
             node = self.node
 
-        super().finalize(node)
+        if self.callbacks:
+            for _k, _v in self.callbacks.items():
+                self.view.removeEventCallback(_k, _v)
+
+        if self.trackers:
+            _t = []
+
+            for _v in self.trackers.values():
+                _t.extend(_v)
+
+            for _v in _t:
+                _v.finalize(self.node)
+
+            self.trackers.clear()
+
+        if self.groups:
+            for _v in self.groups.values():
+                self.remove_node(_v)
+
+            self.groups.clear()
+
+        super().finalize(node, parent)

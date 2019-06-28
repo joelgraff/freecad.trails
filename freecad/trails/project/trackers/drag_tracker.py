@@ -42,6 +42,17 @@ class DragTracker(BaseTracker):
         self.viewport = \
             view.getViewer().getSoRenderManager()
 
+        #nodes are as follows:
+        #   connector - stores SoGroups from other trackers that represents
+        #       'connecting' geometry between the nodes being moved and those
+        #       that remain fixed
+        #
+        #   selected - stores SoGroups from other trackers of geometry that is #        being transformed
+        #
+        #   switch - swtich node for the entire drag tracker
+        #
+        #   transform - transform node that is the first child of the selected
+        #       node group, transforming all selected nodes below it
         self.nodes = {
             'connector': coin.SoGroup(),
             'selected': coin.SoGroup(),
@@ -51,7 +62,6 @@ class DragTracker(BaseTracker):
 
         self.view = view
         self.start_path = None
-
 
         self.gui_callbacks = {
             'SoLocation2Event': \
@@ -70,6 +80,7 @@ class DragTracker(BaseTracker):
 
         names.append('DRAG TRACKER')
 
+        #immediate child nodes are connector and selected nodes
         super().__init__(names, [
             self.nodes['connector'], self.nodes['selected']
         ], False)
@@ -98,24 +109,29 @@ class DragTracker(BaseTracker):
         world_pos = self.view.getPoint(self.view.getCursorPos())
         self.update(world_pos, arg['AltDown'], arg['ShiftDown'])
 
-    def get_matrix(self, group_name):
+    def get_matrix(self):
         """
         Return the transformation matrix for the selection nodes
         """
 
-        #retrieve the group to transform by name
-        _group = self.nodes['selected'].getByName(group_name)
+        #retrieve the first child group in the selected node group
+        _kids = self.nodes['selected'].getChildren()
+        _group = None
+
+        for _i in range(0, _kids.getLength()):
+            if _kids[_i].getClassTypeId().getName() == 'Group':
+                _group = _kids[_i]
 
         if not _group:
             return
 
-        _coords = _group.getChild(0)
+        _root = self.view.getSceneGraph()
 
         #define the search path if not defined
         #if not self.start_path:
         _search = coin.SoSearchAction()
-        _search.setNode(_coords)
-        _search.apply(self.nodes['selected'])
+        _search.setNode(_group)
+        _search.apply(_root)
 
         self.start_path = _search.getPath()
 
@@ -263,13 +279,10 @@ class DragTracker(BaseTracker):
 
         #trigger tracker callbacks for updating the connecting geometry to the
         #geometry being dragged
-        _search = coin.SoSearchAction()
-        _search.setNode(_sel_node.getChild(1))
-
-        _search.apply(_sel_node)
+        _matrix = self.get_matrix()
 
         for _cb in self.callbacks:
-            _cb(_xf, _search.getPath(), world_pos)
+            _cb(_xf, _matrix, world_pos)
 
     def finalize(self, node=None):
         """

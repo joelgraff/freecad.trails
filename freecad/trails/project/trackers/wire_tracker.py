@@ -27,55 +27,32 @@ Customized wire tracker from DraftTrackers.wireTracker
 from pivy import coin
 
 from ..support.const import Const
-from .base_tracker import BaseTracker
+from ..support.mouse_state import MouseState
 
+from .base_tracker import BaseTracker
+from .coin_style import CoinStyle
 
 class WireTracker(BaseTracker):
     """
     Customized wire tracker
     """
 
-
-    class STYLE(Const):
-        """
-        Const Style class
-        """
-
-        DEFAULT = {
-            'line width': None,
-            'line style': coin.SoDrawStyle.LINES,
-            'line weight': 3,
-            'line pattern': None,
-            'color': (0.8, 0.8, 0.8),
-            'select': True
-        }
-
-        EDIT = {
-            'line width': None,
-            'line style': coin.SoDrawStyle.LINES,
-            'line weight': 3,
-            'line pattern': 0x0f0f, #oxaaa
-            'select': False
-        }
-
-        SELECTED = {
-            'id': 'selected',
-            'shape': 'default',
-            'size': 9,
-            'color': (1.0, 0.9, 0.0),
-            'select': True
-        }
-
-    def __init__(self, names, nodes=None, points=None, style=STYLE.DEFAULT):
+    def __init__(self, view, names, nodes=None):
         """
         Constructor
         """
 
-        #self.switch = coin.SoSwitch()
         self.line = coin.SoLineSet()
         self.name = names[2]
         self.coord = coin.SoCoordinate3()
-        self.points = points
+        self.points = None
+        self.view = view
+        self.enabled = True
+        self.state = 'UNSELECTED'
+
+        self.coin_style = None
+        self.selection_nodes = None
+        self.mouse = MouseState()
 
         if not nodes:
             nodes = []
@@ -85,85 +62,60 @@ class WireTracker(BaseTracker):
 
         nodes += [self.coord, self.line]
 
-        #for _node in nodes:
-        #    self.switch.addChild(_node)
+        super().__init__(
+            names=names, children=nodes)
 
-        super().__init__(names=names, children=nodes, select=style['select'])
+        self.set_style(CoinStyle.DEFAULT)
 
-        self.update()
-        #self.on()
+        self.callbacks = {
+            'SoLocation2Event':
+            self.view.addEventCallback('SoLocation2Event', self.mouse_event),
 
-    def off(self):
+            'SoMouseButtonEvent':
+            self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
+        }
+
+    def set_selection_nodes(self, nodes):
         """
-        Override for base tracker function
-        """
-        #super().off(self.switch)
-
-        return
-
-    def on(self):
-        """
-        Override for base tracker function
-        """
-        #super().on(self.switch)
-
-        return
-
-    def update(self, points=None, placement=None):
-        """
-        Update
+        Set the list of node trackers that control wire selection
         """
 
-        _tuples = [tuple(_v.get()) for _v in self.points]
+        self.selection_nodes = nodes
 
-        self.coord.point.setValues(0, len(_tuples), _tuples)
-        self.line.numVertices.setValue(len(_tuples))
-
-    def update_points(self, points):
+    def update(self, points=None):
         """
         Update the wire tracker coordinates based on passed list of
         SoCoordinate3 references
         """
 
-        _p = points
+        if not points:
+            points = self.points
+
+        if not points:
+            return
+
+        _p = points[:]
 
         if not isinstance(points[0], tuple):
-            _p = [tuple(_v) for _v in points]
+            _p = [tuple(_v) for _v in _p]
 
         self.coord.point.setValues(0, len(points), _p)
         self.line.numVertices.setValue(len(points))
 
-    def update_placement(self, placement):
+        self.points = _p
+
+    def transform_points(self, points, matrix):
         """
-        Updates the placement for the wire and the trackers
+        Update the points with the apprpriate transformation and return
         """
-
-        return
-
-    def default(self):
-        """
-        Set wire to default style
-        """
-
-        self.color.rgb = self.STYLE.DEFAULT['color']
-
-        #if self.switch.whichChild:
-        #    self.switch.whichChild = 0
-
-    def selected(self):
-        """
-        Set wire to select style
-        """
-
-        self.color.rgb = self.STYLE.SELECTED['color']
-
-        #if self.switch.whichChild:
-        #    self.switch.whichChild = 0
 
     def set_style(self, style):
         """
         Update the tracker style
         """
+
+        if self.coin_style == style:
+            return
 
         if style['line width']:
             self.draw_style.lineWidth = style['line width']
@@ -174,10 +126,93 @@ class WireTracker(BaseTracker):
         if style['line pattern']:
             self.draw_style.linePattern = style['line pattern']
 
+        self.color.rgb = style['color']
 
-    def finalize(self):
+        self.set_selectability(style['select'])
+
+        self.coin_style = style
+
+    def button_event(self, arg):
+        """
+        Mouse button actions
+        """
+        #if the wire is not selected, or we're not multi-selected, abort
+#        if not (self.state == 'SELECTED' or arg['AltDown']):
+#            return
+
+        #get selection state of the selectable nodes
+        _sel_state = [_v.state == 'SELECTED' for _v in self.selection_nodes]
+
+        self.state = 'UNSELECTED'
+
+        #set selection states of the wrire
+        if all(_sel_state):
+            self.state = 'SELECTED'
+
+        elif any(_sel_state):
+            self.state = 'PARTIAL'
+
+        #set selection style
+        if self.state == 'SELECTED':
+            self.set_style(CoinStyle.SELECTED)
+        else:
+            self.set_style(CoinStyle.DEFAULT)
+
+        #
+#        if arg['AltDown']:
+
+#            if self.state:
+#                self.set_style(CoinStyle.SELECTED)
+
+        #if selected and any of the nodes are deselected, then deselect
+#        else: self.state:
+
+#            _sel_state = [_v.selected for _v in self.selection_nodes]
+
+#            if not all([_v.selected for _v in self.selection_nodes]):
+#                self.set_style(CoinStyle.DEFAULT)
+#                self.state = False
+
+    def mouse_event(self, arg):
+        """
+        Mouse movement actions
+        """
+
+        #skip if currently disabled for various actions
+        if not self.enabled:
+            return
+
+        #no mouseover processing if the element can't be selected
+        if not self.is_selectable():
+            return
+
+        #no mouseover porcessing if the node is currently selected
+        if self.state:
+            return
+
+        #test to see if this node is under the cursor
+        
+        _info = self.view.getObjectInfo(self.mouse.pos)
+
+        if not _info:
+            self.set_style(CoinStyle.DEFAULT)
+            return
+
+        if not self.name in _info['Component']:
+            self.set_style(CoinStyle.DEFAULT)
+            return
+
+        self.set_style(CoinStyle.SELECTED)
+
+    def finalize(self, parent=None):
         """
         Cleanup
         """
 
-        self.remove_node(self.node, self.node)
+        if self.callbacks:
+            for _k, _v in self.callbacks.items():
+                self.view.removeEventCallback(_k, _v)
+
+        self.callbacks.clear()
+
+        super().finalize(self.node, parent)

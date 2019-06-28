@@ -37,8 +37,6 @@ from ....alignment import alignment
 from ...support import const, utils
 from ...support.mouse_state import MouseState
 
-from ...trackers.pi_tracker import PiTracker
-from ...trackers.drag_tracker import DragTracker
 from ...trackers.alignment_tracker import AlignmentTracker
 
 def create(doc, view, alignment_data, object_name):
@@ -99,7 +97,7 @@ class EditAlignmentTask:
         for _v in self.view_objects['line_colors']:
             self.set_vobj_style(_v[0], self.STYLES.DISABLED)
 
-        #get all objects in the scene that are selecctable.
+        #get all objects in the scene that are selectable.
         self.view_objects['selectable'] = [
             (_v.ViewObject, _v.ViewObject.Selectable)
             for _v in self.doc.findObjects()
@@ -113,24 +111,18 @@ class EditAlignmentTask:
         #deselect existing selections
         Gui.Selection.clearSelection()
 
-        self.pi_tracker = PiTracker(
-            self.doc, self.view, self.obj.Name, self.alignment
-        )
-
         self.alignment_tracker = AlignmentTracker(
             self.doc, self.view, self.obj.Name, self.alignment
         )
 
         self.callbacks = {
             'SoKeyboardEvent': self.key_action,
-            'SoMouseButtonEvent': self.button_action,
-            'SoLocation2Event': self.mouse_action
+            #    'SoMouseButtonEvent': self.button_action,
+            #    'SoLocation2Event': self.mouse_action
         }
 
-        for _k, _v in self.callbacks.items():
-            self.view.addEventCallback(_k, _v)
-
         self.doc.recompute()
+
         DraftTools.redraw3DView()
 
     def setup(self):
@@ -170,92 +162,6 @@ class EditAlignmentTask:
         if arg['Key'] == 'ESCAPE':
             self.finish()
 
-    def button_action(self, arg):
-        """
-        SoLocation2Event callback for mouse / keyboard handling
-        """
-
-        pos = self.view.getCursorPos()
-        self.mouse.update(arg, pos)
-
-    def mouse_action(self, arg):
-        """
-        Mouse movement actions
-        """
-
-        _dragging = self.mouse.button1.dragging or self.mouse.button1.pressed
-
-        #exclusive or - abort if both are true or false
-        if not (self.drag_tracker is not None) ^ _dragging:
-            return
-
-        pos = self.view.getCursorPos()
-        self.mouse.update(arg, pos)
-
-        #if tracker exists, but we're not dragging, shut it down
-        if self.drag_tracker:
-            self.end_drag(arg, self.view.getPoint(pos))
-
-        elif _dragging:
-
-            self.start_drag(arg, self.view.getPoint(pos))
-
-    def end_drag(self, arg, world_pos):
-        """
-        End drag operations with drag tracker
-        """
-
-        _path = self.pi_tracker.get_search_path(
-            self.pi_tracker.selection.coord
-        )
-
-        self.alignment_tracker.end_drag(_path)
-        self.pi_tracker.end_drag()
-
-        self.drag_tracker.finalize()
-        self.drag_tracker = None
-
-    def start_drag(self, arg, world_pos):
-        """
-        Begin drag operations with drag tracker
-        """
-
-        _selected = self.pi_tracker.get_selected()
-
-        if not _selected:
-            return
-
-        self.pi_tracker.begin_drag()
-        self.alignment_tracker.begin_drag(self.pi_tracker.get_selected())
-
-        self.drag_tracker = DragTracker(
-            self.view,
-            [self.doc.Name, self.obj.Name, 'DRAG_TRACKER']
-        )
-
-        #get selected geometry from the pi tracker
-        _selected = [
-            self.pi_tracker.selection.group,
-            self.alignment_tracker.selection.group
-        ]
-
-        #get connection geometry from the pi tracker
-        _connected = [
-            self.pi_tracker.connection.group,
-            self.alignment_tracker.connection.group
-        ]
-
-        self.drag_tracker.set_nodes(_selected, _connected, world_pos)
-
-        self.drag_tracker.set_rotation_center(
-            self.pi_tracker.get_selected()[0]
-        )
-
-        self.drag_tracker.callbacks.extend([
-            self.pi_tracker.drag_callback,
-            self.alignment_tracker.drag_callback
-        ])
-
     def set_vobj_style(self, vobj, style):
         """
         Set the view object style based on the passed style tuple
@@ -278,13 +184,17 @@ class EditAlignmentTask:
         Task cleanup
         """
 
-        #reset line colors
-        for _v in self.view_objects['line_colors']:
-            _v[0].LineColor = _v[1]
+        if self.view_objects:
 
-        #reenable object selctables
-        for _v in self.view_objects['selectable']:
-            _v[0].Selectable = _v[1]
+            #reset line colors
+            for _v in self.view_objects['line_colors']:
+                _v[0].LineColor = _v[1]
+
+            #reenable object selctables
+            for _v in self.view_objects['selectable']:
+                _v[0].Selectable = _v[1]
+
+            self.view_objects.clear()
 
         #re-enable selection
         self.view.getSceneGraph().getField("selectionRole").setValue(1)
@@ -300,6 +210,11 @@ class EditAlignmentTask:
 
             self.callbacks.clear()
 
+        #delete the alignment object
+        if self.alignment:
+            self.doc.removeObject(self.alignment.Object.Name)
+            self.alignment = None
+
         #shut down the tracker and re-select the object
         if self.pi_tracker:
             self.pi_tracker.finalize()
@@ -309,3 +224,7 @@ class EditAlignmentTask:
         if self.drag_tracker:
             self.drag_tracker.finalize()
             self.drag_tracker = None
+
+        if self.alignment_tracker:
+            self.alignment_tracker.finalize()
+            self.alignment_tracker = None

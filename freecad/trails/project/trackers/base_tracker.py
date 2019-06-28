@@ -35,17 +35,17 @@ class BaseTracker:
     A custom base Draft Tracker
     """
 
-    def __init__(self, names, children=None, select=True, group=False):
+    def __init__(self, names, children=None, group=False):
         """
         Constructor
         """
         self.visible = False
-        self.select = select
         self.color = coin.SoBaseColor()
         self.draw_style = coin.SoDrawStyle()
         self.names = names
         self.node = coin.SoSeparator()
         self.parent = None
+        self.picker = coin.SoPickStyle()
 
         if not children:
             children = []
@@ -53,24 +53,46 @@ class BaseTracker:
         if group:
             self.node = coin.SoGroup()
 
-        if self.select:
+        self.sel_node = \
+            coin.SoType.fromName("SoFCSelection").createInstance()
 
-            self.node = \
-                coin.SoType.fromName("SoFCSelection").createInstance()
+        self.sel_node.documentName.setValue(self.names[0])
+        self.sel_node.objectName.setValue(self.names[1])
+        self.sel_node.subElementName.setValue(self.names[2])
 
-            self.node.documentName.setValue(self.names[0])
-            self.node.objectName.setValue(self.names[1])
-            self.node.subElementName.setValue(self.names[2])
+        for child in [
+                self.sel_node, self.picker, self.draw_style, self.color
+            ] + children:
 
-        for child in [self.draw_style, self.color] + children:
             self.node.addChild(child)
 
-    def finalize(self, node):
+    def set_selectability(self, is_selectable):
+        """
+        Set the selectability of the node using the SoPickStyle node
+        """
+        _state = coin.SoPickStyle.UNPICKABLE
+
+        if is_selectable:
+            _state = coin.SoPickStyle.SHAPE
+
+        self.picker.style.setValue(_state)
+
+    def is_selectable(self):
+        """
+        Return a bool indicating whether or not the node may be selected
+        """
+
+        return self.picker.style.getValue() != coin.SoPickStyle.UNPICKABLE
+
+    def finalize(self, node, parent=None):
         """
         Node destruction / cleanup
         """
 
-        self.remove_node(node)
+        if node is None:
+            node = self.node
+
+        self.remove_node(node, parent)
 
     def on(self, switch, which_child=0):
         """
@@ -87,6 +109,16 @@ class BaseTracker:
 
         switch.whichChild = -1
         self.visible = False
+
+    def copy(self, node=None):
+        """
+        Return a copy of the tracker node
+        """
+
+        if not node:
+            node = self.node
+
+        return node.copy()
 
     def get_search_path(self, node):
         """
