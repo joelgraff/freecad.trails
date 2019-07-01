@@ -104,10 +104,13 @@ class WireTracker(BaseTracker):
 
         self.points = _p
 
+
     def transform_points(self, points, matrix):
         """
         Update the points with the apprpriate transformation and return
         """
+
+        pass
 
     def set_style(self, style):
         """
@@ -191,7 +194,7 @@ class WireTracker(BaseTracker):
             return
 
         #test to see if this node is under the cursor
-        
+
         _info = self.view.getObjectInfo(self.mouse.pos)
 
         if not _info:

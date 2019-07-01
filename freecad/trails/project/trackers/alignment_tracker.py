@@ -403,14 +403,15 @@ class AlignmentTracker(BaseTracker):
 
         _start = self.drag_geometry['Start']
 
+
         #update nodes that connect selected elements back to unslected
-        for _i, _v in enumerate(self.drag_geometry['Nodes']):
-            _v.update(_nodes[_i])
+        #for _i, _v in enumerate(self.drag_geometry['Nodes']):
+        #    _v.update(_nodes[_i])
 
-        for _v in self.drag_geometry['Wires']:
+        #for _v in self.drag_geometry['Wires']:
 
-            _n = _v.selection_nodes
-            _v.update([_w.get() for _w in _n])
+        #    _n = _v.selection_nodes
+        #    _v.update([_w.get() for _w in _n])
 
     def _transform_nodes(self, nodes):
         """
