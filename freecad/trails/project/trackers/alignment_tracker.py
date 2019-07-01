@@ -58,6 +58,7 @@ class AlignmentTracker(BaseTracker):
         self.user_dragging = False
         self.is_valid = True
         self.status_bar = Gui.getMainWindow().statusBar()
+        self.pi_list=[]
 
         self.drag_geometry = {
             'Start': Vector(),
@@ -302,6 +303,13 @@ class AlignmentTracker(BaseTracker):
         self.drag_geometry['Wires'] =\
             self.trackers['Tangents'][_partial[0]:_partial[-1] + 1]
 
+        #append the first selected tangent as the curve ending on it
+        #also will require updating
+        if _selected:
+            self.drag_geometry['Wires'].append(
+                self.trackers['Tangents'][_selected[0]]
+            )
+
         #save the list of tangent indices
         self.drag_geometry['Indices'] = _partial
 
@@ -310,6 +318,8 @@ class AlignmentTracker(BaseTracker):
             _w for _v in self.drag_geometry['Wires']\
                 for _w in _v.selection_nodes if _w.state == 'SELECTED'
         ]
+
+        self.pi_list = [_v.get() for _v in self.drag_geometry['Nodes']]
 
         #store the entire list of curve goemetry for efficiency
         self.drag_geometry['Curves'] = self.alignment.get_curves()
@@ -325,9 +335,9 @@ class AlignmentTracker(BaseTracker):
 
         self._update_pi_nodes(_world_pos)
 
-        _curves = self._generate_curves()
+        _curves = self._generate_curves_2()
 
-        self._validate_curves(_curves)
+        self._validate_curves_2(_curves)
 
     def end_drag(self):
         """
@@ -388,12 +398,19 @@ class AlignmentTracker(BaseTracker):
         Internal function - Update points of intersection
         """
 
+        #_nodes = [_v.get() for _v in self.drag_geometry['Nodes']]
+        _nodes  = self._transform_nodes(self.pi_list)
+
+        _start = self.drag_geometry['Start']
+
         #update nodes that connect selected elements back to unslected
-        for _v in self.drag_geometry['Nodes']:
-            _v.update(world_pos)
+        for _i, _v in enumerate(self.drag_geometry['Nodes']):
+            _v.update(_nodes[_i])
 
         for _v in self.drag_geometry['Wires']:
-            _v.update([_w.get() for _w in _v.selection_nodes])
+
+            _n = _v.selection_nodes
+            _v.update([_w.get() for _w in _n])
 
     def _transform_nodes(self, nodes):
         """
@@ -405,13 +422,50 @@ class AlignmentTracker(BaseTracker):
 
         for _n in nodes:
 
-            _v = tuple(_n.get())
-
-            if _n.state == 'SELECTED':
-                _v = coin.SbVec4f(_v + (1.0,))
-                _v = _matrix.multVecMatrix(_v).getValue()[:3]
+            _v = coin.SbVec4f(tuple(_n) + (1.0,))
+            _v = _matrix.multVecMatrix(_v).getValue()[:3]
 
             _result.append(Vector(_v))
+
+        return _result
+
+    def _generate_curves_2(self):
+        """
+        _Internal function - Generate curves based on existing curves and nodes
+        """
+
+        #get the indices of curves that are to be updated
+        _indices = self.drag_geometry['Indices']
+
+        #get the complete list of curves
+        _curves = self.drag_geometry['Curves']
+
+        _result = []
+
+        for _i in _indices:
+
+            _start = self.pi_list[_i]
+            _pi = self.pi_list[_i + 1]
+            _end = self.pi_list[_i = 2]
+
+            _curve = arc.get_parameters(
+                {
+                    'BearingIn': support.get_bearing(_pi.sub(_start)),
+                    'BearingOut': support.get_bearing(_end.sub(_pi)),
+                    'PI': _pi,
+                    'Radius': _curves[_i]['Radius'],
+                }
+            )
+
+            _points, _x = arc.get_points(_curve)
+
+            #save a reference to the tracker for later validation and update
+            #_curve['tracker'] = self.trackers['Curves'][_idx]
+            #_curve['tracker'].update(_points)
+
+            self.drag_geometry['Curves'][_i] = _curve
+
+            _result.append(_curve)
 
         return _result
 
@@ -427,30 +481,26 @@ class AlignmentTracker(BaseTracker):
 
         _rng = range(0, len(_tgts) - 1)
 
+        _n = [_w for _v in _tgts for _w in _v.selection_nodes]
+
         for _i in _rng:
 
             #must transform nodes of fully-selected tangents!
+            _nodes = []
 
-            _start = _tgts[_i].selection_nodes[0].get()
-            _pi = _tgts[_i].selection_nodes[1].get()
-            _end = _tgts[_i + 1].selection_nodes[1].get()
+            for _j in [_i, _i + 1]:
 
-            #_nodes = self._transform_nodes( [_pi, _end]
-            #    _tgts[_i].selection_nodes[1:] + _tgts[_i + 1].selection_nodes,
-            #)
+                _nodes = [_v.get() for _v in _tgts[_j].selection_nodes]
 
-            #print(_nodes)
-
-            _tst = _pi.sub(_start)
-            _tend = _end.sub(_pi)
-
+            _tst = _nodes[1].sub(_nodes[0])
+            _tend = _nodes[3].sub(_nodes[1])
             _idx = _indices[_i]
 
             _curve = arc.get_parameters(
                 {
                     'BearingIn': support.get_bearing(_tst),
                     'BearingOut': support.get_bearing(_tend),
-                    'PI': _pi,
+                    'PI': _nodes[1],
                     'Radius': _curves[_idx]['Radius'],
                 }
             )
@@ -479,6 +529,60 @@ class AlignmentTracker(BaseTracker):
                 _result.append(_c)
 
         return _result
+
+    def _validate_curves_2(self, curves):
+        """
+        Given a list of updated curves, validate them against themselves
+        and adjoingin geometry
+        """
+
+        _indices = self.drag_geometry['Indices']
+        _curves = self.drag_geometry['Curves']
+
+        if _indices[0] > 0:
+            curves.insert(0, _curves[_indices[0] - 1])
+
+        elif _indices[-1] < len(_curves) - 1:
+            curves.append(_curves[_indices[-1] + 1])
+
+        _styles = [CoinStyle.DEFAULT]*len(curves)
+
+        for _i in range(0, len(curves) - 1):
+
+            _c = [curves[_i], curves[_i + 1]]
+
+            if (_c[0]['Tangent'] + _c[1]['Tangent'])\
+                > (_c[0]['PI'].distanceToPoint(_c[1]['PI'])):
+
+                _styles[_i + 1] = CoinStyle.ERROR
+                _styles[_i] = CoinStyle.ERROR
+
+        #if only two tangents are being used, we need to do endpoint
+        #checks as this can only happen if the endpoint is selected,
+        #or the alignment only has two tangents
+
+        _idx = []
+
+        if _indices[0] == 0:
+            _idx.append(0)
+
+        if _indices[-1] == len(self.trackers['Nodes']) - 2:
+            _idx.append(-1)
+
+        for _i in _idx:
+
+            _c = curves[_i]
+            _p = self.trackers['Nodes'][_i].get()
+
+            if _styles[_i] != CoinStyle.ERROR:
+
+                if _c['Tangent'] > _c['PI'].distanceToPoint(_p):
+                    _styles[_i] = CoinStyle.ERROR
+
+        for _i, _c in enumerate(curves):
+            _c['tracker'].set_style(_styles[_i])
+
+        self.is_valid = all([_v != CoinStyle.ERROR for _v in _styles])
 
     def _validate_curves(self, curves):
         """

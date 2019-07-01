@@ -32,6 +32,7 @@ from .project.commands \
     spiral_test
 
 from .corridor.template import ViewTemplateLibrary
+from . import resources
 
 class TrailsWorkbench(Gui.Workbench):
     """
@@ -40,7 +41,7 @@ class TrailsWorkbench(Gui.Workbench):
 
     MenuText = 'Trails Workbench'
     ToolTip = 'Transportation Engineering Workbench'
-    Icon = os.path.join(ICONPATH, 'template_resource.svg')
+    Icon = os.path.dirname(resources.__file__) + '/icons/workbench.svg'
     toolbox = []
 
     def __init__(self):
