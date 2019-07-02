@@ -148,7 +148,7 @@ class AlignmentTracker(BaseTracker):
                 self.view.redraw()
 
             else:
-                self.start_drag_2()
+                self.start_drag()
                 self.user_dragging = True
 
         #should not be necessary, but included here in case
@@ -244,7 +244,7 @@ class AlignmentTracker(BaseTracker):
 
         return _wt
 
-    def start_drag_2(self):
+    def start_drag(self):
         """
         Set up the scene graph for dragging operations
         """
@@ -305,7 +305,7 @@ class AlignmentTracker(BaseTracker):
         Cleanup method for drag operations
         """
 
-        print([_v for _v in self.drag['PI']])
+        print('drag_pi = \n',[_v for _v in self.drag['PI']])
 
         if self.is_valid:
 
@@ -369,6 +369,67 @@ class AlignmentTracker(BaseTracker):
         self.drag_transform.translation.setValue(_pos)
 
     def _update_pi_nodes(self, world_pos):
+        """
+        Internal function - Update wires with selected nodes
+        """
+
+        _tans = self.trackers['Tangents']
+        _idx = []
+        _nodes = []
+
+        #get all selected nodes, saving the index and Vector
+        for _i, _v in enumerate(_tans):
+
+            if _v.state == 'UNSELECTED':
+                continue
+
+            for _j, _w in enumerate(_v.selection_nodes):
+
+                if _w.state == 'SELECTED':
+                    _idx.append(_i + _j)
+                    _nodes.append(_w.get())
+
+        #transform selected nodes
+        _result = self._transform_nodes(_nodes)
+
+        _l = 0
+
+        #write updated nodes to PI's
+        for _i, _v in enumerate(_result):
+
+            #pi index
+            _j = _idx[_i]
+
+            #save the updated PI coordinate
+            self.drag['PI'][_j] = _v
+
+            _limits = [_v if _v >= 0 else 0 for _v in [_j - 1, _j + 1]]
+
+            #if this is a partially selected tangent, we need to manually
+            #update the scenegraph for the selected vertex
+            for _l, _t in enumerate(_tans[_limits[0]:_limits[1]]):
+
+                if _t.state != 'PARTIAL':
+                    continue
+
+                _pts = [
+                    tuple(_w.get())\
+                        for _w in _t.selection_nodes
+                ]
+
+                if _t.selection_nodes[0].state == 'SELECTED':
+                    _pts[0] = tuple(_v)
+                else:
+                    _pts[1] = tuple(_v)
+
+                print(_l, 'points = ', _pts)
+                print('group =', self.groups['PARTIAL'].getChild(_l).getNumChildren())
+
+                self.groups['PARTIAL'].getChild(_l).getChild(4).point.setValues(_pts)
+
+                _l += 1
+
+    def _update_pi_nodes_dep(self, world_pos):
         """
         Internal function - Update wires for partially-selected tangents
         """
