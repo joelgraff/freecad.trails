@@ -163,6 +163,9 @@ class AlignmentModel:
 
                 _geo[_key] = _geo[_key].sub(datum)
 
+        if self.data['meta'].get('End'):
+            self.data['meta']['End'] = self.data['meta']['End'].sub(datum)
+
     def validate_alignment(self):
         """
         Ensure the alignment geometry is continuous.

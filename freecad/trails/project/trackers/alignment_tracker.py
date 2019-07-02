@@ -58,14 +58,12 @@ class AlignmentTracker(BaseTracker):
         self.user_dragging = False
         self.is_valid = True
         self.status_bar = Gui.getMainWindow().statusBar()
-        self.pi_list=[]
+        self.pi_list = []
 
         self.drag = {
             'Start': Vector(),
             'Multi': False,
-            'Indices': [],
-            'Nodes': [],
-            'Wires': [],
+            'PI': [],
             'Curves':[],
         }
 
@@ -252,9 +250,10 @@ class AlignmentTracker(BaseTracker):
         """
 
         self.drag['Start'] = self.view.getPoint(self.mouse.pos)
-
         self.curves = self.alignment.get_curves()
         self.pi_list = self.alignment.model.get_pi_coords()
+        self.drag['PI'] = self.pi_list[:]
+
         _partial = []
 
         #duplciate scene nodes of selected and partially-selected wires
@@ -278,10 +277,7 @@ class AlignmentTracker(BaseTracker):
         #build list of curve indices
         for _i in _partial:
 
-            if _i == 0:
-                continue
-
-            if not(_i - 1) in _curves:
+            if _i > 0 and not(_i - 1) in _curves:
                 _curves.append(_i - 1)
 
             if _i < len(self.curves):
@@ -300,20 +296,23 @@ class AlignmentTracker(BaseTracker):
 
         self._update_pi_nodes(_world_pos)
 
-        _curves = self._generate_curves_2()
+        _curves = self._generate_curves()
 
-        self._validate_curves_2(_curves)
+        self._validate_curves(_curves)
 
     def end_drag(self):
         """
         Cleanup method for drag operations
         """
 
+        print([_v for _v in self.drag['PI']])
+
         if self.is_valid:
 
-            self.alignment.update_curves(self.curves)
+            self.alignment.update_curves(self.curves, self.drag['PI'])
 
             for _i, _v in enumerate(self.alignment.model.get_pi_coords()):
+                print(_v)
                 self.trackers['Nodes'][_i].update(_v)
 
             for _v in self.trackers['Tangents']:
@@ -324,8 +323,10 @@ class AlignmentTracker(BaseTracker):
 
             if isinstance(_v, Vector):
                 _v = Vector()
+
             elif isinstance(_v, bool):
                 _v = False
+
             else:
                 _v.clear()
 
@@ -375,12 +376,8 @@ class AlignmentTracker(BaseTracker):
         _curves = self.drag['Curves']
         _k = 0
 
-        print(_curves)
-        print(self.trackers['Tangents'])
-
         for _i in range(_curves[0], _curves[-1] + 2):
 
-            print(_i)
             _v = self.trackers['Tangents'][_i]
 
             if _v.state != 'PARTIAL':
@@ -399,6 +396,8 @@ class AlignmentTracker(BaseTracker):
                             world_pos.sub(self.drag['Start'])
                         )
                     )
+
+                    self.drag['PI'][_i + _j] = Vector(_p)
 
                 _pts.append(_p)
 
@@ -431,7 +430,7 @@ class AlignmentTracker(BaseTracker):
 
         return _result
 
-    def _generate_curves_2(self):
+    def _generate_curves(self):
         """
         _Internal function - Generate curves based on existing curves and nodes
         """
@@ -450,8 +449,6 @@ class AlignmentTracker(BaseTracker):
 
         _j = 0
 
-        print('curves = ', _indices)
-        print('nodes = ', _nodes)
         for _i in _indices:
 
             _start = _nodes[_j]
@@ -467,7 +464,6 @@ class AlignmentTracker(BaseTracker):
                 }
             )
 
-            print(_curve)
             _points, _x = arc.get_points(_curve)
 
             #save a reference to the tracker for later validation and update
@@ -484,7 +480,7 @@ class AlignmentTracker(BaseTracker):
 
         return _result
 
-    def _validate_curves_2(self, curves):
+    def _validate_curves(self, curves):
         """
         Given a list of updated curves, validate them against themselves
         and adjoingin geometry
@@ -501,7 +497,6 @@ class AlignmentTracker(BaseTracker):
         elif _idx[-1] < len(self.curves) - 1:
             _idx.append(_idx[-1] + 1)
             curves.append(self.curves[_idx[-1]])
-
 
         _styles = [CoinStyle.DEFAULT]*len(curves)
 
@@ -528,13 +523,10 @@ class AlignmentTracker(BaseTracker):
         if _idx[-1] == len(self.curves) - 1:
             _x.append(-1)
 
-        print('curve indices = ', _idx)
-        print('endpoints: ', _x)
-
         for _i in _x:
 
-            _c = self.curves[_i]
-            _p = self.trackers['Nodes'][_i].get()
+            _c = curves[_i]
+            _p = self.drag['PI'][_i]
 
             if _styles[_i] != CoinStyle.ERROR:
 
@@ -547,89 +539,3 @@ class AlignmentTracker(BaseTracker):
             )
 
         self.is_valid = all([_v != CoinStyle.ERROR for _v in _styles])
-
-    def _validate_curves(self, curves):
-        """
-        Internal function - Validate curves, set styles to indicate errors
-        """
-
-        #1. Create a list of pairs, starting at the curve preceeding the
-        #   first new curve
-
-        #2. Iterate the pairs testing for distance between PI's exceeding
-        #   sum of adjoining curve tangents, or single curve tangent exceeding
-        #   distance between PI and start / end of alignment, if applicable
-
-        _indices = self.drag_geometry['Indices']
-
-        _styles = [CoinStyle.DEFAULT]*len(curves)
-
-        for _i in range(0, len(curves) - 1):
-
-            _c = [curves[_i], curves[_i + 1]]
-
-            if (_c[0]['Tangent'] + _c[1]['Tangent'])\
-                > (_c[0]['PI'].distanceToPoint(_c[1]['PI'])):
-
-                _styles[_i + 1] = CoinStyle.ERROR
-                _styles[_i] = CoinStyle.ERROR
-
-        #if only two tangents are being used, we need to do endpoint
-        #checks as this can only happen if the endpoint is selected,
-        #or the alignment only has two tangents
-
-        _idx = []
-
-        if _indices[0] == 0:
-            _idx.append(0)
-
-        if _indices[-1] == len(self.trackers['Nodes']) - 2:
-            _idx.append(-1)
-
-        for _i in _idx:
-
-            _c = curves[_i]
-            _p = self.trackers['Nodes'][_i].get()
-
-            if _styles[_i] != CoinStyle.ERROR:
-
-                if _c['Tangent'] > _c['PI'].distanceToPoint(_p):
-                    _styles[_i] = CoinStyle.ERROR
-
-        for _i, _c in enumerate(curves):
-            _c['tracker'].set_style(_styles[_i])
-
-        self.is_valid = all([_v != CoinStyle.ERROR for _v in _styles])
-
-    def finalize(self, node=None, parent=None):
-        """
-        Override of the parent method
-        """
-
-        self.alignment = None
-
-        if not node:
-            node = self.node
-
-        if self.callbacks:
-            for _k, _v in self.callbacks.items():
-                self.view.removeEventCallback(_k, _v)
-
-        if self.trackers:
-            _t = []
-
-            for _v in self.trackers.values():
-                _t.extend(_v)
-
-            for _v in _t:
-                _v.finalize(self.node)
-
-            self.trackers.clear()
-
-        if self.groups:
-            for _v in self.groups.values():
-                self.remove_node(_v)
-
-            self.groups.clear()
-
-        super().finalize(node, parent)
