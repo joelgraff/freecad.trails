@@ -1,3 +1,3 @@
 path_classifiers:
-  ignore:
-    - resources
+  template:
+    - freecad/trails/resources
