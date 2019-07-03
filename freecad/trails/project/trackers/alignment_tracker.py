@@ -419,52 +419,11 @@ class AlignmentTracker(BaseTracker):
 
                 if _t.selection_nodes[0].state == 'SELECTED':
                     _pts[0] = tuple(_v)
+
                 else:
                     _pts[1] = tuple(_v)
 
-                print(_l, 'points = ', _pts)
-                print('group =', self.groups['PARTIAL'].getChild(_l).getNumChildren())
-
                 self.groups['PARTIAL'].getChild(_l).getChild(4).point.setValues(_pts)
-
-                _l += 1
-
-    def _update_pi_nodes_dep(self, world_pos):
-        """
-        Internal function - Update wires for partially-selected tangents
-        """
-
-        _curves = self.drag['Curves']
-        _k = 0
-
-        for _i in range(_curves[0], _curves[-1] + 2):
-
-            _v = self.trackers['Tangents'][_i]
-
-            if _v.state != 'PARTIAL':
-                continue
-
-            _pts = []
-
-            for _j, _w in enumerate(_v.selection_nodes):
-
-                _p = _w.get()
-
-                if _w.state == 'SELECTED':
-
-                    _p = tuple(
-                        self.pi_list[_i + _j].add(
-                            world_pos.sub(self.drag['Start'])
-                        )
-                    )
-
-                    self.drag['PI'][_i + _j] = Vector(_p)
-
-                _pts.append(_p)
-
-            self.groups['PARTIAL'][_k].getChild(4).point.setValues(_pts)
-
-            _k += 1
 
     def _transform_nodes(self, nodes):
         """
