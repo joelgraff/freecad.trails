@@ -46,7 +46,9 @@ class AlignmentTracker(BaseTracker):
     """
 
     class DragState():
-
+        """
+        State tracker for drag operations
+        """
         def __init__(self):
             """
             Constructor
@@ -191,7 +193,8 @@ class AlignmentTracker(BaseTracker):
 
     def build_trackers(self):
         """
-        Build the node and wire trackers that represent the selectable portions of the alignment geometry
+        Build the node and wire trackers that represent the selectable
+        portions of the alignment geometry
         """
 
         _model = self.alignment.model.data
@@ -280,7 +283,7 @@ class AlignmentTracker(BaseTracker):
             if not self.drag.start:
                 self.drag.start = Vector(self.mouse.pos)
                 self.drag.center = _c
-            
+
             if self.drag.nodes:
 
                 if self.drag.nodes[-1] == _c:
@@ -316,7 +319,7 @@ class AlignmentTracker(BaseTracker):
         #build list of curve indices
         for _i in _partial:
 
-            if _i > 0 and not(_i - 1) in _curves:
+            if _i > 0 and not _i - 1 in _curves:
                 _curves.append(_i - 1)
 
             if _i < len(self.curves):
@@ -488,7 +491,8 @@ class AlignmentTracker(BaseTracker):
                 else:
                     _pts[1] = tuple(_v)
 
-                self.groups['PARTIAL'].getChild(_l).getChild(4).point.setValues(_pts)
+                self.groups['PARTIAL'].getChild(_l).getChild(4)\
+                    .point.setValues(_pts)
 
     def _transform_nodes(self, nodes):
         """

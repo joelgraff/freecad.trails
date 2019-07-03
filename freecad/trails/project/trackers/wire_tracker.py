@@ -191,7 +191,7 @@ class WireTracker(BaseTracker):
 
         self.set_style(CoinStyle.SELECTED)
 
-    def finalize(self, parent=None):
+    def finalize(self, node=None, parent=None):
         """
         Cleanup
         """
@@ -202,4 +202,7 @@ class WireTracker(BaseTracker):
 
         self.callbacks.clear()
 
-        super().finalize(self.node, parent)
+        if node is None:
+            node = self.node
+
+        super().finalize(node, parent)

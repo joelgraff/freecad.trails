@@ -212,7 +212,7 @@ def get_segments(spiral, deltas, _dtype=Vector):
     start - starting coordinate
     radius - arc radius
     """
-    
+
     _vec = spiral['PI'].sub(spiral['Start']).normalize()
     _start = spiral['Start']
     _length = spiral['Length']
@@ -324,7 +324,8 @@ def get_points(
 
 def get_ortho_vector(spiral, distance, side):
     """
-    Calculate the vector orthogonal to the spiral for the given distance and direction
+    Calculate the vector orthogonal to the spiral for the given distance and
+    direction
     """
 
     _side = side.lower()
