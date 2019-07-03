@@ -161,21 +161,6 @@ class WireTracker(BaseTracker):
         else:
             self.set_style(CoinStyle.DEFAULT)
 
-        #
-#        if arg['AltDown']:
-
-#            if self.state:
-#                self.set_style(CoinStyle.SELECTED)
-
-        #if selected and any of the nodes are deselected, then deselect
-#        else: self.state:
-
-#            _sel_state = [_v.selected for _v in self.selection_nodes]
-
-#            if not all([_v.selected for _v in self.selection_nodes]):
-#                self.set_style(CoinStyle.DEFAULT)
-#                self.state = False
-
     def mouse_event(self, arg):
         """
         Mouse movement actions
