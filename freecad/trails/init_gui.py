@@ -25,7 +25,6 @@ GUI Initialization module
 
 import os
 import FreeCADGui as Gui
-from . import ICONPATH
 
 from .project.commands \
     import new_project_cmd, import_alignment_cmd, edit_alignment_cmd, \

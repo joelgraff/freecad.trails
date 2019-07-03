@@ -26,7 +26,6 @@ Customized wire tracker from DraftTrackers.wireTracker
 
 from pivy import coin
 
-from ..support.const import Const
 from ..support.mouse_state import MouseState
 
 from .base_tracker import BaseTracker

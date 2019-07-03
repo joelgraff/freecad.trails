@@ -212,8 +212,7 @@ def get_segments(spiral, deltas, _dtype=Vector):
     start - starting coordinate
     radius - arc radius
     """
-
-    _bearing = spiral['BearingIn']
+    
     _vec = spiral['PI'].sub(spiral['Start']).normalize()
     _start = spiral['Start']
     _length = spiral['Length']
@@ -226,7 +225,6 @@ def get_segments(spiral, deltas, _dtype=Vector):
     #toward the start of the spiral
     if _reverse:
         _vec = spiral['PI'].sub(spiral['End']).normalize()
-        _bearing = support.get_bearing(_vec)
         _start = spiral['End']
         _direction *= -1
 

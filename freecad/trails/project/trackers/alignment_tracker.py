@@ -462,8 +462,6 @@ class AlignmentTracker(BaseTracker):
         #transform selected nodes
         _result = self._transform_nodes(self.drag.nodes)
 
-        _l = 0
-
         #write updated nodes to PI's
         for _i, _v in enumerate(_result):
 
