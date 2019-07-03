@@ -24,6 +24,8 @@
 Tracker for alignment editing
 """
 
+import math
+
 from pivy import coin
 
 from FreeCAD import Vector
@@ -36,6 +38,7 @@ from .base_tracker import BaseTracker
 from .coin_style import CoinStyle
 
 from ..support.mouse_state import MouseState
+
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
 
@@ -43,6 +46,27 @@ class AlignmentTracker(BaseTracker):
     """
     Tracker class for alignment design
     """
+
+    class DragState():
+
+        def __init__(self):
+            """
+            Constructor
+            """
+
+            self.start = Vector()
+            self.rotation = None
+            self.multi = False
+            self.pi = []
+            self.curves = []
+
+        def reset(self):
+            """
+            Reset the object to defaults
+            """
+
+            self.__init__()
+
 
     def __init__(self, doc, view, object_name, alignment):
         """
@@ -60,12 +84,7 @@ class AlignmentTracker(BaseTracker):
         self.status_bar = Gui.getMainWindow().statusBar()
         self.pi_list = []
 
-        self.drag = {
-            'Start': Vector(),
-            'Multi': False,
-            'PI': [],
-            'Curves':[],
-        }
+        self.drag = self.DragState()
 
         self.view = view
         self.viewport = \
@@ -144,7 +163,7 @@ class AlignmentTracker(BaseTracker):
         if self.mouse.button1.dragging:
 
             if self.user_dragging:
-                self.on_drag()
+                self.on_drag(arg['AltDown'])
                 self.view.redraw()
 
             else:
@@ -249,10 +268,16 @@ class AlignmentTracker(BaseTracker):
         Set up the scene graph for dragging operations
         """
 
-        self.drag['Start'] = self.view.getPoint(self.mouse.pos)
+        #set the drag start point to the first selected node
+        for _v in self.trackers['Nodes']:
+
+            if _v.state == 'SELECTED':
+                self.drag.start = _v.get()
+                break
+
         self.curves = self.alignment.get_curves()
         self.pi_list = self.alignment.model.get_pi_coords()
-        self.drag['PI'] = self.pi_list[:]
+        self.drag.pi = self.pi_list[:]
 
         _partial = []
 
@@ -264,7 +289,7 @@ class AlignmentTracker(BaseTracker):
 
             self.groups[_v.state].addChild(_v.copy())
 
-        self.drag['Multi'] = self.groups['SELECTED'].getNumChildren() > 1
+        self.drag.multi = self.groups['SELECTED'].getNumChildren() > 1
 
         #get paritally selected tangents to build curve index
         _partial = [
@@ -283,16 +308,16 @@ class AlignmentTracker(BaseTracker):
             if _i < len(self.curves):
                 _curves.append(_i)
 
-        self.drag['Curves'] = _curves
+        self.drag.curves = _curves
 
-    def on_drag(self):
+    def on_drag(self, do_rotation):
         """
         Update method during drag operations
         """
 
         _world_pos = self.view.getPoint(self.mouse.pos)
 
-        self._update_transform(_world_pos)
+        self._update_transform(_world_pos, do_rotation)
 
         self._update_pi_nodes(_world_pos)
 
@@ -305,30 +330,17 @@ class AlignmentTracker(BaseTracker):
         Cleanup method for drag operations
         """
 
-        print('drag_pi = \n',[_v for _v in self.drag['PI']])
-
         if self.is_valid:
 
-            self.alignment.update_curves(self.curves, self.drag['PI'])
+            self.alignment.update_curves(self.curves, self.drag.pi)
 
             for _i, _v in enumerate(self.alignment.model.get_pi_coords()):
-                print(_v)
                 self.trackers['Nodes'][_i].update(_v)
 
             for _v in self.trackers['Tangents']:
                 _v.update([_w.get() for _w in _v.selection_nodes])
 
-        #clear the drag_geometry dict
-        for _v in self.drag.values():
-
-            if isinstance(_v, Vector):
-                _v = Vector()
-
-            elif isinstance(_v, bool):
-                _v = False
-
-            else:
-                _v.clear()
+        self.drag.reset()
 
         #remove child nodes from the selected group
         self.groups['SELECTED'].removeAllChildren()
@@ -359,14 +371,48 @@ class AlignmentTracker(BaseTracker):
 
         return _matrix.getMatrix()
 
-    def _update_transform(self, pos):
+    def _update_transform(self, pos, do_rotation):
         """
         Update the transform node for selected geometry
         """
 
-        _pos = tuple(pos.sub(self.drag['Start']))
+        _delta = pos.sub(self.drag.start)
 
-        self.drag_transform.translation.setValue(_pos)
+        if do_rotation:
+            self.drag_transform.rotation = self._update_rotation(_delta)
+        else:
+            self.drag_transform.translation.setValue(tuple(_delta))
+
+    def _update_rotation(self, vector, modify=False):
+        """
+        Manage rotation during dragging
+        """
+
+        _angle = support.get_bearing(vector)
+
+        if self.drag.rotation is None:
+
+            self.drag_transform.center = \
+                coin.SbVec3f(tuple(self.drag.start))
+
+            _nodes = [_v.get() \
+                for _v in self.trackers['Nodes'] if _v.state == 'SELECTED']
+
+            _nodes = [_v.sub(_nodes[0]) for _v in _nodes]
+
+            _avg = Vector()
+
+            for _v in _nodes:
+                _avg = _avg.add(_v)
+
+            _avg.multiply(1 / len(_nodes)).normalize()
+
+            self.drag.rotation = support.get_bearing(_avg)
+
+        #return the +z axis rotation for the transformation
+        return coin.SbRotation(
+            coin.SbVec3f(0.0, 0.0, 1.0), self.drag.rotation -_angle
+        )
 
     def _update_pi_nodes(self, world_pos):
         """
@@ -401,7 +447,7 @@ class AlignmentTracker(BaseTracker):
             _j = _idx[_i]
 
             #save the updated PI coordinate
-            self.drag['PI'][_j] = _v
+            self.drag.pi[_j] = _v
 
             _limits = [_v if _v >= 0 else 0 for _v in [_j - 1, _j + 1]]
 
@@ -444,7 +490,7 @@ class AlignmentTracker(BaseTracker):
                 _v = _matrix.multVecMatrix(_v).getValue()[:3]
 
             else:
-                _v = _v.add(_world.sub(self.drag['Start']))
+                _v = _v.add(_world.sub(self.drag.start))
 
             _result.append(Vector(_v))
 
@@ -456,7 +502,7 @@ class AlignmentTracker(BaseTracker):
         """
 
         #get the indices of curves that are to be updated
-        _indices = self.drag['Curves']
+        _indices = self.drag.curves
 
         _result = []
         _rng = (_indices[0], _indices[-1] + 3)
@@ -506,7 +552,7 @@ class AlignmentTracker(BaseTracker):
         and adjoingin geometry
         """
 
-        _idx = self.drag['Curves']
+        _idx = self.drag.curves
 
         #append preceeding and following curves if first / last curves
         #aren't being updated
@@ -546,7 +592,7 @@ class AlignmentTracker(BaseTracker):
         for _i in _x:
 
             _c = curves[_i]
-            _p = self.drag['PI'][_i]
+            _p = self.drag.pi[_i]
 
             if _styles[_i] != CoinStyle.ERROR:
 
