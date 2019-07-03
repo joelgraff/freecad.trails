@@ -54,11 +54,13 @@ class AlignmentTracker(BaseTracker):
             Constructor
             """
 
-            self.start = Vector()
+            self.start = None
             self.rotation = None
             self.multi = False
             self.pi = []
             self.curves = []
+            self.nodes = []
+            self.node_idx = []
 
         def reset(self):
             """
@@ -269,11 +271,24 @@ class AlignmentTracker(BaseTracker):
         """
 
         #set the drag start point to the first selected node
-        for _v in self.trackers['Nodes']:
+        for _i, _v in enumerate(self.trackers['Nodes']):
 
-            if _v.state == 'SELECTED':
-                self.drag.start = _v.get()
-                break
+            if _v.state != 'SELECTED':
+                continue
+
+            _c = _v.get()
+
+            print('selected = ', _c)
+            if not self.drag.start:
+                self.drag.start = _c
+            
+            if self.drag.nodes:
+
+                if self.drag.nodes[-1] == _c:
+                    continue
+
+            self.drag.nodes.append(_c)
+            self.drag.node_idx.append(_i)
 
         self.curves = self.alignment.get_curves()
         self.pi_list = self.alignment.model.get_pi_coords()
@@ -362,7 +377,7 @@ class AlignmentTracker(BaseTracker):
 
         #define the search path
         _search = coin.SoSearchAction()
-        _search.setNode(_sel_group.getChild(2))
+        _search.setNode(_sel_group.getChild(1))
         _search.apply(self.view.getSceneGraph())
 
         #get the matrix for the transformation
@@ -378,8 +393,10 @@ class AlignmentTracker(BaseTracker):
 
         _delta = pos.sub(self.drag.start)
 
+        print('delta = ', _delta)
         if do_rotation:
             self.drag_transform.rotation = self._update_rotation(_delta)
+
         else:
             self.drag_transform.translation.setValue(tuple(_delta))
 
@@ -420,31 +437,18 @@ class AlignmentTracker(BaseTracker):
         """
 
         _tans = self.trackers['Tangents']
-        _idx = []
-        _nodes = []
-
-        #get all selected nodes, saving the index and Vector
-        for _i, _v in enumerate(_tans):
-
-            if _v.state == 'UNSELECTED':
-                continue
-
-            for _j, _w in enumerate(_v.selection_nodes):
-
-                if _w.state == 'SELECTED':
-                    _idx.append(_i + _j)
-                    _nodes.append(_w.get())
 
         #transform selected nodes
-        _result = self._transform_nodes(_nodes)
-
+        print('transforming: ', self.drag.nodes)
+        _result = self._transform_nodes(self.drag.nodes)
+        print('transformed = ', _result)
         _l = 0
 
         #write updated nodes to PI's
         for _i, _v in enumerate(_result):
 
             #pi index
-            _j = _idx[_i]
+            _j = self.drag.node_idx[_i]
 
             #save the updated PI coordinate
             self.drag.pi[_j] = _v
@@ -458,10 +462,7 @@ class AlignmentTracker(BaseTracker):
                 if _t.state != 'PARTIAL':
                     continue
 
-                _pts = [
-                    tuple(_w.get())\
-                        for _w in _t.selection_nodes
-                ]
+                _pts = [tuple(_w.get()) for _w in _t.selection_nodes]
 
                 if _t.selection_nodes[0].state == 'SELECTED':
                     _pts[0] = tuple(_v)
@@ -477,9 +478,11 @@ class AlignmentTracker(BaseTracker):
         """
 
         _matrix = self.get_matrix()
+        print('_matrix = ', _matrix)
         _result = []
         _world = self.view.getPoint(self.mouse.pos)
 
+        print('world / start ', _world, self.drag.start)
         for _n in nodes:
 
             _v = _n
