@@ -84,7 +84,7 @@ class BaseTracker:
 
         return self.picker.style.getValue() != coin.SoPickStyle.UNPICKABLE
 
-    def finalize(self, node, parent=None):
+    def finalize(self, node=None, parent=None):
         """
         Node destruction / cleanup
         """

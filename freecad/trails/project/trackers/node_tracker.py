@@ -187,6 +187,6 @@ class NodeTracker(BaseTracker):
             for _k, _v in self.callbacks.items():
                 self.view.removeEventCallback(_k, _v)
 
-        self.callbacks.clear()
+            self.callbacks.clear()
 
         super().finalize(self.node, parent)

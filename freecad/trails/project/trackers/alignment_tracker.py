@@ -24,8 +24,6 @@
 Tracker for alignment editing
 """
 
-import math
-
 from pivy import coin
 
 from FreeCAD import Vector
@@ -55,6 +53,7 @@ class AlignmentTracker(BaseTracker):
             """
 
             self.start = None
+            self.center = None
             self.rotation = None
             self.multi = False
             self.pi = []
@@ -165,7 +164,7 @@ class AlignmentTracker(BaseTracker):
         if self.mouse.button1.dragging:
 
             if self.user_dragging:
-                self.on_drag(arg['AltDown'])
+                self.on_drag(arg['AltDown'], arg['ShiftDown'])
                 self.view.redraw()
 
             else:
@@ -278,9 +277,9 @@ class AlignmentTracker(BaseTracker):
 
             _c = _v.get()
 
-            print('selected = ', _c)
             if not self.drag.start:
-                self.drag.start = _c
+                self.drag.start = Vector(self.mouse.pos)
+                self.drag.center = _c
             
             if self.drag.nodes:
 
@@ -325,14 +324,14 @@ class AlignmentTracker(BaseTracker):
 
         self.drag.curves = _curves
 
-    def on_drag(self, do_rotation):
+    def on_drag(self, do_rotation, modify):
         """
         Update method during drag operations
         """
 
         _world_pos = self.view.getPoint(self.mouse.pos)
 
-        self._update_transform(_world_pos, do_rotation)
+        self._update_transform(_world_pos, do_rotation, modify)
 
         self._update_pi_nodes(_world_pos)
 
@@ -347,6 +346,10 @@ class AlignmentTracker(BaseTracker):
 
         if self.is_valid:
 
+            #do a final calculation on the curves
+            self.drag.curves = list(range(0, len(self.curves)))
+            self._generate_curves()
+
             self.alignment.update_curves(self.curves, self.drag.pi)
 
             for _i, _v in enumerate(self.alignment.model.get_pi_coords()):
@@ -356,6 +359,10 @@ class AlignmentTracker(BaseTracker):
                 _v.update([_w.get() for _w in _v.selection_nodes])
 
         self.drag.reset()
+
+        self.drag_transform.center = coin.SbVec3f((0.0, 0.0, 0.0))
+        self.drag_transform.translation.setValue((0.0, 0.0, 0.0))
+        self.drag_transform.rotation = coin.SbRotation()
 
         #remove child nodes from the selected group
         self.groups['SELECTED'].removeAllChildren()
@@ -386,19 +393,27 @@ class AlignmentTracker(BaseTracker):
 
         return _matrix.getMatrix()
 
-    def _update_transform(self, pos, do_rotation):
+    def _update_transform(self, pos, do_rotation, modify):
         """
         Update the transform node for selected geometry
         """
 
-        _delta = pos.sub(self.drag.start)
+        _scale = 1.0
 
-        print('delta = ', _delta)
+        if modify:
+            _scale = 0.10
+
         if do_rotation:
-            self.drag_transform.rotation = self._update_rotation(_delta)
 
+            self.drag_transform.rotation = \
+                self._update_rotation(pos.sub(self.drag.center), modify)
+
+            _vec = pos.sub(Vector(self.drag_transform.translation.getValue()))
+            self.drag.start = _vec
         else:
-            self.drag_transform.translation.setValue(tuple(_delta))
+
+            _vec = pos.sub(self.drag.start).multiply(_scale)
+            self.drag_transform.translation.setValue(tuple(_vec))
 
     def _update_rotation(self, vector, modify=False):
         """
@@ -409,8 +424,9 @@ class AlignmentTracker(BaseTracker):
 
         if self.drag.rotation is None:
 
-            self.drag_transform.center = \
-                coin.SbVec3f(tuple(self.drag.start))
+            self.drag_transform.center.setValue(
+                coin.SbVec3f(tuple(self.drag.center))
+            )
 
             _nodes = [_v.get() \
                 for _v in self.trackers['Nodes'] if _v.state == 'SELECTED']
@@ -426,9 +442,14 @@ class AlignmentTracker(BaseTracker):
 
             self.drag.rotation = support.get_bearing(_avg)
 
+        _scale = 1.0
+
+        if modify:
+            _scale = 0.10
+
         #return the +z axis rotation for the transformation
         return coin.SbRotation(
-            coin.SbVec3f(0.0, 0.0, 1.0), self.drag.rotation -_angle
+            coin.SbVec3f(0.0, 0.0, 1.0), self.drag.rotation -_angle * _scale
         )
 
     def _update_pi_nodes(self, world_pos):
@@ -439,9 +460,8 @@ class AlignmentTracker(BaseTracker):
         _tans = self.trackers['Tangents']
 
         #transform selected nodes
-        print('transforming: ', self.drag.nodes)
         _result = self._transform_nodes(self.drag.nodes)
-        print('transformed = ', _result)
+
         _l = 0
 
         #write updated nodes to PI's
@@ -478,11 +498,10 @@ class AlignmentTracker(BaseTracker):
         """
 
         _matrix = self.get_matrix()
-        print('_matrix = ', _matrix)
+
         _result = []
         _world = self.view.getPoint(self.mouse.pos)
 
-        print('world / start ', _world, self.drag.start)
         for _n in nodes:
 
             _v = _n
@@ -506,6 +525,9 @@ class AlignmentTracker(BaseTracker):
 
         #get the indices of curves that are to be updated
         _indices = self.drag.curves
+
+        if not _indices:
+            return
 
         _result = []
         _rng = (_indices[0], _indices[-1] + 3)
@@ -556,6 +578,10 @@ class AlignmentTracker(BaseTracker):
         """
 
         _idx = self.drag.curves
+
+        if not _idx:
+            self.is_valid = True
+            return
 
         #append preceeding and following curves if first / last curves
         #aren't being updated
@@ -608,3 +634,24 @@ class AlignmentTracker(BaseTracker):
             )
 
         self.is_valid = all([_v != CoinStyle.ERROR for _v in _styles])
+
+    def finalize(self):
+        """
+        Cleanup the tracker
+        """
+
+        for _t in self.trackers.values():
+
+            for _u in _t:
+                _u.finalize()
+
+        self.remove_node(self.groups['EDIT'], self.node)
+        self.remove_node(self.groups['DRAG'], self.node)
+
+        if self.callbacks:
+            for _k, _v in self.callbacks.items():
+                self.view.removeEventCallback(_k, _v)
+
+            self.callbacks.clear()
+
+        super().finalize()
