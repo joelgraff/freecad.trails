@@ -24,6 +24,8 @@
 Tracker for alignment editing
 """
 
+import math
+
 from pivy import coin
 
 from FreeCAD import Vector
@@ -35,6 +37,7 @@ from ...geometry import support, arc
 from .base_tracker import BaseTracker
 from .coin_style import CoinStyle
 
+from ..support.utils import Constants as C
 from ..support.mouse_state import MouseState
 
 from .node_tracker import NodeTracker
@@ -57,6 +60,9 @@ class AlignmentTracker(BaseTracker):
             self.start = None
             self.center = None
             self.rotation = None
+            self.position = None
+            self.angle = 0.0
+            self.translation = Vector()
             self.multi = False
             self.pi = []
             self.curves = []
@@ -123,7 +129,10 @@ class AlignmentTracker(BaseTracker):
 
         self.drag_transform = coin.SoTransform()
 
+        #add two nodes to the drag group - the transform and a dummy node
+        #which provides a way to access the transform matrix
         self.groups['SELECTED'].addChild(self.drag_transform)
+        self.groups['SELECTED'].addChild(coin.SoSeparator())
 
         self.groups['DRAG'].addChild(self.groups['SELECTED'])
         self.groups['DRAG'].addChild(self.groups['PARTIAL'])
@@ -294,7 +303,8 @@ class AlignmentTracker(BaseTracker):
             _c = _v.get()
 
             if not self.drag.start:
-                self.drag.start = Vector(self.mouse.pos)
+                self.drag.start = Vector(self.view.getPoint(self.mouse.pos))
+                self.drag.position = self.drag.start
                 self.drag.center = _c
 
             if self.drag.nodes:
@@ -319,7 +329,7 @@ class AlignmentTracker(BaseTracker):
 
             self.groups[_v.state].addChild(_v.copy())
 
-        self.drag.multi = self.groups['SELECTED'].getNumChildren() > 1
+        self.drag.multi = self.groups['SELECTED'].getNumChildren() > 2
 
         #get paritally selected tangents to build curve index
         _partial = [
@@ -348,12 +358,12 @@ class AlignmentTracker(BaseTracker):
         _world_pos = self.view.getPoint(self.mouse.pos)
 
         self._update_transform(_world_pos, do_rotation, modify)
-
         self._update_pi_nodes(_world_pos)
 
         _curves = self._generate_curves()
 
         self._validate_curves(_curves)
+        self.drag.position = _world_pos
 
     def end_drag(self):
         """
@@ -383,6 +393,7 @@ class AlignmentTracker(BaseTracker):
         #remove child nodes from the selected group
         self.groups['SELECTED'].removeAllChildren()
         self.groups['SELECTED'].addChild(self.drag_transform)
+        self.groups['SELECTED'].addChild(coin.SoSeparator())
 
         #remove child nodes from the partial group
         self.groups['PARTIAL'].removeAllChildren()
@@ -429,11 +440,12 @@ class AlignmentTracker(BaseTracker):
 
         else:
 
-            _vec = pos.sub(self.drag.start).multiply(_scale)
+            _vec = pos.sub(self.drag.position).multiply(_scale)
+            self.drag.translation = self.drag.translation.add(_vec)
 
-            self.drag_transform.translation.setValue(tuple(_vec))
-
-            print(pos, self.drag.start, _vec)
+            self.drag_transform.translation.setValue(
+                tuple(self.drag.translation)
+            )
 
     def _update_rotation(self, vector, modify=False):
         """
@@ -460,17 +472,29 @@ class AlignmentTracker(BaseTracker):
 
             _avg.multiply(1 / len(_nodes)).normalize()
 
-            self.drag.rotation = support.get_bearing(_avg)
+            self.drag.rotation = 0.0
+            self.drag.angle = _angle
 
         _scale = 1.0
 
         if modify:
             _scale = 0.10
 
+        print('\n\t------- rotations --------', self.drag.rotation, self.drag.angle, _angle, _scale)
+
+        _delta = self.drag.angle - _angle
+
+        if _delta < -math.pi:
+            _delta += C.TWO_PI
+
+        elif _delta > math.pi:
+            _delta -= C.TWO_PI
+
+        self.drag.rotation += _delta * _scale
+        self.drag.angle = _angle
+
         #return the +z axis rotation for the transformation
-        return coin.SbRotation(
-            coin.SbVec3f(0.0, 0.0, 1.0), self.drag.rotation -_angle * _scale
-        )
+        return coin.SbRotation(coin.SbVec3f(0.0, 0.0, 1.0), self.drag.rotation)
 
     def _update_pi_nodes(self, world_pos):
         """
@@ -491,9 +515,9 @@ class AlignmentTracker(BaseTracker):
             #save the updated PI coordinate
             self.drag.pi[_j] = _v
 
-            _limits = [_v if _v >= 0 else 0 for _v in [_j - 1, _j + 1]]
+            _limits = [_w if _w >= 0 else 0 for _w in [_j - 1, _j + 1]]
 
-            #if this is a partially selected tangent, we need to manually
+            #if there are partially selected tangents, we need to manually
             #update the scenegraph for the selected vertex
             for _l, _t in enumerate(_tans[_limits[0]:_limits[1]]):
 
@@ -511,6 +535,8 @@ class AlignmentTracker(BaseTracker):
                 self.groups['PARTIAL'].getChild(_l).getChild(4)\
                     .point.setValues(_pts)
 
+                print('points = ', _pts)
+
     def _transform_nodes(self, nodes):
         """
         Transform selected nodes by the transformation matrix
@@ -524,14 +550,8 @@ class AlignmentTracker(BaseTracker):
         for _n in nodes:
 
             _v = _n
-
-            if _matrix is not None:
-
-                _v = coin.SbVec4f(tuple(_n) + (1.0,))
-                _v = _matrix.multVecMatrix(_v).getValue()[:3]
-
-            else:
-                _v = _v.add(_world.sub(self.drag.start))
+            _v = coin.SbVec4f(tuple(_n) + (1.0,))
+            _v = _matrix.multVecMatrix(_v).getValue()[:3]
 
             _result.append(Vector(_v))
 

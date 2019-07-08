@@ -46,7 +46,7 @@ class AlignmentModel:
     """
     Alignment model for the alignment FeaturePython class
     """
-    def __init__(self, geometry=None):
+    def __init__(self, geometry=None, zero_reference=True):
         """
         Default Constructor
         """
@@ -54,7 +54,7 @@ class AlignmentModel:
         self.data = []
 
         if geometry:
-            if not self.construct_geometry(geometry):
+            if not self.construct_geometry(geometry, zero_reference):
                 print('Errors encounterd generating alignment model')
 
     def get_datum(self):
@@ -72,21 +72,19 @@ class AlignmentModel:
 
         _start = self.data['meta']['Start']
 
-        result = [App.Vector()]
-        result += [_v['PI']for _v in self.data['geometry'] if _v.get('PI')]
+        result = [_start]
+        result += [_v['PI'] for _v in self.data['geometry'] if _v.get('PI')]
 
         result.append(self.data['meta']['End'])
 
         return result
 
-    def construct_geometry(self, geometry):
+    def construct_geometry(self, geometry, zero_reference=True):
         """
         Assign geometry to the alignment object
         """
 
         self.data = geometry
-        do_zero_ref = True
-
         _geometry = []
 
         for _i, _geo in enumerate(self.data['geometry']):
@@ -104,10 +102,6 @@ class AlignmentModel:
                     if not self.data['meta']['Start']:
                         self.data['meta']['Start'] = _geo['Start']
 
-                    else:
-                        do_zero_ref =\
-                            _geo['Start'] != App.Vector()
-
                 continue
 
             elif _geo['Type'] == 'Spiral':
@@ -120,9 +114,7 @@ class AlignmentModel:
             _geometry.append(_geo)
 
         self.data['geometry'] = _geometry
-
         self.validate_datum()
-
         self.validate_stationing()
 
         if not self.validate_bearings():
@@ -136,7 +128,7 @@ class AlignmentModel:
         #call once more to catch geometry added by validate_alignment()
         self.validate_stationing()
 
-        if do_zero_ref:
+        if zero_reference:
             self.zero_reference_coordinates()
 
         #run discretization to force coordinate transformation updates
