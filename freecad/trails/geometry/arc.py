@@ -576,6 +576,12 @@ def convert_units(arc, to_document=False):
 
     return result
 
+def get_position_offset(arc, coord):
+    """
+    Find the distance along the arc and the offset for the given coordinate
+    """
+
+    
 def parameter_test(excludes=None):
     """
     Testing routine

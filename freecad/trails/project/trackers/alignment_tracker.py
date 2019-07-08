@@ -77,7 +77,7 @@ class AlignmentTracker(BaseTracker):
             self.__init__()
 
 
-    def __init__(self, doc, view, object_name, alignment):
+    def __init__(self, doc, view, object_name, alignment, datum=Vector()):
         """
         Constructor
         """
@@ -92,6 +92,7 @@ class AlignmentTracker(BaseTracker):
         self.is_valid = True
         self.status_bar = Gui.getMainWindow().statusBar()
         self.pi_list = []
+        self.datum = datum
 
         self.drag = self.DragState()
 
@@ -104,10 +105,6 @@ class AlignmentTracker(BaseTracker):
 
         super().__init__(
             names=self.names, children=[self.transform]
-        )
-
-        self.transform.translation.setValue(
-            tuple(self.alignment.model.data['meta']['Start'])
         )
 
         #input callback assignments
