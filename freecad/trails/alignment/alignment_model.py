@@ -25,7 +25,7 @@
 Class for managing 2D Horizontal Alignment data
 """
 
-import FreeCAD as App
+from FreeCAD import Vector
 
 from ..project.support import units
 from ..geometry import arc, line, spiral, support
@@ -70,9 +70,7 @@ class AlignmentModel:
         as a list of vectors
         """
 
-        _start = self.data['meta']['Start']
-
-        result = [_start]
+        result = [Vector()]
         result += [_v['PI'] for _v in self.data['geometry'] if _v.get('PI')]
 
         result.append(self.data['meta']['End'])
@@ -179,8 +177,8 @@ class AlignmentModel:
                 #build the line using the provided parameters and add it
                 _geo_list.append(
                     line.get_parameters({
-                        'Start': App.Vector(_prev_coord),
-                        'End': App.Vector(_coord),
+                        'Start': Vector(_prev_coord),
+                        'End': Vector(_coord),
                         'BearingIn': _geo['BearingIn'],
                         'BearingOut': _geo['BearingOut'],
                     })
@@ -274,7 +272,7 @@ class AlignmentModel:
         #Parameter Initialization
         #----------------------------
         _geo_station = 0
-        _geo_start = App.Vector()
+        _geo_start = Vector()
 
         if _geo_truth[0]:
             _geo_station = _geo['StartStation']
@@ -533,6 +531,46 @@ class AlignmentModel:
             position = 0.0
 
         return position * units.scale_factor()
+
+    def get_station_offset(self, coordinate):
+        """
+        Locate the provided coordinate along the alignment, returning
+        the internal station or None if not within tolerance.
+        """
+
+        _results = []
+
+        for _geo in self.data['geometry']:
+
+            _class = line
+
+            if _geo.Type == 'arc':
+                _class = arc
+            elif _geo.Type == 'spiral':
+                _class = spiral
+
+            _v = _class.get_position_offset(coordinate)
+
+            if not _v[0]:
+                continue
+
+            _results.append (_v)
+
+        if not _results:
+            return None, None
+
+        if len(_results) == 1:
+            return _results[0]
+
+        _tpl = _results[0]
+
+        for _v in _results[1:]:
+
+            if _v[1] < _tpl[1]:
+                _tpl = _v
+
+        return _tpl
+
 
     def locate_curve(self, station):
         """

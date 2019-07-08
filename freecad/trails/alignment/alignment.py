@@ -41,7 +41,7 @@ __author__ = 'Joel Graff'
 __url__ = "https://www.freecadweb.org"
 
 
-def create(geometry, object_name='', no_visual=False):
+def create(geometry, object_name='', no_visual=False, zero_reference=True):
     """
     Class construction method
     object_name - Optional. Name of new object.  Defaults to class name.
@@ -67,7 +67,7 @@ def create(geometry, object_name='', no_visual=False):
         _obj = parent.Object.newObject(_TYPE, _name)
 
     result = Alignment(_obj, _name)
-    result.set_geometry(geometry)
+    result.set_geometry(geometry, zero_reference)
 
     if not no_visual:
 

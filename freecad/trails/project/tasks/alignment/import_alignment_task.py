@@ -37,6 +37,7 @@ from . import import_xml_subtask #, ImportCsvSubtask
 from ...support import utils
 from .... import resources
 from ....alignment import alignment_group, alignment
+from ....geometry import support
 
 
 class ImportAlignmentTask:
@@ -88,10 +89,31 @@ class ImportAlignmentTask:
             for _e in errors:
                 print(_e)
 
+        result = self.validate_primary_alignment(data['Alignments'].items())
+
+        if result.errors:
+            errors += result.errors
+            result.errors = []
+
+            App.ActiveDocument.recompute()
+
         Gui.SendMsgToActiveView("ViewFit")
 
         return True
 
+    def validate_primary_alignment(self, alignments):
+        """
+        Validate the chosen alignment as primary (default is first)
+        """
+
+        pass
+        #_datum = alignments[0]['meta']['Start']
+
+        #for _v in alignments[1:]:
+
+        #    _sta, _off = _datum.get_station_offset(_v['meta']['Start'])
+
+            #if support.within_tolerance(_off)
     def reject(self):
         """
         Reject the task

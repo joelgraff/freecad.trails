@@ -68,7 +68,7 @@ class EditAlignmentTask:
         self.view = view
         self.doc = doc
         self.obj = obj
-        self.alignment = alignment.create(alignment_data, 'TEMP', True)
+        self.alignment = alignment.create(alignment_data, 'TEMP', True, False)
         self.pi_tracker = None
         self.drag_tracker = None
         self.alignment_tracker = None
