@@ -93,7 +93,16 @@ class AlignmentTracker(BaseTracker):
         self.viewport = \
             view.getViewer().getSoRenderManager().getViewportRegion()
 
-        super().__init__(names=self.names, group=True)
+        #base (placement) transformation for the alignment
+        self.transform = coin.SoTransform()
+
+        super().__init__(
+            names=self.names, children=[self.transform]
+        )
+
+        self.transform.translation.setValue(
+            tuple(self.alignment.model.data['meta']['Start'])
+        )
 
         #input callback assignments
         self.callbacks = {
@@ -200,7 +209,7 @@ class AlignmentTracker(BaseTracker):
         _model = self.alignment.model.data
 
         #build a list of coordinates from curves in the geometry
-        _nodes = [_model['meta']['Start']]
+        _nodes = [Vector()]
 
         for _geo in _model['geometry']:
 
@@ -244,7 +253,11 @@ class AlignmentTracker(BaseTracker):
 
             _nodes = _result['Nodes'][_i:_i + 3]
 
-            _points, _x = arc.get_points(_curves[_i])
+            if _curves[_i]['Type'] == 'Spiral':
+                pass
+
+            else:
+                _points, _x = arc.get_points(_curves[_i])
 
             _result['Curves'].append(
                 self._build_wire_tracker(
@@ -413,10 +426,14 @@ class AlignmentTracker(BaseTracker):
 
             _vec = pos.sub(Vector(self.drag_transform.translation.getValue()))
             self.drag.start = _vec
+
         else:
 
             _vec = pos.sub(self.drag.start).multiply(_scale)
+
             self.drag_transform.translation.setValue(tuple(_vec))
+
+            print(pos, self.drag.start, _vec)
 
     def _update_rotation(self, vector, modify=False):
         """
