@@ -25,7 +25,7 @@
 Line generation tools
 """
 
-import FreeCAD as App
+from FreeCAD import Vector
 from . import support
 
 def get_parameters(line):
@@ -110,7 +110,7 @@ def get_tangent_vector(line_dict, distance):
     if _start is None or _end is None:
         return None, None
 
-    _slope = App.Vector(-(_end.y - _start.y), _end.x - _start.x).normalize()
+    _slope = Vector(-(_end.y - _start.y), _end.x - _start.x).normalize()
 
     _coord = get_coordinate(
         line_dict['Start'], line_dict['BearingIn'], distance
@@ -138,10 +138,58 @@ def get_ortho_vector(line_dict, distance, side=''):
         return None, None
 
     _delta = end.sub(start).normalize()
-    _left = App.Vector(-_delta.y, _delta.x, 0.0)
+    _left = Vector(-_delta.y, _delta.x, 0.0)
 
     _coord = get_coordinate(
         line_dict['Start'], line_dict['BearingIn'], distance
     )
 
     return _coord, _left.multiply(_dir)
+
+def get_position_offset(line_dict, coord):
+    """
+    Return the position along the line from the start and the offset
+    given the coordinate.  +/- offset = left/right from start to end
+
+    Original implementation at https://stackoverflow.com/questions/10301001/perpendicular-on-a-line-segment-from-a-given-point
+    """
+
+    #calcualte the orthogonals on either end
+    _orthos = [
+        get_ortho_vector(line_dict, 0, 'lt'),
+        get_ortho_vector(line_dict, line_dict['Length'], 'rt')
+    ]
+
+    _start = line_dict['Start']
+    _end = line_dict['End']
+
+    if support.within_tolerance(coord.distanceToPoint(_start)):
+        return 0.0, 0.0
+
+    if support.within_tolerance(coord.distanceToPoint(_end)):
+        return line_dict['Length'], 0.0
+
+    _x = (coord.x - _start.x) *  (_end.x - _start.x)
+    _y = (coord.y - _start.y) * (_end.y - _start.y)
+
+    _d = (_end.x - _start.x)**2 + (_end.y - _start.y)**2
+
+    _u = (_x + _y) / _d
+
+    _r = Vector(
+        _start.x + (_u * (_end.x - _start.x)),
+        _start.y + (_u * (_end.y - _start.y)),
+        0.0
+    )
+
+    if not min(_start.x, _end.x) < _r[0] < max(_start.x, _end.x):
+        return None
+
+    if not min(_start.y, _end.y) < _r[1] < max(_start.y, _end.y):
+        return None
+
+    _point, _vec = get_tangent_vector(
+        line_dict, _start.distanceToPoint(_r)
+    )
+
+    return _point, coord.distanceToPoint(_r)
