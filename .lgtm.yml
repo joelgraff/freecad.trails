@@ -14,4 +14,4 @@ path_classifiers:
     - freecad/trails/alignment/VerticalCurve.py
     - freecad/trails/alignment/GenerateVerticalAlignment.py
     - freecad/trails/alignment/ImportVerticalCurve.py
-    - freecad/trails/cooridor/template/TemplateLibrary.py
+    - freecad/trails/corridor/template/TemplateLibrary.py
