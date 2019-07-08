@@ -625,7 +625,6 @@ class AlignmentModel:
         if len(interval) == 1:
             interval.append(self.data['meta']['Length'])
 
-        print('interval = ', interval)
         #discretize each arc in the geometry list,
         #store each point set as a sublist in the main points list
         for curve in geometry:

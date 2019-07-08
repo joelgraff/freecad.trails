@@ -480,8 +480,6 @@ class AlignmentTracker(BaseTracker):
         if modify:
             _scale = 0.10
 
-        print('\n\t------- rotations --------', self.drag.rotation, self.drag.angle, _angle, _scale)
-
         _delta = self.drag.angle - _angle
 
         if _delta < -math.pi:
@@ -534,8 +532,6 @@ class AlignmentTracker(BaseTracker):
 
                 self.groups['PARTIAL'].getChild(_l).getChild(4)\
                     .point.setValues(_pts)
-
-                print('points = ', _pts)
 
     def _transform_nodes(self, nodes):
         """

@@ -344,9 +344,6 @@ class Alignment(Draft._Wire):
         """
         Assign updated alignment curves to the model.
         """
-
-        print('\n\t Update Curves Start / End:\n\t', pi_list[0], pi_list[-1])
-
         _model = {
             'meta': {
                 'Start': pi_list[0],
@@ -360,11 +357,6 @@ class Alignment(Draft._Wire):
 
         self.set_geometry(_model, False)
 
-        print('------------- PI ----------\n', pi_list[0], pi_list[-1])
-        print('-------------- CURVES ----------\n', self.get_curves())
-
-        print('------- COORDS --------\n', self.get_pi_coords())
-
     def set_geometry(self, geometry, zero_reference=True):
         """
         Assign geometry to the alignment object
@@ -372,7 +364,6 @@ class Alignment(Draft._Wire):
 
         self.model = alignment_model.AlignmentModel(geometry, zero_reference)
 
-        print ('start point = ', self.model.data['meta']['Start'])
         if self.model.errors:
             for _err in self.model.errors:
                 print('Error in alignment {0}: {1}'\
