@@ -27,7 +27,7 @@ Arc generation tools
 import math
 import numpy
 
-import FreeCAD as App
+from FreeCAD import Vector, Console
 
 from ..project.support import units, utils
 from . import support
@@ -280,7 +280,7 @@ def get_lengths(arc, mat):
             if _i == 1:
                 _attribs = ['tangent', 'Start-PI-End']
 
-            App.Console.PrintWarning('\nArc {0} length and {1} distance mismatch by {2:f} mm. Using calculated value of {3:f} mm'\
+            Console.PrintWarning('\nArc {0} length and {1} distance mismatch by {2:f} mm. Using calculated value of {3:f} mm'\
                 .format(_attribs[0], _attribs[1], abs(_s[1] - _s[0]), _s[0]))
 
         if _s[0] and support.within_tolerance(_s[0], params[_i]):
@@ -335,8 +335,8 @@ def get_rotation(arc, vecs):
     """
     Determine the dirction of rotation
     """
-    _v1 = [_v for _v in vecs[0:3] if _v and _v != App.Vector()]
-    _v2 = [_v for _v in vecs[3:] if _v and _v != App.Vector()]
+    _v1 = [_v for _v in vecs[0:3] if _v and _v != Vector()]
+    _v2 = [_v for _v in vecs[3:] if _v and _v != Vector()]
 
     if _v1 and _v2:
         _v1 = _v1[0]
@@ -467,7 +467,7 @@ def get_parameters(arc):
 
     #define the curve start at the origin if none is provided
     if point_count == 0:
-        points[0] = App.Vector()
+        points[0] = Vector()
 
     vecs = [support.safe_sub(arc.get('Start'), arc.get('Center'), True),
             support.safe_sub(arc.get('End'), arc.get('Center'), True),
@@ -576,12 +576,6 @@ def convert_units(arc, to_document=False):
 
     return result
 
-def get_position_offset(arc, coord):
-    """
-    Find the distance along the arc and the offset for the given coordinate
-    """
-
-    
 def parameter_test(excludes=None):
     """
     Testing routine
@@ -605,19 +599,19 @@ def parameter_test(excludes=None):
         'BearingIn': 139.3986,
         'BearingOut': 89.0825,
 
-        'Start': App.Vector(
+        'Start': Vector(
             122056.0603640062, -142398.20717496306, 0.0
             ).multiply(scale_factor),
 
-        'Center': App.Vector(
+        'Center': Vector(
             277108.1622932797, -9495.910944558627, 0.0
             ).multiply(scale_factor),
 
-        'End': App.Vector(
+        'End': Vector(
             280378.2141876281, -213685.7280672748, 0.0
             ).multiply(scale_factor),
 
-        'PI': App.Vector(
+        'PI': Vector(
             184476.32163324804, -215221.57431973785, 0.0
             ).multiply(scale_factor)
     }
@@ -636,10 +630,10 @@ def parameter_test(excludes=None):
             'Length': 588.3816798810212,
             'External': 70.21816809491217,
             'Middle': 63.5571709144523,
-            'Start': App.Vector(400.4463922703616, -467.1857190779628, 0.0),
-            'Center': App.Vector(909.147514086, -31.1545634664, 0.0),
-            'End': App.Vector(919.8760307993049, -701.0686616380407, 0.0),
-            'PI': App.Vector(605.2372756996326, -706.1075272957279, 0.0)
+            'Start': Vector(400.4463922703616, -467.1857190779628, 0.0),
+            'Center': Vector(909.147514086, -31.1545634664, 0.0),
+            'End': Vector(919.8760307993049, -701.0686616380407, 0.0),
+            'PI': Vector(605.2372756996326, -706.1075272957279, 0.0)
             }
 
 
@@ -682,7 +676,7 @@ def run_test(arc, comp, excludes):
         _w = result[_k]
         _x = _v
 
-        if isinstance(_v, App.Vector):
+        if isinstance(_v, Vector):
             _x = _v.Length
             _w = _w.Length
 
@@ -721,7 +715,7 @@ def get_coord_on_arc(start, radius, direction, distance):
 
     delta = distance / radius
 
-    return App.Vector(
+    return Vector(
         math.sin(delta), 1 - math.cos(delta), 0.0
         ).multiply(radius) + start
 
@@ -755,7 +749,7 @@ def get_ortho_vector(arc_dict, distance, side=''):
     if not coord:
         return None, None
 
-    ortho = App.Vector(arc_dict['Center']).sub(coord).multiply(_x).normalize()
+    ortho = Vector(arc_dict['Center']).sub(coord).multiply(_x).normalize()
 
     return coord, ortho
 
@@ -779,7 +773,7 @@ def get_tangent_vector(arc_dict, distance):
 
     return coord, ortho
 
-def get_segments(bearing, deltas, direction, start, radius, _dtype=App.Vector):
+def get_segments(bearing, deltas, direction, start, radius, _dtype=Vector):
     """
     Calculate the coordinates of the curve segments
 
@@ -790,27 +784,75 @@ def get_segments(bearing, deltas, direction, start, radius, _dtype=App.Vector):
     radius - arc radius
     """
 
-    _forward = App.Vector(math.sin(bearing), math.cos(bearing), 0.0)
-    _right = App.Vector(_forward.y, -_forward.x, 0.0)
+    _forward = Vector(math.sin(bearing), math.cos(bearing), 0.0)
+    _right = Vector(_forward.y, -_forward.x, 0.0)
 
     _points = [_dtype(start)]
 
     for delta in deltas:
 
-        _dfw = App.Vector(_forward).multiply(math.sin(delta))
-        _drt = App.Vector(_right).multiply(direction * (1.0 - math.cos(delta)))
+        _dfw = Vector(_forward).multiply(math.sin(delta))
+        _drt = Vector(_right).multiply(direction * (1.0 - math.cos(delta)))
 
         _vec = start.add(_dfw.add(_drt).multiply(radius))
 
-        if _dtype is not App.Vector:
+        if _dtype is not Vector:
             _vec = _dtype(_vec)
 
         _points.append(_vec)
 
     return _points
 
+def get_position_offset(arc, coord):
+    """
+    Find the distance along the arc and the offset for the given coordinate
+    """
+
+    _center = arc['Center']
+
+    #vectors from center point toward start, end, and coordinate
+    _vecs = [
+        _v.sub(_center).normalize() for _v in [arc['Start'], arc['End'], coord]
+    ]
+
+    _rad = arc['Radius']
+
+    #polar angles
+    _thetas = [math.acos(_v.x) for _v in _vecs]
+    _thetas = [_v if _v > 0 else C.TWO_PI + _v for _v in _thetas]
+
+    #if theta falls between start and end vectors, test to see if coord
+    #distance is > or < radius to determine side.
+
+    _offset = coord.distanceToPoint(_center) - _rad
+
+    #if the coord theta falls between the start / end radii thetas,
+    #return the point on the arc,
+    #the offset (adjusted for arc direction and side,
+    #and 0 (point falls on arc)
+    _min_theta = min(_thetas[:2])
+    _max_theta = max(_thetas[:2])
+
+    if _min_theta <= _thetas[2] <= _max_theta:
+
+        return _center.add(_vecs[2].multiply(_rad)), _offset * arc['Direction'], 0
+
+    #otherwise, if the offset is less than the radius,
+    #determine which theta is closer (start or end) and return
+    #-1 if clsoer to start
+    if abs(_offset) < _rad:
+
+        _deltas = [abs(_min_theta - _thetas[2]), abs(_max_theta - _thetas[2])]
+
+        if _deltas[0] < _deltas[1]:
+            if _min_theta == _thetas[0]:
+                return None, None, -1
+
+    #default point exceeds end of arc
+    return None, None, 1
+
 def get_points(
-        arc, size=10.0, method='Segment', interval=None, _dtype=App.Vector):
+        arc, size=10.0, method='Segment', interval=None, _dtype=Vector):
     """
     Discretize an arc into the specified segments.
     Resulting list of coordinates omits provided starting point and

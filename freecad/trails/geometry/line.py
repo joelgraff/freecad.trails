@@ -25,6 +25,8 @@
 Line generation tools
 """
 
+import math
+
 from FreeCAD import Vector
 from . import support
 
@@ -121,7 +123,7 @@ def get_tangent_vector(line_dict, distance):
 def get_ortho_vector(line_dict, distance, side=''):
     """
     Return the orthogonal vector pointing toward the indicated side at the
-    provided position
+    provided position.  Defaults to left-hand side
     """
 
     _dir = 1.0
@@ -146,10 +148,30 @@ def get_ortho_vector(line_dict, distance, side=''):
 
     return _coord, _left.multiply(_dir)
 
+def get_orthogonal_point(start_pt, end_pt, coord):
+    """
+    Return the point on the line specified by
+    """
+    _x = (coord.x - start_pt.x) *  (end_pt.x - start_pt.x)
+    _y = (coord.y - start_pt.y) * (end_pt.y - start_pt.y)
+
+    #euclidean distance
+    _d = (end_pt.x - start_pt.x)**2 + (end_pt.y - start_pt.y)**2
+
+    _u = (_x + _y) / _d
+
+    return Vector(
+        start_pt.x + (_u * (end_pt.x - start_pt.x)),
+        start_pt.y + (_u * (end_pt.y - start_pt.y)),
+        0.0
+    )
+
 def get_position_offset(line_dict, coord):
     """
-    Return the position along the line from the start and the offset
-    given the coordinate.  +/- offset = left/right from start to end
+    Return the projection of the coordinate onto the line, the distance
+    from the line, and a bounding value [-1, 0, 1] that indicate if
+    coordinate falls within the endpoints (0),
+    before the start piont (-1), or after the end point (1)
 
     Original implementation at https://stackoverflow.com/questions/10301001/perpendicular-on-a-line-segment-from-a-given-point
     """
@@ -157,39 +179,66 @@ def get_position_offset(line_dict, coord):
     #calcualte the orthogonals on either end
     _orthos = [
         get_ortho_vector(line_dict, 0, 'lt'),
-        get_ortho_vector(line_dict, line_dict['Length'], 'rt')
+        get_ortho_vector(line_dict, line_dict['Length'], 'lt')
     ]
 
     _start = line_dict['Start']
     _end = line_dict['End']
 
+    #quit successfully if we're on endpoints
     if support.within_tolerance(coord.distanceToPoint(_start)):
-        return 0.0, 0.0
+        return 0.0, 0.0, 0.0
 
     if support.within_tolerance(coord.distanceToPoint(_end)):
-        return line_dict['Length'], 0.0
+        return line_dict['Length'], 0.0, 0.0
 
-    _x = (coord.x - _start.x) *  (_end.x - _start.x)
-    _y = (coord.y - _start.y) * (_end.y - _start.y)
+    #get the point projection, and test to see if it's within the limits
+    #of the line
+    _r = get_orthogonal_point(_start, _end, coord)
 
-    _d = (_end.x - _start.x)**2 + (_end.y - _start.y)**2
+    _ortho = coord.sub(_r)
 
-    _u = (_x + _y) / _d
+    _dir = -1.0
 
-    _r = Vector(
-        _start.x + (_u * (_end.x - _start.x)),
-        _start.y + (_u * (_end.y - _start.y)),
-        0.0
-    )
+    #determine the direction of the offset
+    if math.copysign(1, _ortho.x) == math.copysign(1, _orthos[0][1].x)\
+        and math.copysign(1, _ortho.y) == math.copysign(1, _orthos[0][1].y):
 
-    if not min(_start.x, _end.x) < _r[0] < max(_start.x, _end.x):
-        return None
+            _dir = 1.0
 
-    if not min(_start.y, _end.y) < _r[1] < max(_start.y, _end.y):
-        return None
+    _bounds = [
+        (min(_start.x, _end.x), max(_start.x, _end.x)),
+        (min(_start.y, _end.y), max(_start.y, _end.y))
+    ]
 
-    _point, _vec = get_tangent_vector(
-        line_dict, _start.distanceToPoint(_r)
-    )
+    in_limits = \
+        min(_start.x, _end.x) < _r[0] < max(_start.x, _end.x)\
+        and min(_start.y, _end.y) < _r[1] < max(_start.y, _end.y)
 
-    return _point, coord.distanceToPoint(_r)
+    if in_limits:
+
+        _point, _vec = get_tangent_vector(
+            line_dict, _start.distanceToPoint(_r)
+        )
+
+        return _point, coord.distanceToPoint(_r) * _dir, 0
+
+    #outside the limits
+    _o = _orthos[0][1]
+
+    _pts = [
+        get_orthogonal_point(_start, _o.add(_start), coord),
+        get_orthogonal_point(_end, _o.add(_end), coord)
+    ]
+
+    _dist = [
+        coord.distanceToPoint(_pts[0]),
+        coord.distanceToPoint(_pts[1])
+    ]
+
+    _bound = 1
+
+    if _dist[0] < _dist[1]:
+        _bound = -1
+
+    return _r, coord.distanceToPoint(_r) * _dir, _bound

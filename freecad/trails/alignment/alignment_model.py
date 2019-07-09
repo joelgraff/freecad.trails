@@ -538,39 +538,32 @@ class AlignmentModel:
         the internal station or None if not within tolerance.
         """
 
-        _results = []
+        _matches = []
+        _classes = {'Line': line, 'Curve': arc, 'Spiral': spiral}
 
-        for _geo in self.data['geometry']:
+        #iterate the geometry, creating a list of potential matches
+        for _i, _v in enumerate(self.data['geometry']):
 
-            _class = line
+            _class = _classes[_v['Type']]
 
-            if _geo.Type == 'arc':
-                _class = arc
-            elif _geo.Type == 'spiral':
-                _class = spiral
+            _p, _d, _b = _class.get_position_offset(_v, coordinate)
 
-            _v = _class.get_position_offset(coordinate)
+            if _b < 0:
+                break
 
-            if not _v[0]:
+            if _b > 0:
                 continue
 
-            _results.append (_v)
+            _matches.append((_p, _d, _i))
 
-        if not _results:
+        if not _matches:
             return None, None
 
-        if len(_results) == 1:
-            return _results[0]
+        #get the distances
+        _dists = [_v[1] for _v in _matches]
 
-        _tpl = _results[0]
-
-        for _v in _results[1:]:
-
-            if _v[1] < _tpl[1]:
-                _tpl = _v
-
-        return _tpl
-
+        #return the closest match
+        return _matches[_dists.index(min(_dists))]
 
     def locate_curve(self, station):
         """

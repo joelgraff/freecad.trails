@@ -372,3 +372,10 @@ def get_tangent_vector(spiral, distance):
     _is_forward = int(spiral['StartRadius'] == math.inf)
 
     return _coords[_is_forward], _tangent
+
+def get_position_offset(line_dict, coord):
+    """
+    Return the position and offset of the coordinate along the spiral
+    """
+
+    return None, None, 1
