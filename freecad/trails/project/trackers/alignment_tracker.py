@@ -139,7 +139,7 @@ class AlignmentTracker(BaseTracker):
         self.node.addChild(self.groups['EDIT'])
         self.node.addChild(self.groups['DRAG'])
 
-        #generate inital node trackers and wire trackers for mouse interaction
+        #generate initial node trackers and wire trackers for mouse interaction
         #and add them to the scenegraph
         self.trackers = None
         self.build_trackers()
@@ -323,7 +323,7 @@ class AlignmentTracker(BaseTracker):
 
         _partial = []
 
-        #duplciate scene nodes of selected and partially-selected wires
+        #duplicate scene nodes of selected and partially-selected wires
         for _v in self.trackers['Tangents'] + self.trackers['Curves']:
 
             if _v.state == 'UNSELECTED':
@@ -625,7 +625,7 @@ class AlignmentTracker(BaseTracker):
             self.is_valid = True
             return
 
-        #append preceeding and following curves if first / last curves
+        #append preceding and following curves if first / last curves
         #aren't being updated
         if _idx[0] > 0:
             _idx.insert(0, _idx[0] - 1)

@@ -130,7 +130,7 @@ class NodeTracker(BaseTracker):
         if not self.is_selectable():
             return
 
-        #no mouseover porcessing if the node is currently selected
+        #no mouseover processing if the node is currently selected
         if self.state == 'SELECTED':
             return
 
