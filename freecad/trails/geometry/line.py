@@ -206,11 +206,6 @@ def get_position_offset(line_dict, coord):
 
             _dir = 1.0
 
-    _bounds = [
-        (min(_start.x, _end.x), max(_start.x, _end.x)),
-        (min(_start.y, _end.y), max(_start.y, _end.y))
-    ]
-
     in_limits = \
         min(_start.x, _end.x) < _r[0] < max(_start.x, _end.x)\
         and min(_start.y, _end.y) < _r[1] < max(_start.y, _end.y)
