@@ -32,7 +32,7 @@ from FreeCAD import Vector
 
 import FreeCADGui as Gui
 
-from ...geometry import support, arc
+from ...geometry import support, arc, spiral
 
 from .base_tracker import BaseTracker
 from .coin_style import CoinStyle
@@ -221,7 +221,7 @@ class AlignmentTracker(BaseTracker):
 
         for _geo in _model['geometry']:
 
-            if _geo['Type'] == 'Curve':
+            if _geo['Type'] != 'Line':
                 _nodes += [_geo['PI']]
 
         _nodes += [_model['meta']['End']]
@@ -261,11 +261,12 @@ class AlignmentTracker(BaseTracker):
         for _i in range(0, len(_result['Tangents']) - 1):
 
             _nodes = _result['Nodes'][_i:_i + 3]
+            _class = arc
 
             if _curves[_i]['Type'] == 'Spiral':
-                continue
+                _class = spiral
 
-            _points, _x = arc.get_points(_curves[_i])
+            _points, _x = _class.get_points(_curves[_i])
 
             _result['Curves'].append(
                 self._build_wire_tracker(
@@ -374,6 +375,7 @@ class AlignmentTracker(BaseTracker):
 
         if self.is_valid:
 
+            print ('updating!')
             #do a final calculation on the curves
             self.drag.curves = list(range(0, len(self.curves)))
             self._generate_curves()
@@ -588,16 +590,27 @@ class AlignmentTracker(BaseTracker):
             _pi = _nodes[_j + 1]
             _end = _nodes[_j + 2]
 
-            _curve = arc.get_parameters(
-                {
+            _class = arc
+            _curve = {
                     'BearingIn': support.get_bearing(_pi.sub(_start)),
                     'BearingOut': support.get_bearing(_end.sub(_pi)),
                     'PI': _pi,
                     'Radius': self.curves[_i]['Radius'],
                 }
-            )
 
-            _points, _x = arc.get_points(_curve)
+            if self.curves[_i]['Type'] == 'Spiral':
+                _class = spiral
+                _curve = {
+                    'Start': _start,
+                    'PI': _pi,
+                    'End': _end,
+                    'Radius': self.curves[_i]['Radius']
+                }
+
+            print('\nt\tclass = ', _class, '\n\tcurve = ', _curve)
+
+            _curve = _class.get_parameters(_curve)
+            _points, _x = _class.get_points(_curve)
 
             #save a reference to the tracker for later validation and update
             #_curve['tracker'] = self.trackers['Curves'][_idx]

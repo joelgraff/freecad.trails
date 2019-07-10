@@ -704,7 +704,7 @@ class AlignmentModel:
                     points.append(_pts)
 
             elif curve['Type'] == 'Spiral':
-                _pts = spiral.get_points(curve, size=delta, method=method)
+                _pts, _hsh = spiral.get_points(curve, size=delta, method=method)
 
                 if _pts:
                     points.append(_pts)

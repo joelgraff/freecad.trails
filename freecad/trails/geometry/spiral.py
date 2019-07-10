@@ -115,7 +115,7 @@ def _calc_rlt(radius, length, theta):
 
 def _solve_by_absolute(spiral):
     """
-    Solve by absolute position (3 coordiantes defined)
+    Solve by absolute position (3 coordinates defined)
     """
 
     #require 3 coordinates and radius
@@ -320,7 +320,7 @@ def get_points(
         float(_i + 1) * _delta for _i in range(0, int(angle / _delta))
     ]
 
-    return get_segments(spiral, segment_deltas, _dtype)
+    return get_segments(spiral, segment_deltas, _dtype), None
 
 def get_ortho_vector(spiral, distance, side):
     """

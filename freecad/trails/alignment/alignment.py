@@ -322,7 +322,7 @@ class Alignment(Draft._Wire):
         """
 
         return [_v for _v in self.model.data['geometry'] \
-            if _v['Type'] == 'Curve']
+            if _v['Type'] != 'Line']
 
     def get_geometry(self, curve_hash=None):
         """
