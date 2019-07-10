@@ -93,7 +93,6 @@ class EditAlignmentCmd():
         obj = Gui.Selection.getSelection()[0]
         data = obj.Proxy.get_data_copy()
 
-
         self.doc = App.ActiveDocument
         self.view = Gui.ActiveDocument.ActiveView
 

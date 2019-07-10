@@ -92,7 +92,7 @@ class AlignmentTracker(BaseTracker):
         self.is_valid = True
         self.status_bar = Gui.getMainWindow().statusBar()
         self.pi_list = []
-        self.datum = datum
+        self.datum = alignment.model.data['meta']['Start']
 
         self.drag = self.DragState()
 
@@ -102,7 +102,9 @@ class AlignmentTracker(BaseTracker):
 
         #base (placement) transformation for the alignment
         self.transform = coin.SoTransform()
-
+        self.transform.translation.setValue(
+            tuple(alignment.model.data['meta']['Start'])
+        )
         super().__init__(
             names=self.names, children=[self.transform]
         )
@@ -253,6 +255,7 @@ class AlignmentTracker(BaseTracker):
             )
 
         _curves = self.alignment.get_curves()
+        _points = []
 
         #wire trackers - Curves
         for _i in range(0, len(_result['Tangents']) - 1):
@@ -260,10 +263,9 @@ class AlignmentTracker(BaseTracker):
             _nodes = _result['Nodes'][_i:_i + 3]
 
             if _curves[_i]['Type'] == 'Spiral':
-                pass
+                continue
 
-            else:
-                _points, _x = arc.get_points(_curves[_i])
+            _points, _x = arc.get_points(_curves[_i])
 
             _result['Curves'].append(
                 self._build_wire_tracker(
@@ -300,7 +302,10 @@ class AlignmentTracker(BaseTracker):
             _c = _v.get()
 
             if not self.drag.start:
-                self.drag.start = Vector(self.view.getPoint(self.mouse.pos))
+
+                self.drag.start =\
+                    Vector(self.view.getPoint(self.mouse.pos)).sub(self.datum)
+
                 self.drag.position = self.drag.start
                 self.drag.center = _c
 
@@ -352,7 +357,7 @@ class AlignmentTracker(BaseTracker):
         Update method during drag operations
         """
 
-        _world_pos = self.view.getPoint(self.mouse.pos)
+        _world_pos = self.view.getPoint(self.mouse.pos).sub(self.datum)
 
         self._update_transform(_world_pos, do_rotation, modify)
         self._update_pi_nodes(_world_pos)
@@ -373,13 +378,21 @@ class AlignmentTracker(BaseTracker):
             self.drag.curves = list(range(0, len(self.curves)))
             self._generate_curves()
 
-            self.alignment.update_curves(self.curves, self.drag.pi)
+            self.alignment.update_curves(self.curves, self.drag.pi, True) #TRUE
 
             for _i, _v in enumerate(self.alignment.model.get_pi_coords()):
                 self.trackers['Nodes'][_i].update(_v)
 
             for _v in self.trackers['Tangents']:
                 _v.update([_w.get() for _w in _v.selection_nodes])
+
+            for _v in self.trackers['Curves']:
+                _v.update([
+                    tuple(Vector(_w).sub(self.drag.pi[0])) for _w in _v.points
+                ])
+
+            self.datum = self.datum.add(self.drag.pi[0])
+            self.transform.translation.setValue(tuple(self.datum))
 
         self.drag.reset()
 
@@ -536,17 +549,14 @@ class AlignmentTracker(BaseTracker):
         """
 
         _matrix = self.get_matrix()
-
         _result = []
-        _world = self.view.getPoint(self.mouse.pos)
 
         for _n in nodes:
 
-            _v = _n
             _v = coin.SbVec4f(tuple(_n) + (1.0,))
             _v = _matrix.multVecMatrix(_v).getValue()[:3]
 
-            _result.append(Vector(_v))
+            _result.append(Vector(_v).sub(self.datum))
 
         return _result
 

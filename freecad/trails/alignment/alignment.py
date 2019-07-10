@@ -340,10 +340,11 @@ class Alignment(Draft._Wire):
 
         return None
 
-    def update_curves(self, curves, pi_list, zero_refrence=False):
+    def update_curves(self, curves, pi_list, zero_reference=False):
         """
         Assign updated alignment curves to the model.
         """
+
         _model = {
             'meta': {
                 'Start': pi_list[0],
@@ -355,7 +356,7 @@ class Alignment(Draft._Wire):
             'station': self.model.data['station']
         }
 
-        self.set_geometry(_model, False)
+        self.set_geometry(_model, zero_reference)
 
     def set_geometry(self, geometry, zero_reference=True):
         """
@@ -376,7 +377,7 @@ class Alignment(Draft._Wire):
 
         return self.model.errors
 
-    def assign_meta_data(self):
+    def assign_meta_data(self, model=None):
         """
         Extract the meta data for the alignment from the data set
         Check it for errors
@@ -404,6 +405,8 @@ class Alignment(Draft._Wire):
 
         if meta.get('StartStation'):
             obj.Start_Station = str(meta['StartStation']) + ' ft'
+
+        print(obj.Start)
 
     def onChanged(self, obj, prop):
         """

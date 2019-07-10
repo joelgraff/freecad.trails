@@ -118,7 +118,7 @@ class AlignmentModel:
         if not self.validate_bearings():
             return False
 
-        self.validate_coordinates()
+        self.validate_coordinates(zero_reference)
 
         if not self.validate_alignment():
             return False
@@ -128,7 +128,6 @@ class AlignmentModel:
 
         if zero_reference:
             self.zero_reference_coordinates()
-
         #run discretization to force coordinate transformation updates
         #self.discretize_geometry()
 
@@ -341,7 +340,7 @@ class AlignmentModel:
 
             _datum['StartStation'] -= delta
 
-    def validate_coordinates(self):
+    def validate_coordinates(self, zero_reference):
         """
         Iterate the geometry, testing for incomplete / incorrect station /
         coordinate values. Fix them where possible, error otherwise
@@ -356,6 +355,9 @@ class AlignmentModel:
         _prev_geo = {'End': _datum['Start'], 'InternalStation': (0.0, 0.0),
                      'StartStation': _datum['StartStation'], 'Length': 0.0
                     }
+
+        if not zero_reference:
+            _prev_geo['End'] = Vector()
 
         for _geo in _geo_data:
 
