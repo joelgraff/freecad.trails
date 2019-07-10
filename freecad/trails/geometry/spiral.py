@@ -164,6 +164,7 @@ def _solve_by_absolute(spiral):
     #calc theta as dot product of bearing vectors
     _theta = math.acos(_result.A[1][0] / (_tangents[0] * _tangents[1]))
     spiral['Theta'] = _test_tolerance(spiral.get('Theta'), _theta)
+    print(spiral['Theta'])
 
     #calc length
     _len = spiral['Radius'] * spiral['Theta'] * 2.0
@@ -175,6 +176,9 @@ def _solve_by_absolute(spiral):
 
     _tx = _calc_total_x(spiral['Theta']) * spiral['Length']
     spiral['TotalX'] = _test_tolerance(spiral.get('TotalX'), _tx)
+
+    if spiral.get('Type') is None:
+        spiral['Type'] = 'Spiral'
 
     return spiral
 
@@ -195,6 +199,7 @@ def get_parameters(spiral_dict):
 
     #test for missing points. branch accordingly
     if all([spiral_dict.get(_k) for _k in ['Start', 'End', 'PI', 'Radius']]):
+        print('calc by absolute')
         return _solve_by_absolute(spiral_dict)
     #else:
     #   _solve_by_relative(spiral_dict)
@@ -219,7 +224,10 @@ def get_segments(spiral, deltas, _dtype=Vector):
     _radius = spiral['Radius']
     _direction = spiral['Direction']
 
-    _reverse = spiral['EndRadius'] == math.inf
+    _reverse = spiral.get('EndRadius') is None
+
+    if not _reverse:
+        _reverse = spiral['EndRadius'] == math.inf
 
     #if short tangent leads, we need to calculate from the other end
     #toward the start of the spiral

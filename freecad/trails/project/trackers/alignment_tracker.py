@@ -599,17 +599,29 @@ class AlignmentTracker(BaseTracker):
                 }
 
             if self.curves[_i]['Type'] == 'Spiral':
+
                 _class = spiral
+                _key = 'StartRadius'
+
+                if not self.curves[_i].get('StartRadius'):
+                    _key = 'EndRadius'
+
+                elif self.curves[_i]['StartRadius'] == math.inf:
+                    _key = 'EndRadius'
+
                 _curve = {
                     'Start': _start,
                     'PI': _pi,
                     'End': _end,
-                    'Radius': self.curves[_i]['Radius']
+                    _key: self.curves[_i][_key],
+                    'Direction': self.curves[_i]['Direction']
                 }
 
-            print('\nt\tclass = ', _class, '\n\tcurve = ', _curve)
-
+            print('/n/traw curve = ', _curve)
             _curve = _class.get_parameters(_curve)
+
+            print('\n\tcurve = ', _curve)
+
             _points, _x = _class.get_points(_curve)
 
             #save a reference to the tracker for later validation and update
@@ -656,6 +668,10 @@ class AlignmentTracker(BaseTracker):
 
             _c = [curves[_i], curves[_i + 1]]
 
+            #disable validation for spirals temporarily
+            if _c[0]['Type'] == 'Spiral' or _c[1]['Type'] == 'Spiral':
+                continue
+
             if (_c[0]['Tangent'] + _c[1]['Tangent'])\
                 > (_c[0]['PI'].distanceToPoint(_c[1]['PI'])):
 
@@ -677,6 +693,10 @@ class AlignmentTracker(BaseTracker):
 
             _c = curves[_i]
             _p = self.drag.pi[_i]
+
+            #disable validation for spirals temporarily
+            if _c['Type'] == 'Spiral':
+                continue
 
             if _styles[_i] != CoinStyle.ERROR:
 
