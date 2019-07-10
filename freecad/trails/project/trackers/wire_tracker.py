@@ -106,7 +106,7 @@ class WireTracker(BaseTracker):
 
     def transform_points(self, points, matrix):
         """
-        Update the points with the apprpriate transformation and return
+        Update the points with the appropriate transformation and return
         """
 
         pass
@@ -173,7 +173,7 @@ class WireTracker(BaseTracker):
         if not self.is_selectable():
             return
 
-        #no mouseover porcessing if the node is currently selected
+        #no mouseover processing if the node is currently selected
         if self.state:
             return
 

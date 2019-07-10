@@ -171,12 +171,12 @@ def get_position_offset(line_dict, coord):
     Return the projection of the coordinate onto the line, the distance
     from the line, and a bounding value [-1, 0, 1] that indicate if
     coordinate falls within the endpoints (0),
-    before the start piont (-1), or after the end point (1)
+    before the start point (-1), or after the end point (1)
 
     Original implementation at https://stackoverflow.com/questions/10301001/perpendicular-on-a-line-segment-from-a-given-point
     """
 
-    #calcualte the orthogonals on either end
+    #calculate the orthogonals on either end
     _orthos = [
         get_ortho_vector(line_dict, 0, 'lt'),
         get_ortho_vector(line_dict, line_dict['Length'], 'lt')

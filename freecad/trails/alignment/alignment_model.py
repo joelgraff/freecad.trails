@@ -55,7 +55,7 @@ class AlignmentModel:
 
         if geometry:
             if not self.construct_geometry(geometry, zero_reference):
-                print('Errors encounterd generating alignment model')
+                print('Errors encountered generating alignment model')
 
     def get_datum(self):
         """
@@ -91,7 +91,7 @@ class AlignmentModel:
                 _geo = arc.get_parameters(_geo)
 
             #skip serialized lines unless it begins the alignment.
-            #In that case, set the tangent's start coordiante as
+            #In that case, set the tangent's start coordinate as
             #alignment datum before continuing
             elif _geo['Type'] == 'Line':
 
