@@ -150,21 +150,35 @@ def _solve_by_absolute(spiral):
     spiral['TanShort'] = _test_tolerance(spiral.get('TanShort'), _tangents[0])
     spiral['TanLong'] = _test_tolerance(spiral.get('TanLong'), _tangents[1])
 
+    if spiral['TanShort'] > spiral['TanLong']:
+        spiral['TanShort'], spiral['TanLong'] = \
+            spiral['TanLong'], spiral['TanShort']
+
     #set bearings
-    spiral['BearingIn'] = math.acos(_result.A[2][0] / _tangents[0])
-    spiral['BearingOut'] = math.acos(_result.A[2][1] / _tangents[1])
+    _b = [
+        math.acos(_result.A[2][0] / _tangents[0]),
+        math.acos(_result.A[2][1] / _tangents[1])
+    ]
 
     #adjust by 2pi if dX < 0 (leftward vector)
     if support.get_quadrant(Vector(_vecs[0])) > 1:
-        spiral['BearingIn'] = C.TWO_PI - spiral['BearingIn']
+        _b[0] = C.TWO_PI - _b[0]
 
     if support.get_quadrant(Vector(_vecs[1])) > 1:
-        spiral['BearingOut'] = C.TWO_PI - spiral['BearingOut']
+        _b[1] = C.TWO_PI - _b[1]
+
+    spiral['BearingIn'] = _b[0]
+    spiral['BearingOut'] = _b[1]
+
+    _b_vec = [support.vector_from_angle(_v) for _v in _b]
+
+    #set direction
+    spiral['Direction'] = \
+        support.get_rotation(_b_vec[0], _b_vec[1])
 
     #calc theta as dot product of bearing vectors
     _theta = math.acos(_result.A[1][0] / (_tangents[0] * _tangents[1]))
     spiral['Theta'] = _test_tolerance(spiral.get('Theta'), _theta)
-    print(spiral['Theta'])
 
     #calc length
     _len = spiral['Radius'] * spiral['Theta'] * 2.0
@@ -181,6 +195,78 @@ def _solve_by_absolute(spiral):
         spiral['Type'] = 'Spiral'
 
     return spiral
+
+def solve_by_relative(spiral_dict):
+    """
+    Return the spiral curve definition provided it's bearings, a PI,
+    a radius, and a length.
+    """
+
+    if not all(spiral_dict.get(_k)\
+         for _k in ['BearingIn', 'BearingOut', 'PI']):
+
+        return None
+
+    _radius = spiral_dict.get('StartRadius')
+    _terminus = spiral_dict.get('Start')
+    _is_inbound = False
+
+    if _radius is not None:
+        if _radius == math.inf:
+            _radius = spiral_dict['EndRadius']
+            _terminus = spiral_dict['End']
+            _is_inbound = True
+    else:
+        _radius = spiral_dict['EndRadius']
+        _terminus = spiral_dict['End']
+        _is_inbound = True
+
+    _theta = abs(spiral_dict['BearingOut'] - spiral_dict['BearingIn'])
+
+    _len = 2.0 * _radius * _theta
+
+    _Xc = _len**2.0 / (6.0 * _radius)
+    _Yc = _len - ((_len**3) / (40.0 * _radius**2))
+
+    _long_tan = _Yc - (_Xc / math.tan(_theta))
+    _short_tan = _Xc / math.sin(_theta)
+
+    _tangents = [
+        support.vector_from_angle(spiral_dict['BearingIn']),
+        support.vector_from_angle(spiral_dict['BearingOut'])
+    ]
+
+    _tan_len = [_short_tan, _long_tan]
+
+    #swap if inbound where long tangent comes first
+    if _is_inbound:
+        _tan_len[0], _tan_len[1] = _tan_len[1], _tan_len[0]
+
+    _pi = spiral_dict['PI']
+
+    _dir = support.get_rotation(_tangents[0], _tangents[1])
+
+    _tans = [Vector(_tangents[_i]).multiply(_tan_len[_i]) for _i in [0, 1]]
+
+    _begin_pt = _pi.add(_tans[1])
+
+    if _is_inbound:
+        _begin_pt = _pi.sub(_tans[0])
+        spiral_dict['Start'] = _begin_pt
+    else:
+        spiral_dict['End'] = _begin_pt
+
+    spiral_dict['TanShort'] = _short_tan
+    spiral_dict['TanLong'] = _long_tan
+    spiral_dict['Direction'] = _dir
+    spiral_dict['Theta'] = _theta
+    spiral_dict['TotalX'] = _Xc
+    spiral_dict['TotalY'] = _Yc
+    spiral_dict['Type'] = 'Spiral'
+    spiral_dict['Radius'] = _radius
+    spiral_dict['Length'] = _len
+
+    return spiral_dict
 
 def get_parameters(spiral_dict):
     """

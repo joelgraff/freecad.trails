@@ -564,7 +564,7 @@ class AlignmentTracker(BaseTracker):
 
     def _generate_curves(self):
         """
-        _Internal function - Generate curves based on existing curves and nodes
+        Internal function - Generate curves based on existing curves and nodes
         """
 
         #get the indices of curves that are to be updated
@@ -583,6 +583,7 @@ class AlignmentTracker(BaseTracker):
                 _nodes[_i] = self._transform_nodes([_v.get()])[0]
 
         _j = 0
+        _last_curve = None
 
         for _i in _indices:
 
@@ -601,32 +602,54 @@ class AlignmentTracker(BaseTracker):
             if self.curves[_i]['Type'] == 'Spiral':
 
                 _class = spiral
-                _key = 'StartRadius'
+                _key = ''
+                _rad = 0.0
 
-                if not self.curves[_i].get('StartRadius'):
+                if not self.curves[_i].get('StartRadius') \
+                    or self.curves[_i]['StartRadius'] == math.inf:
                     _key = 'EndRadius'
+                    _rad = self.curves[_i + 1]['Radius']
+                    _end = self.curves[_i +1]['Start']
 
-                elif self.curves[_i]['StartRadius'] == math.inf:
-                    _key = 'EndRadius'
+                    if _i > 0:
+                        _start = _pi.sub(
+                            Vector(_pi.sub(_start)).multiply(
+                                _start.distanceToPoint(_pi) / 2.0
+                            )
+                        )
+
+                else:
+                    _key = 'StartRadius'
+                    _rad = self.curves[_i - 1]['Radius']
+                    _start = self.curves[_i - 1]['End']
+
+                    if _i < len(self.curves) - 1:
+                        _end = _pi.add(
+                            Vector(_end.sub(_pi)).multiply(
+                                _end.distanceToPoint(_pi) / 2.0)
+                        )
 
                 _curve = {
-                    'Start': _start,
+                    'BearingIn': support.get_bearing(_pi.sub(_start)),
+                    'BearingOut': support.get_bearing(_end.sub(_pi)),
                     'PI': _pi,
+                    'Start': _start,
                     'End': _end,
-                    _key: self.curves[_i][_key],
-                    'Direction': self.curves[_i]['Direction']
+                    _key: _rad
                 }
 
-            print('/n/traw curve = ', _curve)
-            _curve = _class.get_parameters(_curve)
+                _curve = spiral.solve_by_relative(_curve)
 
-            print('\n\tcurve = ', _curve)
+                #re-render the last known good points if an error occurs
+                if _curve['TanShort'] <= 0.0 or _curve['TanLong'] <= 0.0:
+                    _curve = self.curves[_i]
 
-            _points, _x = _class.get_points(_curve)
+                _points, _x = spiral.get_points(_curve)
 
-            #save a reference to the tracker for later validation and update
-            #_curve['tracker'] = self.trackers['Curves'][_idx]
-            #_curve['tracker'].update(_points)
+            else:
+                _class = arc
+                _curve = arc.get_parameters(_curve)
+                _points, _x = arc.get_points(_curve)
 
             self.curves[_i] = _curve
 
@@ -668,9 +691,20 @@ class AlignmentTracker(BaseTracker):
 
             _c = [curves[_i], curves[_i + 1]]
 
+            _tangents = []
+
             #disable validation for spirals temporarily
-            if _c[0]['Type'] == 'Spiral' or _c[1]['Type'] == 'Spiral':
-                continue
+            if _c[0]['Type'] == 'Spiral':
+                _tangents[0] = spiral.get_left_tangent(_c[0])
+
+            else:
+                _tangents[0] = _c[0]['Tangent']
+
+            if _c[1]['Type'] == 'Spiral':
+                _tangents[1] = spiral.get_right_tangent(_c[1])
+
+            else:
+                _tangents[1] = _c[1]['Tangent']
 
             if (_c[0]['Tangent'] + _c[1]['Tangent'])\
                 > (_c[0]['PI'].distanceToPoint(_c[1]['PI'])):
@@ -693,14 +727,20 @@ class AlignmentTracker(BaseTracker):
 
             _c = curves[_i]
             _p = self.drag.pi[_i]
+            _tangent = None
 
             #disable validation for spirals temporarily
             if _c['Type'] == 'Spiral':
-                continue
+                if _i == 0:
+                    _tangent = spiral.get_left_tangent(_c)
+                else:
+                    _tangent = spiral.get_right_tangent(_c)
+            else:
+                _tangent = c['Tangent']
 
             if _styles[_i] != CoinStyle.ERROR:
 
-                if _c['Tangent'] > _c['PI'].distanceToPoint(_p):
+                if _tangent > _c['PI'].distanceToPoint(_p):
                     _styles[_i] = CoinStyle.ERROR
 
         for _i, _c in enumerate(curves):
