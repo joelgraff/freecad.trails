@@ -222,18 +222,16 @@ def solve_by_relative(spiral_dict):
 
         return None
 
+    print('\n---------------------\n', spiral_dict)
     _radius = spiral_dict.get('StartRadius')
-    _terminus = spiral_dict.get('Start')
     _is_inbound = False
 
     if _radius is not None:
         if _radius == math.inf:
             _radius = spiral_dict['EndRadius']
-            _terminus = spiral_dict['End']
             _is_inbound = True
     else:
         _radius = spiral_dict['EndRadius']
-        _terminus = spiral_dict['End']
         _is_inbound = True
 
     _theta = abs(spiral_dict['BearingOut'] - spiral_dict['BearingIn'])
@@ -261,9 +259,7 @@ def solve_by_relative(spiral_dict):
 
     _dir = support.get_rotation(_tangents[0], _tangents[1])
 
-    _tans = [Vector(_tangents[_i]).multiply(_tan_len[_i]) for _i in [0, 1]]
-
-    _begin_pt = _pi.add(_tans[1])
+    spiral_dict['Direction'] = _dir
 
     #calculate vectors for total x and total y, pointing toward the point of
     #infinite radius
@@ -272,21 +268,35 @@ def solve_by_relative(spiral_dict):
     if _is_inbound:
         _vec = _tangents[1]
 
+    #calc the Xc / Yc vectors pointing away from the finite radius point
+    _ortho = support.vector_ortho(_tangents[0])
+
+    #flip the orthogonal for clockwise curves
+    if _dir > 0:
+        _ortho.multiply(-1.0)
+
+    _vecs = [
+        Vector(_tangents[0]).multiply(_Xc),
+        Vector(_ortho).multiply(_Yc)
+    ]
+
+    spiral_dict['vTotal'] = _vecs[0].add(_vecs[1])
+
     #calc the Xc / Yxc vectors pointing away from the finite radius point
-    spiral_dict['vTotalY'] = _vec.multiply(spiral_dict['TotalY'])
+    spiral_dict['vTotalY'] = _vec.multiply(_Yc)
     spiral_dict['vTotalX'] = \
-        support.vector_ortho(_vec).multiply(spiral_dict['TotalX'])
+        support.vector_ortho(_vec).multiply(_Xc)
 
     #flip the orthogonal for clockwise curves
     if spiral_dict['Direction'] > 0:
         spiral_dict['vTotalX'].multiply(-1.0)
 
+    print('\n\t---->\n\t',spiral_dict['Start'], spiral_dict['End'], spiral_dict['vTotal'])
     #set the starting points appropriately
     if _is_inbound:
-        _begin_pt = _pi.sub(_tans[0])
-        spiral_dict['Start'] = _begin_pt
+        spiral_dict['Start'] = spiral_dict['End'].sub(spiral_dict['vTotal'])
     else:
-        spiral_dict['End'] = _begin_pt
+        spiral_dict['End'] = spiral_dict['Start'].add(spiral_dict['vTotal'])
 
     spiral_dict['TanShort'] = _short_tan
     spiral_dict['TanLong'] = _long_tan

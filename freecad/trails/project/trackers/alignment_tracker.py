@@ -695,13 +695,15 @@ class AlignmentTracker(BaseTracker):
 
             #disable validation for spirals temporarily
             if _c[0]['Type'] == 'Spiral':
-                _tangents[0] = spiral.get_left_tangent(_c[0])
+                continue
+                #_tangents[0] = spiral.get_left_tangent(_c[0])
 
             else:
                 _tangents[0] = _c[0]['Tangent']
 
             if _c[1]['Type'] == 'Spiral':
-                _tangents[1] = spiral.get_right_tangent(_c[1])
+                continue
+                #_tangents[1] = spiral.get_right_tangent(_c[1])
 
             else:
                 _tangents[1] = _c[1]['Tangent']
