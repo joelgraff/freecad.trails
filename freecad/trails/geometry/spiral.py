@@ -47,10 +47,10 @@ def _calc_expansion(theta, expansion):
     Compute the expansion of terms
     """
 
-    _t2 = theta * theta
+    _t2 = theta**4
     _acc = 0.0
 
-    for _v in SpiralConst.TX_EXPANSION:
+    for _v in expansion:
 
         _acc += _v
         _acc *= _t2
@@ -62,14 +62,15 @@ def _calc_total_x(theta):
     Compute the totalX value by series expansion
     """
 
-    return  1 - _calc_expansion(math.degrees(theta), SpiralConst.TX_EXPANSION)
+    _v = 1 + _calc_expansion(theta**(1/2), SpiralConst.TX_EXPANSION)
+
+    return _v
 
 def _calc_total_y(theta):
     """
     Compute the totalY value by series expansion
     """
-
-    _v = (1/3) + _calc_expansion(math.degrees(theta), SpiralConst.TY_EXPANSION)
+    _v = (1/3) + _calc_expansion(theta**(1/2), SpiralConst.TY_EXPANSION)
 
     return _v * theta
 
@@ -191,6 +192,20 @@ def _solve_by_absolute(spiral):
     _tx = _calc_total_x(spiral['Theta']) * spiral['Length']
     spiral['TotalX'] = _test_tolerance(spiral.get('TotalX'), _tx)
 
+    #calc the Xc / Yc vectors pointing away from the finite radius point
+    _ortho = support.vector_ortho(_b_vec[0])
+
+    #flip the orthogonal for clockwise curves
+    if spiral['Direction'] > 0:
+        _ortho.multiply(-1.0)
+
+    _vecs = [
+        Vector(_b_vec[0]).multiply(spiral['TotalX']),
+        Vector(_ortho).multiply(spiral['TotalY'])
+    ]
+
+    spiral['vTotal'] = _vecs[0].add(_vecs[1])
+
     if spiral.get('Type') is None:
         spiral['Type'] = 'Spiral'
 
@@ -250,6 +265,23 @@ def solve_by_relative(spiral_dict):
 
     _begin_pt = _pi.add(_tans[1])
 
+    #calculate vectors for total x and total y, pointing toward the point of
+    #infinite radius
+    _vec = _tangents[0].multiply(-1.0)
+
+    if _is_inbound:
+        _vec = _tangents[1]
+
+    #calc the Xc / Yxc vectors pointing away from the finite radius point
+    spiral_dict['vTotalY'] = _vec.multiply(spiral_dict['TotalY'])
+    spiral_dict['vTotalX'] = \
+        support.vector_ortho(_vec).multiply(spiral_dict['TotalX'])
+
+    #flip the orthogonal for clockwise curves
+    if spiral_dict['Direction'] > 0:
+        spiral_dict['vTotalX'].multiply(-1.0)
+
+    #set the starting points appropriately
     if _is_inbound:
         _begin_pt = _pi.sub(_tans[0])
         spiral_dict['Start'] = _begin_pt
@@ -304,12 +336,13 @@ def get_segments(spiral, deltas, _dtype=Vector):
     radius - arc radius
     """
 
-    _vec = spiral['PI'].sub(spiral['Start']).normalize()
-    _start = spiral['Start']
+    _vec = None
+    _draw_start = None
     _length = spiral['Length']
     _radius = spiral['Radius']
     _direction = spiral['Direction']
 
+    #reverse only if end radius is infinite / undefined
     _reverse = spiral.get('EndRadius') is None
 
     if not _reverse:
@@ -317,12 +350,16 @@ def get_segments(spiral, deltas, _dtype=Vector):
 
     #if short tangent leads, we need to calculate from the other end
     #toward the start of the spiral
-    if _reverse:
-        _vec = spiral['PI'].sub(spiral['End']).normalize()
-        _start = spiral['End']
+    if not _reverse:
+        _draw_start = spiral['Start']
+
+    else:
+        _draw_start = spiral['End']
         _direction *= -1
 
-    _points = [_dtype(_start)]
+    _vec = spiral['PI'].sub(_draw_start).normalize()
+
+    _points = [_dtype(_draw_start)]
 
     for _delta in deltas:
 
@@ -338,7 +375,7 @@ def get_segments(spiral, deltas, _dtype=Vector):
         _dy = Vector(_vec).multiply(_y)
         _dx = Vector(_vec.y, -_vec.x, 0.0).multiply(_direction).multiply(_x)
 
-        _points.append(_dtype(_start.add(_dy.add(_dx))))
+        _points.append(_dtype(_draw_start.add(_dy.add(_dx))))
 
     if _reverse:
         _points = _points[::-1]
