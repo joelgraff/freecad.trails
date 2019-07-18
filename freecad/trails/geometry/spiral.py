@@ -408,15 +408,20 @@ def get_segments(spiral, deltas, _dtype=Vector):
 
     _points = []
 
-    for _delta in deltas:
+    _six_rad_len = 6.0 * _radius * _length
+    _two_rad_len_root = math.sqrt(2.0 * _radius * _length)
+    _forty_rad2_len2 = 40.0 * _radius**2 * _length**2
+    _root_deltas = [math.sqrt(_v) for _v in deltas]
+    
+    for _i, _delta in enumerate(deltas):
 
         #calculate length of curve at the current delta
-        _seg_len = math.sqrt(2.0 * _radius * _length * _delta)
+        _seg_len = _two_rad_len_root * _root_deltas[_i]
 
         #calculate positions along curve at delta offset
-        _x = _seg_len**3 / (6.0 * _radius * _length)
+        _x = _seg_len**3 / _six_rad_len
 
-        _y = _seg_len - ((_seg_len**5) / (40 * _radius**2 * _length**2))
+        _y = _seg_len - ((_seg_len**5) / _forty_rad2_len2)
 
         #calculate vector coordinates
         _dy = Vector(_vec).multiply(_y)
@@ -505,6 +510,16 @@ def get_points(
         segment_deltas.append(angle)
 
     return get_segments(spiral, segment_deltas, _dtype), None
+
+def get_ordered_tangents(curve):
+    """
+    Return the tangents in order of increasing station
+    """
+
+    if curve['PI'].sub(curve['Start']).Length == curve['TanShort']:
+        return [curve['TanShort'], curve['TanLong']]
+
+    return [curve['TanLong'], curve['TanShort']]
 
 def get_ortho_vector(spiral, distance, side):
     """

@@ -68,6 +68,7 @@ class AlignmentTracker(BaseTracker):
             self.curves = []
             self.nodes = []
             self.node_idx = []
+            self.tracker_state = []
 
         def reset(self):
             """
@@ -313,6 +314,7 @@ class AlignmentTracker(BaseTracker):
             self.drag.nodes.append(_c)
             self.drag.node_idx.append(_i)
 
+
         self.curves = self.alignment.get_curves()
         self.pi_list = self.alignment.model.get_pi_coords()
         self.drag.pi = self.pi_list[:]
@@ -321,6 +323,10 @@ class AlignmentTracker(BaseTracker):
 
         #duplicate scene nodes of selected and partially-selected wires
         for _v in self.trackers['Tangents'] + self.trackers['Curves']:
+
+            self.drag.tracker_state.append(
+                [_w.get() for _w in _v.selection_nodes]
+            )
 
             if _v.state == 'UNSELECTED':
                 continue
@@ -363,7 +369,7 @@ class AlignmentTracker(BaseTracker):
 
         _curves = self._generate_curves()
 
-        #self._validate_curves(_curves)
+        self._validate_curves(_curves)
         self.drag.position = _world_pos
 
     def end_drag(self):
@@ -373,6 +379,7 @@ class AlignmentTracker(BaseTracker):
 
         if self.is_valid:
 
+            print('!!!! VALID !!!!')
             #do a final calculation on the curves
             self.drag.curves = list(range(0, len(self.curves)))
 
@@ -391,6 +398,15 @@ class AlignmentTracker(BaseTracker):
 
             self.datum = self.datum.add(self.drag.pi[0])
             self.transform.translation.setValue(tuple(self.datum))
+
+        #reset the tracker state
+        else:
+
+            print('tracker state = ', self.drag.tracker_state)
+            for _i, _v in enumerate(
+                self.trackers['Tangents'] + self.trackers['Curves']):
+
+                _v.update(self.drag.tracker_state[_i])
 
         self.drag.reset()
 
@@ -661,7 +677,7 @@ class AlignmentTracker(BaseTracker):
         and adjoingin geometry
         """
 
-        _idx = self.drag.curves
+        _idx = self.drag.curves[:]
 
         if not _idx:
             self.is_valid = True
@@ -685,24 +701,21 @@ class AlignmentTracker(BaseTracker):
 
             _c = [curves[_i], curves[_i + 1]]
 
-            _tangents = [0.0, 0.0]
+            _tangents = [0.0, 0]
 
-            #disable validation for spirals temporarily
             if _c[0]['Type'] == 'Spiral':
-                continue
-                #_tangents[0] = spiral.get_left_tangent(_c[0])
+                _tangents[0] = spiral.get_ordered_tangents(_c[0])[0]
 
             else:
                 _tangents[0] = _c[0]['Tangent']
 
             if _c[1]['Type'] == 'Spiral':
-                continue
-                #_tangents[1] = spiral.get_right_tangent(_c[1])
+                _tangents[1] = spiral.get_ordered_tangents(_c[1])[1]
 
             else:
                 _tangents[1] = _c[1]['Tangent']
 
-            if (_c[0]['Tangent'] + _c[1]['Tangent'])\
+            if (_tangents[0] + _tangents[1])\
                 > (_c[0]['PI'].distanceToPoint(_c[1]['PI'])):
 
                 _styles[_i + 1] = CoinStyle.ERROR
@@ -727,11 +740,13 @@ class AlignmentTracker(BaseTracker):
 
             #disable validation for spirals temporarily
             if _c['Type'] == 'Spiral':
-                continue
+                
+                _tans = spiral.get_ordered_tangents(_c)
+                _tangent = _tans[1]
+
                 if _i == 0:
-                    _tangent = spiral.get_left_tangent(_c)
-                else:
-                    _tangent = spiral.get_right_tangent(_c)
+                    _tangent = _tans[0]
+
             else:
                 _tangent = _c['Tangent']
 

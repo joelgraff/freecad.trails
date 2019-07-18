@@ -141,7 +141,7 @@ class NodeTracker(BaseTracker):
             self.set_style(CoinStyle.DEFAULT)
             return
 
-        if not self.name in _info['Component']:
+        if not self.name == _info['Component']:
             self.set_style(CoinStyle.DEFAULT)
             return
 
