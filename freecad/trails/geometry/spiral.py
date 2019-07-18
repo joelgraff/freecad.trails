@@ -211,6 +211,53 @@ def _solve_by_absolute(spiral):
 
     return spiral
 
+def solve_unk_length(curve):
+    """
+    Build the spiral for unknown length and theta
+    """
+
+    if not all(curve.get(_k) for _k in ['Start', 'End', 'PI']):
+        return None
+
+    _is_inbound = True
+    _end_point = curve['End']
+    _start_point = curve['Start']
+    _rad = None
+
+    #a finite start radius means the curve is outbound
+    if curve.get('StartRadius') is not None:
+        _is_inbound = curve['StartRadius'] == math.inf
+
+    if not _is_inbound:
+        _end_point, _start_point = _start_point, _end_point
+        _rad = curve['StartRadius']
+
+    else:
+        _rad = curve['EndRadius']
+
+    _long_tan = curve['PI'].sub(_start_point)
+    _short_tan = _end_point.sub(curve['PI'])
+    _chord = _end_point.sub(_start_point)
+
+    #get the point on the long tangent vector that is the endpoint for Xc
+    _total_vec_x = Vector().projectToLine(_chord, _long_tan)
+
+    curve['vTotalX'] = _start_point.add(_total_vec_x)
+    curve['vTotalY'] = _end_point.sub(curve['vTotalX'])
+    curve['vTotal'] = _total_vec_x.add(curve['vTotalY'])
+    
+    curve['TanShort'] = _short_tan.Length
+    curve['TanLong'] = _long_tan.Length
+    curve['Direction'] = support.get_rotation(_long_tan, _short_tan)
+    curve['TotalX'] = curve['vTotalX'].Length
+    curve['TotalY'] = curve['vTotalY'].Length
+    curve['Type'] = 'Spiral'
+    curve['Radius'] = _rad
+    curve['Length'] = math.sqrt(curve['TotalX'] * 6.0 * _rad)
+    curve['Theta'] = curve['Length'] / (2 * _rad)
+
+    return curve
+
 def solve_by_relative(spiral_dict):
     """
     Return the spiral curve definition provided it's bearings, a PI,
@@ -222,7 +269,6 @@ def solve_by_relative(spiral_dict):
 
         return None
 
-    print('\n---------------------\n', spiral_dict)
     _radius = spiral_dict.get('StartRadius')
     _is_inbound = False
 
@@ -238,11 +284,11 @@ def solve_by_relative(spiral_dict):
 
     _len = 2.0 * _radius * _theta
 
-    _Xc = _len**2.0 / (6.0 * _radius)
-    _Yc = _len - ((_len**3) / (40.0 * _radius**2))
+    _Yc = _len**2.0 / (6.0 * _radius)
+    _Xc = _len - ((_len**3) / (40.0 * _radius**2))
 
-    _long_tan = _Yc - (_Xc / math.tan(_theta))
-    _short_tan = _Xc / math.sin(_theta)
+    _long_tan = _Xc - (_Yc / math.tan(_theta))
+    _short_tan = _Yc / math.sin(_theta)
 
     _tangents = [
         support.vector_from_angle(spiral_dict['BearingIn']),
@@ -260,39 +306,34 @@ def solve_by_relative(spiral_dict):
     _dir = support.get_rotation(_tangents[0], _tangents[1])
 
     spiral_dict['Direction'] = _dir
-
     #calculate vectors for total x and total y, pointing toward the point of
     #infinite radius
-    _vec = _tangents[0].multiply(-1.0)
+    _v_xc = _tangents[1]
 
     if _is_inbound:
-        _vec = _tangents[1]
+        _v_xc = _tangents[0]
 
-    #calc the Xc / Yc vectors pointing away from the finite radius point
-    _ortho = support.vector_ortho(_tangents[0])
+    #calc the ortho vector(_Yc)
+    _v_yc = support.vector_ortho(_v_xc)
 
     #flip the orthogonal for clockwise curves
     if _dir > 0:
-        _ortho.multiply(-1.0)
+        _v_yc.multiply(-1.0)
 
-    _vecs = [
-        Vector(_tangents[0]).multiply(_Xc),
-        Vector(_ortho).multiply(_Yc)
-    ]
+    #scale Xc / Yc vectors
+    _v_xc.multiply(_Xc)
+    _v_yc.multiply(_Yc)
 
-    spiral_dict['vTotal'] = _vecs[0].add(_vecs[1])
+    spiral_dict['vTotal'] = _v_xc.add(_v_yc)
 
-    #calc the Xc / Yxc vectors pointing away from the finite radius point
-    spiral_dict['vTotalY'] = _vec.multiply(_Yc)
-    spiral_dict['vTotalX'] = \
-        support.vector_ortho(_vec).multiply(_Xc)
+    spiral_dict['vTotalY'] = _v_yc
+    spiral_dict['vTotalX'] = _v_xc
 
     #flip the orthogonal for clockwise curves
     if spiral_dict['Direction'] > 0:
         spiral_dict['vTotalX'].multiply(-1.0)
 
-    print('\n\t---->\n\t',spiral_dict['Start'], spiral_dict['End'], spiral_dict['vTotal'])
-    #set the starting points appropriately
+    #Calculate the point with infinite radius from the point of definite radius
     if _is_inbound:
         spiral_dict['Start'] = spiral_dict['End'].sub(spiral_dict['vTotal'])
     else:
@@ -327,7 +368,6 @@ def get_parameters(spiral_dict):
 
     #test for missing points. branch accordingly
     if all([spiral_dict.get(_k) for _k in ['Start', 'End', 'PI', 'Radius']]):
-        print('calc by absolute')
         return _solve_by_absolute(spiral_dict)
     #else:
     #   _solve_by_relative(spiral_dict)
@@ -338,7 +378,6 @@ def get_parameters(spiral_dict):
 def get_segments(spiral, deltas, _dtype=Vector):
     """
     Calculate the coordinates of the curve segments
-
     bearing - beginning bearing
     deltas - list of angles to calculate
     direction - curve direction: -1.0 = ccw, 1.0 = cw
@@ -347,7 +386,8 @@ def get_segments(spiral, deltas, _dtype=Vector):
     """
 
     _vec = None
-    _draw_start = None
+    _draw_start = spiral['Start']
+    _draw_end = spiral['End']
     _length = spiral['Length']
     _radius = spiral['Radius']
     _direction = spiral['Direction']
@@ -360,16 +400,13 @@ def get_segments(spiral, deltas, _dtype=Vector):
 
     #if short tangent leads, we need to calculate from the other end
     #toward the start of the spiral
-    if not _reverse:
-        _draw_start = spiral['Start']
-
-    else:
-        _draw_start = spiral['End']
+    if _reverse:
+        _draw_start, _draw_end = _draw_end, _draw_start
         _direction *= -1
 
     _vec = spiral['PI'].sub(_draw_start).normalize()
 
-    _points = [_dtype(_draw_start)]
+    _points = []
 
     for _delta in deltas:
 
@@ -385,10 +422,14 @@ def get_segments(spiral, deltas, _dtype=Vector):
         _dy = Vector(_vec).multiply(_y)
         _dx = Vector(_vec.y, -_vec.x, 0.0).multiply(_direction).multiply(_x)
 
-        _points.append(_dtype(_draw_start.add(_dy.add(_dx))))
+        _points.append(_dtype(_dy.add(_dx)))
+
+    _delta = _draw_end.sub(_points[-1])
 
     if _reverse:
         _points = _points[::-1]
+
+    _points = [_v.add(_delta) for _v in _points]
 
     return _points
 
@@ -443,7 +484,6 @@ def get_points(
     #define the incremental angle for segment calculations,
     #defaulting to 'Segment'
     _delta = angle / size
-
     _ratio = (size * units.scale_factor()) / radius
 
     if method == 'Interval':
@@ -457,9 +497,12 @@ def get_points(
     if _delta == 0.0:
         return None, None
 
-    segment_deltas = [
-        float(_i + 1) * _delta for _i in range(0, int(angle / _delta))
+    segment_deltas = [float(_i) * _delta\
+        for _i in range(0, int(angle / _delta) + 1)
     ]
+
+    if segment_deltas[-1] < angle:
+        segment_deltas.append(angle)
 
     return get_segments(spiral, segment_deltas, _dtype), None
 

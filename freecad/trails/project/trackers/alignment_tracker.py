@@ -190,11 +190,6 @@ class AlignmentTracker(BaseTracker):
                 self.start_drag()
                 self.user_dragging = True
 
-        #should not be necessary, but included here in case
-        #an event gets missed
-        elif self.user_dragging:
-            self.end_drag()
-            self.user_dragging = False
 
     def button_event(self, arg):
         """
@@ -358,6 +353,9 @@ class AlignmentTracker(BaseTracker):
         Update method during drag operations
         """
 
+        if self.drag.start is None:
+            return
+
         _world_pos = self.view.getPoint(self.mouse.pos).sub(self.datum)
 
         self._update_transform(_world_pos, do_rotation, modify)
@@ -365,7 +363,7 @@ class AlignmentTracker(BaseTracker):
 
         _curves = self._generate_curves()
 
-        self._validate_curves(_curves)
+        #self._validate_curves(_curves)
         self.drag.position = _world_pos
 
     def end_drag(self):
@@ -375,12 +373,10 @@ class AlignmentTracker(BaseTracker):
 
         if self.is_valid:
 
-            print ('updating!')
             #do a final calculation on the curves
             self.drag.curves = list(range(0, len(self.curves)))
-            self._generate_curves()
 
-            self.alignment.update_curves(self.curves, self.drag.pi, True) #TRUE
+            self.alignment.update_curves(self.curves, self.drag.pi, True)
 
             for _i, _v in enumerate(self.alignment.model.get_pi_coords()):
                 self.trackers['Nodes'][_i].update(_v)
@@ -609,7 +605,7 @@ class AlignmentTracker(BaseTracker):
                     or self.curves[_i]['StartRadius'] == math.inf:
                     _key = 'EndRadius'
                     _rad = self.curves[_i + 1]['Radius']
-                    _end = self.curves[_i +1]['Start']
+                    _end = self.curves[_i + 1]['Start']
 
                     if _i > 0:
                         _start = _pi.sub(
@@ -630,15 +626,13 @@ class AlignmentTracker(BaseTracker):
                         )
 
                 _curve = {
-                    'BearingIn': support.get_bearing(_pi.sub(_start)),
-                    'BearingOut': support.get_bearing(_end.sub(_pi)),
                     'PI': _pi,
                     'Start': _start,
                     'End': _end,
                     _key: _rad
                 }
 
-                _curve = spiral.solve_by_relative(_curve)
+                _curve = spiral.solve_unk_length(_curve)
 
                 #re-render the last known good points if an error occurs
                 if _curve['TanShort'] <= 0.0 or _curve['TanLong'] <= 0.0:
@@ -691,7 +685,7 @@ class AlignmentTracker(BaseTracker):
 
             _c = [curves[_i], curves[_i + 1]]
 
-            _tangents = []
+            _tangents = [0.0, 0.0]
 
             #disable validation for spirals temporarily
             if _c[0]['Type'] == 'Spiral':
@@ -733,12 +727,13 @@ class AlignmentTracker(BaseTracker):
 
             #disable validation for spirals temporarily
             if _c['Type'] == 'Spiral':
+                continue
                 if _i == 0:
                     _tangent = spiral.get_left_tangent(_c)
                 else:
                     _tangent = spiral.get_right_tangent(_c)
             else:
-                _tangent = c['Tangent']
+                _tangent = _c['Tangent']
 
             if _styles[_i] != CoinStyle.ERROR:
 
