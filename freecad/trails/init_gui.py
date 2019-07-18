@@ -33,12 +33,16 @@ from .project.commands \
 from .corridor.template import ViewTemplateLibrary
 from . import resources
 
+TRAILSWB_VERSION = '(alpha)'
+
 class TrailsWorkbench(Gui.Workbench):
     """
-    Class which gets initiated at starup of the GUI.
+    Class which gets initiated at startup of the GUI.
     """
 
-    MenuText = 'Trails Workbench'
+    global TRAILSWB_VERSION
+
+    MenuText = 'Trails '+TRAILSWB_VERSION
     ToolTip = 'Transportation Engineering Workbench'
     Icon = os.path.dirname(resources.__file__) + '/icons/workbench.svg'
     toolbox = []
