@@ -26,6 +26,8 @@ Task to edit an alignment
 """
 from PySide import QtGui
 
+import FreeCAD
+from FreeCAD import Vector
 import FreeCADGui as Gui
 
 import DraftTools
@@ -67,7 +69,7 @@ class EditAlignmentTask:
         self.panel = None
         self.view = view
         self.doc = doc
-        self.obj = obj
+        self.Object = obj
         self.alignment = alignment.create(alignment_data, 'TEMP', True, False)
         self.pi_tracker = None
         self.drag_tracker = None
@@ -77,6 +79,7 @@ class EditAlignmentTask:
         self.form = None
         self.ui_path = resources.__path__[0] + '/ui/'
         self.ui = self.ui_path + 'edit_alignment_task.ui'
+        self.camera_state = self.view.viewPosition()
 
         self.view_objects = {
             'selectables': [],
@@ -112,7 +115,7 @@ class EditAlignmentTask:
         Gui.Selection.clearSelection()
 
         self.alignment_tracker = AlignmentTracker(
-            self.doc, self.view, self.obj.Name, self.alignment
+            self.doc, self.view, self.Object.Name, self.alignment
         )
 
         self.callbacks = {
@@ -122,6 +125,32 @@ class EditAlignmentTask:
         }
 
         self.doc.recompute()
+
+        #set the zoom to the selected alignment
+        _bb = self.Object.Shape.BoundBox
+
+        print(_bb.XMin, _bb.XMax, _bb.YMin, _bb.YMax)
+
+        #_state_pos = self.camera_state.split('position')
+        #_state_orient = self.camera_state.split('orientation')
+
+        _box_pts = [
+            self.view.getPointOnScreen(_v) for _v in [
+                Vector(_bb.XMin, _bb.YMin, 0.0),
+                Vector(_bb.XMax, _bb.YMax, 0.0)
+            ]
+        ]
+
+        _center = _bb.Center
+        print(_box_pts)
+        print(_center)
+        _new_state = FreeCAD.Placement(self.camera_state)
+        print(_new_state.Base)
+        _center.z = -110.01
+        _new_state.Base = _center
+        print(_new_state.Base)
+        #self.view.viewPosition(_new_state)
+
 
         DraftTools.redraw3DView()
 
@@ -219,7 +248,7 @@ class EditAlignmentTask:
         if self.pi_tracker:
             self.pi_tracker.finalize()
             self.pi_tracker = None
-            Gui.Selection.addSelection(self.obj)
+            Gui.Selection.addSelection(self.Object)
 
         if self.drag_tracker:
             self.drag_tracker.finalize()
@@ -228,3 +257,6 @@ class EditAlignmentTask:
         if self.alignment_tracker:
             self.alignment_tracker.finalize()
             self.alignment_tracker = None
+
+        if self.camera_state:
+            self.view.setCamera(self.camera_state)
