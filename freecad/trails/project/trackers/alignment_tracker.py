@@ -165,7 +165,14 @@ class AlignmentTracker(BaseTracker):
         if info:
             _id = info['Component']
 
-        _msg = _id + ' ' + str(tuple(self.view.getPoint(self.mouse.pos)))
+        _pos = self.view.getPoint(self.mouse.pos)
+
+        if 'NODE' in _id:
+            _pos = self.datum.add(
+                self.trackers['Nodes'][int(_id.split('-')[1])].get()
+            )
+
+        _msg = _id + ' ' + str(tuple(_pos))
 
         #self.status_bar.clearMessage()
         self.status_bar.showMessage(_msg)
