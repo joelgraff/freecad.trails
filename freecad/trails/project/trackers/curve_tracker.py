@@ -21,7 +21,7 @@
 #*                                                                     *
 #***********************************************************************
 """
-Tracker for alignment editing
+Tracker for curve editing
 """
 
 import math
@@ -45,7 +45,7 @@ from ..containers import DragState
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
 
-class AlignmentTracker(BaseTracker):
+class CurveTracker(BaseTracker):
     """
     Tracker class for alignment design
     """
@@ -67,7 +67,7 @@ class AlignmentTracker(BaseTracker):
         self.pi_list = []
         self.datum = alignment.model.data['meta']['Start']
 
-        self.drag = DragState()
+        self.drag = self.DragState()
 
         self.view = view
         self.viewport = \
