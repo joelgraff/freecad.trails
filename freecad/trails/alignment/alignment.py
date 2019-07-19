@@ -30,7 +30,7 @@ import FreeCAD as App
 import Draft
 
 from ..project.support import properties, units
-from ..geometry import support, arc
+from ..geometry import support
 from . import alignment_group, alignment_model
 
 _CLASS_NAME = 'Alignment'
@@ -405,8 +405,6 @@ class Alignment(Draft._Wire):
 
         if meta.get('StartStation'):
             obj.Start_Station = str(meta['StartStation']) + ' ft'
-
-        print(obj.Start)
 
     def onChanged(self, obj, prop):
         """
