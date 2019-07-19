@@ -174,11 +174,10 @@ class WireTracker(BaseTracker):
             return
 
         #no mouseover processing if the node is currently selected
-        if self.state:
+        if self.state == 'SELECTED':
             return
 
         #test to see if this node is under the cursor
-
         _info = self.view.getObjectInfo(self.mouse.pos)
 
         if not _info:
