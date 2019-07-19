@@ -50,20 +50,19 @@ class CurveTracker(BaseTracker):
     Tracker class for alignment design
     """
 
-    def __init__(self, doc, view, object_name, curve):
+    def __init__(self, view, names, curve):
         """
         Constructor
         """
 
         self.curve = curve
         self.callbacks = {}
-        self.doc = doc
-        self.names = [doc.Name, object_name, 'CURVE_TRACKER']
+        self.names = names
         self.mouse = MouseState()
         self.user_dragging = False
         self.is_valid = True
         self.status_bar = Gui.getMainWindow().statusBar()
-        self.drag = self.DragState()
+        self.drag = DragState()
         self.view = view
         self.viewport = \
             view.getViewer().getSoRenderManager().getViewportRegion()
@@ -84,8 +83,6 @@ class CurveTracker(BaseTracker):
             'EDIT': coin.SoGroup(),
             'DRAG': coin.SoGroup(),
         }
-
-        self.groups['DRAG'].addChild(self.groups['PARTIAL'])
 
         self.node.addChild(self.groups['EDIT'])
         self.node.addChild(self.groups['DRAG'])
@@ -174,18 +171,18 @@ class CurveTracker(BaseTracker):
         ]
 
         #build a list of coordinates from curves in the geometry
-        _nodes = [self.curve[_k] for _k in _node_names[:-1]]
+        _coords = [self.curve[_k] for _k in _node_names[:-1]]
 
         #build the trackers
-        _names = self.names[:2]
         _result = {'Nodes': [], 'Wires': [], 'Curve:': None}
 
         #node trackers
-        for _i, _pt in enumerate(_nodes):
+        for _i, _pt in enumerate(_coords):
 
             _tr = NodeTracker(
                 view=self.view,
-                names=_names + [_node_names[_i]], point=_pt
+                names=self.names + [_node_names[_i]],
+                point=_pt
             )
 
             _tr.update(_pt)
@@ -196,15 +193,15 @@ class CurveTracker(BaseTracker):
         for _i, _v in enumerate(_wire_names):
 
             if _i < len(_wire_names) - 1:
-                _n = _nodes[_i:_i + 2]
+                _n = _coords[_i:_i + 2]
             else:
-                _n = [_nodes[0], _nodes[3]]
+                _n = [_coords[0], _coords[3]]
 
             _result['Wires'].append(
                 self._build_wire_tracker(
-                    wire_name=_names + [_wire_names[_i]],
-                    nodes=_n,
-                    points=[_v.get() for _v in _n]
+                    wire_name=self.names + [_wire_names[_i]],
+                    nodes=_result['Nodes'],
+                    points=_n
                 )
             )
 
@@ -218,11 +215,10 @@ class CurveTracker(BaseTracker):
 
         _points, _x = _class.get_points(self.curve)
 
-        _result['Curve'].append(
+        _result['Curve'] = \
             self._build_wire_tracker(
-                _names + [self.curve['TYPE']], _nodes, _points, True
+                self.names + [self.curve['TYPE']], _nodes, _points, True
             )
-        )
 
         self.trackers = _result
 

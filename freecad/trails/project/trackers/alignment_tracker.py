@@ -44,6 +44,7 @@ from ..containers import DragState
 
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
+from .curve_tracker import CurveTracker
 
 class AlignmentTracker(BaseTracker):
     """
@@ -183,6 +184,14 @@ class AlignmentTracker(BaseTracker):
             self.end_drag()
             self.user_dragging = False
 
+        _info = self.view.getObjectInfo(self.mouse.pos)
+
+        if not _info:
+            return
+
+        if 'CURVE' in _info['Component']:
+            self.trackers['']
+
     def build_trackers(self):
         """
         Build the node and wire trackers that represent the selectable
@@ -232,22 +241,16 @@ class AlignmentTracker(BaseTracker):
         _curves = self.alignment.get_curves()
         _points = []
 
-        #wire trackers - Curves
+        #curve trackers
         for _i in range(0, len(_result['Tangents']) - 1):
 
-            _nodes = _result['Nodes'][_i:_i + 3]
-            _class = arc
-
-            if _curves[_i]['Type'] == 'Spiral':
-                _class = spiral
-
-            _points, _x = _class.get_points(_curves[_i])
-
-            _result['Curves'].append(
-                self._build_wire_tracker(
-                    _names + ['CURVE-' + str(_i)], _nodes, _points, True
-                )
+            _ct = CurveTracker(
+                view=self.view,
+                names=_names + ['CURVE-' + str(_i)],
+                curve=_curves[_i]
             )
+
+            _ct.set_selectability(True)
 
         self.trackers = _result
 

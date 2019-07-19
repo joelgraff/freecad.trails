@@ -138,27 +138,27 @@ class WireTracker(BaseTracker):
         """
         Mouse button actions
         """
-        #if the wire is not selected, or we're not multi-selected, abort
-#        if not (self.state == 'SELECTED' or arg['AltDown']):
-#            return
 
-        #get selection state of the selectable nodes
-        _sel_state = [_v.state == 'SELECTED' for _v in self.selection_nodes]
+        if not self.enabled:
+            return
+
+        if not self.is_selectable():
+            return
 
         self.state = 'UNSELECTED'
 
-        #set selection states of the wrire
-        if all(_sel_state):
-            self.state = 'SELECTED'
+        _info = self.view.getObjectInfo(self.mouse.pos)
 
-        elif any(_sel_state):
-            self.state = 'PARTIAL'
-
-        #set selection style
-        if self.state == 'SELECTED':
-            self.set_style(CoinStyle.SELECTED)
-        else:
+        if not _info:
             self.set_style(CoinStyle.DEFAULT)
+            return
+
+        if not self.name in _info['Component']:
+            self.set_style(CoinStyle.DEFAULT)
+            return
+
+        self.state = 'SELECTED'
+        self.set_style(CoinStyle.SELECTED)
 
     def mouse_event(self, arg):
         """
