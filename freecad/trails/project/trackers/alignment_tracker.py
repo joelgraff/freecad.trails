@@ -219,8 +219,10 @@ class AlignmentTracker(BaseTracker):
 
             _tr = NodeTracker(
                 view=self.view,
-                names=_names + ['NODE-' + str(_i)], point=_pt
+                names=_names + ['NODE-' + str(_i)],
+                point=_pt
             )
+
             _tr.update(_pt)
 
             _result['Nodes'].append(_tr)
@@ -242,15 +244,15 @@ class AlignmentTracker(BaseTracker):
         _points = []
 
         #curve trackers
-        for _i in range(0, len(_result['Tangents']) - 1):
+        #for _i in range(0, len(_result['Tangents']) - 1):
 
-            _ct = CurveTracker(
-                view=self.view,
-                names=_names + ['CURVE-' + str(_i)],
-                curve=_curves[_i]
-            )
+        #    _ct = CurveTracker(
+        #        view=self.view,
+        #        names=_names + ['CURVE-' + str(_i)],
+        #        curve=_curves[_i]
+        #    )
 
-            _ct.set_selectability(True)
+        #    _ct.set_selectability(True)
 
         self.trackers = _result
 

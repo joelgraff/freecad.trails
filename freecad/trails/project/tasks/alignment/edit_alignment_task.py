@@ -24,7 +24,10 @@
 """
 Task to edit an alignment
 """
+import math
+
 from PySide import QtGui
+from pivy import coin
 
 import FreeCAD
 from FreeCAD import Vector
@@ -79,7 +82,11 @@ class EditAlignmentTask:
         self.form = None
         self.ui_path = resources.__path__[0] + '/ui/'
         self.ui = self.ui_path + 'edit_alignment_task.ui'
-        self.camera_state = self.view.viewPosition()
+        self.camera_state = {
+            'position': None,
+            'height': None,
+            'bound box': None
+        }
 
         self.view_objects = {
             'selectables': [],
@@ -126,33 +133,83 @@ class EditAlignmentTask:
 
         self.doc.recompute()
 
-        #set the zoom to the selected alignment
-        _bb = self.Object.Shape.BoundBox
+        #save camera state
+        _camera = self.view.getCameraNode()
 
-        print(_bb.XMin, _bb.XMax, _bb.YMin, _bb.YMax)
+        self.camera_state['position'] = _camera.position.getValue().getValue()
+        self.camera_state['height'] = _camera.height.getValue()
+        self.camera_state['bound box'] = self.Object.Shape.BoundBox
 
-        #_state_pos = self.camera_state.split('position')
-        #_state_orient = self.camera_state.split('orientation')
-
-        _box_pts = [
-            self.view.getPointOnScreen(_v) for _v in [
-                Vector(_bb.XMin, _bb.YMin, 0.0),
-                Vector(_bb.XMax, _bb.YMax, 0.0)
-            ]
-        ]
-
-        _center = _bb.Center
-        print(_box_pts)
-        print(_center)
-        _new_state = FreeCAD.Placement(self.camera_state)
-        print(_new_state.Base)
-        _center.z = -110.01
-        _new_state.Base = _center
-        print(_new_state.Base)
-        #self.view.viewPosition(_new_state)
-
+        self._zoom_camera()
 
         DraftTools.redraw3DView()
+
+    def _zoom_camera(self, use_bound_box=True):
+        """
+        Fancy routine to smooth zoom the camera
+        """
+
+        _camera = self.view.getCameraNode()
+
+        _start_pos = Vector(_camera.position.getValue().getValue())
+        _start_ht = _camera.height.getValue()
+
+        _center = Vector(self.camera_state['position'])
+        _height = self.camera_state['height']
+
+        if use_bound_box:
+        
+            _bound_box = self.camera_state['bound box']
+
+            #get the center of the camera, setting the z coordinate positive
+            _center = Vector(_bound_box.Center)
+            _center.z = 1.0
+
+            #calcualte the camera height = bounding box larger dim + 15%
+            _height = _bound_box.XMax - _bound_box.XMin
+            _dy = _bound_box.YMax - _bound_box.YMin
+
+            if _dy > _height:
+                _height = _dy
+
+            _height += 0.15 * _height
+
+        _frames = 60.0
+
+        #calculate a total change value
+        _pct_chg = abs(_height - _start_ht) / (_height + _start_ht)
+
+        #at 50% change or more, use 60 frames, otherwise scale frames
+        if _pct_chg < 0.5:
+            _frames *= _pct_chg * 2.0
+
+        _steps = [
+            math.cos((_i/_frames) * (math.pi/2.0)) * _frames\
+                for _i in range(0, int(_frames))
+        ]
+
+        _steps = _steps[::-1]
+
+        _d_pos = _center - _start_pos
+        _d_pos.multiply(1.0 / _frames)
+
+        _d_ht = (_height - _start_ht) / _frames
+
+
+        for _v in _steps:
+
+            #set the camera
+            self.view.getCameraNode().position.setValue(
+                tuple(_start_pos + (_d_pos * _v))
+            )
+
+            self.view.getCameraNode().height.setValue(
+                _start_ht + (_d_ht * _v)
+            )
+
+            #DraftTools.redraw3DView()
+            #FreeCAD.ActiveDocument.recompute()
+            Gui.updateGui()
 
     def setup(self):
         """
@@ -259,4 +316,4 @@ class EditAlignmentTask:
             self.alignment_tracker = None
 
         if self.camera_state:
-            self.view.setCamera(self.camera_state)
+            self._zoom_camera(False)
