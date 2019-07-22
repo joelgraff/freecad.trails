@@ -123,10 +123,10 @@ class AlignmentTracker(BaseTracker):
             _trackers.extend(_v)
 
         for _v in _trackers:
-            self.insert_node(_v.node, self.groups['EDIT'])
+            self.insert_node(_v.switch, self.groups['EDIT'])
 
         #insert in the scenegraph root
-        self.insert_node(self.node)
+        self.insert_node(self.switch)
 
     def _update_status_bar(self, info):
         """
@@ -159,7 +159,9 @@ class AlignmentTracker(BaseTracker):
 
         self.mouse.update(arg, _p)
 
-        self._update_status_bar(self.view.getObjectInfo(_p))
+        _info = self.view.getObjectInfo(_p)
+
+        self._update_status_bar(_info)
 
         if self.mouse.button1.dragging:
 
@@ -170,7 +172,6 @@ class AlignmentTracker(BaseTracker):
             else:
                 self.start_drag()
                 self.user_dragging = True
-
 
     def button_event(self, arg):
         """
@@ -189,8 +190,8 @@ class AlignmentTracker(BaseTracker):
         if not _info:
             return
 
-        if 'CURVE' in _info['Component']:
-            self.trackers['']
+        #if 'CURVE' in _info['Component']:
+        #    self.trackers['']
 
     def build_trackers(self):
         """
@@ -243,16 +244,22 @@ class AlignmentTracker(BaseTracker):
         _curves = self.alignment.get_curves()
         _points = []
 
+        self.trackers = _result
+
+        return
+
         #curve trackers
-        #for _i in range(0, len(_result['Tangents']) - 1):
+        for _i in range(0, len(_result['Tangents']) - 1):
 
-        #    _ct = CurveTracker(
-        #        view=self.view,
-        #        names=_names + ['CURVE-' + str(_i)],
-        #        curve=_curves[_i]
-        #    )
+            _ct = CurveTracker(
+                view=self.view,
+                names=_names + ['CURVE-' + str(_i)],
+                curve=_curves[_i]
+            )
 
-        #    _ct.set_selectability(True)
+            _ct.set_selectability(True)
+
+            _result['Curves'].append(_ct)
 
         self.trackers = _result
 
@@ -295,9 +302,9 @@ class AlignmentTracker(BaseTracker):
                 if self.drag.nodes[-1] == _c:
                     continue
 
+            print('dragging ', _v.names)
             self.drag.nodes.append(_c)
             self.drag.node_idx.append(_i)
-
 
         self.curves = self.alignment.get_curves()
         self.pi_list = self.alignment.model.get_pi_coords()
@@ -308,6 +315,10 @@ class AlignmentTracker(BaseTracker):
         #duplicate scene nodes of selected and partially-selected wires
         for _v in self.trackers['Tangents'] + self.trackers['Curves']:
 
+            print(_v.names, _v.state)
+            if isinstance(_v, CurveTracker):
+                continue
+
             self.drag.tracker_state.append(
                 [_w.get() for _w in _v.selection_nodes]
             )
@@ -315,6 +326,7 @@ class AlignmentTracker(BaseTracker):
             if _v.state == 'UNSELECTED':
                 continue
 
+            print('copying ', _v.names)
             self.groups[_v.state].addChild(_v.copy())
 
         self.drag.multi = self.groups['SELECTED'].getNumChildren() > 2
@@ -327,6 +339,7 @@ class AlignmentTracker(BaseTracker):
 
         _curves = []
 
+        print('partials = ', _partial)
         #build list of curve indices
         for _i in _partial:
 
@@ -375,10 +388,10 @@ class AlignmentTracker(BaseTracker):
             for _v in self.trackers['Tangents']:
                 _v.update([_w.get() for _w in _v.selection_nodes])
 
-            for _v in self.trackers['Curves']:
-                _v.update([
-                    tuple(Vector(_w).sub(self.drag.pi[0])) for _w in _v.points
-                ])
+            #for _v in self.trackers['Curves']:
+            #    _v.update([
+            #        tuple(Vector(_w).sub(self.drag.pi[0])) for _w in _v.points
+            #    ])
 
             self.datum = self.datum.add(self.drag.pi[0])
             self.transform.translation.setValue(tuple(self.datum))
@@ -754,6 +767,7 @@ class AlignmentTracker(BaseTracker):
         for _t in self.trackers.values():
 
             for _u in _t:
+                print(_u.names)
                 _u.finalize()
 
         self.remove_node(self.groups['EDIT'], self.node)
@@ -765,4 +779,5 @@ class AlignmentTracker(BaseTracker):
 
             self.callbacks.clear()
 
+        print('finalizing alignment tracker...')
         super().finalize()

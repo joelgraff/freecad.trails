@@ -137,15 +137,32 @@ class NodeTracker(BaseTracker):
         #test to see if this node is under the cursor
         _info = self.view.getObjectInfo(self.mouse.pos)
 
-        if not _info:
-            self.set_style(CoinStyle.DEFAULT)
-            return
+        _comp = ''
 
-        if not self.name == _info['Component']:
-            self.set_style(CoinStyle.DEFAULT)
-            return
+        if _info:
+            _comp = _info['Component']
 
-        self.set_style(CoinStyle.SELECTED)
+        if self.name != _comp:
+
+            self.set_style(CoinStyle.DEFAULT)
+
+            #hide the PI node if the mouse is highlighting a curve
+            if 'CURVE' in _comp:
+            
+                if 'NODE' in self.name:
+
+                    _idx = int(_comp.split('-')[1])
+
+                    if _idx == int(self.name.split('-')[1]) - 1:
+                        self.off()
+
+                    return
+
+        else:
+            self.set_style(CoinStyle.SELECTED)
+
+        if not self.visible:
+            self.on()
 
     def button_event(self, arg):
         """

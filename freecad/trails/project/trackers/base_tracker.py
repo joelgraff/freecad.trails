@@ -46,6 +46,7 @@ class BaseTracker:
         self.node = coin.SoSeparator()
         self.parent = None
         self.picker = coin.SoPickStyle()
+        self.switch = coin.SoSwitch()
 
         if not children:
             children = []
@@ -65,6 +66,10 @@ class BaseTracker:
             ] + children:
 
             self.node.addChild(child)
+
+        self.switch.addChild(self.node)
+
+        self.on()
 
     def set_selectability(self, is_selectable):
         """
@@ -94,18 +99,24 @@ class BaseTracker:
 
         self.remove_node(node, parent)
 
-    def on(self, switch, which_child=0):
+    def on(self, switch=None, which_child=0):
         """
         Make node visible
         """
 
+        if not switch:
+            switch = self.switch
+
         switch.whichChild = which_child
         self.visible = True
 
-    def off(self, switch):
+    def off(self, switch=None):
         """
         Make node invisible
         """
+
+        if not switch:
+            switch = self.switch
 
         switch.whichChild = -1
         self.visible = False
@@ -118,6 +129,9 @@ class BaseTracker:
         if not node:
             node = self.node
 
+        x = node.copy()
+
+        print(x)
         return node.copy()
 
     def get_search_path(self, node):
@@ -170,7 +184,7 @@ class BaseTracker:
         """
 
         if not node:
-            node = self.node
+            node = self.switch
 
         if not node:
             return

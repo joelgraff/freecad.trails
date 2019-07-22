@@ -142,8 +142,8 @@ class WireTracker(BaseTracker):
         if not self.enabled:
             return
 
-        if not self.is_selectable():
-            return
+        #if not self.is_selectable():
+        #    return
 
         self.state = 'UNSELECTED'
 
@@ -154,7 +154,16 @@ class WireTracker(BaseTracker):
             return
 
         if not self.name in _info['Component']:
-            self.set_style(CoinStyle.DEFAULT)
+
+            if any([_v.state == 'SELECTED' for _v in self.selection_nodes]):
+
+                self.set_style(CoinStyle.SELECTED)
+                self.state = 'PARTIAL'
+
+            else:
+
+                self.set_style(CoinStyle.DEFAULT)
+
             return
 
         self.state = 'SELECTED'
@@ -202,6 +211,6 @@ class WireTracker(BaseTracker):
         self.callbacks.clear()
 
         if node is None:
-            node = self.node
+            node = self.switch
 
         super().finalize(node, parent)
