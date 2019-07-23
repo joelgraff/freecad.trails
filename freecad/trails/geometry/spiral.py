@@ -509,7 +509,7 @@ def get_points(
     if segment_deltas[-1] < angle:
         segment_deltas.append(angle)
 
-    return get_segments(spiral, segment_deltas, _dtype), None
+    return get_segments(spiral, segment_deltas, _dtype)
 
 def get_ordered_tangents(curve):
     """

@@ -696,7 +696,7 @@ class AlignmentModel:
 
             if curve['Type'] == 'Curve':
 
-                _pts, _hsh = arc.get_points(
+                _pts = arc.get_points(
                     curve, size=delta, method=method, interval=_arc_int
                 )
 
@@ -705,7 +705,7 @@ class AlignmentModel:
 
             elif curve['Type'] == 'Spiral':
 
-                _pts, _hsh = spiral.get_points(curve, size=delta, method=method)
+                _pts = spiral.get_points(curve, size=delta, method=method)
 
                 if _pts:
                     points.append(_pts)

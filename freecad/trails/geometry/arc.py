@@ -945,4 +945,4 @@ def get_points(
 
     #    _prev = _pt
 
-    return points, None
+    return points
