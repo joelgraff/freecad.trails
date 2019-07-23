@@ -157,14 +157,10 @@ class CurveTracker(BaseTracker):
 
         self.mouse.update(arg, self.view.getCursorPos())
 
-        _states = [_v.state == 'SELECTED' for _v in self.trackers['Nodes']]
+        self.state = 'UNSELECTED'
 
-        if all(_states):
+        if any([_v.state == 'SELECTED' for _v in self.pi_nodes]):
             self.state = 'SELECTED'
-        elif any(_states):
-            self.state = 'PARTIAL'
-        else:
-            self.state = 'UNSELECTED'
 
         #terminate dragging if button is released
         if self.user_dragging and not self.mouse.button1.dragging:
@@ -227,7 +223,7 @@ class CurveTracker(BaseTracker):
         if self.curve['Type'] == 'Spiral':
             _class = spiral
 
-        _points, _x = _class.get_points(self.curve)
+        _points = _class.get_points(self.curve)
 
         _result['Curve'] = [
             self._build_wire_tracker(
@@ -258,13 +254,21 @@ class CurveTracker(BaseTracker):
         Update the curve based on the passed data points
         """
 
+        if self.state == 'UNSELECTED':
+            return
+
+        _points = None
+
         if self.curve['Type'] == 'Spiral':
-            self.curve = self._generate_spiral()
+            _points = self._generate_spiral()
 
         else:
-            self.curve = self._generate_arc()
+            _points = self._generate_arc()
 
-        self.build_trackers()
+        if not _points:
+            return
+
+        self.trackers['Curve'][0].update(_points)
 
     def _generate_spiral(self):
         """
@@ -274,9 +278,9 @@ class CurveTracker(BaseTracker):
         _key = ''
         _rad = 0.0
 
-        _start = self.pi_nodes[0].get()
-        _pi = self.pi_nodes[1].get()
-        _end = self.pi_nodes[2].get()
+        _start = Vector(self.pi_nodes[0].point)
+        _pi = Vector(self.pi_nodes[1].point)
+        _end = Vector(self.pi_nodes[2].point)
 
         if not self.curve.get('StartRadius') \
             or self.curve['StartRadius'] == math.inf:
@@ -321,16 +325,18 @@ class CurveTracker(BaseTracker):
         if _curve['TanShort'] <= 0.0 or _curve['TanLong'] <= 0.0:
             _curve = self.curve
 
-        return _curve
+        self.curve = _curve
+
+        return spiral.get_points(self.curve)
 
     def _generate_arc(self):
         """
         Generate a simple arc curve
         """
 
-        _start = self.pi_nodes[0].get()
-        _pi = self.pi_nodes[1].get()
-        _end = self.pi_nodes[2].get()
+        _start = Vector(self.pi_nodes[0].point)
+        _pi = Vector(self.pi_nodes[1].point)
+        _end = Vector(self.pi_nodes[2].point)
 
         _curve = {
                 'BearingIn': support.get_bearing(_pi.sub(_start)),
@@ -339,7 +345,9 @@ class CurveTracker(BaseTracker):
                 'Radius': self.curve['Radius'],
             }
 
-        return arc.get_parameters(_curve)
+        self.curve = arc.get_parameters(_curve)
+
+        return arc.get_points(self.curve)
 
     def start_drag(self):
         """
@@ -625,12 +633,12 @@ class CurveTracker(BaseTracker):
         #        if _curve['TanShort'] <= 0.0 or _curve['TanLong'] <= 0.0:
         #            _curve = self.curves[_i]
 
-        #        _points, _x = spiral.get_points(_curve)
+        #        _points = spiral.get_points(_curve)
 
         #    else:
         #        _class = arc
         #        _curve = arc.get_parameters(_curve)
-        #        _points, _x = arc.get_points(_curve)
+        #        _points = arc.get_points(_curve)
 
         #    self.curves[_i] = _curve
 
