@@ -27,7 +27,6 @@ Customized edit tracker from DraftTrackers.editTracker
 from pivy import coin
 
 from FreeCAD import Vector
-import FreeCADGui as Gui
 
 from .coin_style import CoinStyle
 from .base_tracker import BaseTracker
@@ -55,7 +54,6 @@ class NodeTracker(BaseTracker):
         self.state = 'UNSELECTED'
 
         self.enabled = True
-        self.coin_style = None
         self.view = view
         self.name = names[2]
         self.mouse = MouseState()
@@ -81,23 +79,6 @@ class NodeTracker(BaseTracker):
         }
 
         self.update()
-
-    def set_style(self, style):
-        """
-        Set the node style
-        """
-
-        if self.coin_style == style:
-            return
-
-        self.color.rgb = style['color']
-
-        self.marker.markerIndex = \
-            Gui.getMarkerIndex(style['shape'], style['size'])
-
-        self.set_selectability(style['select'])
-
-        self.coin_style = style
 
     def update(self, coord=None):
         """

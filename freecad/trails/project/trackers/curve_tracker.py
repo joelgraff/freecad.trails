@@ -55,6 +55,7 @@ class CurveTracker(BaseTracker):
         Constructor
         """
 
+        self.coin_style = None
         self.curve = curve
         self.pi_nodes = pi_nodes
         self.callbacks = {}
@@ -128,6 +129,13 @@ class CurveTracker(BaseTracker):
         ##self.status_bar.clearMessage()
         #self.status_bar.showMessage(_msg)
 
+    def set_style(self, style):
+        """
+        Override of base function
+        """
+
+        self.trackers['Curve'][0].set_style(style)
+
     def mouse_event(self, arg):
         """
         Manage mouse actions affecting multiple nodes / wires
@@ -147,14 +155,11 @@ class CurveTracker(BaseTracker):
         self.mouse.update(arg, self.view.getCursorPos())
 
         self.state = 'UNSELECTED'
+        self.trackers['Curve'][0].state = 'UNSELECTED'
 
         if any([_v.state == 'SELECTED' for _v in self.pi_nodes]):
             self.state = 'SELECTED'
-
-        #terminate dragging if button is released
-        if self.user_dragging and not self.mouse.button1.dragging:
-            self.end_drag()
-            self.user_dragging = False
+            self.trackers['Curve'][0].state = 'SELECTED'
 
     def build_trackers(self):
         """
@@ -328,108 +333,15 @@ class CurveTracker(BaseTracker):
         _end = Vector(self.pi_nodes[2].point)
 
         _curve = {
-                'BearingIn': support.get_bearing(_pi.sub(_start)),
-                'BearingOut': support.get_bearing(_end.sub(_pi)),
-                'PI': _pi,
-                'Radius': self.curve['Radius'],
-            }
+            'BearingIn': support.get_bearing(_pi.sub(_start)),
+            'BearingOut': support.get_bearing(_end.sub(_pi)),
+            'PI': _pi,
+            'Radius': self.curve['Radius'],
+        }
 
         self.curve = arc.get_parameters(_curve)
 
         return arc.get_points(self.curve)
-
-    def _validate_curve(self, curves):
-        """
-        Given a list of updated curves, validate them against themselves
-        and adjoingin geometry
-        """
-
-        pass
-
-        #_idx = self.drag.curves[:]
-
-        #if not _idx:
-        #    self.is_valid = True
-        #    return
-
-        ##append preceding and following curves if first / last curves
-        ##aren't being updated
-        #if _idx[0] > 0:
-        #    _idx.insert(0, _idx[0] - 1)
-        #    curves.insert(0, self.curves[_idx[0]])
-
-        #elif _idx[-1] < len(self.curves) - 1:
-        #    _idx.append(_idx[-1] + 1)
-        #    curves.append(self.curves[_idx[-1]])
-
-        #_styles = [CoinStyle.DEFAULT]*len(curves)
-
-        ##validate curves against each other,
-        ##ensuring PI distance >= sum  of curve tangents
-        #for _i in range(0, len(curves) - 1):
-
-        #    _c = [curves[_i], curves[_i + 1]]
-
-        #    _tangents = [0.0, 0]
-
-        #    if _c[0]['Type'] == 'Spiral':
-        #        _tangents[0] = spiral.get_ordered_tangents(_c[0])[0]
-
-        #    else:
-        #        _tangents[0] = _c[0]['Tangent']
-
-        #    if _c[1]['Type'] == 'Spiral':
-        #        _tangents[1] = spiral.get_ordered_tangents(_c[1])[1]
-
-        #    else:
-        #        _tangents[1] = _c[1]['Tangent']
-
-        #    if (_tangents[0] + _tangents[1])\
-        #        > (_c[0]['PI'].distanceToPoint(_c[1]['PI'])):
-
-        #        _styles[_i + 1] = CoinStyle.ERROR
-        #        _styles[_i] = CoinStyle.ERROR
-
-        ##do endpoint checks if the first or last curves are changing.
-        #_x = []
-
-        ##first curve is updating
-        #if _idx[0] == 0:
-        #    _x.append(0)
-
-        ##last curve is updating
-        #if _idx[-1] == len(self.curves) - 1:
-        #    _x.append(-1)
-
-        #for _i in _x:
-
-        #    _c = curves[_i]
-        #    _p = self.drag.pi[_i]
-        #    _tangent = None
-
-        #    #disable validation for spirals temporarily
-        #    if _c['Type'] == 'Spiral':
-                
-        #        _tans = spiral.get_ordered_tangents(_c)
-        #        _tangent = _tans[1]
-
-        #        if _i == 0:
-        #            _tangent = _tans[0]
-
-        #    else:
-        #        _tangent = _c['Tangent']
-
-        #    if _styles[_i] != CoinStyle.ERROR:
-
-        #        if _tangent > _c['PI'].distanceToPoint(_p):
-        #            _styles[_i] = CoinStyle.ERROR
-
-        #for _i, _c in enumerate(curves):
-        #    self.trackers['Curves'][_idx[0] + _i].set_style(
-        #        _styles[_i]
-        #    )
-
-        #self.is_valid = all([_v != CoinStyle.ERROR for _v in _styles])
 
     def finalize(self):
         """
@@ -450,4 +362,5 @@ class CurveTracker(BaseTracker):
 
             self.callbacks.clear()
 
+        print('finailizing curve tracker')
         super().finalize()

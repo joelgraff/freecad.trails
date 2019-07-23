@@ -49,7 +49,6 @@ class WireTracker(BaseTracker):
         self.enabled = True
         self.state = 'UNSELECTED'
 
-        self.coin_style = None
         self.selection_nodes = None
         self.mouse = MouseState()
 
@@ -111,29 +110,6 @@ class WireTracker(BaseTracker):
 
         pass
 
-    def set_style(self, style):
-        """
-        Update the tracker style
-        """
-
-        if self.coin_style == style:
-            return
-
-        if style['line width']:
-            self.draw_style.lineWidth = style['line width']
-
-        self.draw_style.style = style['line style']
-        self.draw_style.lineWeight = style['line weight']
-
-        if style['line pattern']:
-            self.draw_style.linePattern = style['line pattern']
-
-        self.color.rgb = style['color']
-
-        self.set_selectability(style['select'])
-
-        self.coin_style = style
-
     def button_event(self, arg):
         """
         Mouse button actions
@@ -180,7 +156,7 @@ class WireTracker(BaseTracker):
             return
 
         #no mouseover processing if the node is currently selected
-        if self.state == 'SELECTED':
+        if self.state == 'UNSELECTED':
             return
 
         #test to see if this node is under the cursor

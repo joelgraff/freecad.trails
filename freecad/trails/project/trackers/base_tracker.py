@@ -26,6 +26,8 @@ Customized wire tracker from DraftTrackers.wireTracker
 
 from pivy import coin
 
+import FreeCADGui as Gui
+
 import Draft
 
 from DraftGui import todo
@@ -47,6 +49,7 @@ class BaseTracker:
         self.parent = None
         self.picker = coin.SoPickStyle()
         self.switch = coin.SoSwitch()
+        self.coin_style = None
 
         if not children:
             children = []
@@ -88,6 +91,34 @@ class BaseTracker:
         """
 
         return self.picker.style.getValue() != coin.SoPickStyle.UNPICKABLE
+
+    def set_style(self, style):
+        """
+        Update the tracker style
+        """
+
+        if self.coin_style == style:
+            return
+
+        if style['line width']:
+            self.draw_style.lineWidth = style['line width']
+
+        self.draw_style.style = style['line style']
+
+        self.draw_style.lineWeight = style['line weight']
+
+        if style['line pattern']:
+            self.draw_style.linePattern = style['line pattern']
+
+        if hasattr(self, 'marker'):
+            self.marker.markerIndex = \
+                Gui.getMarkerIndex(style['shape'], style['size'])
+
+        self.color.rgb = style['color']
+
+        self.set_selectability(style['select'])
+
+        self.coin_style = style
 
     def finalize(self, node=None, parent=None):
         """
@@ -131,7 +162,6 @@ class BaseTracker:
 
         x = node.copy()
 
-        print(x)
         return node.copy()
 
     def get_search_path(self, node):
