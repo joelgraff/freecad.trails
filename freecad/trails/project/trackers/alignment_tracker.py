@@ -358,7 +358,7 @@ class AlignmentTracker(BaseTracker):
         for _curve in self.trackers['Curves']:
             _curve.update()
 
-        #self._validate_curves()
+        self._validate_curves()
         self.drag.position = _world_pos
 
     def end_drag(self):
@@ -558,115 +558,18 @@ class AlignmentTracker(BaseTracker):
 
         return _result
 
-    def _generate_curves(self):
-        """
-        Internal function - Generate curves based on existing curves and nodes
-        """
-
-        #get the indices of curves that are to be updated
-        _indices = self.drag.curves
-
-        if not _indices:
-            return
-
-        _result = []
-        _rng = (_indices[0], _indices[-1] + 3)
-        _nodes = self.pi_list[_rng[0]:_rng[1]]
-
-        for _i, _v in enumerate(self.trackers['Nodes'][_rng[0]:_rng[1]]):
-
-            if _v.state == 'SELECTED':
-                _nodes[_i] = self._transform_nodes([_v.get()])[0]
-
-        _j = 0
-        _last_curve = None
-
-        print('indices = ', _indices)
-        for _i in _indices:
-
-            _start = _nodes[_j]
-            _pi = _nodes[_j + 1]
-            _end = _nodes[_j + 2]
-
-            _class = arc
-            _curve = {
-                'BearingIn': support.get_bearing(_pi.sub(_start)),
-                'BearingOut': support.get_bearing(_end.sub(_pi)),
-                'PI': _pi,
-                'Radius': self.curves[_i]['Radius'],
-            }
-
-            if self.curves[_i]['Type'] == 'Spiral':
-
-                _class = spiral
-                _key = ''
-                _rad = 0.0
-
-                if not self.curves[_i].get('StartRadius') \
-                    or self.curves[_i]['StartRadius'] == math.inf:
-                    _key = 'EndRadius'
-                    _rad = self.curves[_i + 1]['Radius']
-                    _end = self.curves[_i + 1]['Start']
-
-                    if _i > 0:
-                        _start = _pi.sub(
-                            Vector(_pi.sub(_start)).multiply(
-                                _start.distanceToPoint(_pi) / 2.0
-                            )
-                        )
-
-                else:
-                    _key = 'StartRadius'
-                    _rad = self.curves[_i - 1]['Radius']
-                    _start = self.curves[_i - 1]['End']
-
-                    if _i < len(self.curves) - 1:
-                        _end = _pi.add(
-                            Vector(_end.sub(_pi)).multiply(
-                                _end.distanceToPoint(_pi) / 2.0)
-                        )
-
-                _curve = {
-                    'PI': _pi,
-                    'Start': _start,
-                    'End': _end,
-                    _key: _rad
-                }
-
-                _curve = spiral.solve_unk_length(_curve)
-
-                #re-render the last known good points if an error occurs
-                if _curve['TanShort'] <= 0.0 or _curve['TanLong'] <= 0.0:
-                    _curve = self.curves[_i]
-
-                _points = spiral.get_points(_curve)
-
-            else:
-                _class = arc
-                _curve = arc.get_parameters(_curve)
-                _points = arc.get_points(_curve)
-
-            self.curves[_i] = _curve
-
-            _result.append(_curve)
-
-            self.trackers['Curves'][_i].update(_points)
-
-            _j += 1
-
-        return _result
-
-    def _validate_curves(self, curves):
+    def _validate_curves(self):
         """
         Given a list of updated curves, validate them against themselves
         and adjoingin geometry
         """
 
-        _idx = self.drag.curves[:]
-
-        if not _idx:
+        if not self.drag.curves:
             self.is_valid = True
             return
+
+        _idx = self.drag.curves[:]
+        curves = [self.trackers['Curves'][_v].curve for _v in self.drag.curves]
 
         #append preceding and following curves if first / last curves
         #aren't being updated
@@ -684,24 +587,20 @@ class AlignmentTracker(BaseTracker):
         #ensuring PI distance >= sum  of curve tangents
         for _i in range(0, len(curves) - 1):
 
-            _c = [curves[_i], curves[_i + 1]]
+            _tangents = []
+            _pair = [curves[_i], curves[_i + 1]]
 
-            _tangents = [0.0, 0]
+            for _c in _pair:
 
-            if _c[0]['Type'] == 'Spiral':
-                _tangents[0] = spiral.get_ordered_tangents(_c[0])[0]
+                if _c['Type'] == 'Spiral':
 
-            else:
-                _tangents[0] = _c[0]['Tangent']
+                    _tangents.append(spiral.get_ordered_tangents(_c)[0])
+                    continue
 
-            if _c[1]['Type'] == 'Spiral':
-                _tangents[1] = spiral.get_ordered_tangents(_c[1])[1]
-
-            else:
-                _tangents[1] = _c[1]['Tangent']
+                _tangents.append(_c['Tangent'])
 
             if (_tangents[0] + _tangents[1])\
-                > (_c[0]['PI'].distanceToPoint(_c[1]['PI'])):
+                > (_pair[0]['PI'].distanceToPoint(_pair[1]['PI'])):
 
                 _styles[_i + 1] = CoinStyle.ERROR
                 _styles[_i] = CoinStyle.ERROR
@@ -720,12 +619,12 @@ class AlignmentTracker(BaseTracker):
         for _i in _x:
 
             _c = curves[_i]
-            _p = self.trackers['Nodes'][_i]
+            _p = self.trackers['Nodes'][_i].get()
             _tangent = None
 
             #disable validation for spirals temporarily
             if _c['Type'] == 'Spiral':
-                
+
                 _tans = spiral.get_ordered_tangents(_c)
                 _tangent = _tans[1]
 
@@ -735,10 +634,10 @@ class AlignmentTracker(BaseTracker):
             else:
                 _tangent = _c['Tangent']
 
-            if _styles[_i] != CoinStyle.ERROR:
+            if _styles[_i] != CoinStyle.ERROR \
+                and _tangent > _c['PI'].distanceToPoint(_p):
 
-                if _tangent > _c['PI'].distanceToPoint(_p):
-                    _styles[_i] = CoinStyle.ERROR
+                _styles[_i] = CoinStyle.ERROR
 
         for _i, _c in enumerate(curves):
             self.trackers['Curves'][_idx[0] + _i].set_style(
