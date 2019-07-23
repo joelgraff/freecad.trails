@@ -42,7 +42,6 @@ class DragState():
         self.angle = 0.0
         self.translation = Vector()
         self.multi = False
-        self.pi = []
         self.curves = []
         self.nodes = []
         self.node_idx = []
