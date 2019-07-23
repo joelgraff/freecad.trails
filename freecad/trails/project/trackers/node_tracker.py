@@ -58,6 +58,7 @@ class NodeTracker(BaseTracker):
         self.view = view
         self.name = names[2]
         self.mouse = MouseState()
+        self.is_end_node = False
 
         #build node structure for the node tracker
         self.coord = coin.SoCoordinate3()

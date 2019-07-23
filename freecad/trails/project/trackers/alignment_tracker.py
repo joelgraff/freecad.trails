@@ -190,9 +190,6 @@ class AlignmentTracker(BaseTracker):
         if not _info:
             return
 
-        #if 'CURVE' in _info['Component']:
-        #    self.trackers['']
-
     def build_trackers(self):
         """
         Build the node and wire trackers that represent the selectable
@@ -228,6 +225,9 @@ class AlignmentTracker(BaseTracker):
 
             _result['Nodes'].append(_tr)
 
+        _result['Nodes'][0].is_end_node = True
+        _result['Nodes'][-1].is_end_node = True
+
         #wire trackers - Tangents
         for _i in range(0, len(_result['Nodes']) - 1):
 
@@ -244,17 +244,14 @@ class AlignmentTracker(BaseTracker):
         _curves = self.alignment.get_curves()
         _points = []
 
-        self.trackers = _result
-
-        return
-
         #curve trackers
         for _i in range(0, len(_result['Tangents']) - 1):
 
             _ct = CurveTracker(
                 view=self.view,
                 names=_names + ['CURVE-' + str(_i)],
-                curve=_curves[_i]
+                curve=_curves[_i],
+                pi_nodes=_result['Nodes'][_i:_i+3]
             )
 
             _ct.set_selectability(True)
@@ -289,6 +286,8 @@ class AlignmentTracker(BaseTracker):
 
             _c = _v.get()
 
+            #drag start may exist if the user has switched between
+            #translation and rotation
             if not self.drag.start:
 
                 self.drag.start =\
@@ -306,6 +305,8 @@ class AlignmentTracker(BaseTracker):
             self.drag.nodes.append(_c)
             self.drag.node_idx.append(_i)
 
+        print('drag nodes = ', self.drag.node_idx)
+
         self.curves = self.alignment.get_curves()
         self.pi_list = self.alignment.model.get_pi_coords()
         self.drag.pi = self.pi_list[:]
@@ -316,6 +317,7 @@ class AlignmentTracker(BaseTracker):
         for _v in self.trackers['Tangents'] + self.trackers['Curves']:
 
             print(_v.names, _v.state)
+
             if isinstance(_v, CurveTracker):
                 continue
 
@@ -364,9 +366,12 @@ class AlignmentTracker(BaseTracker):
         self._update_transform(_world_pos, do_rotation, modify)
         self._update_pi_nodes(_world_pos)
 
-        _curves = self._generate_curves()
+        #for _curve in self.trackers['Curves']:
+            #_curve.update()
 
-        self._validate_curves(_curves)
+#        _curves = self._generate_curves()
+
+        #self._validate_curves()
         self.drag.position = _world_pos
 
     def end_drag(self):
@@ -594,6 +599,7 @@ class AlignmentTracker(BaseTracker):
         _j = 0
         _last_curve = None
 
+        print('indices = ', _indices)
         for _i in _indices:
 
             _start = _nodes[_j]

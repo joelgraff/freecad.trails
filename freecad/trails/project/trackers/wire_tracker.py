@@ -142,10 +142,14 @@ class WireTracker(BaseTracker):
         if not self.enabled:
             return
 
-        #if not self.is_selectable():
-        #    return
+        _states = [_v.state == 'SELECTED' for _v in self.selection_nodes]
 
         self.state = 'UNSELECTED'
+
+        if all(_states):
+            self.state = 'SELECTED'
+        elif any(_states):
+            self.state = 'PARTIAL'
 
         _info = self.view.getObjectInfo(self.mouse.pos)
 
@@ -153,21 +157,14 @@ class WireTracker(BaseTracker):
             self.set_style(CoinStyle.DEFAULT)
             return
 
+        _style = CoinStyle.SELECTED
+
         if not self.name in _info['Component']:
 
-            if any([_v.state == 'SELECTED' for _v in self.selection_nodes]):
+            if self.state == 'UNSELECTED':
+                _style = CoinStyle.DEFAULT
 
-                self.set_style(CoinStyle.SELECTED)
-                self.state = 'PARTIAL'
-
-            else:
-
-                self.set_style(CoinStyle.DEFAULT)
-
-            return
-
-        self.state = 'SELECTED'
-        self.set_style(CoinStyle.SELECTED)
+        self.set_style(_style)
 
     def mouse_event(self, arg):
         """

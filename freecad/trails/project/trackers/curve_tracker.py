@@ -50,12 +50,13 @@ class CurveTracker(BaseTracker):
     Tracker class for alignment design
     """
 
-    def __init__(self, view, names, curve):
+    def __init__(self, view, names, curve, pi_nodes):
         """
         Constructor
         """
 
         self.curve = curve
+        self.pi_nodes = pi_nodes
         self.callbacks = {}
         self.names = names
         self.mouse = MouseState()
@@ -64,6 +65,7 @@ class CurveTracker(BaseTracker):
         self.status_bar = Gui.getMainWindow().statusBar()
         self.drag = DragState()
         self.view = view
+        self.state = 'UNSELECTED'
         self.viewport = \
             view.getViewer().getSoRenderManager().getViewportRegion()
 
@@ -155,6 +157,15 @@ class CurveTracker(BaseTracker):
 
         self.mouse.update(arg, self.view.getCursorPos())
 
+        _states = [_v.state == 'SELECTED' for _v in self.trackers['Nodes']]
+
+        if all(_states):
+            self.state = 'SELECTED'
+        elif any(_states):
+            self.state = 'PARTIAL'
+        else:
+            self.state = 'UNSELECTED'
+
         #terminate dragging if button is released
         if self.user_dragging and not self.mouse.button1.dragging:
             self.end_drag()
@@ -220,7 +231,10 @@ class CurveTracker(BaseTracker):
 
         _result['Curve'] = [
             self._build_wire_tracker(
-                self.names + [self.curve['Type']], _coords, _points, True
+                wire_name=self.names + [self.curve['Type']],
+                nodes=_result['Nodes'],
+                points=_points,
+                select=True
             )
         ]
 
@@ -238,6 +252,94 @@ class CurveTracker(BaseTracker):
         _wt.update(points)
 
         return _wt
+
+    def update(self):
+        """
+        Update the curve based on the passed data points
+        """
+
+        if self.curve['Type'] == 'Spiral':
+            self.curve = self._generate_spiral()
+
+        else:
+            self.curve = self._generate_arc()
+
+        self.build_trackers()
+
+    def _generate_spiral(self):
+        """
+        Generate a spiral curve
+        """
+
+        _key = ''
+        _rad = 0.0
+
+        _start = self.pi_nodes[0].get()
+        _pi = self.pi_nodes[1].get()
+        _end = self.pi_nodes[2].get()
+
+        if not self.curve.get('StartRadius') \
+            or self.curve['StartRadius'] == math.inf:
+
+            _key = 'EndRadius'
+            _end = self.curve['End']
+
+            #first curve uses the start point.
+            #otherwise, calculate a point halfway in between.
+            if _start.is_end_node:
+
+                _start = _pi.sub(
+                    Vector(_pi.sub(_start)).multiply(
+                        _start.distanceToPoint(_pi) / 2.0
+                    )
+                )
+
+        else:
+
+            _key = 'StartRadius'
+            _start = self.curve['Start']
+
+            #last curve uses the end point.
+            #otherwise, calcualte a point halfway between.
+            if _start.is_end_node:
+
+                    _end = _pi.add(
+                        Vector(_end.sub(_pi)).multiply(
+                             _end.distanceToPoint(_pi) / 2.0)
+                    )
+
+        _curve = {
+            'PI': _pi,
+            'Start': _start,
+            'End': _end,
+            _key: self.curve[_key]
+        }
+
+        _curve = spiral.solve_unk_length(_curve)
+
+        #re-render the last known good points if an error occurs
+        if _curve['TanShort'] <= 0.0 or _curve['TanLong'] <= 0.0:
+            _curve = self.curve
+
+        return _curve
+
+    def _generate_arc(self):
+        """
+        Generate a simple arc curve
+        """
+
+        _start = self.pi_nodes[0].get()
+        _pi = self.pi_nodes[1].get()
+        _end = self.pi_nodes[2].get()
+
+        _curve = {
+                'BearingIn': support.get_bearing(_pi.sub(_start)),
+                'BearingOut': support.get_bearing(_end.sub(_pi)),
+                'PI': _pi,
+                'Radius': self.curve['Radius'],
+            }
+
+        return arc.get_parameters(_curve)
 
     def start_drag(self):
         """
