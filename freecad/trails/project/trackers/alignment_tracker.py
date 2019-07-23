@@ -147,7 +147,6 @@ class AlignmentTracker(BaseTracker):
 
         _msg = _id + ' ' + str(tuple(_pos))
 
-        #self.status_bar.clearMessage()
         self.status_bar.showMessage(_msg)
 
     def mouse_event(self, arg):
@@ -220,8 +219,6 @@ class AlignmentTracker(BaseTracker):
                 names=_names + ['NODE-' + str(_i)],
                 point=_pt
             )
-
-            _tr.update(_pt)
 
             _result['Nodes'].append(_tr)
 
@@ -301,22 +298,16 @@ class AlignmentTracker(BaseTracker):
                 if self.drag.nodes[-1] == _c:
                     continue
 
-            print('dragging ', _v.names)
             self.drag.nodes.append(_c)
             self.drag.node_idx.append(_i)
 
-        print('drag nodes = ', self.drag.node_idx)
-
         self.curves = self.alignment.get_curves()
         self.pi_list = self.alignment.model.get_pi_coords()
-        self.drag.pi = self.pi_list[:]
 
         _partial = []
 
         #duplicate scene nodes of selected and partially-selected wires
         for _v in self.trackers['Tangents'] + self.trackers['Curves']:
-
-            print(_v.names, _v.state)
 
             if isinstance(_v, CurveTracker):
                 continue
@@ -328,7 +319,6 @@ class AlignmentTracker(BaseTracker):
             if _v.state == 'UNSELECTED':
                 continue
 
-            print('copying ', _v.names)
             self.groups[_v.state].addChild(_v.copy())
 
         self.drag.multi = self.groups['SELECTED'].getNumChildren() > 2
@@ -341,7 +331,6 @@ class AlignmentTracker(BaseTracker):
 
         _curves = []
 
-        print('partials = ', _partial)
         #build list of curve indices
         for _i in _partial:
 
@@ -366,10 +355,8 @@ class AlignmentTracker(BaseTracker):
         self._update_transform(_world_pos, do_rotation, modify)
         self._update_pi_nodes(_world_pos)
 
-        #for _curve in self.trackers['Curves']:
-            #_curve.update()
-
-#        _curves = self._generate_curves()
+        for _curve in self.trackers['Curves']:
+            _curve.update()
 
         #self._validate_curves()
         self.drag.position = _world_pos
@@ -381,30 +368,25 @@ class AlignmentTracker(BaseTracker):
 
         if self.is_valid:
 
-            print('!!!! VALID !!!!')
+            _pi_list = [Vector(_v.point) for _v in self.trackers['Nodes']]
+
             #do a final calculation on the curves
             self.drag.curves = list(range(0, len(self.curves)))
 
-            self.alignment.update_curves(self.curves, self.drag.pi, True)
+            self.alignment.update_curves(self.curves, _pi_list, True)
 
-            for _i, _v in enumerate(self.alignment.model.get_pi_coords()):
-                self.trackers['Nodes'][_i].update(_v)
+            for _v in self.trackers['Nodes']:
+                _v.update()
 
             for _v in self.trackers['Tangents']:
-                _v.update([_w.get() for _w in _v.selection_nodes])
+                _v.update()
 
-            #for _v in self.trackers['Curves']:
-            #    _v.update([
-            #        tuple(Vector(_w).sub(self.drag.pi[0])) for _w in _v.points
-            #    ])
-
-            self.datum = self.datum.add(self.drag.pi[0])
+            self.datum = self.datum.add(_pi_list[0])
             self.transform.translation.setValue(tuple(self.datum))
 
         #reset the tracker state
         else:
 
-            print('tracker state = ', self.drag.tracker_state)
             for _i, _v in enumerate(
                 self.trackers['Tangents'] + self.trackers['Curves']):
 
@@ -537,7 +519,7 @@ class AlignmentTracker(BaseTracker):
             _j = self.drag.node_idx[_i]
 
             #save the updated PI coordinate
-            self.drag.pi[_j] = _v
+            self.trackers['Nodes'][_j].point = _v
 
             _limits = [_w if _w >= 0 else 0 for _w in [_j - 1, _j + 1]]
 
@@ -608,11 +590,11 @@ class AlignmentTracker(BaseTracker):
 
             _class = arc
             _curve = {
-                    'BearingIn': support.get_bearing(_pi.sub(_start)),
-                    'BearingOut': support.get_bearing(_end.sub(_pi)),
-                    'PI': _pi,
-                    'Radius': self.curves[_i]['Radius'],
-                }
+                'BearingIn': support.get_bearing(_pi.sub(_start)),
+                'BearingOut': support.get_bearing(_end.sub(_pi)),
+                'PI': _pi,
+                'Radius': self.curves[_i]['Radius'],
+            }
 
             if self.curves[_i]['Type'] == 'Spiral':
 
@@ -657,12 +639,12 @@ class AlignmentTracker(BaseTracker):
                 if _curve['TanShort'] <= 0.0 or _curve['TanLong'] <= 0.0:
                     _curve = self.curves[_i]
 
-                _points, _x = spiral.get_points(_curve)
+                _points = spiral.get_points(_curve)
 
             else:
                 _class = arc
                 _curve = arc.get_parameters(_curve)
-                _points, _x = arc.get_points(_curve)
+                _points = arc.get_points(_curve)
 
             self.curves[_i] = _curve
 
@@ -738,7 +720,7 @@ class AlignmentTracker(BaseTracker):
         for _i in _x:
 
             _c = curves[_i]
-            _p = self.drag.pi[_i]
+            _p = self.trackers['Nodes'][_i]
             _tangent = None
 
             #disable validation for spirals temporarily

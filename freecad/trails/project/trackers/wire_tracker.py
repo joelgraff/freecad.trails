@@ -88,7 +88,7 @@ class WireTracker(BaseTracker):
         """
 
         if not points:
-            points = self.points
+            points = [_v.point for _v in self.selection_nodes]
 
         if not points:
             return

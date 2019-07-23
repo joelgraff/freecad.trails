@@ -45,6 +45,7 @@ class NodeTracker(BaseTracker):
         """
 
         self.type = 'NODE'
+
         if not nodes:
             nodes = []
 
@@ -59,6 +60,7 @@ class NodeTracker(BaseTracker):
         self.name = names[2]
         self.mouse = MouseState()
         self.is_end_node = False
+        self.point = point
 
         #build node structure for the node tracker
         self.coord = coin.SoCoordinate3()
@@ -78,6 +80,8 @@ class NodeTracker(BaseTracker):
             self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
         }
 
+        self.update()
+
     def set_style(self, style):
         """
         Set the node style
@@ -95,10 +99,13 @@ class NodeTracker(BaseTracker):
 
         self.coin_style = style
 
-    def update(self, coord):
+    def update(self, coord=None):
         """
         Update the coordinate position
         """
+
+        if not coord:
+            coord = self.point
 
         #if we have a list of points, pick the first
         if isinstance(coord, list):
@@ -110,6 +117,8 @@ class NodeTracker(BaseTracker):
             _c = tuple(_c)
 
         self.coord.point.setValue(_c)
+
+        self.point = _c
 
     def get(self):
         """
