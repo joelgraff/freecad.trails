@@ -53,6 +53,8 @@ class NodeTracker(BaseTracker):
 
         self.state = 'UNSELECTED'
 
+        self.hide_conditions = []
+        self.show_conditions = []
         self.enabled = True
         self.view = view
         self.name = names[2]
@@ -133,27 +135,27 @@ class NodeTracker(BaseTracker):
         if _info:
             _comp = _info['Component']
 
+        self.on()
+
+        _style = CoinStyle.SELECTED
+
         if self.name != _comp:
 
-            self.set_style(CoinStyle.DEFAULT)
+            _style = CoinStyle.DEFAULT
 
             #hide the PI node if the mouse is highlighting a curve
-            if 'CURVE' in _comp:
-            
-                if 'NODE' in self.name:
+            for _cond in self.hide_conditions:
 
-                    _idx = int(_comp.split('-')[1])
-
-                    if _idx == int(self.name.split('-')[1]) - 1:
+                if _cond[0] == '!':
+                    if _cond[1:] not in _comp:
                         self.off()
+                        return
 
+                elif _cond in _comp:
+                    self.off()
                     return
 
-        else:
-            self.set_style(CoinStyle.SELECTED)
-
-        if not self.visible:
-            self.on()
+        self.set_style(_style)
 
     def button_event(self, arg):
         """

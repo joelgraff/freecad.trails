@@ -253,6 +253,7 @@ class AlignmentTracker(BaseTracker):
 
             _ct.set_selectability(True)
 
+            _result['Nodes'][_i + 1].hide_conditions.append(_ct.name[2])
             _result['Curves'].append(_ct)
 
         self.trackers = _result
@@ -380,6 +381,10 @@ class AlignmentTracker(BaseTracker):
 
             for _v in self.trackers['Tangents']:
                 _v.update()
+
+            #rebuild the curve tracker wires to match the updated curve
+            for _v in self.trackers['Curves']:
+                _v.rebuild_trackers()
 
             self.datum = self.datum.add(_pi_list[0])
             self.transform.translation.setValue(tuple(self.datum))

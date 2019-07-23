@@ -49,6 +49,8 @@ class WireTracker(BaseTracker):
         self.enabled = True
         self.state = 'UNSELECTED'
 
+        self.hide_conditions = []
+        self.show_conditions = []
         self.selection_nodes = None
         self.mouse = MouseState()
 
@@ -151,26 +153,32 @@ class WireTracker(BaseTracker):
         if not self.enabled:
             return
 
-        #no mouseover processing if the element can't be selected
-        if not self.is_selectable():
-            return
-
-        #no mouseover processing if the node is currently selected
-        if self.state == 'UNSELECTED':
-            return
-
         #test to see if this node is under the cursor
-        _info = self.view.getObjectInfo(self.mouse.pos)
-
-        if not _info:
-            self.set_style(CoinStyle.DEFAULT)
-            return
-
-        if not self.name in _info['Component']:
-            self.set_style(CoinStyle.DEFAULT)
-            return
-
         self.set_style(CoinStyle.SELECTED)
+
+        _info = self.view.getObjectInfo(self.mouse.pos)
+        _comp = ''
+
+        if _info:
+            _comp = _info['Component']
+
+        if self.name != _comp:
+
+            self.set_style(CoinStyle.DEFAULT)
+
+            #hide the PI node if the mouse is highlighting a curve
+            for _cond in self.hide_conditions:
+
+                if _cond[0] == '!':
+                    if _cond[1:] not in _comp:
+                        self.off()
+                        return
+
+                elif _cond in _comp:
+                    self.off()
+                    return
+
+        self.on()
 
     def finalize(self, node=None, parent=None):
         """

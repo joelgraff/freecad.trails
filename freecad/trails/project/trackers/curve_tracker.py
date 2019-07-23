@@ -55,11 +55,12 @@ class CurveTracker(BaseTracker):
         Constructor
         """
 
+        self.show_conditions = []
         self.coin_style = None
         self.curve = curve
         self.pi_nodes = pi_nodes
         self.callbacks = {}
-        self.names = names
+        self.name = names
         self.mouse = MouseState()
         self.user_dragging = False
         self.is_valid = True
@@ -70,7 +71,15 @@ class CurveTracker(BaseTracker):
         self.viewport = \
             view.getViewer().getSoRenderManager().getViewportRegion()
 
-        super().__init__(names=self.names)
+        self.node_names = ['Center', 'Start', 'End', 'PI', 'Center']
+        self.wire_names = (
+            ('Start Radius', 1, 0),
+            ('Start Tangent', 1, 3),
+            ('End Radius', 2, 0),
+            ('End Tangent', 2, 3)
+        )
+
+        super().__init__(names=self.name)
 
         #input callback assignments
         self.callbacks = {
@@ -101,7 +110,7 @@ class CurveTracker(BaseTracker):
             _trackers.extend(_v)
 
         for _v in _trackers:
-            self.insert_node(_v.node, self.groups['EDIT'])
+            self.insert_node(_v.switch, self.groups['EDIT'])
 
         #insert in the scenegraph root
         self.insert_node(self.node)
@@ -161,23 +170,30 @@ class CurveTracker(BaseTracker):
             self.state = 'SELECTED'
             self.trackers['Curve'][0].state = 'SELECTED'
 
+    def rebuild_trackers(self):
+        """
+        Rebuild the existing trackers to match updated curve
+        """
+
+        #build a list of coordinates from curves in the geometry
+        #skipping the last (duplicate of center)
+        _coords = [self.curve[_k] for _k in self.node_names[:-1]]
+
+        for _i, _v in enumerate(_coords[:-1]):
+            self.trackers['Nodes'][_i].update(_v)
+
+        for _i, _v in enumerate(self.wire_names):
+            self.trackers['Wires'][_i].update([_coords[_v[1]], _coords[_v[2]]])
+
     def build_trackers(self):
         """
         Build the node and wire trackers that represent the selectable
         portions of the curve geometry
         """
 
-        _node_names = ['Center', 'Start', 'End', 'PI', 'Center']
-        _wires = (
-            ('Start Radius', 1, 0),
-            ('Start Tangent', 1, 3),
-            ('End Radius', 2, 0),
-            ('End Tangent', 2, 3)
-        )
-
         #build a list of coordinates from curves in the geometry
         #skipping the last (duplicate of center)
-        _coords = [self.curve[_k] for _k in _node_names[:-1]]
+        _coords = [self.curve[_k] for _k in self.node_names[:-1]]
 
         #build the trackers
         _result = {'Nodes': [], 'Wires': [], 'Curve': None}
@@ -185,8 +201,8 @@ class CurveTracker(BaseTracker):
         #node trackers - don't create a PI node
         for _i, _pt in enumerate(_coords[:-1]):
 
-            _names = self.names[:]
-            _names[-1] = _names[-1] + '-' + _node_names[_i]
+            _names = self.name[:]
+            _names[-1] = _names[-1] + '-' + self.node_names[_i]
 
             _tr = NodeTracker(
                 view=self.view,
@@ -195,19 +211,23 @@ class CurveTracker(BaseTracker):
             )
 
             _tr.update(_pt)
+            _tr.hide_conditions.append('!' + self.name[2])
+            _tr.off()
 
             _result['Nodes'].append(_tr)
 
         #wire trackers
-        for _i, _v in enumerate(_wires):
+        for _i, _v in enumerate(self.wire_names):
 
-            _result['Wires'].append(
-                self._build_wire_tracker(
-                    wire_name=self.names + [_v[0]],
-                    nodes=_result['Nodes'],
-                    points=[_coords[_v[1]], _coords[_v[2]]]
-                )
+            _wt = self._build_wire_tracker(
+                wire_name=self.name + [_v[0]],
+                nodes=_result['Nodes'],
+                points=[_coords[_v[1]], _coords[_v[2]]]
             )
+
+            _wt.hide_conditions.append('!' + self.name[2])
+            _wt.off()
+            _result['Wires'].append(_wt)
 
         _points = []
 
@@ -221,7 +241,7 @@ class CurveTracker(BaseTracker):
 
         _result['Curve'] = [
             self._build_wire_tracker(
-                wire_name=self.names + [self.curve['Type']],
+                wire_name=self.name + [self.curve['Type']],
                 nodes=_result['Nodes'],
                 points=_points,
                 select=True

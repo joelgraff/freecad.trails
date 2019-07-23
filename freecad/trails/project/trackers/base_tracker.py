@@ -115,9 +115,6 @@ class BaseTracker:
                 Gui.getMarkerIndex(style['shape'], style['size'])
 
         self.color.rgb = style['color']
-
-        self.set_selectability(style['select'])
-
         self.coin_style = style
 
     def finalize(self, node=None, parent=None):
@@ -159,8 +156,6 @@ class BaseTracker:
 
         if not node:
             node = self.node
-
-        x = node.copy()
 
         return node.copy()
 
