@@ -34,10 +34,9 @@ import FreeCADGui as Gui
 
 from ...geometry import support, arc, spiral
 
-from .base_tracker import BaseTracker
+from .base_tracker import BaseTracker, TriState
 from .coin_style import CoinStyle
 
-from ..support.utils import Constants as C
 from ..support.mouse_state import MouseState
 
 from ..containers import DragState
@@ -67,7 +66,6 @@ class CurveTracker(BaseTracker):
         self.status_bar = Gui.getMainWindow().statusBar()
         self.drag = DragState()
         self.view = view
-        self.state = 'UNSELECTED'
         self.viewport = \
             view.getViewer().getSoRenderManager().getViewportRegion()
 
@@ -161,14 +159,49 @@ class CurveTracker(BaseTracker):
         Manage button actions affecting multiple nodes / wires
         """
 
-        self.mouse.update(arg, self.view.getCursorPos())
+        _p = self.view.getCursorPos()
 
-        self.state = 'UNSELECTED'
-        self.trackers['Curve'][0].state = 'UNSELECTED'
+        self.mouse.update(arg, _p)
 
-        if any([_v.state == 'SELECTED' for _v in self.pi_nodes]):
-            self.state = 'SELECTED'
-            self.trackers['Curve'][0].state = 'SELECTED'
+        if self.mouse.button1.state != 'UP':
+            return
+
+        _info = self.view.getObjectInfo(_p)
+        _selected = TriState.OFF
+
+        #if the curve is picked, set state to selected
+        if _info:
+            if self.name[2] in _info['Component']:
+                _selected = TriState.ON
+
+        #if change in selection state, trackers will be visible if
+        #new state is selected
+        if _selected != self.state.selected:
+
+            self.state.selected = _selected
+            self.trackers['Curve'][0].override.selected = _selected
+
+            if _selected == TriState.OFF:
+                _selected = TriState.UNDEFINED
+
+            #always show trackers if necessary
+            for _v in self.trackers['Nodes'] + self.trackers['Wires']:
+                _v.override.visible = _selected
+
+        #disable the curve PI when the curve is selected
+        if self.is_selected():
+            self.pi_nodes[1].override.visible = TriState.OFF
+
+            for _v in self.trackers['Nodes'] + self.trackers['Wires']:
+                _v.on()
+
+        else:
+            #force refresh of nodes and trackers
+            self.pi_nodes[1].on()
+            self.pi_nodes[1].override.visible = TriState.UNDEFINED
+
+            for _v in self.trackers['Nodes'] + self.trackers['Wires']:
+                _v.off()
 
     def rebuild_trackers(self):
         """
@@ -211,7 +244,7 @@ class CurveTracker(BaseTracker):
             )
 
             _tr.update(_pt)
-            _tr.hide_conditions.append('!' + self.name[2])
+            _tr.conditions.append('!' + self.name[2])
             _tr.off()
 
             _result['Nodes'].append(_tr)
@@ -219,13 +252,17 @@ class CurveTracker(BaseTracker):
         #wire trackers
         for _i, _v in enumerate(self.wire_names):
 
+            _names = self.name[:]
+            _names[-1] = _names[-1] + '-' + _v[0]
+
             _wt = self._build_wire_tracker(
-                wire_name=self.name + [_v[0]],
+                wire_name=_names,
                 nodes=_result['Nodes'],
                 points=[_coords[_v[1]], _coords[_v[2]]]
             )
 
-            _wt.hide_conditions.append('!' + self.name[2])
+            _wt.conditions.append('!' + self.name[2])
+            _wt.set_style(CoinStyle.EDIT)
             _wt.off()
             _result['Wires'].append(_wt)
 
@@ -268,7 +305,7 @@ class CurveTracker(BaseTracker):
         Update the curve based on the passed data points
         """
 
-        if self.state == 'UNSELECTED':
+        if not self.is_selected():
             return
 
         _points = None

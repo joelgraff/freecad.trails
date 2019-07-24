@@ -32,7 +32,7 @@ from FreeCAD import Vector
 
 import FreeCADGui as Gui
 
-from ...geometry import support, arc, spiral
+from ...geometry import support, spiral
 
 from .base_tracker import BaseTracker
 from .coin_style import CoinStyle
@@ -40,7 +40,7 @@ from .coin_style import CoinStyle
 from ..support.utils import Constants as C
 from ..support.mouse_state import MouseState
 
-from ..containers import DragState
+from ..containers import DragState, TriState
 
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
@@ -184,11 +184,6 @@ class AlignmentTracker(BaseTracker):
             self.end_drag()
             self.user_dragging = False
 
-        _info = self.view.getObjectInfo(self.mouse.pos)
-
-        if not _info:
-            return
-
     def build_trackers(self):
         """
         Build the node and wire trackers that represent the selectable
@@ -253,7 +248,7 @@ class AlignmentTracker(BaseTracker):
 
             _ct.set_selectability(True)
 
-            _result['Nodes'][_i + 1].hide_conditions.append(_ct.name[2])
+            _result['Nodes'][_i + 1].conditions.append(_ct.name[2])
             _result['Curves'].append(_ct)
 
         self.trackers = _result
@@ -279,7 +274,7 @@ class AlignmentTracker(BaseTracker):
         #set the drag start point to the first selected node
         for _i, _v in enumerate(self.trackers['Nodes']):
 
-            if _v.state != 'SELECTED':
+            if not _v.is_selected():
                 continue
 
             _c = _v.get()
@@ -306,40 +301,39 @@ class AlignmentTracker(BaseTracker):
         self.pi_list = self.alignment.model.get_pi_coords()
 
         _partial = []
+        _curves = []
 
         #duplicate scene nodes of selected and partially-selected wires
-        for _v in self.trackers['Tangents'] + self.trackers['Curves']:
-
-            if isinstance(_v, CurveTracker):
-                continue
+        for _i, _v in enumerate(self.trackers['Tangents']):
 
             self.drag.tracker_state.append(
                 [_w.get() for _w in _v.selection_nodes]
             )
 
-            if _v.state == 'UNSELECTED':
+            if not _v.is_selected():
                 continue
 
-            self.groups[_v.state].addChild(_v.copy())
+            _g = 'SELECTED'
+
+            #partial selection - add adjoinging curves, save list of partially
+            #selected tangents and curves
+            if _v.state.selected == TriState.NONE:
+
+                _g = 'PARTIAL'
+                _partial.append(_i)
+
+                if _i > 0 and not _i - 1 in _curves:
+                    _curves.append(_i - 1)
+
+                if _i < len(self.curves):
+                    _curves.append(_i)
+
+            self.groups[_g].addChild(_v.copy())
 
         self.drag.multi = self.groups['SELECTED'].getNumChildren() > 2
 
-        #get paritally selected tangents to build curve index
-        _partial = [
-            _i for _i, _v in enumerate(self.trackers['Tangents'])\
-                if _v.state == 'PARTIAL'
-        ]
-
-        _curves = []
-
-        #build list of curve indices
-        for _i in _partial:
-
-            if _i > 0 and not _i - 1 in _curves:
-                _curves.append(_i - 1)
-
-            if _i < len(self.curves):
-                _curves.append(_i)
+        for _i in _curves:
+            self.trackers['Curves'][_i].state.selected = TriState.ON
 
         self.drag.curves = _curves
 
@@ -474,7 +468,7 @@ class AlignmentTracker(BaseTracker):
             )
 
             _nodes = [_v.get() \
-                for _v in self.trackers['Nodes'] if _v.state == 'SELECTED']
+                for _v in self.trackers['Nodes'] if _v.state.is_selecetd()]
 
             _nodes = [_v.sub(_nodes[0]) for _v in _nodes]
 
@@ -532,12 +526,12 @@ class AlignmentTracker(BaseTracker):
             #update the scenegraph for the selected vertex
             for _l, _t in enumerate(_tans[_limits[0]:_limits[1]]):
 
-                if _t.state != 'PARTIAL':
+                if _t.state.selected != TriState.NONE:
                     continue
 
                 _pts = [tuple(_w.get()) for _w in _t.selection_nodes]
 
-                if _t.selection_nodes[0].state == 'SELECTED':
+                if _t.selection_nodes[0].is_selected():
                     _pts[0] = tuple(_v)
 
                 else:

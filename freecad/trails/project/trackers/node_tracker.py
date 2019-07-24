@@ -29,7 +29,7 @@ from pivy import coin
 from FreeCAD import Vector
 
 from .coin_style import CoinStyle
-from .base_tracker import BaseTracker
+from .base_tracker import BaseTracker, TriState
 
 from ..support.mouse_state import MouseState
 
@@ -51,11 +51,6 @@ class NodeTracker(BaseTracker):
         elif not isinstance(nodes, list):
             nodes = [nodes]
 
-        self.state = 'UNSELECTED'
-
-        self.hide_conditions = []
-        self.show_conditions = []
-        self.enabled = True
         self.view = view
         self.name = names[2]
         self.mouse = MouseState()
@@ -115,16 +110,19 @@ class NodeTracker(BaseTracker):
         Mouse movement actions
         """
 
-        #skip if currently disabled for various actions
-        if not self.enabled:
+        if not self.is_enabled():
             return
+
+        #skip if currently invisible
+        #if not self.is_visible():
+        #    return
 
         #skip if the node can't be selected
         if not self.is_selectable():
             return
 
         #no mouseover processing if the node is currently selected
-        if self.state == 'SELECTED':
+        if self.is_selected():
             return
 
         #test to see if this node is under the cursor
@@ -141,19 +139,9 @@ class NodeTracker(BaseTracker):
 
         if self.name != _comp:
 
+            self.state.selected = TriState.OFF
             _style = CoinStyle.DEFAULT
-
-            #hide the PI node if the mouse is highlighting a curve
-            for _cond in self.hide_conditions:
-
-                if _cond[0] == '!':
-                    if _cond[1:] not in _comp:
-                        self.off()
-                        return
-
-                elif _cond in _comp:
-                    self.off()
-                    return
+            self._process_conditions(_comp)
 
         self.set_style(_style)
 
@@ -161,32 +149,44 @@ class NodeTracker(BaseTracker):
         """
         Button click trapping
         """
-
-        if not self.enabled:
+        #do nothing - state freeze
+        if not self.is_enabled():
             return
 
-        self.state = 'UNSELECTED'
+        #only if mouse button is being released
+        if self.mouse.button1.state == 'UP':
+            return
 
         _info = self.view.getObjectInfo(self.mouse.pos)
 
+        #clicking over nothing always unselects everything
         if not _info:
+            self.state.selected = TriState.OFF
             self.set_style(CoinStyle.DEFAULT)
             return
 
         _name = _info['Component']
 
+        self._process_conditions(_name)
+
+        #unselction for multi-select case
         if arg['AltDown']:
 
             if int(_name.split('-')[1]) > int(self.name.split('-')[1]):
+                self.state.selected = TriState.OFF
                 self.set_style(CoinStyle.DEFAULT)
                 return
 
+        #show as unselected, but leave state unchanged, as it may be
+        #controlled externally
         elif not self.name in _name:
+
+            self.state.selected = TriState.OFF
             self.set_style(CoinStyle.DEFAULT)
             return
 
         self.set_style(CoinStyle.SELECTED)
-        self.state = 'SELECTED'
+        self.state.selected = TriState.ON
 
     def finalize(self, node=None, parent=None):
         """

@@ -32,6 +32,8 @@ import Draft
 
 from DraftGui import todo
 
+from ..containers import TriState, TrackerState
+
 class BaseTracker:
     """
     A custom base Draft Tracker
@@ -41,7 +43,10 @@ class BaseTracker:
         """
         Constructor
         """
-        self.visible = False
+
+        self.state = TrackerState()
+        self.override = TrackerState(True)
+
         self.color = coin.SoBaseColor()
         self.draw_style = coin.SoDrawStyle()
         self.names = names
@@ -50,6 +55,7 @@ class BaseTracker:
         self.picker = coin.SoPickStyle()
         self.switch = coin.SoSwitch()
         self.coin_style = None
+        self.conditions = []
 
         if not children:
             children = []
@@ -85,6 +91,37 @@ class BaseTracker:
 
         self.picker.style.setValue(_state)
 
+    def convert_state(self, state_val, override_val):
+        """
+        Compare and return the state as boolean
+        """
+
+        if int(state_val) | int(override_val) == int(state_val):
+            return bool(int(state_val) - 1)
+
+        return bool(int(override_val) - 1)
+
+    def is_enabled(self):
+        """
+        Return the enabled state
+        """
+
+        return self.convert_state(self.state.enabled, self.override.enabled)
+
+    def is_visible(self):
+        """
+        Return the visible state
+        """
+
+        return self.convert_state(self.state.visible, self.override.visible)
+
+    def is_selected(self):
+        """
+        Return the selcted state
+        """
+
+        return self.convert_state(self.state.selected, self.override.selected)
+
     def is_selectable(self):
         """
         Return a bool indicating whether or not the node may be selected
@@ -114,7 +151,9 @@ class BaseTracker:
             self.marker.markerIndex = \
                 Gui.getMarkerIndex(style['shape'], style['size'])
 
-        self.color.rgb = style['color']
+        if style.get('color'):
+            self.color.rgb = style['color']
+
         self.coin_style = style
 
     def finalize(self, node=None, parent=None):
@@ -136,7 +175,7 @@ class BaseTracker:
             switch = self.switch
 
         switch.whichChild = which_child
-        self.visible = True
+        self.state.visible = TriState.ON
 
     def off(self, switch=None):
         """
@@ -147,7 +186,7 @@ class BaseTracker:
             switch = self.switch
 
         switch.whichChild = -1
-        self.visible = False
+        self.state.visible = TriState.OFF
 
     def copy(self, node=None):
         """
@@ -158,6 +197,25 @@ class BaseTracker:
             node = self.node
 
         return node.copy()
+
+    def _process_conditions(self, info):
+        """
+        Process the conditions which determine node visiblity
+        """
+
+        if self.override.visible == TriState.OFF:
+            self.off()
+            return
+
+        if self.override.visible == TriState.ON:
+            return
+
+        for _cond in self.conditions:
+
+            if (_cond[0] == '!' and _cond[1:] not in info) or (_cond in info):
+
+                self.off()
+                break
 
     def get_search_path(self, node):
         """

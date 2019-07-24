@@ -24,11 +24,13 @@
 Tracker for drag data
 """
 
+from enum import IntEnum, unique
+
 from FreeCAD import Vector
 
 class DragState():
     """
-    State tracker for drag operations
+    State class for drag operations
     """
     def __init__(self):
         """
@@ -53,3 +55,29 @@ class DragState():
         """
 
         self.__init__()
+ 
+@unique
+class TriState(IntEnum):
+
+    UNDEFINED = 0
+    OFF = 1
+    ON = 2
+    NONE = 4
+
+class TrackerState():
+
+    def __init__(self, is_undefined=False):
+        """
+        Cosntructor
+        """
+
+        self.enabled = TriState.ON
+        self.visible = TriState.ON
+        self.selected = TriState.OFF
+
+        if is_undefined:
+
+            self.enabled = TriState.UNDEFINED
+            self.visible = TriState.UNDEFINED
+            self.selected = TriState.UNDEFINED
+

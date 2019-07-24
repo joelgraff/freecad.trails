@@ -28,7 +28,7 @@ from pivy import coin
 
 from ..support.mouse_state import MouseState
 
-from .base_tracker import BaseTracker
+from .base_tracker import BaseTracker, TriState
 from .coin_style import CoinStyle
 
 class WireTracker(BaseTracker):
@@ -45,14 +45,10 @@ class WireTracker(BaseTracker):
         self.name = names[2]
         self.coord = coin.SoCoordinate3()
         self.points = None
-        self.view = view
-        self.enabled = True
-        self.state = 'UNSELECTED'
 
-        self.hide_conditions = []
-        self.show_conditions = []
         self.selection_nodes = None
         self.mouse = MouseState()
+        self.view = view
 
         if not nodes:
             nodes = []
@@ -104,30 +100,27 @@ class WireTracker(BaseTracker):
 
         self.points = _p
 
-
-    def transform_points(self, points, matrix):
-        """
-        Update the points with the appropriate transformation and return
-        """
-
-        pass
-
     def button_event(self, arg):
         """
         Mouse button actions
         """
 
-        if not self.enabled:
+        if not self.is_enabled():
             return
 
-        _states = [_v.state == 'SELECTED' for _v in self.selection_nodes]
+        #no processing if the wire itself is currently selected
+        if self.is_selected():
+            return
 
-        self.state = 'UNSELECTED'
+        _states = [_v.is_selected() for _v in self.selection_nodes]
+
+        self.state.selected = TriState.OFF
 
         if all(_states):
-            self.state = 'SELECTED'
+            self.state.selected = TriState.ON
+
         elif any(_states):
-            self.state = 'PARTIAL'
+            self.state.selected = TriState.NONE
 
         _info = self.view.getObjectInfo(self.mouse.pos)
 
@@ -135,11 +128,15 @@ class WireTracker(BaseTracker):
             self.set_style(CoinStyle.DEFAULT)
             return
 
+        _comp = _info['Component']
+
+        self._process_conditions(_comp)
+
         _style = CoinStyle.SELECTED
 
-        if not self.name in _info['Component']:
+        if not self.name in _comp:
 
-            if self.state == 'UNSELECTED':
+            if not self.is_selected():
                 _style = CoinStyle.DEFAULT
 
         self.set_style(_style)
@@ -149,8 +146,11 @@ class WireTracker(BaseTracker):
         Mouse movement actions
         """
 
-        #skip if currently disabled for various actions
-        if not self.enabled:
+        if not self.is_enabled():
+            return
+
+        #abort if currently selected
+        if self.is_selected():
             return
 
         #test to see if this node is under the cursor
@@ -162,23 +162,12 @@ class WireTracker(BaseTracker):
         if _info:
             _comp = _info['Component']
 
+        self.on()
+
         if self.name != _comp:
 
             self.set_style(CoinStyle.DEFAULT)
-
-            #hide the PI node if the mouse is highlighting a curve
-            for _cond in self.hide_conditions:
-
-                if _cond[0] == '!':
-                    if _cond[1:] not in _comp:
-                        self.off()
-                        return
-
-                elif _cond in _comp:
-                    self.off()
-                    return
-
-        self.on()
+            self._process_conditions(_comp)
 
     def finalize(self, node=None, parent=None):
         """
