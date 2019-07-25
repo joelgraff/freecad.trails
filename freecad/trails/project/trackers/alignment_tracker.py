@@ -306,12 +306,13 @@ class AlignmentTracker(BaseTracker):
         _partial = []
         _curves = []
 
+        #save the current tracker state before editing for 
+        #restoration if drag ops yield invalid alignment
+        for _v in self.trackers['Nodes']:
+            self.drag.tracker_state.append(_v.get())
+
         #duplicate scene nodes of selected and partially-selected wires
         for _i, _v in enumerate(self.trackers['Tangents']):
-
-            self.drag.tracker_state.append(
-                [_w.get() for _w in _v.selection_nodes]
-            )
 
             if not _v.is_selected():
                 continue
@@ -356,7 +357,7 @@ class AlignmentTracker(BaseTracker):
         for _curve in self.trackers['Curves']:
             _curve.update()
 
-        self._validate_curves()
+        self.is_valid = self._validate_curves()
         self.drag.position = _world_pos
 
     def end_drag(self):
@@ -391,10 +392,13 @@ class AlignmentTracker(BaseTracker):
         #reset the tracker state
         else:
 
-            for _i, _v in enumerate(
-                self.trackers['Tangents'] + self.trackers['Curves']):
-
+            #write the original node positions back to node trackers
+            for _i, _v in enumerate(self.trackers['Nodes']):
                 _v.update(self.drag.tracker_state[_i])
+
+            #force update the tangent and curve trackers after node reset
+            for _v in self.trackers['Tangents'] + self.trackers['Curves']:
+                _v.update()
 
         self.drag.reset()
 
