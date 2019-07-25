@@ -40,7 +40,7 @@ from .coin_style import CoinStyle
 from ..support.utils import Constants as C
 from ..support.mouse_state import MouseState
 
-from ..containers import DragState, TriState
+from ..containers import DragState
 
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
@@ -297,6 +297,9 @@ class AlignmentTracker(BaseTracker):
             self.drag.nodes.append(_c)
             self.drag.node_idx.append(_i)
 
+        #temporarily disable geometry selectability
+        self.set_selectability(False)
+
         self.curves = self.alignment.get_curves()
         self.pi_list = self.alignment.model.get_pi_coords()
 
@@ -317,7 +320,7 @@ class AlignmentTracker(BaseTracker):
 
             #partial selection - add adjoinging curves, save list of partially
             #selected tangents and curves
-            if _v.state.selected == TriState.NONE:
+            if _v.state.selected == self.State.SELECT_PARTIAL:
 
                 _g = 'PARTIAL'
                 _partial.append(_i)
@@ -333,7 +336,7 @@ class AlignmentTracker(BaseTracker):
         self.drag.multi = self.groups['SELECTED'].getNumChildren() > 2
 
         for _i in _curves:
-            self.trackers['Curves'][_i].state.selected = TriState.ON
+            self.trackers['Curves'][_i].set_selected(self.State.SELECT_ON)
 
         self.drag.curves = _curves
 
@@ -380,6 +383,8 @@ class AlignmentTracker(BaseTracker):
             for _v in self.trackers['Curves']:
                 _v.rebuild_trackers()
 
+            self.set_selectability(True)
+
             self.datum = self.datum.add(_pi_list[0])
             self.transform.translation.setValue(tuple(self.datum))
 
@@ -404,6 +409,16 @@ class AlignmentTracker(BaseTracker):
 
         #remove child nodes from the partial group
         self.groups['PARTIAL'].removeAllChildren()
+
+    def set_selectability(self, is_selectable):
+        """
+        Override of the base implementation
+        """
+
+        for _v in self.trackers.values():
+
+            for _w in _v:
+                _w.set_selectability(is_selectable)
 
     def get_matrix(self):
         """
@@ -526,7 +541,7 @@ class AlignmentTracker(BaseTracker):
             #update the scenegraph for the selected vertex
             for _l, _t in enumerate(_tans[_limits[0]:_limits[1]]):
 
-                if _t.state.selected != TriState.NONE:
+                if _t.state.selected != self.State.SELECT_PARTIAL:
                     continue
 
                 _pts = [tuple(_w.get()) for _w in _t.selection_nodes]
@@ -560,7 +575,7 @@ class AlignmentTracker(BaseTracker):
     def _validate_curves(self):
         """
         Given a list of updated curves, validate them against themselves
-        and adjoingin geometry
+        and adjoining geometry
         """
 
         if not self.drag.curves:

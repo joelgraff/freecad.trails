@@ -55,29 +55,35 @@ class DragState():
         """
 
         self.__init__()
- 
-@unique
-class TriState(IntEnum):
-
-    UNDEFINED = 0
-    OFF = 1
-    ON = 2
-    NONE = 4
 
 class TrackerState():
+    """
+    State container for BaseTracker class
+    """
+
+    @unique
+    class Enums(IntEnum):
+        """
+        Enum class 
+        """
+
+        UNDEFINED = 0
+        OFF = 1
+        ON = 2
+        NONE = 4
 
     def __init__(self, is_undefined=False):
         """
         Cosntructor
         """
 
-        self.enabled = TriState.ON
-        self.visible = TriState.ON
-        self.selected = TriState.OFF
+        self.enabled = self.Enums.ON
+        self.visible = self.Enums.ON
+        self.selected = self.Enums.OFF
 
         if is_undefined:
 
-            self.enabled = TriState.UNDEFINED
-            self.visible = TriState.UNDEFINED
-            self.selected = TriState.UNDEFINED
+            self.enabled = self.Enums.UNDEFINED
+            self.visible = self.Enums.UNDEFINED
+            self.selected = self.Enums.UNDEFINED
 

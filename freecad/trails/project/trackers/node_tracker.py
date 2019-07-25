@@ -29,7 +29,7 @@ from pivy import coin
 from FreeCAD import Vector
 
 from .coin_style import CoinStyle
-from .base_tracker import BaseTracker, TriState
+from .base_tracker import BaseTracker
 
 from ..support.mouse_state import MouseState
 
@@ -139,7 +139,7 @@ class NodeTracker(BaseTracker):
 
         if self.name != _comp:
 
-            self.state.selected = TriState.OFF
+            self.state.selected = self.State.SELECT_OFF
             _style = CoinStyle.DEFAULT
             self._process_conditions(_comp)
 
@@ -161,7 +161,7 @@ class NodeTracker(BaseTracker):
 
         #clicking over nothing always unselects everything
         if not _info:
-            self.state.selected = TriState.OFF
+            self.state.selected = self.State.SELECT_OFF
             self.set_style(CoinStyle.DEFAULT)
             return
 
@@ -173,7 +173,7 @@ class NodeTracker(BaseTracker):
         if arg['AltDown']:
 
             if int(_name.split('-')[1]) > int(self.name.split('-')[1]):
-                self.state.selected = TriState.OFF
+                self.state.selected = self.State.SELECT_OFF
                 self.set_style(CoinStyle.DEFAULT)
                 return
 
@@ -181,12 +181,12 @@ class NodeTracker(BaseTracker):
         #controlled externally
         elif not self.name in _name:
 
-            self.state.selected = TriState.OFF
+            self.state.selected = self.State.SELECT_OFF
             self.set_style(CoinStyle.DEFAULT)
             return
 
         self.set_style(CoinStyle.SELECTED)
-        self.state.selected = TriState.ON
+        self.state.selected = self.State.SELECT_ON
 
     def finalize(self, node=None, parent=None):
         """

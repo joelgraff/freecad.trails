@@ -34,7 +34,7 @@ import FreeCADGui as Gui
 
 from ...geometry import support, arc, spiral
 
-from .base_tracker import BaseTracker, TriState
+from .base_tracker import BaseTracker
 from .coin_style import CoinStyle
 
 from ..support.mouse_state import MouseState
@@ -167,12 +167,12 @@ class CurveTracker(BaseTracker):
             return
 
         _info = self.view.getObjectInfo(_p)
-        _selected = TriState.OFF
+        _selected = self.State.SELECT_OFF
 
         #if the curve is picked, set state to selected
         if _info:
             if self.name[2] in _info['Component']:
-                _selected = TriState.ON
+                _selected = self.State.SELECT_ON
 
         #if change in selection state, trackers will be visible if
         #new state is selected
@@ -181,8 +181,8 @@ class CurveTracker(BaseTracker):
             self.state.selected = _selected
             self.trackers['Curve'][0].override.selected = _selected
 
-            if _selected == TriState.OFF:
-                _selected = TriState.UNDEFINED
+            if _selected == self.State.SELECT_OFF:
+                _selected = self.State.UNDEFINED
 
             #always show trackers if necessary
             for _v in self.trackers['Nodes'] + self.trackers['Wires']:
@@ -190,7 +190,7 @@ class CurveTracker(BaseTracker):
 
         #disable the curve PI when the curve is selected
         if self.is_selected():
-            self.pi_nodes[1].override.visible = TriState.OFF
+            self.pi_nodes[1].override.visible = self.State.VISIBLE_OFF
 
             for _v in self.trackers['Nodes'] + self.trackers['Wires']:
                 _v.on()
@@ -198,7 +198,7 @@ class CurveTracker(BaseTracker):
         else:
             #force refresh of nodes and trackers
             self.pi_nodes[1].on()
-            self.pi_nodes[1].override.visible = TriState.UNDEFINED
+            self.pi_nodes[1].override.visible = self.State.UNDEFINED
 
             for _v in self.trackers['Nodes'] + self.trackers['Wires']:
                 _v.off()
@@ -399,6 +399,15 @@ class CurveTracker(BaseTracker):
         self.curve = arc.get_parameters(_curve)
 
         return arc.get_points(self.curve)
+
+    def set_selectability(self, is_selectable):
+        """
+        Override of base implementation
+        """
+
+        for _v in self.trackers['Nodes'] + self.trackers['Wires'] + self.trackers['Curve']:
+
+            _v.set_selectability(is_selectable)
 
     def finalize(self):
         """

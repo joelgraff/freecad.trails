@@ -28,7 +28,7 @@ from pivy import coin
 
 from ..support.mouse_state import MouseState
 
-from .base_tracker import BaseTracker, TriState
+from .base_tracker import BaseTracker
 from .coin_style import CoinStyle
 
 class WireTracker(BaseTracker):
@@ -114,13 +114,13 @@ class WireTracker(BaseTracker):
 
         _states = [_v.is_selected() for _v in self.selection_nodes]
 
-        self.state.selected = TriState.OFF
+        self.state.selected = self.State.SELECT_OFF
 
         if all(_states):
-            self.state.selected = TriState.ON
+            self.state.selected = self.State.SELECT_ON
 
         elif any(_states):
-            self.state.selected = TriState.NONE
+            self.state.selected = self.State.SELECT_PARTIAL
 
         _info = self.view.getObjectInfo(self.mouse.pos)
 
@@ -154,8 +154,6 @@ class WireTracker(BaseTracker):
             return
 
         #test to see if this node is under the cursor
-        self.set_style(CoinStyle.SELECTED)
-
         _info = self.view.getObjectInfo(self.mouse.pos)
         _comp = ''
 
@@ -166,8 +164,15 @@ class WireTracker(BaseTracker):
 
         if self.name != _comp:
 
-            self.set_style(CoinStyle.DEFAULT)
+            if self.coin_style == CoinStyle.SELECTED:
+                self.set_style(CoinStyle.DEFAULT)
+
             self._process_conditions(_comp)
+
+        else:
+
+            if self.coin_style == CoinStyle.DEFAULT:
+                self.set_style(CoinStyle.SELECTED)
 
     def finalize(self, node=None, parent=None):
         """

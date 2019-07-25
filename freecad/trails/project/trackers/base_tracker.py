@@ -24,6 +24,8 @@
 Customized wire tracker from DraftTrackers.wireTracker
 """
 
+from enum import IntEnum
+
 from pivy import coin
 
 import FreeCADGui as Gui
@@ -32,12 +34,26 @@ import Draft
 
 from DraftGui import todo
 
-from ..containers import TriState, TrackerState
+from ..containers import TrackerState
 
 class BaseTracker:
     """
     A custom base Draft Tracker
     """
+
+    class State(IntEnum):
+
+        UNDEFINED = 0
+
+        ENABLE_OFF = 1
+        ENABLE_ON = 2
+
+        VISIBLE_ON = 1
+        VISIBLE_OFF = 2
+
+        SELECT_OFF = 1
+        SELECT_ON = 2
+        SELECT_PARTIAL = 4
 
     def __init__(self, names, children=None, group=False):
         """
@@ -84,12 +100,43 @@ class BaseTracker:
         """
         Set the selectability of the node using the SoPickStyle node
         """
+
         _state = coin.SoPickStyle.UNPICKABLE
 
         if is_selectable:
             _state = coin.SoPickStyle.SHAPE
 
         self.picker.style.setValue(_state)
+
+    def set_selected(self, state, override=False):
+        """
+        Set the selection state
+        """
+
+        if override:
+            self.override.selected = TrackerState.Enums(int(state))
+        else:
+            self.state.selected = TrackerState.Enums(int(state))
+
+    def set_visible(self, state, override=False):
+        """
+        Set the visible state
+        """
+
+        if override:
+            self.override.visible = TrackerState.Enums(int(state))
+        else:
+            self.state.visible = TrackerState.Enums(int(state))
+
+    def set_enabled(self, state, override=False):
+        """
+        Set the visible state
+        """
+
+        if override:
+            self.override.enabled = TrackerState.Enums(int(state))
+        else:
+            self.state.enabled = TrackerState.Enums(int(state))
 
     def convert_state(self, state_val, override_val):
         """
@@ -175,7 +222,7 @@ class BaseTracker:
             switch = self.switch
 
         switch.whichChild = which_child
-        self.state.visible = TriState.ON
+        self.state.visible = TrackerState.Enums.ON
 
     def off(self, switch=None):
         """
@@ -186,7 +233,7 @@ class BaseTracker:
             switch = self.switch
 
         switch.whichChild = -1
-        self.state.visible = TriState.OFF
+        self.state.visible = TrackerState.Enums.OFF
 
     def copy(self, node=None):
         """
@@ -203,11 +250,11 @@ class BaseTracker:
         Process the conditions which determine node visiblity
         """
 
-        if self.override.visible == TriState.OFF:
+        if self.override.visible == TrackerState.Enums.OFF:
             self.off()
             return
 
-        if self.override.visible == TriState.ON:
+        if self.override.visible == TrackerState.Enums.ON:
             return
 
         for _cond in self.conditions:

@@ -46,6 +46,7 @@ class CoinStyle(Const):
     }
 
     EDIT = {
+        'id': 'edit',
         'line width': None,
         'line style': coin.SoDrawStyle.LINES,
         'line weight': 3,
