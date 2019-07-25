@@ -358,6 +358,7 @@ class AlignmentTracker(BaseTracker):
             _curve.update()
 
         self.is_valid = self._validate_curves()
+        print(self.is_valid)
         self.drag.position = _world_pos
 
     def end_drag(self):
@@ -367,6 +368,7 @@ class AlignmentTracker(BaseTracker):
 
         if self.is_valid:
 
+            print('valid')
             _pi_list = [Vector(_v.point) for _v in self.trackers['Nodes']]
 
             #do a final calculation on the curves
@@ -384,14 +386,13 @@ class AlignmentTracker(BaseTracker):
             for _v in self.trackers['Curves']:
                 _v.rebuild_trackers()
 
-            self.set_selectability(True)
-
             self.datum = self.datum.add(_pi_list[0])
             self.transform.translation.setValue(tuple(self.datum))
 
         #reset the tracker state
         else:
 
+            print('invalid')
             #write the original node positions back to node trackers
             for _i, _v in enumerate(self.trackers['Nodes']):
                 _v.update(self.drag.tracker_state[_i])
@@ -399,6 +400,8 @@ class AlignmentTracker(BaseTracker):
             #force update the tangent and curve trackers after node reset
             for _v in self.trackers['Tangents'] + self.trackers['Curves']:
                 _v.update()
+
+        self.set_selectability(True)
 
         self.drag.reset()
 
@@ -662,7 +665,7 @@ class AlignmentTracker(BaseTracker):
                 _styles[_i]
             )
 
-        self.is_valid = all([_v != CoinStyle.ERROR for _v in _styles])
+        return all([_v != CoinStyle.ERROR for _v in _styles])
 
     def finalize(self):
         """
