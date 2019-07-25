@@ -357,8 +357,8 @@ class AlignmentTracker(BaseTracker):
         for _curve in self.trackers['Curves']:
             _curve.update()
 
-        self.is_valid = self._validate_curves()
-        print(self.is_valid)
+        self._validate_alignment()
+
         self.drag.position = _world_pos
 
     def end_drag(self):
@@ -422,10 +422,9 @@ class AlignmentTracker(BaseTracker):
         Override of the base implementation
         """
 
-        for _v in self.trackers.values():
+        for _v in self.trackers['Nodes'] + self.trackers['Curves']:
 
-            for _w in _v:
-                _w.set_selectability(is_selectable)
+            _v.set_selectability(is_selectable)
 
     def get_matrix(self):
         """
@@ -579,7 +578,7 @@ class AlignmentTracker(BaseTracker):
 
         return _result
 
-    def _validate_curves(self):
+    def _validate_alignment(self):
         """
         Given a list of updated curves, validate them against themselves
         and adjoining geometry
@@ -665,7 +664,7 @@ class AlignmentTracker(BaseTracker):
                 _styles[_i]
             )
 
-        return all([_v != CoinStyle.ERROR for _v in _styles])
+        self.is_valid = all([_v != CoinStyle.ERROR for _v in _styles])
 
     def finalize(self):
         """

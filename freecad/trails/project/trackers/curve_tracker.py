@@ -179,7 +179,9 @@ class CurveTracker(BaseTracker):
         if _selected != self.state.selected:
 
             self.state.selected = _selected
+
             self.trackers['Curve'][0].override.selected = _selected
+            self.trackers['Curve'][0].update(self.trackers['Curve'][0].points)
 
             if _selected == self.State.SELECT_OFF:
                 _selected = self.State.UNDEFINED

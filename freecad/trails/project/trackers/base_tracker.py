@@ -48,8 +48,8 @@ class BaseTracker:
         ENABLE_OFF = 1
         ENABLE_ON = 2
 
-        VISIBLE_ON = 1
-        VISIBLE_OFF = 2
+        VISIBLE_OFF = 1
+        VISIBLE_ON = 2
 
         SELECT_OFF = 1
         SELECT_ON = 2

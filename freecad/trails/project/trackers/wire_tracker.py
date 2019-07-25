@@ -100,21 +100,20 @@ class WireTracker(BaseTracker):
 
         self.points = _p
 
-    def button_event(self, arg):
+        self.update_selection_state()
+
+    def update_selection_state(self):
         """
-        Mouse button actions
+        Update the selection state
         """
 
         if not self.is_enabled():
             return
 
-        #no processing if the wire itself is currently selected
-        if self.is_selected():
-            return
-
         _states = [_v.is_selected() for _v in self.selection_nodes]
 
         self.state.selected = self.State.SELECT_OFF
+        _style = CoinStyle.DEFAULT
 
         if all(_states):
             self.state.selected = self.State.SELECT_ON
@@ -122,7 +121,13 @@ class WireTracker(BaseTracker):
         elif any(_states):
             self.state.selected = self.State.SELECT_PARTIAL
 
-        _info = self.view.getObjectInfo(self.mouse.pos)
+        if self.is_selected():
+            _style = CoinStyle.SELECTED
+
+        _info = None
+
+        if self.mouse.pos:
+            _info = self.view.getObjectInfo(self.mouse.pos)
 
         if not _info:
             self.set_style(CoinStyle.DEFAULT)
@@ -132,14 +137,22 @@ class WireTracker(BaseTracker):
 
         self._process_conditions(_comp)
 
-        _style = CoinStyle.SELECTED
-
         if not self.name in _comp:
 
             if not self.is_selected():
                 _style = CoinStyle.DEFAULT
 
         self.set_style(_style)
+
+    def button_event(self, arg):
+        """
+        Mouse button actions
+        """
+
+        if self.mouse.button1.state != 'UP':
+            return
+
+        self.update_selection_state()
 
     def mouse_event(self, arg):
         """
