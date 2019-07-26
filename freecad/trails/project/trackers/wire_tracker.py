@@ -99,7 +99,7 @@ class WireTracker(BaseTracker):
         Update the selection state
         """
 
-        if not self.is_enabled():
+        if not self.state.enabled:
             return
 
         _states = [_v.is_selected() for _v in self.selection_nodes]
@@ -113,7 +113,7 @@ class WireTracker(BaseTracker):
         elif any(_states):
             self.state.selected = self.State.SELECT_PARTIAL
 
-        if self.is_selected():
+        if self.state.selected:
             print(self.name, 'selected')
             _style = CoinStyle.SELECTED
 
@@ -132,7 +132,7 @@ class WireTracker(BaseTracker):
 
         if not self.name in _comp:
 
-            if not self.is_selected():
+            if not self.state.selected:
                 _style = CoinStyle.DEFAULT
 
         self.set_style(_style)
@@ -145,7 +145,7 @@ class WireTracker(BaseTracker):
         if self.mouse.button1.state != 'UP':
             return
 
-        self.update_selection_state()
+        #self.update_selection_state()
 
     def _dep_mouse_event(self, arg):
         """
@@ -154,11 +154,11 @@ class WireTracker(BaseTracker):
 
         print(self.name, 'mouse')
 
-        if not self.is_enabled():
+        if not self.state.enabled:
             return
 
         #abort if currently selected
-        if self.is_selected():
+        if self.state.selected:
             return
 
         #test to see if this node is under the cursor

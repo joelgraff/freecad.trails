@@ -106,7 +106,7 @@ class NodeTracker(BaseTracker):
 
         print('override mouse')
         return
-        if not self.is_enabled():
+        if not self.state.enabled:
             return
 
         #skip if the node can't be selected
@@ -114,7 +114,7 @@ class NodeTracker(BaseTracker):
             return
 
         #no mouseover processing if the node is currently selected
-        if self.is_selected():
+        if self.state.selected:
             return
 
         #test to see if this node is under the cursor
@@ -143,7 +143,7 @@ class NodeTracker(BaseTracker):
         """
 
         #do nothing - state freeze
-        if not self.is_enabled():
+        if not self.state.enabled:
             return
 
         #only if mouse button is being pressed
@@ -163,7 +163,7 @@ class NodeTracker(BaseTracker):
         self._process_conditions()
 
         #unselction for multi-select case
-        if self.mouse.AltDown:
+        if self.mouse.altDown:
 
             if int(_name.split('-')[1]) > int(self.name.split('-')[1]):
                 self.state.selected = self.State.SELECT_OFF
@@ -187,7 +187,7 @@ class NodeTracker(BaseTracker):
         """
 
         self.mouse.update(arg, self.view.getCursorPos())
-        self.update_selection_state()
+        #self.update_selection_state()
 
     def finalize(self, node=None, parent=None):
         """

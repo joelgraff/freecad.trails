@@ -34,7 +34,7 @@ import Draft
 
 from DraftGui import todo
 
-from ..containers import TrackerState
+from ..containers import TrackerContainer
 from ..support.mouse_state import MouseState
 
 from .coin_style import CoinStyle
@@ -66,8 +66,8 @@ class BaseTracker:
         self.view = view
         self.names = names
         self.name = names[2]
-        self.state = TrackerState()
-        self.override = TrackerState(True)
+        self.state = TrackerContainer()
+        self.override = TrackerContainer(True)
 
         self.color = coin.SoBaseColor()
         self.draw_style = coin.SoDrawStyle()
@@ -126,6 +126,7 @@ class BaseTracker:
             style = self.coin_style
 
         self._process_conditions()
+
         self.set_style(style)
 
     def mouse_event(self, arg):
@@ -134,26 +135,24 @@ class BaseTracker:
         """
 
         #pre-empptive abort conditions
-        if not self.is_enabled():
+        if not self.state.enabled.value:
             return
 
-        if not self.is_visible():
+        if not self.state.visible.value:
             return
 
-        if self.is_selected():
+        if self.state.selected.value:
             return
 
+        
         #selection logic - skip if ignore flag is set
-        if not self.state.ignore_selected:
+        if not self.state.selected.ignore:
 
             _style = self.coin_style
 
             #test to see if this node is under the cursor
             if self.name == MouseState().component:
                 _style = CoinStyle.SELECTED
-
-        else:
-            self.state.ignore_selected = False
 
         self.refresh(_style)
 
@@ -166,33 +165,34 @@ class BaseTracker:
             return
 
         #preemptive abort conditions
-        if not self.is_enabled():
+        if not self.state.enabled.value:
             return
 
-        if not self.is_visible():
+        if not self.state.visible.value:
             return
+
+        print(self.name, 'click')
 
         #selection logic - skip once if ignore flag is set
-        if not self.state.ignore_selected:
+        if not self.state.selected.ignore:
+            print('\tno ignore selected', MouseState().ctrlDown, self.state.selected.value)
 
             if self.name == MouseState().component:
 
                 if MouseState().ctrlDown:
-                    self.set_selected(False)
+                    self.state.selected.value = False
 
                 else:
-                    self.set_selected()
+                    self.state.selected.value = True
 
             #deselect unless multi-selecting
-            elif self.is_selected() and not MouseState().ctrlDown:
-                self.set_selected(False)
-
-        else:
-            self.state.ignore_selected = False
+            elif self.state.selected.value and not MouseState().ctrlDown:
+                self.state.selected.value = False
 
         _style = self.coin_style
 
-        if self.is_selected():
+        print('\t', 'state',self.state.selected.value)
+        if self.state.selected.value:
             _style = CoinStyle.SELECTED
 
         self.refresh(_style)
@@ -209,7 +209,7 @@ class BaseTracker:
 
         self.picker.style.setValue(_state)
 
-    def set_selected(self, is_on=True, override=False, ignore=False):
+    def _dep_set_selected(self, is_on=True, override=False, ignore=False):
         """
         Set the selection state
 
@@ -223,14 +223,14 @@ class BaseTracker:
         if not is_on:
             _state = self.State.SELECT_OFF
 
-        if override:
-            self.override.selected = TrackerState.Enums(int(_state))
-        else:
-            self.state.selected = TrackerState.Enums(int(_state))
+        #if override:
+        #    self.override.selected.value = TrackerContainer.Enums(int(_state))
+        #else:
+        #    self.state.selected.value = TrackerContainer.Enums(int(_state))
 
         self.state.ignore_selected = ignore
 
-    def set_visible(self, is_on=True, override=False, ignore=False):
+    def _dep_set_visible(self, is_on=True, override=False, ignore=False):
         """
         Set the visible state
 
@@ -244,14 +244,14 @@ class BaseTracker:
         if not is_on:
             _state = self.State.VISIBLE_OFF
 
-        if override:
-            self.override.visible = TrackerState.Enums(int(_state))
-        else:
-            self.state.visible = TrackerState.Enums(int(_state))
+        #if override:
+        #    self.override.visible = TrackerContainer.Enums(int(_state))
+        #else:
+        #    self.state.visible = TrackerContainer.Enums(int(_state))
 
         self.state.ignore_visible = ignore
 
-    def set_enabled(self, is_on=True, override=False, ignore=False):
+    def _dep_set_enabled(self, is_on=True, override=False, ignore=False):
         """
         Set the enabled state
 
@@ -265,14 +265,14 @@ class BaseTracker:
         if not is_on:
             _state = self.State.ENABLE_OFF
 
-        if override:
-            self.override.enabled = TrackerState.Enums(int(_state))
-        else:
-            self.state.enabled = TrackerState.Enums(int(_state))
+        ##if override:
+        #    self.override.enabled = TrackerContainer.Enums(int(_state))
+        #else:
+        #    self.state.enabled = TrackerContainer.Enums(int(_state))
 
         self.state.ignore_enabled = ignore
 
-    def convert_state(self, state_val, override_val):
+    def _dep_convert_state(self, state_val, override_val):
         """
         Compare and return the state as boolean
         """
@@ -282,26 +282,26 @@ class BaseTracker:
 
         return bool(int(override_val) - 1)
 
-    def is_enabled(self):
+    def _dep_is_enabled(self):
         """
         Return the enabled state
         """
 
-        return self.convert_state(self.state.enabled, self.override.enabled)
+        return None #self.convert_state(self.state.enabled, self.override.enabled)
 
-    def is_visible(self):
+    def _dep_is_visible(self):
         """
         Return the visible state
         """
 
-        return self.convert_state(self.state.visible, self.override.visible)
+        return None #self.convert_state(self.state.visible, self.override.visible)
 
-    def is_selected(self):
+    def _dep_is_selected(self):
         """
         Return the selcted state
         """
 
-        return self.convert_state(self.state.selected, self.override.selected)
+        return None #self.convert_state(self.state.selected, self.override.selected)
 
     def is_selectable(self):
         """
@@ -359,7 +359,7 @@ class BaseTracker:
             switch = self.switch
 
         switch.whichChild = which_child
-        self.state.visible = TrackerState.Enums.ON
+        self.state.visible.value = True
 
     def off(self, switch=None):
         """
@@ -370,7 +370,7 @@ class BaseTracker:
             switch = self.switch
 
         switch.whichChild = -1
-        self.state.visible = TrackerState.Enums.OFF
+        self.state.visible.value = False
 
     def copy(self, node=None):
         """
@@ -387,12 +387,12 @@ class BaseTracker:
         Process the conditions which determine node visiblity
         """
 
-        if self.override.visible == TrackerState.Enums.OFF:
-            self.off()
-            return
+        #if self.override.visible == TrackerContainer.Enums.OFF:
+        #    self.off()
+        #    return
 
-        if self.override.visible == TrackerState.Enums.ON:
-            return
+        #if self.override.visible == TrackerContainer.Enums.ON:
+        #    return
 
         if not self.conditions:
             return

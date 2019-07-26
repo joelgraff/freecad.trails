@@ -183,13 +183,13 @@ class AlignmentTracker(BaseTracker):
 
             _idx = int(MouseState().component.split('-')[1])
 
-            for _v in self.trackers['Nodes'][_idx:]:
-                print(_v.name)
-                _v.set_selected(ignore=True)
+            for _i, _v in enumerate(self.trackers['Nodes']):
+                _v.state.selected.value = _i >= _idx
+                _v.state.selected.ignore_once()
 
-            for _v in self.trackers['Tangents'][_idx:]:
-                _v.set_selected(ignore=True)
-
+            for _i, _v in enumerate(self.trackers['Tangents']):
+                _v.state.selected.value = _i >= _idx
+                _v.state.selected.ignore_once()
 
         #force update the selection state for wires 
 #        if self.mouse.button1.state == 'DOWN':
@@ -343,7 +343,7 @@ class AlignmentTracker(BaseTracker):
 
             #partial selection - add adjoinging curves, save list of partially
             #selected tangents and curves
-            if _v.state.selected == self.State.SELECT_PARTIAL:
+            if _v.state.selected.value == self.State.SELECT_PARTIAL:
 
                 _g = 'PARTIAL'
                 _partial.append(_i)
@@ -572,7 +572,7 @@ class AlignmentTracker(BaseTracker):
             #update the scenegraph for the selected vertex
             for _l, _t in enumerate(_tans[_limits[0]:_limits[1]]):
 
-                if _t.state.selected != self.State.SELECT_PARTIAL:
+                if _t.state.selected.value != self.State.SELECT_PARTIAL:
                     continue
 
                 _pts = [tuple(_w.get()) for _w in _t.selection_nodes]

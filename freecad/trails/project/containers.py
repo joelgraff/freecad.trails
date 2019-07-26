@@ -56,15 +56,15 @@ class DragState():
 
         self.__init__()
 
-class TrackerState():
+class TrackerContainer():
     """
     State container for BaseTracker class
     """
 
     @unique
-    class Enums(IntEnum):
+    class State(IntEnum):
         """
-        Enum class 
+        Enum class
         """
 
         UNDEFINED = 0
@@ -72,21 +72,75 @@ class TrackerState():
         ON = 2
         NONE = 4
 
+    class Property():
+
+        def __init__(self, value):
+
+            self._value = value
+            self._ignore_once = False
+            self._ignore = False
+
+        def set_value(self, state):
+            """
+            Set the property state using bools
+            """
+
+            if state:
+                self._value = TrackerContainer.State.ON
+            else:
+                self._value = TrackerContainer.State.OFF
+
+        def get_value(self):
+            """
+            Get the poerty state as bool
+            """
+
+            return self._value == TrackerContainer.State.ON
+
+        def ignore_once(self):
+            """
+            Set the ignore once flag
+            """
+
+            self._ignore_once = True
+            self._ignore = True
+
+        def set_ignore(self, state):
+            """
+            Set the ignore flag, clearing _ignore_once
+            """
+
+            self._ignore_once = False
+            self._ignore = True
+
+        def get_ignore(self):
+            """
+            Get the ignore flag, clearing _ignore_once
+            """
+
+            _result = self._ignore
+
+            if self._ignore_once:
+
+                self._ignore_once = False
+                self._ignore = False
+
+            return _result
+
+        value = property(get_value, set_value)
+        ignore = property(get_ignore, set_ignore)
+
     def __init__(self, is_undefined=False):
         """
         Cosntructor
         """
 
-        self.enabled = self.Enums.ON
-        self.visible = self.Enums.ON
-        self.selected = self.Enums.OFF
-
-        self.ignore_enabled = False
-        self.ignore_visible = False
-        self.ignore_selected = False
+        self.enabled = self.Property(self.State.ON)
+        self.visible = self.Property(self.State.ON)
+        self.selected = self.Property(self.State.OFF)
 
         if is_undefined:
 
-            self.enabled = self.Enums.UNDEFINED
-            self.visible = self.Enums.UNDEFINED
-            self.selected = self.Enums.UNDEFINED
+            self.enabled._value = self.State.UNDEFINED
+            self.visible._value = self.State.UNDEFINED
+            self.selected._value = self.State.UNDEFINED
