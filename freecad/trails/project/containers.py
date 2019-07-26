@@ -86,4 +86,3 @@ class TrackerState():
             self.enabled = self.Enums.UNDEFINED
             self.visible = self.Enums.UNDEFINED
             self.selected = self.Enums.UNDEFINED
-

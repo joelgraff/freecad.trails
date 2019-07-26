@@ -80,17 +80,18 @@ class AlignmentTracker(BaseTracker):
             tuple(alignment.model.data['meta']['Start'])
         )
         super().__init__(
-            names=self.names, children=[self.transform]
+            view=view, names=self.names, children=[self.transform],
+            has_events=False
         )
 
         #input callback assignments
-        self.callbacks = {
-            'SoLocation2Event':
-            self.view.addEventCallback('SoLocation2Event', self.mouse_event),
+        #self.callbacks = {
+        #    'SoLocation2Event':
+        #    self.view.addEventCallback('SoLocation2Event', self.mouse_event),
 
-            'SoMouseButtonEvent':
-            self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
-        }
+        #    'SoMouseButtonEvent':
+        #    self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
+        #}
 
         #scenegraph node structure for editing and dragging operations
         self.groups = {
@@ -149,7 +150,7 @@ class AlignmentTracker(BaseTracker):
 
         self.status_bar.showMessage(_msg)
 
-    def mouse_event(self, arg):
+    def _dep_mouse_event(self, arg):
         """
         Manage mouse actions affecting multiple nodes / wires
         """
@@ -172,7 +173,7 @@ class AlignmentTracker(BaseTracker):
                 self.start_drag()
                 self.user_dragging = True
 
-    def button_event(self, arg):
+    def _dep_button_event(self, arg):
         """
         Manage button actions affecting multiple nodes / wires
         """
@@ -183,6 +184,16 @@ class AlignmentTracker(BaseTracker):
         if self.user_dragging and not self.mouse.button1.dragging:
             self.end_drag()
             self.user_dragging = False
+
+        #force update the selection state for wires 
+        if self.mouse.button1.state == 'DOWN':
+
+            for _v in self.trackers['Nodes'] + self.trackers['Tangents']:
+                _v.update_selection_state()
+
+            for _v in self.trackers['Curves']:
+                _v.state.selected = self.State.SELECT_OFF
+                _v.update_selection_state()
 
     def build_trackers(self):
         """
@@ -229,12 +240,17 @@ class AlignmentTracker(BaseTracker):
                 self._build_wire_tracker(
                     wire_name=_names + ['WIRE-' + str(_i)],
                     nodes=_nodes,
-                    points=[_v.get() for _v in _nodes]
+                    points=[_v.get() for _v in _nodes],
+                    select=True
                 )
             )
 
         _curves = self.alignment.get_curves()
         _points = []
+
+        self.trackers = _result
+
+        return
 
         #curve trackers
         for _i in range(0, len(_result['Tangents']) - 1):
@@ -248,7 +264,7 @@ class AlignmentTracker(BaseTracker):
 
             _ct.set_selectability(True)
 
-            _result['Nodes'][_i + 1].conditions.append(_ct.name[2])
+            _result['Nodes'][_i + 1].conditions.append(_ct.name)
             _result['Curves'].append(_ct)
 
         self.trackers = _result
@@ -306,7 +322,7 @@ class AlignmentTracker(BaseTracker):
         _partial = []
         _curves = []
 
-        #save the current tracker state before editing for 
+        #save the current tracker state before editing for
         #restoration if drag ops yield invalid alignment
         for _v in self.trackers['Nodes']:
             self.drag.tracker_state.append(_v.get())
@@ -314,6 +330,7 @@ class AlignmentTracker(BaseTracker):
         #duplicate scene nodes of selected and partially-selected wires
         for _i, _v in enumerate(self.trackers['Tangents']):
 
+            print(_v.name, 'is selected?', _v.is_selected())
             if not _v.is_selected():
                 continue
 
@@ -338,6 +355,9 @@ class AlignmentTracker(BaseTracker):
 
         for _i in _curves:
             self.trackers['Curves'][_i].set_selected(self.State.SELECT_ON)
+
+        for _v in self.trackers['Curves']:
+            _v.update_selection_state()
 
         self.drag.curves = _curves
 

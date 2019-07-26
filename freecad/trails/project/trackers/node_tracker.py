@@ -52,7 +52,6 @@ class NodeTracker(BaseTracker):
             nodes = [nodes]
 
         self.view = view
-        self.name = names[2]
         self.mouse = MouseState()
         self.is_end_node = False
         self.point = point
@@ -62,18 +61,10 @@ class NodeTracker(BaseTracker):
         self.marker = coin.SoMarkerSet()
 
         super().__init__(
-            names=names, children=[self.coord, self.marker] + nodes, group=True
+            view=view, names=names, children=[self.coord, self.marker] + nodes
         )
 
-        self.set_style(CoinStyle.DEFAULT)
-
-        self.callbacks = {
-            'SoLocation2Event':
-            self.view.addEventCallback('SoLocation2Event', self.mouse_event),
-
-            'SoMouseButtonEvent':
-            self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
-        }
+        self.coin_style = CoinStyle.DEFAULT
 
         self.update()
 
@@ -98,6 +89,9 @@ class NodeTracker(BaseTracker):
 
         self.point = _c
 
+        #update style / state changes
+        super().refresh()
+
     def get(self):
         """
         Get method
@@ -105,17 +99,15 @@ class NodeTracker(BaseTracker):
 
         return Vector(self.coord.point.getValues()[0].getValue())
 
-    def mouse_event(self, arg):
+    def _dep_mouse_event(self, arg):
         """
         Mouse movement actions
         """
 
+        print('override mouse')
+        return
         if not self.is_enabled():
             return
-
-        #skip if currently invisible
-        #if not self.is_visible():
-        #    return
 
         #skip if the node can't be selected
         if not self.is_selectable():
@@ -141,19 +133,20 @@ class NodeTracker(BaseTracker):
 
             self.state.selected = self.State.SELECT_OFF
             _style = CoinStyle.DEFAULT
-            self._process_conditions(_comp)
+            self._process_conditions()
 
         self.set_style(_style)
 
-    def button_event(self, arg):
+    def _dep_update_selection_state(self):
         """
-        Button click trapping
+        Update the tracker selection state
         """
+
         #do nothing - state freeze
         if not self.is_enabled():
             return
 
-        #only if mouse button is being released
+        #only if mouse button is being pressed
         if self.mouse.button1.state == 'UP':
             return
 
@@ -167,10 +160,10 @@ class NodeTracker(BaseTracker):
 
         _name = _info['Component']
 
-        self._process_conditions(_name)
+        self._process_conditions()
 
         #unselction for multi-select case
-        if arg['AltDown']:
+        if self.mouse.AltDown:
 
             if int(_name.split('-')[1]) > int(self.name.split('-')[1]):
                 self.state.selected = self.State.SELECT_OFF
@@ -187,6 +180,14 @@ class NodeTracker(BaseTracker):
 
         self.set_style(CoinStyle.SELECTED)
         self.state.selected = self.State.SELECT_ON
+
+    def _dep_button_event(self, arg):
+        """
+        Button click trapping
+        """
+
+        self.mouse.update(arg, self.view.getCursorPos())
+        self.update_selection_state()
 
     def finalize(self, node=None, parent=None):
         """

@@ -58,6 +58,7 @@ class CurveTracker(BaseTracker):
         self.coin_style = None
         self.curve = curve
         self.pi_nodes = pi_nodes
+        self.trackers = None
         self.callbacks = {}
         self.name = names
         self.mouse = MouseState()
@@ -77,7 +78,7 @@ class CurveTracker(BaseTracker):
             ('End Tangent', 2, 3)
         )
 
-        super().__init__(names=self.name)
+        super().__init__(view=view, names=self.name)
 
         #input callback assignments
         self.callbacks = {
@@ -99,7 +100,6 @@ class CurveTracker(BaseTracker):
 
         #generate initial node trackers and wire trackers for mouse interaction
         #and add them to the scenegraph
-        self.trackers = None
         self.build_trackers()
 
         _trackers = []
@@ -141,6 +141,9 @@ class CurveTracker(BaseTracker):
         Override of base function
         """
 
+        if not self.trackers:
+            return
+
         self.trackers['Curve'][0].set_style(style)
 
     def mouse_event(self, arg):
@@ -148,26 +151,22 @@ class CurveTracker(BaseTracker):
         Manage mouse actions affecting multiple nodes / wires
         """
 
+        print(self.name, 'mouse')
+
         _p = self.view.getCursorPos()
 
         self.mouse.update(arg, _p)
 
         self._update_status_bar(self.view.getObjectInfo(_p))
 
-    def button_event(self, arg):
+    def update_selection_state(self):
         """
-        Manage button actions affecting multiple nodes / wires
+        Update the selection state
         """
 
-        _p = self.view.getCursorPos()
-
-        self.mouse.update(arg, _p)
-
-        if self.mouse.button1.state != 'UP':
-            return
-
-        _info = self.view.getObjectInfo(_p)
         _selected = self.State.SELECT_OFF
+
+        _info = self.view.getObjectInfo(self.mouse.pos)
 
         #if the curve is picked, set state to selected
         if _info:
@@ -205,6 +204,19 @@ class CurveTracker(BaseTracker):
             for _v in self.trackers['Nodes'] + self.trackers['Wires']:
                 _v.off()
 
+    def button_event(self, arg):
+        """
+        Manage button actions affecting multiple nodes / wires
+        """
+
+        _p = self.view.getCursorPos()
+        self.mouse.update(arg, _p)
+
+        if self.mouse.button1.state != 'UP':
+            return
+
+        self.update_selection_state()
+
     def rebuild_trackers(self):
         """
         Rebuild the existing trackers to match updated curve
@@ -236,7 +248,7 @@ class CurveTracker(BaseTracker):
         #node trackers - don't create a PI node
         for _i, _pt in enumerate(_coords[:-1]):
 
-            _names = self.name[:]
+            _names = self.names[:]
             _names[-1] = _names[-1] + '-' + self.node_names[_i]
 
             _tr = NodeTracker(
@@ -245,7 +257,7 @@ class CurveTracker(BaseTracker):
                 point=_pt
             )
 
-            _tr.update(_pt)
+            _tr.update()
             _tr.conditions.append('!' + self.name[2])
             _tr.off()
 
@@ -254,7 +266,7 @@ class CurveTracker(BaseTracker):
         #wire trackers
         for _i, _v in enumerate(self.wire_names):
 
-            _names = self.name[:]
+            _names = self.names[:]
             _names[-1] = _names[-1] + '-' + _v[0]
 
             _wt = self._build_wire_tracker(
@@ -280,7 +292,7 @@ class CurveTracker(BaseTracker):
 
         _result['Curve'] = [
             self._build_wire_tracker(
-                wire_name=self.name + [self.curve['Type']],
+                wire_name=self.names + [self.curve['Type']],
                 nodes=_result['Nodes'],
                 points=_points,
                 select=True

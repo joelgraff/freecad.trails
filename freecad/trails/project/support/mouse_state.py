@@ -25,6 +25,7 @@ Mouse state class
 """
 
 from FreeCAD import Vector
+import FreeCADGui as Gui
 
 from .singleton import Singleton
 
@@ -91,9 +92,8 @@ class MouseState(metaclass=Singleton):
             #otherwise, start only if the button is pressed and the
             #mouse has moved
             elif self.pressed and (self.pos != pos):
-                    print('start drag!')
-                    self.dragging = True
-                    self.drag_start = pos
+                self.dragging = True
+                self.drag_start = pos
 
             if self.dragging:
                 self.state = 'DRAG'
@@ -108,7 +108,7 @@ class MouseState(metaclass=Singleton):
         """
 
         self.pos = ()
- 
+        self.view = Gui.ActiveDocument.ActiveView
         self.buttons = {
             'BUTTON1': self.ButtonState(),
             'BUTTON2': self.ButtonState(),
@@ -119,6 +119,14 @@ class MouseState(metaclass=Singleton):
         self.button2 = self.buttons['BUTTON2']
         self.button3 = self.buttons['BUTTON3']
 
+        self.AltDown = False
+        self.CtrlDown = False
+        self.ShiftDown = False
+
+        self.object = None
+        self.component = None
+        self.coordinates = Vector()
+
         self.state = [self.buttons, self.pos]
 
     def update(self, arg, _p):
@@ -127,9 +135,23 @@ class MouseState(metaclass=Singleton):
         """
 
         self.pos = _p + (0.0,)
+        _info = self.view.getObjectInfo(self.pos)
+
+        if _info:
+            self.object = _info['Object']
+            self.component = _info['Component']
+            self.coordinates = Vector(_info['x'], _info['y'], _info['z'])
+        else:
+            self.object = None
+            self.component = None
+            self.coordinates = Vector()
 
         _btn = arg.get('Button')
         _state = arg.get('State')
+
+        self.AltDown = arg['AltDown']
+        self.CtrlDown = arg['CtrlDown']
+        self.ShiftDown = arg['ShiftDown']
 
         if not _state:
             return
@@ -150,8 +172,11 @@ class MouseState(metaclass=Singleton):
         #pressed and mouse moves.  If continuing, drag ends when button is up
         if _btn.dragging:
             _btn.dragging = _btn.pressed and (_btn.state != 'UP')
+
         else:
-            _btn.dragging = _btn.pressed and (_btn.drag_start != self.pos)
+            _btn.dragging =\
+                _btn.pressed and _btn.drag_start\
+                    and (_btn.drag_start != self.pos)
 
         #set drag states
         if _btn.dragging:

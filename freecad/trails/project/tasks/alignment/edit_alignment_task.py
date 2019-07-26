@@ -121,17 +121,17 @@ class EditAlignmentTask:
         #deselect existing selections
         Gui.Selection.clearSelection()
 
+        self.callbacks = {
+            'SoLocation2Event':
+            self.view.addEventCallback('SoLocation2Event', self.mouse_event),
+
+            'SoMouseButtonEvent':
+            self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
+        }
+
         self.alignment_tracker = AlignmentTracker(
             self.doc, self.view, self.Object.Name, self.alignment
         )
-
-        self.callbacks = {
-            'SoKeyboardEvent': self.key_action,
-            #    'SoMouseButtonEvent': self.button_action,
-            #    'SoLocation2Event': self.mouse_action
-        }
-
-        self.doc.recompute()
 
         #save camera state
         _camera = self.view.getCameraNode()
@@ -246,13 +246,27 @@ class EditAlignmentTask:
 
         return None
 
-    def key_action(self, arg):
+    def key_event(self, arg):
         """
         SoKeyboardEvent callback
         """
 
         if arg['Key'] == 'ESCAPE':
             self.finish()
+
+    def mouse_event(self, arg):
+        """
+        SoLocation2Event callback
+        """
+
+        self.mouse.update(arg, self.view.getCursorPos())
+
+    def button_event(self, arg):
+        """
+        SoMouseButtonEvent callback
+        """
+
+        self.mouse.update(arg, self.view.getCursorPos())
 
     def set_vobj_style(self, vobj, style):
         """

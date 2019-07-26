@@ -59,17 +59,9 @@ class WireTracker(BaseTracker):
         nodes += [self.coord, self.line]
 
         super().__init__(
-            names=names, children=nodes)
+            view=view, names=names, children=nodes)
 
-        self.set_style(CoinStyle.DEFAULT)
-
-        self.callbacks = {
-            'SoLocation2Event':
-            self.view.addEventCallback('SoLocation2Event', self.mouse_event),
-
-            'SoMouseButtonEvent':
-            self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
-        }
+        self.coin_style = CoinStyle.DEFAULT
 
     def set_selection_nodes(self, nodes):
         """
@@ -100,9 +92,9 @@ class WireTracker(BaseTracker):
 
         self.points = _p
 
-        self.update_selection_state()
+        super().refresh()
 
-    def update_selection_state(self):
+    def _dep_update_selection_state(self):
         """
         Update the selection state
         """
@@ -122,6 +114,7 @@ class WireTracker(BaseTracker):
             self.state.selected = self.State.SELECT_PARTIAL
 
         if self.is_selected():
+            print(self.name, 'selected')
             _style = CoinStyle.SELECTED
 
         _info = None
@@ -135,7 +128,7 @@ class WireTracker(BaseTracker):
 
         _comp = _info['Component']
 
-        self._process_conditions(_comp)
+        self._process_conditions()
 
         if not self.name in _comp:
 
@@ -144,7 +137,7 @@ class WireTracker(BaseTracker):
 
         self.set_style(_style)
 
-    def button_event(self, arg):
+    def _dep_button_event(self, arg):
         """
         Mouse button actions
         """
@@ -154,10 +147,12 @@ class WireTracker(BaseTracker):
 
         self.update_selection_state()
 
-    def mouse_event(self, arg):
+    def _dep_mouse_event(self, arg):
         """
         Mouse movement actions
         """
+
+        print(self.name, 'mouse')
 
         if not self.is_enabled():
             return
@@ -180,7 +175,7 @@ class WireTracker(BaseTracker):
             if self.coin_style == CoinStyle.SELECTED:
                 self.set_style(CoinStyle.DEFAULT)
 
-            self._process_conditions(_comp)
+            self._process_conditions()
 
         else:
 

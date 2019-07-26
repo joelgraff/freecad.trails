@@ -35,6 +35,9 @@ import Draft
 from DraftGui import todo
 
 from ..containers import TrackerState
+from ..support.mouse_state import MouseState
+
+from .coin_style import CoinStyle
 
 class BaseTracker:
     """
@@ -55,36 +58,39 @@ class BaseTracker:
         SELECT_ON = 2
         SELECT_PARTIAL = 4
 
-    def __init__(self, names, children=None, group=False):
+    def __init__(self, view, names, children=None, has_events=True):
         """
         Constructor
         """
 
+        self.view = view
+        self.names = names
+        self.name = names[2]
         self.state = TrackerState()
         self.override = TrackerState(True)
 
         self.color = coin.SoBaseColor()
         self.draw_style = coin.SoDrawStyle()
-        self.names = names
         self.node = coin.SoSeparator()
         self.parent = None
         self.picker = coin.SoPickStyle()
         self.switch = coin.SoSwitch()
         self.coin_style = None
+        self.active_style = None
         self.conditions = []
 
         if not children:
             children = []
 
-        if group:
-            self.node = coin.SoGroup()
+        #if group:
+        #    self.node = coin.SoGroup()
 
         self.sel_node = \
             coin.SoType.fromName("SoFCSelection").createInstance()
 
-        self.sel_node.documentName.setValue(self.names[0])
-        self.sel_node.objectName.setValue(self.names[1])
-        self.sel_node.subElementName.setValue(self.names[2])
+        self.sel_node.documentName.setValue(names[0])
+        self.sel_node.objectName.setValue(names[1])
+        self.sel_node.subElementName.setValue(names[2])
 
         for child in [
                 self.sel_node, self.picker, self.draw_style, self.color
@@ -94,7 +100,89 @@ class BaseTracker:
 
         self.switch.addChild(self.node)
 
+        self.callbacks = None
+
+        if has_events:
+
+            self.callbacks = {
+                'SoLocation2Event':
+                    self.view.addEventCallback(
+                        'SoLocation2Event', MouseState()_event),
+
+                'SoMouseButtonEvent':
+                    self.view.addEventCallback(
+                        'SoMouseButtonEvent', self.button_event)
+            }
+
+        self.set_style(CoinStyle.DEFAULT)
         self.on()
+
+    def refresh(self, style=None):
+        """
+        Upate the tracker to reflect state changes
+        """
+
+        if not style:
+            style = self.coin_style
+
+        self._process_conditions()
+        self.set_style(style)
+
+    def mouse_event(self, arg):
+        """
+        SoLocation2Event callback
+        """
+
+        #pre-empptive abort conditions
+        if not self.is_enabled():
+            return
+
+        if not self.is_visible():
+            return
+
+        if self.is_selected():
+            return
+
+        _style = self.coin_style
+
+        #test to see if this node is under the cursor
+        if self.name == MouseState().component:
+            _style = CoinStyle.SELECTED
+
+        self.refresh(_style)
+
+    def button_event(self, arg):
+        """
+        SoMouseButtonEvent callback
+        """
+
+        if MouseState().button1.state != 'UP':
+            return
+
+        #preemptive abort conditions
+        if not self.is_enabled():
+            return
+
+        if not self.is_visible():
+            return
+
+        if self.name == MouseState().component:
+
+            if not self.is_selected():
+                self.state.selected = self.State.SELECT_ON
+            else:
+                self.state.selected = self.State.SELECT_OFF
+
+        #deselect unless multi-selecting
+        elif self.is_selected() and not MouseState().CtrlDown:
+            self.state.selected = self.State.SELECT_OFF
+
+        _style = self.coin_style
+
+        if self.is_selected():
+            _style = CoinStyle.SELECTED
+
+        self.refresh(_style)
 
     def set_selectability(self, is_selectable):
         """
@@ -176,12 +264,15 @@ class BaseTracker:
 
         return self.picker.style.getValue() != coin.SoPickStyle.UNPICKABLE
 
-    def set_style(self, style):
+    def set_style(self, style=None):
         """
         Update the tracker style
         """
 
-        if self.coin_style == style:
+        if not style:
+            style = self.coin_style
+
+        if self.active_style == style:
             return
 
         if style['line width']:
@@ -201,7 +292,7 @@ class BaseTracker:
         if style.get('color'):
             self.color.rgb = style['color']
 
-        self.coin_style = style
+        self.active_style = style
 
     def finalize(self, node=None, parent=None):
         """
@@ -245,7 +336,7 @@ class BaseTracker:
 
         return node.copy()
 
-    def _process_conditions(self, info):
+    def _process_conditions(self):
         """
         Process the conditions which determine node visiblity
         """
@@ -257,9 +348,17 @@ class BaseTracker:
         if self.override.visible == TrackerState.Enums.ON:
             return
 
+        if not self.conditions:
+            return
+
+        _c = MouseState().component
+
+        if not _c:
+            return
+
         for _cond in self.conditions:
 
-            if (_cond[0] == '!' and _cond[1:] not in info) or (_cond in info):
+            if (_cond[0] == '!' and _cond[1:] not in _c) or (_cond in _c):
 
                 self.off()
                 break
