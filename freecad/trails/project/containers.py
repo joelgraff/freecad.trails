@@ -41,6 +41,7 @@ class DragState():
         self.center = None
         self.rotation = None
         self.position = None
+        self.object = None
         self.angle = 0.0
         self.translation = Vector()
         self.multi = False
@@ -55,6 +56,21 @@ class DragState():
         """
 
         self.__init__()
+
+    def __str__(self):
+
+        return '\nstart = ' + str(self.start) \
+               + '\ncenter = ' + str(self.center) \
+               + '\nrotation = ' + str(self.rotation) \
+               + '\nposition = ' + str(self.position) \
+               + '\nobject = ' + str(self.object) \
+               + '\nangle = ' + str(self.angle) \
+               + '\ntranslation = ' + str(self.translation) \
+               + '\nmulti = ' + str(self.multi) \
+               + '\ncurves = \n' + str(self.curves) \
+               + '\nnodes = \n' + str(self.nodes) \
+               + '\nnode_idx = \n' + str(self.node_idx) \
+               + '\ntracker_state = \n' + str(self.tracker_state)
 
 class TrackerContainer():
     """

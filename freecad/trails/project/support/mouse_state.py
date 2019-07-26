@@ -123,8 +123,8 @@ class MouseState(metaclass=Singleton):
         self.ctrlDown = False
         self.shiftDown = False
 
-        self.object = None
-        self.component = None
+        self.object = ''
+        self.component = ''
         self.coordinates = Vector()
 
         self.state = [self.buttons, self.pos]
@@ -141,10 +141,11 @@ class MouseState(metaclass=Singleton):
             self.object = _info['Object']
             self.component = _info['Component']
             self.coordinates = Vector(_info['x'], _info['y'], _info['z'])
+
         else:
-            self.object = None
-            self.component = None
-            self.coordinates = Vector()
+            self.object = ''
+            self.component = ''
+            self.coordinates = self.view.getPoint(self.pos)
 
         _btn = arg.get('Button')
         _state = arg.get('State')
@@ -174,9 +175,7 @@ class MouseState(metaclass=Singleton):
             _btn.dragging = _btn.pressed and (_btn.state != 'UP')
 
         else:
-            _btn.dragging =\
-                _btn.pressed and _btn.drag_start\
-                    and (_btn.drag_start != self.pos)
+            _btn.dragging = _btn.pressed and (_btn.drag_start != self.pos)
 
         #set drag states
         if _btn.dragging:

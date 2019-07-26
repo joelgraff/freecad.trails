@@ -61,7 +61,6 @@ class AlignmentTracker(BaseTracker):
         self.doc = doc
         self.curves = []
         self.names = [doc.Name, object_name, 'ALIGNMENT_TRACKER']
-        self.mouse = MouseState()
         self.user_dragging = False
         self.is_valid = True
         self.status_bar = Gui.getMainWindow().statusBar()
@@ -119,43 +118,23 @@ class AlignmentTracker(BaseTracker):
         #insert in the scenegraph root
         self.insert_node(self.switch)
 
-    def _update_status_bar(self, info):
+    def _update_status_bar(self):
         """
         Update the status bar with the latest mouseover data
         """
 
-        _id = ''
-
-        if info:
-            _id = info['Component']
-
-        _pos = self.view.getPoint(self.mouse.pos)
-
-        if 'NODE' in _id:
-            _pos = self.datum.add(
-                self.trackers['Nodes'][int(_id.split('-')[1])].get()
-            )
-
-        _msg = _id + ' ' + str(tuple(_pos))
-
-        self.status_bar.showMessage(_msg)
+        self.status_bar.showMessage(
+            MouseState().component + ' ' + str(tuple(MouseState().coordinates))
+        )
 
     def mouse_event(self, arg):
         """
         Manage mouse actions affecting multiple nodes / wires
         """
 
-        pass
+        self._update_status_bar()
 
-        _p = self.view.getCursorPos()
-
-        self.mouse.update(arg, _p)
-
-        _info = self.view.getObjectInfo(_p)
-
-        self._update_status_bar(_info)
-
-        if self.mouse.button1.dragging:
+        if MouseState().button1.dragging:
 
             if self.user_dragging:
                 self.on_drag(arg['AltDown'], arg['ShiftDown'])
@@ -170,36 +149,40 @@ class AlignmentTracker(BaseTracker):
         Override base button actions
         """
 
-        #terminate dragging if button is released
-        if self.user_dragging and not self.mouse.button1.dragging:
-            self.end_drag()
-            self.user_dragging = False
+        if MouseState().button1.state == 'UP':
 
-        if MouseState().button1.state != 'UP':
+            #terminate dragging if button is released
+            if self.user_dragging and not MouseState().button1.dragging:
+                self.end_drag()
+                self.user_dragging = False
+
             return
 
-        #multiselect - force select all nodes / wires following the picked node
-        if MouseState().ctrlDown and MouseState().component:
+        if not MouseState().component:
+            return
 
-            _idx = int(MouseState().component.split('-')[1])
+        _idx = int(MouseState().component.split('-')[1])
 
-            for _i, _v in enumerate(self.trackers['Nodes']):
-                _v.state.selected.value = _i >= _idx
-                _v.state.selected.ignore_once()
+        for _i, _v in enumerate(self.trackers['Nodes']):
 
-            for _i, _v in enumerate(self.trackers['Tangents']):
-                _v.state.selected.value = _i >= _idx
-                _v.state.selected.ignore_once()
+            _v.state.selected.value = _i >= _idx
 
-        #force update the selection state for wires 
-#        if self.mouse.button1.state == 'DOWN':
+            if _i == _idx and not MouseState().ctrlDown:
+                break
 
-#            for _v in self.trackers['Nodes'] + self.trackers['Tangents']:
-#                _v.update_selection_state()
+            _v.state.selected.ignore_once()
 
-#            for _v in self.trackers['Curves']:
-#                _v.state.selected = self.State.SELECT_OFF
-#                _v.update_selection_state()
+        if _idx > 0:
+            _idx -= 1
+
+        for _i, _v in enumerate(self.trackers['Tangents']):
+
+            _v.state.selected.value = _i >= _idx
+
+            if _i == _idx and not MouseState().ctrlDown:
+                break
+
+            _v.state.selected.ignore_once()
 
     def build_trackers(self):
         """
@@ -295,7 +278,7 @@ class AlignmentTracker(BaseTracker):
         #set the drag start point to the first selected node
         for _i, _v in enumerate(self.trackers['Nodes']):
 
-            if not _v.is_selected():
+            if not _v.state.selected.value:
                 continue
 
             _c = _v.get()
@@ -304,11 +287,13 @@ class AlignmentTracker(BaseTracker):
             #translation and rotation
             if not self.drag.start:
 
-                self.drag.start =\
-                    Vector(self.view.getPoint(self.mouse.pos)).sub(self.datum)
-
-                self.drag.position = self.drag.start
+                self.drag.start = _c
+                self.drag.position = _c
                 self.drag.center = _c
+                self.drag.object = _v
+
+                _v.state.selected.value = True
+                _v.state.selected.ignore = True
 
             if self.drag.nodes:
 
@@ -319,52 +304,54 @@ class AlignmentTracker(BaseTracker):
             self.drag.node_idx.append(_i)
 
         #temporarily disable geometry selectability
-        self.set_selectability(False)
+        #self.set_selectability(False)
 
-        self.curves = self.alignment.get_curves()
+        #self.curves = self.alignment.get_curves()
         self.pi_list = self.alignment.model.get_pi_coords()
 
         _partial = []
-        _curves = []
+        #_curves = []
 
         #save the current tracker state before editing for
         #restoration if drag ops yield invalid alignment
-        for _v in self.trackers['Nodes']:
-            self.drag.tracker_state.append(_v.get())
+        self.drag.tracker_state = [Vector(_v) for _v in self.drag.nodes]
 
         #duplicate scene nodes of selected and partially-selected wires
         for _i, _v in enumerate(self.trackers['Tangents']):
 
-            print(_v.name, 'is selected?', _v.is_selected())
-            if not _v.is_selected():
+            print('n_vecs = ', [_x.get() for _x in _v.selection_nodes])
+            _state = [_x.state.selected.value for _x in _v.selection_nodes]
+
+            if not any(_state):
                 continue
+
+            print('drag nodes = ', _v.name, _state)
 
             _g = 'SELECTED'
 
-            #partial selection - add adjoinging curves, save list of partially
-            #selected tangents and curves
-            if _v.state.selected.value == self.State.SELECT_PARTIAL:
+            if not all(_state):
 
                 _g = 'PARTIAL'
                 _partial.append(_i)
 
-                if _i > 0 and not _i - 1 in _curves:
-                    _curves.append(_i - 1)
+                #if _i > 0 and not _i - 1 in _curves:
+                #    _curves.append(_i - 1)
 
-                if _i < len(self.curves):
-                    _curves.append(_i)
+                #if _i < len(self.curves):
+                #    _curves.append(_i)
 
             self.groups[_g].addChild(_v.copy())
 
+        print('partials = ', _partial)
         self.drag.multi = self.groups['SELECTED'].getNumChildren() > 2
 
-        for _i in _curves:
-            self.trackers['Curves'][_i].set_selected()
+        #for _i in _curves:
+        #    self.trackers['Curves'][_i].selected = True
 
-        for _v in self.trackers['Curves']:
-            _v.update_selection_state()
+        #for _v in self.trackers['Curves']:
+            #_v.update_selection_state()
 
-        self.drag.curves = _curves
+        #self.drag.curves = _curves
 
     def on_drag(self, do_rotation, modify):
         """
@@ -374,15 +361,15 @@ class AlignmentTracker(BaseTracker):
         if self.drag.start is None:
             return
 
-        _world_pos = self.view.getPoint(self.mouse.pos).sub(self.datum)
+        _world_pos = MouseState().coordinates.sub(self.datum)
 
         self._update_transform(_world_pos, do_rotation, modify)
         self._update_pi_nodes(_world_pos)
 
-        for _curve in self.trackers['Curves']:
-            _curve.update()
+        #for _curve in self.trackers['Curves']:
+        #    _curve.update()
 
-        self._validate_alignment()
+        #self._validate_alignment()
 
         self.drag.position = _world_pos
 
@@ -428,6 +415,7 @@ class AlignmentTracker(BaseTracker):
 
         self.set_selectability(True)
 
+        self.drag.object.state.selected.ignore = False
         self.drag.reset()
 
         self.drag_transform.center = coin.SbVec3f((0.0, 0.0, 0.0))

@@ -144,7 +144,8 @@ class BaseTracker:
         if self.state.selected.value:
             return
 
-        
+        _style = None
+
         #selection logic - skip if ignore flag is set
         if not self.state.selected.ignore:
 
@@ -171,8 +172,6 @@ class BaseTracker:
         if not self.state.visible.value:
             return
 
-        print(self.name, 'click')
-
         #selection logic - skip once if ignore flag is set
         if not self.state.selected.ignore:
             print('\tno ignore selected', MouseState().ctrlDown, self.state.selected.value)
@@ -191,7 +190,6 @@ class BaseTracker:
 
         _style = self.coin_style
 
-        print('\t', 'state',self.state.selected.value)
         if self.state.selected.value:
             _style = CoinStyle.SELECTED
 
@@ -208,100 +206,6 @@ class BaseTracker:
             _state = coin.SoPickStyle.SHAPE
 
         self.picker.style.setValue(_state)
-
-    def _dep_set_selected(self, is_on=True, override=False, ignore=False):
-        """
-        Set the selection state
-
-        is_on - bool indicating state flag
-        override - bool inidacting state set
-        ignore - bool indicating tracker should skip state check once
-        """
-
-        _state = self.State.SELECT_ON
-
-        if not is_on:
-            _state = self.State.SELECT_OFF
-
-        #if override:
-        #    self.override.selected.value = TrackerContainer.Enums(int(_state))
-        #else:
-        #    self.state.selected.value = TrackerContainer.Enums(int(_state))
-
-        self.state.ignore_selected = ignore
-
-    def _dep_set_visible(self, is_on=True, override=False, ignore=False):
-        """
-        Set the visible state
-
-        is_on - bool indicating state flag
-        override - bool inidacting state set
-        ignore - bool indicating tracker should skip state check once        
-        """
-
-        _state = self.State.VISIBLE_ON
-
-        if not is_on:
-            _state = self.State.VISIBLE_OFF
-
-        #if override:
-        #    self.override.visible = TrackerContainer.Enums(int(_state))
-        #else:
-        #    self.state.visible = TrackerContainer.Enums(int(_state))
-
-        self.state.ignore_visible = ignore
-
-    def _dep_set_enabled(self, is_on=True, override=False, ignore=False):
-        """
-        Set the enabled state
-
-        is_on - bool indicating state flag
-        override - bool inidacting state set
-        ignore - bool indicating tracker should skip state check once        
-        """
-
-        _state = self.State.ENABLE_ON
-
-        if not is_on:
-            _state = self.State.ENABLE_OFF
-
-        ##if override:
-        #    self.override.enabled = TrackerContainer.Enums(int(_state))
-        #else:
-        #    self.state.enabled = TrackerContainer.Enums(int(_state))
-
-        self.state.ignore_enabled = ignore
-
-    def _dep_convert_state(self, state_val, override_val):
-        """
-        Compare and return the state as boolean
-        """
-
-        if int(state_val) | int(override_val) == int(state_val):
-            return bool(int(state_val) - 1)
-
-        return bool(int(override_val) - 1)
-
-    def _dep_is_enabled(self):
-        """
-        Return the enabled state
-        """
-
-        return None #self.convert_state(self.state.enabled, self.override.enabled)
-
-    def _dep_is_visible(self):
-        """
-        Return the visible state
-        """
-
-        return None #self.convert_state(self.state.visible, self.override.visible)
-
-    def _dep_is_selected(self):
-        """
-        Return the selcted state
-        """
-
-        return None #self.convert_state(self.state.selected, self.override.selected)
 
     def is_selectable(self):
         """
@@ -451,24 +355,3 @@ class BaseTracker:
 
         if parent.findChild(node) >= 0:
             todo.delay(parent.removeChild, node)
-
-    def adjustTracker(self, node=None, to_top=True):
-        """
-        Raises the tracker to the top or lowers it to the bottom based
-        on the passed boolean
-        """
-
-        if not node:
-            node = self.switch
-
-        if not node:
-            return
-
-        _sg = Draft.get3DView().getSceneGraph()
-        _sg.removeChild(node)
-
-        if to_top:
-            _sg.insertChild(node)
-
-        else:
-            _sg.addChild(node)
