@@ -119,9 +119,9 @@ class MouseState(metaclass=Singleton):
         self.button2 = self.buttons['BUTTON2']
         self.button3 = self.buttons['BUTTON3']
 
-        self.AltDown = False
-        self.CtrlDown = False
-        self.ShiftDown = False
+        self.altDown = False
+        self.ctrlDown = False
+        self.shiftDown = False
 
         self.object = None
         self.component = None
@@ -149,9 +149,9 @@ class MouseState(metaclass=Singleton):
         _btn = arg.get('Button')
         _state = arg.get('State')
 
-        self.AltDown = arg['AltDown']
-        self.CtrlDown = arg['CtrlDown']
-        self.ShiftDown = arg['ShiftDown']
+        self.altDown = arg['AltDown']
+        self.ctrlDown = arg['CtrlDown']
+        self.shiftDown = arg['ShiftDown']
 
         if not _state:
             return

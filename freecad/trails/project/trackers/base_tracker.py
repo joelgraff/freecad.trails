@@ -107,7 +107,7 @@ class BaseTracker:
             self.callbacks = {
                 'SoLocation2Event':
                     self.view.addEventCallback(
-                        'SoLocation2Event', MouseState()_event),
+                        'SoLocation2Event', self.mouse_event),
 
                 'SoMouseButtonEvent':
                     self.view.addEventCallback(
@@ -143,11 +143,17 @@ class BaseTracker:
         if self.is_selected():
             return
 
-        _style = self.coin_style
+        #selection logic - skip if ignore flag is set
+        if not self.state.ignore_selected:
 
-        #test to see if this node is under the cursor
-        if self.name == MouseState().component:
-            _style = CoinStyle.SELECTED
+            _style = self.coin_style
+
+            #test to see if this node is under the cursor
+            if self.name == MouseState().component:
+                _style = CoinStyle.SELECTED
+
+        else:
+            self.state.ignore_selected = False
 
         self.refresh(_style)
 
@@ -166,16 +172,23 @@ class BaseTracker:
         if not self.is_visible():
             return
 
-        if self.name == MouseState().component:
+        #selection logic - skip once if ignore flag is set
+        if not self.state.ignore_selected:
 
-            if not self.is_selected():
-                self.state.selected = self.State.SELECT_ON
-            else:
-                self.state.selected = self.State.SELECT_OFF
+            if self.name == MouseState().component:
 
-        #deselect unless multi-selecting
-        elif self.is_selected() and not MouseState().CtrlDown:
-            self.state.selected = self.State.SELECT_OFF
+                if MouseState().ctrlDown:
+                    self.set_selected(False)
+
+                else:
+                    self.set_selected()
+
+            #deselect unless multi-selecting
+            elif self.is_selected() and not MouseState().ctrlDown:
+                self.set_selected(False)
+
+        else:
+            self.state.ignore_selected = False
 
         _style = self.coin_style
 
@@ -196,35 +209,68 @@ class BaseTracker:
 
         self.picker.style.setValue(_state)
 
-    def set_selected(self, state, override=False):
+    def set_selected(self, is_on=True, override=False, ignore=False):
         """
         Set the selection state
+
+        is_on - bool indicating state flag
+        override - bool inidacting state set
+        ignore - bool indicating tracker should skip state check once
         """
 
-        if override:
-            self.override.selected = TrackerState.Enums(int(state))
-        else:
-            self.state.selected = TrackerState.Enums(int(state))
+        _state = self.State.SELECT_ON
 
-    def set_visible(self, state, override=False):
+        if not is_on:
+            _state = self.State.SELECT_OFF
+
+        if override:
+            self.override.selected = TrackerState.Enums(int(_state))
+        else:
+            self.state.selected = TrackerState.Enums(int(_state))
+
+        self.state.ignore_selected = ignore
+
+    def set_visible(self, is_on=True, override=False, ignore=False):
         """
         Set the visible state
+
+        is_on - bool indicating state flag
+        override - bool inidacting state set
+        ignore - bool indicating tracker should skip state check once        
         """
+
+        _state = self.State.VISIBLE_ON
+
+        if not is_on:
+            _state = self.State.VISIBLE_OFF
 
         if override:
-            self.override.visible = TrackerState.Enums(int(state))
+            self.override.visible = TrackerState.Enums(int(_state))
         else:
-            self.state.visible = TrackerState.Enums(int(state))
+            self.state.visible = TrackerState.Enums(int(_state))
 
-    def set_enabled(self, state, override=False):
+        self.state.ignore_visible = ignore
+
+    def set_enabled(self, is_on=True, override=False, ignore=False):
         """
-        Set the visible state
+        Set the enabled state
+
+        is_on - bool indicating state flag
+        override - bool inidacting state set
+        ignore - bool indicating tracker should skip state check once        
         """
+
+        _state = self.State.ENABLE_ON
+
+        if not is_on:
+            _state = self.State.ENABLE_OFF
 
         if override:
-            self.override.enabled = TrackerState.Enums(int(state))
+            self.override.enabled = TrackerState.Enums(int(_state))
         else:
-            self.state.enabled = TrackerState.Enums(int(state))
+            self.state.enabled = TrackerState.Enums(int(_state))
+
+        self.state.ignore_enabled = ignore
 
     def convert_state(self, state_val, override_val):
         """
