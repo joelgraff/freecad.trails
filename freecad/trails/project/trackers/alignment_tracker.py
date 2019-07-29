@@ -134,21 +134,24 @@ class AlignmentTracker(BaseTracker):
 
         self._update_status_bar()
 
-        if MouseState().button1.dragging:
+        if not MouseState().button1.dragging:
+            return
 
-            if self.user_dragging:
-                self.on_drag(arg['AltDown'], arg['ShiftDown'])
-                self.view.redraw()
+        #handle drag operations
+        if self.user_dragging:
+            self.on_drag(arg['AltDown'], arg['ShiftDown'])
+            self.view.redraw()
 
-            else:
-                self.start_drag()
-                self.user_dragging = True
+        else:
+            self.start_drag()
+            self.user_dragging = True
 
     def button_event(self, arg):
         """
         Override base button actions
         """
 
+        #terminate existing drag oepration and exit
         if MouseState().button1.state == 'UP':
 
             #terminate dragging if button is released
@@ -158,11 +161,15 @@ class AlignmentTracker(BaseTracker):
 
             return
 
-        if not MouseState().component:
+        #abort unless a node or wire is selected
+        if not any([_v in MouseState().component for _v in ['NODE', 'WIRE']]):
             return
 
+        #get the index of the picked component
         _idx = int(MouseState().component.split('-')[1])
+        _prev = None
 
+        #set component state
         for _i, _v in enumerate(self.trackers['Nodes']):
 
             _v.state.selected.value = _i >= _idx
@@ -170,19 +177,16 @@ class AlignmentTracker(BaseTracker):
             if _i == _idx and not MouseState().ctrlDown:
                 break
 
-            _v.state.selected.ignore = True
+            #ignore the select state for one pass, since button click events
+            #for the individual nodes are handled afterward
+            _v.state.selected.ignore_once()
 
-        if _idx > 0:
-            _idx -= 1
+            #select the wire between consecutive nodes
+            if _prev:
+                self.trackers['Tangents'][_i - 1].state.selected.value =\
+                    _prev.state.selected.value
 
-        for _i, _v in enumerate(self.trackers['Tangents']):
-
-            _v.state.selected.value = _i >= _idx
-
-            if _i == _idx and not MouseState().ctrlDown:
-                break
-
-            _v.state.selected.ignore = True
+            _prev = _v
 
     def build_trackers(self):
         """
@@ -236,9 +240,7 @@ class AlignmentTracker(BaseTracker):
         _curves = self.alignment.get_curves()
         _points = []
 
-        self.trackers = _result
-
-        return
+        _names = self.names[:2]
 
         #curve trackers
         for _i in range(0, len(_result['Tangents']) - 1):

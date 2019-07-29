@@ -60,8 +60,7 @@ class CurveTracker(BaseTracker):
         self.pi_nodes = pi_nodes
         self.trackers = None
         self.callbacks = {}
-        self.name = names
-        self.mouse = MouseState()
+
         self.user_dragging = False
         self.is_valid = True
         self.status_bar = Gui.getMainWindow().statusBar()
@@ -78,7 +77,7 @@ class CurveTracker(BaseTracker):
             ('End Tangent', 2, 3)
         )
 
-        super().__init__(view=view, names=self.name)
+        super().__init__(view=view, names=names)
 
         #input callback assignments
         self.callbacks = {
@@ -113,7 +112,7 @@ class CurveTracker(BaseTracker):
         #insert in the scenegraph root
         self.insert_node(self.node)
 
-    def _update_status_bar(self, info):
+    def _update_status_bar(self):
         """
         Update the status bar with the latest mouseover data
         """
@@ -151,71 +150,45 @@ class CurveTracker(BaseTracker):
         Manage mouse actions affecting multiple nodes / wires
         """
 
-        print(self.name, 'mouse')
-
-        _p = self.view.getCursorPos()
-
-        self.mouse.update(arg, _p)
-
-        self._update_status_bar(self.view.getObjectInfo(_p))
+        self.update_selection_state()
+        self._update_status_bar()
 
     def update_selection_state(self):
         """
         Update the selection state
         """
 
-        _selected = self.State.SELECT_OFF
-
-        _info = self.view.getObjectInfo(self.mouse.pos)
-
         #if the curve is picked, set state to selected
-        if _info:
-            if self.name[2] in _info['Component']:
-                _selected = self.State.SELECT_ON
+        _do_select = self.name in MouseState().component
 
-        #if change in selection state, trackers will be visible if
-        #new state is selected
-        if _selected != self.state.selected:
+        if _do_select == self.state.selected.value:
+            return
 
-            self.state.selected.value = _selected
+        self.state.selected.value = _do_select
+        self.trackers['Curve'][0].refresh()
 
-            #self.trackers['Curve'][0].override.selected = _selected
-            self.trackers['Curve'][0].update(self.trackers['Curve'][0].points)
+        #always show trackers if necessary
+        for _v in self.trackers['Nodes'] + self.trackers['Wires']:
+            _v.refresh(visible=_do_select)
 
-            if _selected == self.State.SELECT_OFF:
-                _selected = self.State.UNDEFINED
-
-            #always show trackers if necessary
-            for _v in self.trackers['Nodes'] + self.trackers['Wires']:
-                _v.override.visible = _selected
-
-        #disable the curve PI when the curve is selected
-        if self.is_selected():
-            self.pi_nodes[1].override.visible = self.State.VISIBLE_OFF
-
-            for _v in self.trackers['Nodes'] + self.trackers['Wires']:
-                _v.on()
-
-        else:
-            #force refresh of nodes and trackers
-            self.pi_nodes[1].on()
-            self.pi_nodes[1].override.visible = self.State.UNDEFINED
-
-            for _v in self.trackers['Nodes'] + self.trackers['Wires']:
-                _v.off()
+        self.pi_nodes[1].refresh(visible=not self.state.selected.value)
 
     def button_event(self, arg):
         """
         Manage button actions affecting multiple nodes / wires
         """
 
-        _p = self.view.getCursorPos()
-        self.mouse.update(arg, _p)
-
-        if self.mouse.button1.state != 'UP':
+        if MouseState().button1.state == 'UP':
             return
 
-        self.update_selection_state()
+        _do_select = self.name in MouseState().component
+
+        for _v in self.trackers['Nodes'] + self.trackers['Wires']:
+            #_v.state.selected.value = self.state.selected.ignore
+            #_v.state.selected.ignore = self.state.selected.ignore
+            _v.state.visible.value = _do_select
+            _v.state.visible.ignore = _do_select
+            _v.refresh()
 
     def rebuild_trackers(self):
         """
@@ -259,7 +232,8 @@ class CurveTracker(BaseTracker):
 
             _tr.update()
             _tr.conditions.append('!' + self.name[2])
-            _tr.off()
+            _tr.set_visible(False)
+            _tr.state.selected.multi = False
 
             _result['Nodes'].append(_tr)
 
@@ -277,7 +251,8 @@ class CurveTracker(BaseTracker):
 
             _wt.conditions.append('!' + self.name[2])
             _wt.set_style(CoinStyle.EDIT)
-            _wt.off()
+            _wt.set_visible(False)
+
             _result['Wires'].append(_wt)
 
         _points = []
@@ -311,6 +286,7 @@ class CurveTracker(BaseTracker):
         _wt.set_selectability(select)
         _wt.set_selection_nodes(nodes)
         _wt.update(points)
+        _wt.state.selected.multi = False
 
         return _wt
 
@@ -319,7 +295,7 @@ class CurveTracker(BaseTracker):
         Update the curve based on the passed data points
         """
 
-        if not self.is_selected():
+        if not self.state.selected.value:
             return
 
         _points = None
@@ -442,5 +418,4 @@ class CurveTracker(BaseTracker):
 
             self.callbacks.clear()
 
-        print('finailizing curve tracker')
         super().finalize()

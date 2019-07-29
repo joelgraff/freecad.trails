@@ -95,6 +95,12 @@ class TrackerContainer():
             self._value = value
             self._ignore_once = False
             self._ignore = False
+            self.multi = True
+
+        def __str__(self):
+            return '\nvalue = ' + str(self._value) \
+                + '\nignore = ' + str(self._ignore) \
+                + '\nignore_once = ' + str(self._ignore_once)
 
         def set_value(self, state):
             """

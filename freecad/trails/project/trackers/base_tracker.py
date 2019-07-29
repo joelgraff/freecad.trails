@@ -115,9 +115,9 @@ class BaseTracker:
             }
 
         self.set_style(CoinStyle.DEFAULT)
-        self.on()
+        self.set_visible(True)
 
-    def refresh(self, style=None):
+    def refresh(self, style=None, visible=None):
         """
         Upate the tracker to reflect state changes
         """
@@ -128,6 +128,7 @@ class BaseTracker:
         self._process_conditions()
 
         self.set_style(style)
+        self.set_visible(visible)
 
     def mouse_event(self, arg):
         """
@@ -172,6 +173,11 @@ class BaseTracker:
         if not self.state.visible.value:
             return
 
+        print('\n', self.name, 'click\n\t', self.state.selected)
+        print(MouseState().component, MouseState().ctrlDown)
+
+        _multi_select = MouseState().ctrlDown and self.state.selected.multi
+
         #selection logic - skip once if ignore flag is set
         if not self.state.selected.ignore:
 
@@ -184,8 +190,10 @@ class BaseTracker:
                     self.state.selected.value = True
 
             #deselect unless multi-selecting
-            elif self.state.selected.value and not MouseState().ctrlDown:
+            elif self.state.selected.value and not _multi_select:
                 self.state.selected.value = False
+
+        print('\n', self.name, 'click\n\t', self.state.selected)
 
         _style = self.coin_style
 
@@ -212,6 +220,24 @@ class BaseTracker:
         """
 
         return self.picker.style.getValue() != coin.SoPickStyle.UNPICKABLE
+
+    def set_visible(self, visible=None):
+        """
+        Update the tracker visibility
+        """
+
+        if self.state.visible.ignore:
+            return
+
+        if visible is None:
+            visible = self.state.visible.value
+
+        if visible:
+            self.switch.whichChild = 0
+        else:
+            self.switch.whichChild = -1
+
+        self.state.visible.value = visible
 
     def set_style(self, style=None):
         """
@@ -253,27 +279,33 @@ class BaseTracker:
 
         self.remove_node(node, parent)
 
-    def on(self, switch=None, which_child=0):
+    def _dep_on(self, switch=None, which_child=0):
         """
         Make node visible
         """
+
+        #abort if visible state is to be ignored
+        if self.state.visible.ignore:
+            return
 
         if not switch:
             switch = self.switch
 
         switch.whichChild = which_child
-        self.state.visible.value = True
 
-    def off(self, switch=None):
+    def _dep_off(self, switch=None):
         """
         Make node invisible
         """
+
+        #abort if visible state is to be ignored
+        if self.state.visible.ignore:
+            return
 
         if not switch:
             switch = self.switch
 
         switch.whichChild = -1
-        self.state.visible.value = False
 
     def copy(self, node=None):
         """
@@ -302,7 +334,7 @@ class BaseTracker:
 
             if (_cond[0] == '!' and _cond[1:] not in _c) or (_cond in _c):
 
-                self.off()
+                self.set_visible(False)
                 break
 
     def get_search_path(self, node):
