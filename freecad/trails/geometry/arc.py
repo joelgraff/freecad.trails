@@ -885,7 +885,7 @@ def get_points(
     start = arc['Start']
 
     if not radius:
-        return [arc['PI']], None
+        return [arc['PI']]
 
     if not interval:
         interval = [0.0, 0.0]

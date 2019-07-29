@@ -646,6 +646,7 @@ class AlignmentModel:
         delta - discretization interval parameter
         """
 
+        print('\n\t===========', self.data['meta']['ID'])
         geometry = self.data['geometry']
         points = []
         last_curve = None

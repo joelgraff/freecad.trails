@@ -210,11 +210,18 @@ class CurveTracker(BaseTracker):
         Build the node and wire trackers that represent the selectable
         portions of the curve geometry
         """
+        _nn = self.node_names[:]
+        _wn = self.wire_names[:]
 
+        if self.curve['Type'] == 'Spiral':
+            _nn = _nn[1:-1]
+            _wn = [self.wire_names[0], self.wire_names[2]]
         #build a list of coordinates from curves in the geometry
         #skipping the last (duplicate of center)
-        _coords = [self.curve[_k] for _k in self.node_names[:-1]]
+        _coords = [self.curve[_k] for _k in _nn]
 
+        print('\n\tcurve = ', self.curve)
+        print('\n\tcoords = ', _coords)
         #build the trackers
         _result = {'Nodes': [], 'Wires': [], 'Curve': None}
 
@@ -222,7 +229,7 @@ class CurveTracker(BaseTracker):
         for _i, _pt in enumerate(_coords[:-1]):
 
             _names = self.names[:]
-            _names[-1] = _names[-1] + '-' + self.node_names[_i]
+            _names[-1] = _names[-1] + '-' + _nn[_i]
 
             _tr = NodeTracker(
                 view=self.view,
@@ -238,7 +245,7 @@ class CurveTracker(BaseTracker):
             _result['Nodes'].append(_tr)
 
         #wire trackers
-        for _i, _v in enumerate(self.wire_names):
+        for _i, _v in enumerate(_wn):
 
             _names = self.names[:]
             _names[-1] = _names[-1] + '-' + _v[0]

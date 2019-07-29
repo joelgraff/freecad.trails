@@ -204,7 +204,7 @@ def get_position_offset(line_dict, coord):
     if math.copysign(1, _ortho.x) == math.copysign(1, _orthos[0][1].x)\
         and math.copysign(1, _ortho.y) == math.copysign(1, _orthos[0][1].y):
 
-            _dir = 1.0
+        _dir = 1.0
 
     in_limits = \
         min(_start.x, _end.x) < _r[0] < max(_start.x, _end.x)\
