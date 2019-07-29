@@ -290,13 +290,6 @@ class BaseTracker:
         Process the conditions which determine node visiblity
         """
 
-        #if self.override.visible == TrackerContainer.Enums.OFF:
-        #    self.off()
-        #    return
-
-        #if self.override.visible == TrackerContainer.Enums.ON:
-        #    return
-
         if not self.conditions:
             return
 
@@ -318,7 +311,6 @@ class BaseTracker:
         """
 
         #define the search path if not defined
-        #if not self.start_path:
         _search = coin.SoSearchAction()
         _search.setNode(node)
         _search.apply(self.node)
