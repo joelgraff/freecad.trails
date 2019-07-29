@@ -277,6 +277,8 @@ class AlignmentTracker(BaseTracker):
         Set up the scene graph for dragging operations
         """
 
+        self.drag.tracker_state = [None]*len(self.trackers['Nodes'])
+
         #set the drag start point to the first selected node
         for _i, _v in enumerate(self.trackers['Nodes']):
 
@@ -302,8 +304,11 @@ class AlignmentTracker(BaseTracker):
                 if self.drag.nodes[-1] == _c:
                     continue
 
+            #save references to drag nodes and initial vectors for updates
+            #and restoration in invalid cases
             self.drag.nodes.append(_c)
             self.drag.node_idx.append(_i)
+            self.drag.tracker_state[_i] = Vector(_c)
 
         #temporarily disable geometry selectability
         #self.set_selectability(False)
@@ -313,10 +318,6 @@ class AlignmentTracker(BaseTracker):
 
         _partial = []
         _curves = []
-
-        #save the current tracker state before editing for
-        #restoration if drag ops yield invalid alignment
-        self.drag.tracker_state = [Vector(_v) for _v in self.drag.nodes]
 
         #duplicate scene nodes of selected and partially-selected wires
         for _i, _v in enumerate(self.trackers['Tangents']):
@@ -407,6 +408,9 @@ class AlignmentTracker(BaseTracker):
             if self.is_valid:
                 _v.rebuild_trackers()
 
+            else:
+                _v.set_base_style(CoinStyle.DEFAULT)
+
             _v.update()
             _v.state.selected.ignore = False
 
@@ -433,7 +437,6 @@ class AlignmentTracker(BaseTracker):
         """
 
         for _v in self.trackers['Nodes'] + self.trackers['Curves']:
-
             _v.set_selectability(is_selectable)
 
     def get_matrix(self):
