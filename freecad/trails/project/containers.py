@@ -101,8 +101,12 @@ class TrackerContainer():
             Set the property state using bools
             """
 
-            if state:
+            if state == TrackerContainer.State.NONE:
+                self._value = state
+
+            elif state:
                 self._value = TrackerContainer.State.ON
+
             else:
                 self._value = TrackerContainer.State.OFF
 
@@ -111,7 +115,7 @@ class TrackerContainer():
             Get the poerty state as bool
             """
 
-            return self._value == TrackerContainer.State.ON
+            return self._value >= TrackerContainer.State.ON
 
         def ignore_once(self):
             """
@@ -127,7 +131,7 @@ class TrackerContainer():
             """
 
             self._ignore_once = False
-            self._ignore = True
+            self._ignore = state
 
         def get_ignore(self):
             """
