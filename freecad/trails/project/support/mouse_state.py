@@ -92,6 +92,7 @@ class MouseState(metaclass=Singleton):
             #otherwise, start only if the button is pressed and the
             #mouse has moved
             elif self.pressed and (self.pos != pos):
+
                 self.dragging = True
                 self.drag_start = pos
 

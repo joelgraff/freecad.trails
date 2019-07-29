@@ -184,8 +184,7 @@ class CurveTracker(BaseTracker):
         _do_select = self.name in MouseState().component
 
         for _v in self.trackers['Nodes'] + self.trackers['Wires']:
-            #_v.state.selected.value = self.state.selected.ignore
-            #_v.state.selected.ignore = self.state.selected.ignore
+
             _v.state.visible.value = _do_select
             _v.state.visible.ignore = _do_select
             _v.refresh()
@@ -220,8 +219,6 @@ class CurveTracker(BaseTracker):
         #skipping the last (duplicate of center)
         _coords = [self.curve[_k] for _k in _nn]
 
-        print('\n\tcurve = ', self.curve)
-        print('\n\tcoords = ', _coords)
         #build the trackers
         _result = {'Nodes': [], 'Wires': [], 'Curve': None}
 
@@ -302,8 +299,8 @@ class CurveTracker(BaseTracker):
         Update the curve based on the passed data points
         """
 
-        if not self.state.selected.value:
-            return
+        #if not self.state.selected.value:
+        #    return
 
         _points = None
 

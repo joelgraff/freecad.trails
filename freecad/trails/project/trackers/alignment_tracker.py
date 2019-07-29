@@ -308,11 +308,11 @@ class AlignmentTracker(BaseTracker):
         #temporarily disable geometry selectability
         #self.set_selectability(False)
 
-        #self.curves = self.alignment.get_curves()
+        self.curves = self.alignment.get_curves()
         self.pi_list = self.alignment.model.get_pi_coords()
 
         _partial = []
-        #_curves = []
+        _curves = []
 
         #save the current tracker state before editing for
         #restoration if drag ops yield invalid alignment
@@ -334,23 +334,23 @@ class AlignmentTracker(BaseTracker):
                 _partial.append(_i)
                 _v.state.selected.value = self.State.SELECT_PARTIAL
 
-                #if _i > 0 and not _i - 1 in _curves:
-                #    _curves.append(_i - 1)
+                if _i > 0 and not _i - 1 in _curves:
+                    _curves.append(_i - 1)
 
-                #if _i < len(self.curves):
-                #    _curves.append(_i)
+                if _i < len(self.curves):
+                    _curves.append(_i)
 
             self.groups[_g].addChild(_v.copy())
 
         self.drag.multi = self.groups['SELECTED'].getNumChildren() > 2
 
-        #for _i in _curves:
-        #    self.trackers['Curves'][_i].selected = True
+        for _i in _curves:
+            self.trackers['Curves'][_i].selected = True
 
-        #for _v in self.trackers['Curves']:
-            #_v.update_selection_state()
+        for _v in self.trackers['Curves']:
+            _v.update_selection_state()
 
-        #self.drag.curves = _curves
+        self.drag.curves = _curves
 
     def on_drag(self, do_rotation, modify):
         """
@@ -365,10 +365,10 @@ class AlignmentTracker(BaseTracker):
         self._update_transform(_world_pos, do_rotation, modify)
         self._update_pi_nodes(_world_pos)
 
-        #for _curve in self.trackers['Curves']:
-        #    _curve.update()
+        for _curve in self.trackers['Curves']:
+            _curve.update()
 
-        #self._validate_alignment()
+        self._validate_alignment()
 
         self.drag.position = _world_pos
 
@@ -385,11 +385,7 @@ class AlignmentTracker(BaseTracker):
             self.transform.translation.setValue(tuple(self.datum))
 
         else:
-
             print('invalid')
-            for _v in self.trackers['Curves']:
-                _v.update()
-                _v.state.selected.ignore = False
 
         #write the original node positions back to node trackers, if valid
         for _i, _v in enumerate(self.trackers['Nodes']):
@@ -403,6 +399,14 @@ class AlignmentTracker(BaseTracker):
             _v.state.selected.ignore = False
 
         for _v in self.trackers['Tangents']:
+            _v.update()
+            _v.state.selected.ignore = False
+
+        for _v in self.trackers['Curves']:
+
+            if self.is_valid:
+                _v.rebuild_trackers()
+
             _v.update()
             _v.state.selected.ignore = False
 
