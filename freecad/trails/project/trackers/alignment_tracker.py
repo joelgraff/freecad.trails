@@ -493,7 +493,7 @@ class AlignmentTracker(BaseTracker):
             )
 
             _nodes = [_v.get() \
-                for _v in self.trackers['Nodes'] if _v.state.is_selecetd()]
+                for _v in self.trackers['Nodes'] if _v.state.selected.value]
 
             _nodes = [_v.sub(_nodes[0]) for _v in _nodes]
 
