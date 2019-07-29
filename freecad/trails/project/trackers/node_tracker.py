@@ -64,8 +64,6 @@ class NodeTracker(BaseTracker):
             view=view, names=names, children=[self.coord, self.marker] + nodes
         )
 
-        self.coin_style = CoinStyle.DEFAULT
-
         self.update()
 
     def update(self, coord=None):

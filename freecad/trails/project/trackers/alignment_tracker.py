@@ -669,10 +669,12 @@ class AlignmentTracker(BaseTracker):
 
                 _styles[_i] = CoinStyle.ERROR
 
-        for _i, _c in enumerate(curves):
-            self.trackers['Curves'][_idx[0] + _i].set_style(
-                _styles[_i]
-            )
+        for _i, _v in enumerate(_styles):
+
+            _t = self.trackers['Curves'][_idx[0] + _i]
+
+            _t.set_base_style(_v)
+            _t.set_style(_v)
 
         self.is_valid = all([_v != CoinStyle.ERROR for _v in _styles])
 

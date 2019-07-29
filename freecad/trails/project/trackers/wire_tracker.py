@@ -61,8 +61,6 @@ class WireTracker(BaseTracker):
         super().__init__(
             view=view, names=names, children=nodes)
 
-        self.coin_style = CoinStyle.DEFAULT
-
     def set_selection_nodes(self, nodes):
         """
         Set the list of node trackers that control wire selection

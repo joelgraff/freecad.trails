@@ -55,7 +55,6 @@ class CurveTracker(BaseTracker):
         """
 
         self.show_conditions = []
-        self.coin_style = None
         self.curve = curve
         self.pi_nodes = pi_nodes
         self.trackers = None
@@ -135,6 +134,14 @@ class CurveTracker(BaseTracker):
         ##self.status_bar.clearMessage()
         #self.status_bar.showMessage(_msg)
 
+    def set_base_style(self, style):
+        """
+        Override of base function
+        """
+
+        self.trackers['Curve'][0].set_base_style(style)
+        super().set_base_style(style)
+
     def set_style(self, style):
         """
         Override of base function
@@ -144,6 +151,7 @@ class CurveTracker(BaseTracker):
             return
 
         self.trackers['Curve'][0].set_style(style)
+        super().set_style(style)
 
     def mouse_event(self, arg):
         """

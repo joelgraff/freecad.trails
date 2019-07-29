@@ -75,7 +75,7 @@ class BaseTracker:
         self.parent = None
         self.picker = coin.SoPickStyle()
         self.switch = coin.SoSwitch()
-        self.coin_style = None
+        self.coin_style = CoinStyle.DEFAULT
         self.active_style = None
         self.conditions = []
 
@@ -173,9 +173,6 @@ class BaseTracker:
         if not self.state.visible.value:
             return
 
-        print('\n', self.name, 'click\n\t', self.state.selected)
-        print(MouseState().component, MouseState().ctrlDown)
-
         _multi_select = MouseState().ctrlDown and self.state.selected.multi
 
         #selection logic - skip once if ignore flag is set
@@ -192,8 +189,6 @@ class BaseTracker:
             #deselect unless multi-selecting
             elif self.state.selected.value and not _multi_select:
                 self.state.selected.value = False
-
-        print('\n', self.name, 'click\n\t', self.state.selected)
 
         _style = self.coin_style
 
@@ -238,6 +233,16 @@ class BaseTracker:
             self.switch.whichChild = -1
 
         self.state.visible.value = visible
+
+    def set_base_style(self, style=CoinStyle.DEFAULT):
+        """
+        Set the base style of the tracker
+        """
+
+        if style is None:
+            style = CoinStyle.DEFAULT
+
+        self.coin_style = style
 
     def set_style(self, style=None):
         """
