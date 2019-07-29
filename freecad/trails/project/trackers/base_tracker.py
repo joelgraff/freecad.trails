@@ -123,7 +123,7 @@ class BaseTracker:
         """
 
         if not style:
-            style = self.coin_style
+            style = self.active_style
 
         self._process_conditions()
 
@@ -162,7 +162,7 @@ class BaseTracker:
         SoMouseButtonEvent callback
         """
 
-        if MouseState().button1.state != 'UP':
+        if MouseState().button1.state == 'UP':
             return
 
         #preemptive abort conditions
@@ -174,7 +174,6 @@ class BaseTracker:
 
         #selection logic - skip once if ignore flag is set
         if not self.state.selected.ignore:
-            print('\tno ignore selected', MouseState().ctrlDown, self.state.selected.value)
 
             if self.name == MouseState().component:
 

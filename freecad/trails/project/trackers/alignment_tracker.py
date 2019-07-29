@@ -170,7 +170,7 @@ class AlignmentTracker(BaseTracker):
             if _i == _idx and not MouseState().ctrlDown:
                 break
 
-            _v.state.selected.ignore_once()
+            _v.state.selected.ignore = True
 
         if _idx > 0:
             _idx -= 1
@@ -182,7 +182,7 @@ class AlignmentTracker(BaseTracker):
             if _i == _idx and not MouseState().ctrlDown:
                 break
 
-            _v.state.selected.ignore_once()
+            _v.state.selected.ignore = True
 
     def build_trackers(self):
         """
@@ -319,13 +319,10 @@ class AlignmentTracker(BaseTracker):
         #duplicate scene nodes of selected and partially-selected wires
         for _i, _v in enumerate(self.trackers['Tangents']):
 
-            print('n_vecs = ', [_x.get() for _x in _v.selection_nodes])
             _state = [_x.state.selected.value for _x in _v.selection_nodes]
 
             if not any(_state):
                 continue
-
-            print('drag nodes = ', _v.name, _state)
 
             _g = 'SELECTED'
 
@@ -333,6 +330,7 @@ class AlignmentTracker(BaseTracker):
 
                 _g = 'PARTIAL'
                 _partial.append(_i)
+                _v.state.selected.value = self.State.SELECT_PARTIAL
 
                 #if _i > 0 and not _i - 1 in _curves:
                 #    _curves.append(_i - 1)
@@ -342,7 +340,6 @@ class AlignmentTracker(BaseTracker):
 
             self.groups[_g].addChild(_v.copy())
 
-        print('partials = ', _partial)
         self.drag.multi = self.groups['SELECTED'].getNumChildren() > 2
 
         #for _i in _curves:
@@ -382,36 +379,30 @@ class AlignmentTracker(BaseTracker):
 
             print('valid')
             _pi_list = [Vector(_v.point) for _v in self.trackers['Nodes']]
-
-            #do a final calculation on the curves
-            self.drag.curves = list(range(0, len(self.curves)))
-
-            self.alignment.update_curves(self.curves, _pi_list, True)
-
-            for _v in self.trackers['Nodes']:
-                _v.update()
-
-            for _v in self.trackers['Tangents']:
-                _v.update()
-
-            #rebuild the curve tracker wires to match the updated curve
-            for _v in self.trackers['Curves']:
-                _v.rebuild_trackers()
-
-            self.datum = self.datum.add(_pi_list[0])
+            #self.datum = _pi_list[0]
             self.transform.translation.setValue(tuple(self.datum))
 
-        #reset the tracker state
         else:
 
             print('invalid')
-            #write the original node positions back to node trackers
-            for _i, _v in enumerate(self.trackers['Nodes']):
-                _v.update(self.drag.tracker_state[_i])
-
-            #force update the tangent and curve trackers after node reset
-            for _v in self.trackers['Tangents'] + self.trackers['Curves']:
+            for _v in self.trackers['Curves']:
                 _v.update()
+                _v.state.selected.ignore = False
+
+        #write the original node positions back to node trackers, if valid
+        for _i, _v in enumerate(self.trackers['Nodes']):
+
+            _pt = None
+
+            if not self.is_valid:
+                _pt = self.drag.tracker_state[_i]
+
+            _v.update(_pt)
+            _v.state.selected.ignore = False
+
+        for _v in self.trackers['Tangents']:
+            _v.update()
+            _v.state.selected.ignore = False
 
         self.set_selectability(True)
 
@@ -560,12 +551,12 @@ class AlignmentTracker(BaseTracker):
             #update the scenegraph for the selected vertex
             for _l, _t in enumerate(_tans[_limits[0]:_limits[1]]):
 
-                if _t.state.selected.value != self.State.SELECT_PARTIAL:
+                if _t.state.selected._value != self.State.SELECT_PARTIAL:
                     continue
 
                 _pts = [tuple(_w.get()) for _w in _t.selection_nodes]
 
-                if _t.selection_nodes[0].is_selected():
+                if _t.selection_nodes[0].state.selected.value:
                     _pts[0] = tuple(_v)
 
                 else:
