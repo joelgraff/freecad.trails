@@ -49,6 +49,7 @@ class DragState():
         self.nodes = []
         self.node_idx = []
         self.tracker_state = []
+        self.is_valid = False
 
     def reset(self):
         """
@@ -70,7 +71,8 @@ class DragState():
                + '\ncurves = \n' + str(self.curves) \
                + '\nnodes = \n' + str(self.nodes) \
                + '\nnode_idx = \n' + str(self.node_idx) \
-               + '\ntracker_state = \n' + str(self.tracker_state)
+               + '\ntracker_state = \n' + str(self.tracker_state) \
+               + '\nis_valid = \n' + str(self.is_valid)
 
 class TrackerContainer():
     """
@@ -95,7 +97,6 @@ class TrackerContainer():
             self._value = value
             self._ignore_once = False
             self._ignore = False
-            self.multi = True
 
         def __str__(self):
             return '\nvalue = ' + str(self._value) \
@@ -164,6 +165,8 @@ class TrackerContainer():
         self.enabled = self.Property(self.State.ON)
         self.visible = self.Property(self.State.ON)
         self.selected = self.Property(self.State.OFF)
+        self.multi_select = True
+        self.highlighted = False
 
         if is_undefined:
 

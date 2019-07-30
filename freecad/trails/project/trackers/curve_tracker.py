@@ -29,18 +29,14 @@ import math
 from pivy import coin
 
 from FreeCAD import Vector
-
 import FreeCADGui as Gui
 
 from ...geometry import support, arc, spiral
 
+from ..support.mouse_state import MouseState
+
 from .base_tracker import BaseTracker
 from .coin_style import CoinStyle
-
-from ..support.mouse_state import MouseState
-from ..support.view_state import ViewState
-from ..containers import DragState
-
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
 
@@ -54,37 +50,23 @@ class CurveTracker(BaseTracker):
         Constructor
         """
 
-        self.show_conditions = []
         self.curve = curve
         self.pi_nodes = pi_nodes
         self.trackers = None
-        self.callbacks = {}
 
-        self.user_dragging = False
-        self.is_valid = True
         self.status_bar = Gui.getMainWindow().statusBar()
-        self.drag = DragState()
 
-        self.node_names = ['Center', 'Start', 'End', 'PI', 'Center']
-        self.wire_names = (
-            ('Start Radius', 1, 0),
-            ('Start Tangent', 1, 3),
-            ('End Radius', 2, 0),
-            ('End Tangent', 2, 3)
-        )
+        self.obj_names = {
+            'Nodes': ['Center', 'Start', 'End', 'PI', 'Center'],
+            'Wires': (
+                ('Start Radius', 1, 0),
+                ('Start Tangent', 1, 3),
+                ('End Radius', 2, 0),
+                ('End Tangent', 2, 3)
+            )
+        }
 
         super().__init__(names=names)
-
-        #input callback assignments
-        self.callbacks = {
-            'SoLocation2Event':
-            ViewState().view.addEventCallback(
-                'SoLocation2Event', self.mouse_event),
-
-            'SoMouseButtonEvent':
-            ViewState().view.addEventCallback(
-                'SoMouseButtonEvent', self.button_event)
-        }
 
         #scenegraph node structure for editing and dragging operations
         self.groups = {
@@ -98,14 +80,6 @@ class CurveTracker(BaseTracker):
         #generate initial node trackers and wire trackers for mouse interaction
         #and add them to the scenegraph
         self.build_trackers()
-
-        _trackers = []
-
-        for _v in self.trackers.values():
-            _trackers.extend(_v)
-
-        for _v in _trackers:
-            self.insert_node(_v.switch, self.groups['EDIT'])
 
         #insert in the scenegraph root
         self.insert_node(self.node)
@@ -133,6 +107,23 @@ class CurveTracker(BaseTracker):
         ##self.status_bar.clearMessage()
         #self.status_bar.showMessage(_msg)
 
+    def _build_edit_group(self):
+        """
+        Build / rebuild the edit group node and the tracker nodes that
+        belong in it.
+        """
+
+        _node = self.groups['EDIT']
+        _node.removeAllChildren()
+
+        _trackers = []
+
+        for _v in self.trackers.values():
+            _trackers.extend(_v)
+
+        for _v in _trackers:
+            self.insert_node(_v.switch, _node)
+        
     def set_base_style(self, style=None):
         """
         Override of base function
@@ -154,31 +145,27 @@ class CurveTracker(BaseTracker):
 
     def mouse_event(self, arg):
         """
-        Manage mouse actions affecting multiple nodes / wires
+        Mouse event callback
         """
 
-        self.update_selection_state()
-        self._update_status_bar()
-
-    def update_selection_state(self):
-        """
-        Update the selection state
-        """
-
-        #if the curve is picked, set state to selected
-        _do_select = self.name in MouseState().component
-
-        if _do_select == self.state.selected.value:
+        #skip if the curve is selected
+        if self.state.selected.value:
             return
 
-        self.state.selected.value = _do_select
-        self.trackers['Curve'][0].refresh()
+        #if the curve is under cursor, set state to selected
+        _do_highlight = self.name in MouseState().component
+
+        #skip if there's no state change for highlighting
+        if _do_highlight == self.state.highlighted:
+            return
 
         #always show trackers if necessary
         for _v in self.trackers['Nodes'] + self.trackers['Wires']:
-            _v.refresh(visible=_do_select)
+            _v.refresh(visible=_do_highlight)
 
-        self.pi_nodes[1].refresh(visible=not self.state.selected.value)
+        self.pi_nodes[1].refresh(visible=not _do_highlight)
+
+        self.state.highlighted = _do_highlight
 
     def button_event(self, arg):
         """
@@ -196,6 +183,8 @@ class CurveTracker(BaseTracker):
             _v.state.visible.ignore = _do_select
             _v.refresh()
 
+        self.state.selected.value = _do_select
+
     def rebuild_trackers(self):
         """
         Rebuild the existing trackers to match updated curve
@@ -203,25 +192,29 @@ class CurveTracker(BaseTracker):
 
         #build a list of coordinates from curves in the geometry
         #skipping the last (duplicate of center)
-        _coords = [self.curve[_k] for _k in self.node_names[:-1]]
+        _coords = [self.curve[_k] for _k in self.obj_names['Nodes'][:-1]]
 
+        #rebuild all nodes except for the PI
         for _i, _v in enumerate(_coords[:-1]):
             self.trackers['Nodes'][_i].update(_v)
 
-        for _i, _v in enumerate(self.wire_names):
+        for _i, _v in enumerate(self.obj_names['Wires']):
             self.trackers['Wires'][_i].update([_coords[_v[1]], _coords[_v[2]]])
+
+        self._build_edit_group()
 
     def build_trackers(self):
         """
         Build the node and wire trackers that represent the selectable
         portions of the curve geometry
         """
-        _nn = self.node_names[:]
-        _wn = self.wire_names[:]
+        _nn = self.obj_names['Nodes'][:]
+        _wn = self.obj_names['Wires'][:]
 
         if self.curve['Type'] == 'Spiral':
             _nn = _nn[1:-1]
-            _wn = [self.wire_names[0], self.wire_names[2]]
+            _wn = [self.obj_names['Wires'][0], self.obj_names['Wires'][2]]
+
         #build a list of coordinates from curves in the geometry
         #skipping the last (duplicate of center)
         _coords = [self.curve[_k] for _k in _nn]
@@ -230,7 +223,7 @@ class CurveTracker(BaseTracker):
         _result = {'Nodes': [], 'Wires': [], 'Curve': None}
 
         #node trackers - don't create a PI node
-        for _i, _pt in enumerate(_coords[:-1]):
+        for _i, _pt in enumerate(_coords[:-2]):
 
             _names = self.names[:]
             _names[-1] = _names[-1] + '-' + _nn[_i]
@@ -240,7 +233,7 @@ class CurveTracker(BaseTracker):
             _tr.update()
             _tr.conditions.append('!' + self.name[2])
             _tr.set_visible(False)
-            _tr.state.selected.multi = False
+            _tr.state.multi_select = False
 
             _result['Nodes'].append(_tr)
 
@@ -282,6 +275,7 @@ class CurveTracker(BaseTracker):
         ]
 
         self.trackers = _result
+        self._build_edit_group()
 
     def _build_wire_tracker(self, wire_name, nodes, points, select=False):
         """
@@ -293,7 +287,7 @@ class CurveTracker(BaseTracker):
         _wt.set_selectability(select)
         _wt.set_selection_nodes(nodes)
         _wt.update(points)
-        _wt.state.selected.multi = False
+        _wt.state.multi_select = False
 
         return _wt
 

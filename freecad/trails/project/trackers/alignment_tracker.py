@@ -58,12 +58,10 @@ class AlignmentTracker(BaseTracker):
         """
 
         self.alignment = alignment
-        self.callbacks = {}
         self.doc = doc
         self.curves = []
         self.names = [doc.Name, object_name, 'ALIGNMENT_TRACKER']
         self.user_dragging = False
-        self.is_valid = True
         self.status_bar = Gui.getMainWindow().statusBar()
         self.pi_list = []
         self.datum = alignment.model.data['meta']['Start']
@@ -335,9 +333,6 @@ class AlignmentTracker(BaseTracker):
         for _i in _curves:
             self.trackers['Curves'][_i].selected = True
 
-        for _v in self.trackers['Curves']:
-            _v.update_selection_state()
-
         self.drag.curves = _curves
 
     def on_drag(self, do_rotation, modify):
@@ -365,7 +360,7 @@ class AlignmentTracker(BaseTracker):
         Cleanup method for drag operations
         """
 
-        if self.is_valid:
+        if self.drag.is_valid:
             self.transform.translation.setValue(tuple(self.datum))
 
         #write the original node positions back to node trackers, if valid
@@ -373,19 +368,21 @@ class AlignmentTracker(BaseTracker):
 
             _pt = None
 
-            if not self.is_valid:
+            if not self.drag.is_valid:
                 _pt = self.drag.tracker_state[_i]
 
             _v.update(_pt)
             _v.state.selected.ignore = False
 
+        #update the tangents (rebuild on the updated nodes)
         for _v in self.trackers['Tangents']:
             _v.update()
             _v.state.selected.ignore = False
 
+        #update the curves (needs updated curve data)
         for _v in self.trackers['Curves']:
 
-            if self.is_valid:
+            if self.drag.is_valid:
                 _v.rebuild_trackers()
 
             else:
@@ -578,7 +575,7 @@ class AlignmentTracker(BaseTracker):
         """
 
         if not self.drag.curves:
-            self.is_valid = True
+            self.drag.is_valid = True
             return
 
         _idx = self.drag.curves[:]
@@ -659,7 +656,7 @@ class AlignmentTracker(BaseTracker):
             _t.set_base_style(_v)
             _t.set_style(_v)
 
-        self.is_valid = all([_v != CoinStyle.ERROR for _v in _styles])
+        self.drag.is_valid = all([_v != CoinStyle.ERROR for _v in _styles])
 
     def finalize(self):
         """

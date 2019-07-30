@@ -173,7 +173,7 @@ class BaseTracker:
         if not self.state.visible.value:
             return
 
-        _multi_select = MouseState().ctrlDown and self.state.selected.multi
+        _multi_select = MouseState().ctrlDown and self.state.multi_select
 
         #selection logic - skip once if ignore flag is set
         if not self.state.selected.ignore:
