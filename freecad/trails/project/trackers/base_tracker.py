@@ -29,6 +29,7 @@ from enum import IntEnum
 from pivy import coin
 
 import FreeCADGui as Gui
+from FreeCAD import Vector
 
 from DraftGui import todo
 
@@ -69,7 +70,6 @@ class BaseTracker:
         self.names = names
         self.name = names[2]
         self.state = TrackerContainer()
-        self.drag = DragState()
 
         self.color = coin.SoBaseColor()
         self.draw_style = coin.SoDrawStyle()
@@ -246,21 +246,21 @@ class BaseTracker:
 
         DragState().add_node(self.copy())
 
-        if not DragState().drag_node:
+        if not DragState().node:
 
-            DragState().drag_node = self
-            DragState().start_coord = MouseState().coordinates
-            self.insert_node(DragState().node_group, 0)
+            DragState().node = self
+            DragState().start = MouseState().coordinates
+            self.insert_node(DragState().group, 0)
 
     def on_drag(self):
         """
         Ongoing drag ops
         """
 
-        if self == DragState().drag_node:
+        if self == DragState().node:
 
             DragState().transform.translation.setValue(
-                tuple(MouseState().coordinates.sub(DragState().start_coord))
+                tuple(MouseState().coordinates.sub(DragState().start))
             )
 
     def end_drag(self):
@@ -268,11 +268,7 @@ class BaseTracker:
         Terminate drag ops
         """
 
-        if self == DragState().drag_node:
-
-            self.remove_node(DragState().node_group)
-            DragState().reset()
-
+        DragState().finish()
         self.state.dragging = False
 
     def set_selectability(self, is_selectable):
@@ -392,17 +388,24 @@ class BaseTracker:
                 self.set_visible(False)
                 break
 
-    def get_search_path(self, node):
+    def transform_nodes(self, nodes):
         """
-        Return the search path for the specified node
+        Transform selected nodes by the transformation matrix
         """
 
-        #define the search path if not defined
-        _search = coin.SoSearchAction()
-        _search.setNode(node)
-        _search.apply(self.node)
+        _result = []
 
-        return _search.getPath()
+        if not DragState().matrix:
+            return _result
+
+        for _n in nodes:
+
+            _v = coin.SbVec4f(tuple(_n) + (1.0,))
+            _v = DragState().matrix.multVecMatrix(_v).getValue()[:3]
+
+            _result.append(Vector(_v)) #.sub(self.datum))
+
+        return _result
 
     def insert_node(self, node, parent=None):
         """

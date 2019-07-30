@@ -41,7 +41,7 @@ from ..support.utils import Constants as C
 from ..support.mouse_state import MouseState
 from ..support.view_state import ViewState
 
-from ..containers import DragState
+from ..support.drag_state import DragState
 
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker

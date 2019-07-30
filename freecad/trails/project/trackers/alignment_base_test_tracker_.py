@@ -40,7 +40,7 @@ from ..support.utils import Constants as C
 from ..support.mouse_state import MouseState
 from ..support.view_state import ViewState
 
-from ..containers import DragState
+from ..support.drag_state import DragState
 
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
@@ -222,33 +222,6 @@ class AlignmentBaseTestTracker(BaseTracker):
         _matrix.apply(_search.getPath())
 
         return _matrix.getMatrix()
-
-    def _update_transform(self, pos, do_rotation, modify):
-        """
-        Update the transform node for selected geometry
-        """
-
-        _scale = 1.0
-
-        if modify:
-            _scale = 0.10
-
-        if do_rotation:
-
-            self.drag_transform.rotation = \
-                self._update_rotation(pos.sub(self.drag.center), modify)
-
-            _vec = pos.sub(Vector(self.drag_transform.translation.getValue()))
-            self.drag.start = _vec
-
-        else:
-
-            _vec = pos.sub(self.drag.position).multiply(_scale)
-            self.drag.translation = self.drag.translation.add(_vec)
-
-            self.drag_transform.translation.setValue(
-                tuple(self.drag.translation)
-            )
 
     def _update_rotation(self, vector, modify=False):
         """

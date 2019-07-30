@@ -29,6 +29,7 @@ from pivy import coin
 from FreeCAD import Vector
 
 from .singleton import Singleton
+from .view_state import ViewState
 
 class DragState(metaclass=Singleton):
     """
@@ -37,27 +38,54 @@ class DragState(metaclass=Singleton):
 
     def __init__(self):
 
-        self.start_coord = Vector()
-        self.start_pos = tuple()
+        self.start = Vector()
 
-        self.node_group = coin.SoSeparator()
+        self.group = coin.SoSeparator()
         self.transform = coin.SoTransform()
 
-        self.drag_node = None
-
-        self.node_group.addChild(self.transform)
+        self.node = None
+        self.matrix = None
+        self.group.addChild(self.transform)
 
     def add_node(self, node):
         """
         Add a node to the drag node group
         """
 
-        self.node_group.addChild(node)
+        self.group.addChild(node)
+
+    def finish(self):
+        """
+        Return the transformation matrix for the provided node
+        """
+
+        if not self.node:
+            return
+
+        self.node.remove_node(self.group)
+
+        #abort if no children have been added
+        if self.group.getNumChildren() < 2:
+            return None
+
+        #define the search path
+        _search = coin.SoSearchAction()
+        _search.setNode(self.group.getChild(1))
+        _search.apply(ViewState().sg_root)
+
+        #get the matrix for the transformation
+        _matrix = coin.SoGetMatrixAction(ViewState().viewport)
+        _matrix.apply(_search.getPath())
+
+        self.reset()
+
+        self.matrix = _matrix.getMatrix()
 
     def reset(self):
         """
         State reset function
         """
 
-        self.node_group.removeAllChildren()
+        self.group.removeAllChildren()
+
         self.__init__()

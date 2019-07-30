@@ -28,7 +28,7 @@ from pivy import coin
 
 from FreeCAD import Vector
 
-from ..support.mouse_state import MouseState
+from ..support.drag_state import DragState
 
 from .base_tracker import BaseTracker
 
@@ -62,6 +62,15 @@ class NodeTracker(BaseTracker):
         )
 
         self.update()
+
+    def end_drag(self):
+        """
+        Override of base function
+        """
+
+        self.update(self.transform_nodes([self.point]))
+
+        super().end_drag()
 
     def update(self, coord=None):
         """
