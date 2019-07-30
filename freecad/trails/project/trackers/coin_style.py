@@ -50,7 +50,6 @@ class CoinStyle(Const):
         'line width': None,
         'line style': coin.SoDrawStyle.LINES,
         'line weight': 3,
-        'line pattern': None,
         'line pattern': 0x0f0f, #oxaaa
         'color': None,
         'select': False
@@ -62,8 +61,7 @@ class CoinStyle(Const):
         'line width': None,
         'line style': coin.SoDrawStyle.LINES,
         'line weight': 3,
-        'line pattern': None,
-        'line pattern': 0x0f0f, #oxaaa        
+        'line pattern': 0x0f0f, #oxaaa
         'size': 9,
         'color': (0.4, 0.8, 0.4),
         'select': True
@@ -75,8 +73,7 @@ class CoinStyle(Const):
         'line width': None,
         'line style': coin.SoDrawStyle.LINES,
         'line weight': 3,
-        'line pattern': None,
-        'line pattern': 0x0f0f, #oxaaa        
+        'line pattern': 0x0f0f, #oxaaa
         'size': 5,
         'color': (0.4, 0.8, 0.4),
         'select': True

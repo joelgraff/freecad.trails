@@ -99,7 +99,6 @@ class BaseTracker:
             self.node.addChild(child)
 
         self.switch.addChild(self.node)
-
         self.callbacks = None
 
         if has_events:
@@ -114,8 +113,9 @@ class BaseTracker:
                         'SoMouseButtonEvent', self.button_event)
             }
 
-        self.set_style(CoinStyle.DEFAULT)
-        self.set_visible(True)
+        #bypass overrides on intialization
+        BaseTracker.set_style(self, CoinStyle.DEFAULT)
+        BaseTracker.set_visible(self, True)
 
     def refresh(self, style=None, visible=None):
         """

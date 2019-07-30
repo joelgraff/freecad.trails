@@ -301,8 +301,6 @@ def solve_by_relative(spiral_dict):
     if _is_inbound:
         _tan_len[0], _tan_len[1] = _tan_len[1], _tan_len[0]
 
-    _pi = spiral_dict['PI']
-
     _dir = support.get_rotation(_tangents[0], _tangents[1])
 
     spiral_dict['Direction'] = _dir

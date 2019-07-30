@@ -228,8 +228,6 @@ class AlignmentTracker(BaseTracker):
             )
 
         _curves = self.alignment.get_curves()
-        _points = []
-
         _names = self.names[:2]
 
         #curve trackers
@@ -368,14 +366,7 @@ class AlignmentTracker(BaseTracker):
         """
 
         if self.is_valid:
-
-            print('valid')
-            _pi_list = [Vector(_v.point) for _v in self.trackers['Nodes']]
-            #self.datum = _pi_list[0]
             self.transform.translation.setValue(tuple(self.datum))
-
-        else:
-            print('invalid')
 
         #write the original node positions back to node trackers, if valid
         for _i, _v in enumerate(self.trackers['Nodes']):

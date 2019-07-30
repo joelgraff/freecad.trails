@@ -324,7 +324,6 @@ class CurveTracker(BaseTracker):
         """
 
         _key = ''
-        _rad = 0.0
 
         _start = Vector(self.pi_nodes[0].point)
         _pi = Vector(self.pi_nodes[1].point)
