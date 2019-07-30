@@ -44,7 +44,9 @@ class BaseTracker:
     """
 
     class State(IntEnum):
-
+        """
+        State enum class for base tracker state values
+        """
         UNDEFINED = 0
 
         ENABLE_OFF = 1
@@ -232,7 +234,7 @@ class BaseTracker:
 
         self.state.visible.value = visible
 
-    def set_base_style(self, style=CoinStyle.DEFAULT):
+    def set_base_style(self, style=None):
         """
         Set the base style of the tracker
         """

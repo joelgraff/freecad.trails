@@ -690,5 +690,4 @@ class AlignmentTracker(BaseTracker):
 
             self.callbacks.clear()
 
-        print('finalizing alignment tracker...')
         super().finalize()

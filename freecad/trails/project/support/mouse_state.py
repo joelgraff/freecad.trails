@@ -168,9 +168,10 @@ class MouseState(metaclass=Singleton):
         _btn.pressed = _state == 'DOWN'
         _btn.state = _state
 
-        #drag condition depends on whether drag ops are only starting or 
-        #continuing.  If only starting, drag does not begin unil button is
-        #pressed and mouse moves.  If continuing, drag ends when button is up
+        #drag condition depends on whether drag ops are only starting or
+        #continuing.  If starting, drag does not begin unil button is
+        #pressed and mouse moves.
+        #If continuing, drag ends when button is up
         if _btn.dragging:
             _btn.dragging = _btn.pressed and (_btn.state != 'UP')
 
@@ -187,7 +188,8 @@ class MouseState(metaclass=Singleton):
 
     def get_drag_vector(self):
         """
-        Return the drag vector pointing toward the current position from the point where drag operations began
+        Return the drag vector pointing toward the current position from
+        the point where drag operations began
         """
 
         if not self.button1.dragging:

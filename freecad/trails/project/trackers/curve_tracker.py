@@ -133,7 +133,7 @@ class CurveTracker(BaseTracker):
         ##self.status_bar.clearMessage()
         #self.status_bar.showMessage(_msg)
 
-    def set_base_style(self, style):
+    def set_base_style(self, style=None):
         """
         Override of base function
         """
@@ -141,7 +141,7 @@ class CurveTracker(BaseTracker):
         self.trackers['Curve'][0].set_base_style(style)
         super().set_base_style(style)
 
-    def set_style(self, style):
+    def set_style(self, style=None):
         """
         Override of base function
         """
@@ -355,10 +355,10 @@ class CurveTracker(BaseTracker):
             #otherwise, calcualte a point halfway between.
             if _start.is_end_node:
 
-                    _end = _pi.add(
-                        Vector(_end.sub(_pi)).multiply(
-                             _end.distanceToPoint(_pi) / 2.0)
-                    )
+                _end = _pi.add(
+                    Vector(_end.sub(_pi)).multiply(
+                        _end.distanceToPoint(_pi) / 2.0)
+                )
 
         _curve = {
             'PI': _pi,
@@ -402,7 +402,8 @@ class CurveTracker(BaseTracker):
         Override of base implementation
         """
 
-        for _v in self.trackers['Nodes'] + self.trackers['Wires'] + self.trackers['Curve']:
+        for _v in self.trackers['Nodes'] \
+            + self.trackers['Wires'] + self.trackers['Curve']:
 
             _v.set_selectability(is_selectable)
 

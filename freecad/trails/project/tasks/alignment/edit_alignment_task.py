@@ -27,9 +27,7 @@ Task to edit an alignment
 import math
 
 from PySide import QtGui
-from pivy import coin
 
-import FreeCAD
 from FreeCAD import Vector
 import FreeCADGui as Gui
 
@@ -160,7 +158,7 @@ class EditAlignmentTask:
         _height = self.camera_state['height']
 
         if use_bound_box:
-        
+
             _bound_box = self.camera_state['bound box']
 
             #get the center of the camera, setting the z coordinate positive

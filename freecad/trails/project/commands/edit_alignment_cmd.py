@@ -44,7 +44,7 @@ class EditAlignmentCmd():
         """
 
         self.doc = None
-        self.edit_alignment_task = None
+        self.task = None
         self.is_activated = False
         self.call = None
         self.tmp_group = None
@@ -98,10 +98,9 @@ class EditAlignmentCmd():
         ViewState().view = Gui.ActiveDocument.ActiveView
 
         #create alignment editing task
-        self.edit_alignment_task = \
-            edit_alignment_task.create(self.doc, data, obj)
+        self.task = edit_alignment_task.create(self.doc, data, obj)
 
-        Gui.Control.showDialog(self.edit_alignment_task)
-        self.edit_alignment_task.setup()
+        Gui.Control.showDialog(self.task)
+        self.task.setup()
 
 Gui.addCommand('EditAlignmentCmd', EditAlignmentCmd())
