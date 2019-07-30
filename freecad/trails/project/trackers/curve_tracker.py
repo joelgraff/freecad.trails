@@ -243,11 +243,12 @@ class CurveTracker(BaseTracker):
             _names = self.names[:]
             _names[-1] = _names[-1] + '-' + _v[0]
 
-            _wt = self._build_wire_tracker(
-                wire_name=_names,
-                nodes=_result['Nodes'],
-                points=[_coords[_v[1]], _coords[_v[2]]]
-            )
+            _wt = WireTracker(names=_names)
+
+            _wt.set_selectability(False)
+            _wt.set_selection_nodes(_result['Nodes'])
+            _wt.update([_coords[_v[1]], _coords[_v[2]]])
+            _wt.state.multi_select = False
 
             _wt.conditions.append('!' + self.name[2])
             _wt.set_style(CoinStyle.EDIT)
@@ -265,31 +266,17 @@ class CurveTracker(BaseTracker):
 
         _points = _class.get_points(self.curve)
 
-        _result['Curve'] = [
-            self._build_wire_tracker(
-                wire_name=self.names + [self.curve['Type']],
-                nodes=_result['Nodes'],
-                points=_points,
-                select=True
-            )
-        ]
+        _wt = WireTracker(self.names + [self.curve['Type']])
+
+        _wt.set_selectability(True)
+        _wt.set_selection_nodes(_result['Nodes'])
+        _wt.update(_points)
+        _wt.state.multi_select = False
+
+        _result['Curve'] = [_wt]
 
         self.trackers = _result
         self._build_edit_group()
-
-    def _build_wire_tracker(self, wire_name, nodes, points, select=False):
-        """
-        Convenience function for WireTracker construction
-        """
-
-        _wt = WireTracker(names=wire_name)
-
-        _wt.set_selectability(select)
-        _wt.set_selection_nodes(nodes)
-        _wt.update(points)
-        _wt.state.multi_select = False
-
-        return _wt
 
     def update(self):
         """
@@ -395,8 +382,7 @@ class CurveTracker(BaseTracker):
         Override of base implementation
         """
 
-        for _v in self.trackers['Nodes'] \
-            + self.trackers['Wires'] + self.trackers['Curve']:
+        for _v in self.trackers['Nodes'] + self.trackers['Curve']:
 
             _v.set_selectability(is_selectable)
 
