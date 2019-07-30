@@ -28,7 +28,7 @@ import FreeCADGui as Gui
 
 from .project.commands \
     import new_project_cmd, import_alignment_cmd, edit_alignment_cmd, \
-    spiral_test
+    spiral_test, base_tracker_test
 
 from .corridor.template import ViewTemplateLibrary
 from . import resources

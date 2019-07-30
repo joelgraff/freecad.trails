@@ -23,15 +23,17 @@
 """
 BaseTracker test class
 """
-import math
 
 import FreeCAD as App
 import FreeCADGui as Gui
 
 from DraftTools import Modifier
-from ..support.const import Const
 
-from ...geometry import arc
+from ... import resources
+
+from ..tasks.alignment import base_tracker_test_task
+
+from ..support.view_state import ViewState
 
 class BaseTrackerTest(Modifier):
     """
@@ -41,16 +43,45 @@ class BaseTrackerTest(Modifier):
         """
         Constructor
         """
-        pass
+
+        self.doc = None
+        self.task = None
+        self.is_activated = False
+        self.call = None
+        self.tmp_group = None
+
+    def IsActive(self):
+        """
+        Activation condition requires one alignment be selected
+        """
+
+        if Gui.Control.activeDialog():
+            return False
+
+        if not App.ActiveDocument:
+            return False
+
+        selected = Gui.Selection.getSelection()
+
+        if not selected:
+            return False
+
+        if not selected[0].Proxy.Type == 'Alignment':
+            return False
+
+        return True
 
     def GetResources(self):
         """
-        Resource supplier
+        Icon resources.
         """
-        return {'Pixmap'  : '',
-                'Accel'   : '',
-                'MenuText': '',
-                'ToolTip' : '',
+
+        icon_path = resources.__path__[0] + '/icons/new_alignment.svg'
+
+        return {'Pixmap'  : icon_path,
+                'Accel'   : 'Ctrl+Shift+D',
+                'MenuText': 'Draft Alignment',
+                'ToolTip' : 'Draft a horizontal alignment',
                 'CmdType' : 'ForEdit'}
 
     def Activated(self):
@@ -58,10 +89,21 @@ class BaseTrackerTest(Modifier):
         Command activation method
         """
 
-        #generate a spiral with two radii given the arcs on either side
-        #and render it
+        self.doc = App.ActiveDocument
+
+        #create working, non-visual copy of horizontal alignment
+        obj = Gui.Selection.getSelection()[0]
+        data = obj.Proxy.get_data_copy()
+
+        self.doc = App.ActiveDocument
+        ViewState().view = Gui.ActiveDocument.ActiveView
+
+        #create alignment editing task
+        self.task = base_tracker_test_task.create(self.doc, data, obj)
+
+        Gui.Control.showDialog(self.task)
+        self.task.setup()
+
         Modifier.Activated(self, 'BaseTrackerTest')
-
-
 
 Gui.addCommand('BaseTrackerTest', BaseTrackerTest())
