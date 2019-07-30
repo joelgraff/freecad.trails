@@ -38,7 +38,7 @@ from .base_tracker import BaseTracker
 from .coin_style import CoinStyle
 
 from ..support.mouse_state import MouseState
-
+from ..support.view_state import ViewState
 from ..containers import DragState
 
 from .node_tracker import NodeTracker
@@ -49,7 +49,7 @@ class CurveTracker(BaseTracker):
     Tracker class for alignment design
     """
 
-    def __init__(self, view, names, curve, pi_nodes):
+    def __init__(self, names, curve, pi_nodes):
         """
         Constructor
         """
@@ -64,9 +64,6 @@ class CurveTracker(BaseTracker):
         self.is_valid = True
         self.status_bar = Gui.getMainWindow().statusBar()
         self.drag = DragState()
-        self.view = view
-        self.viewport = \
-            view.getViewer().getSoRenderManager().getViewportRegion()
 
         self.node_names = ['Center', 'Start', 'End', 'PI', 'Center']
         self.wire_names = (
@@ -76,15 +73,17 @@ class CurveTracker(BaseTracker):
             ('End Tangent', 2, 3)
         )
 
-        super().__init__(view=view, names=names)
+        super().__init__(names=names)
 
         #input callback assignments
         self.callbacks = {
             'SoLocation2Event':
-            self.view.addEventCallback('SoLocation2Event', self.mouse_event),
+            ViewState().view.addEventCallback(
+                'SoLocation2Event', self.mouse_event),
 
             'SoMouseButtonEvent':
-            self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
+            ViewState().view.addEventCallback(
+                'SoMouseButtonEvent', self.button_event)
         }
 
         #scenegraph node structure for editing and dragging operations
@@ -236,11 +235,7 @@ class CurveTracker(BaseTracker):
             _names = self.names[:]
             _names[-1] = _names[-1] + '-' + _nn[_i]
 
-            _tr = NodeTracker(
-                view=self.view,
-                names=_names,
-                point=_pt
-            )
+            _tr = NodeTracker(names=_names, point=_pt)
 
             _tr.update()
             _tr.conditions.append('!' + self.name[2])
@@ -293,7 +288,7 @@ class CurveTracker(BaseTracker):
         Convenience function for WireTracker construction
         """
 
-        _wt = WireTracker(view=self.view, names=wire_name)
+        _wt = WireTracker(names=wire_name)
 
         _wt.set_selectability(select)
         _wt.set_selection_nodes(nodes)
@@ -423,11 +418,5 @@ class CurveTracker(BaseTracker):
 
         self.remove_node(self.groups['EDIT'], self.node)
         self.remove_node(self.groups['DRAG'], self.node)
-
-        if self.callbacks:
-            for _k, _v in self.callbacks.items():
-                self.view.removeEventCallback(_k, _v)
-
-            self.callbacks.clear()
 
         super().finalize()

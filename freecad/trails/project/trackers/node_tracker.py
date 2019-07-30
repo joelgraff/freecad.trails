@@ -28,17 +28,14 @@ from pivy import coin
 
 from FreeCAD import Vector
 
-from .coin_style import CoinStyle
 from .base_tracker import BaseTracker
-
-from ..support.mouse_state import MouseState
 
 class NodeTracker(BaseTracker):
     """
     Tracker object for nodes
     """
 
-    def __init__(self, view, names, point, nodes=None):
+    def __init__(self, names, point, nodes=None):
         """
         Constructor
         """
@@ -51,8 +48,6 @@ class NodeTracker(BaseTracker):
         elif not isinstance(nodes, list):
             nodes = [nodes]
 
-        self.view = view
-        self.mouse = MouseState()
         self.is_end_node = False
         self.point = point
 
@@ -61,7 +56,7 @@ class NodeTracker(BaseTracker):
         self.marker = coin.SoMarkerSet()
 
         super().__init__(
-            view=view, names=names, children=[self.coord, self.marker] + nodes
+            names=names, children=[self.coord, self.marker] + nodes
         )
 
         self.update()
@@ -101,11 +96,5 @@ class NodeTracker(BaseTracker):
         """
         Cleanup
         """
-
-        if self.callbacks:
-            for _k, _v in self.callbacks.items():
-                self.view.removeEventCallback(_k, _v)
-
-            self.callbacks.clear()
 
         super().finalize(self.node, parent)

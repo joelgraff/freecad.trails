@@ -39,6 +39,7 @@ from .coin_style import CoinStyle
 
 from ..support.utils import Constants as C
 from ..support.mouse_state import MouseState
+from ..support.view_state import ViewState
 
 from ..containers import DragState
 
@@ -51,7 +52,7 @@ class AlignmentTracker(BaseTracker):
     Tracker class for alignment design
     """
 
-    def __init__(self, doc, view, object_name, alignment, datum=Vector()):
+    def __init__(self, doc, object_name, alignment, datum=Vector()):
         """
         Constructor
         """
@@ -69,18 +70,12 @@ class AlignmentTracker(BaseTracker):
 
         self.drag = DragState()
 
-        self.view = view
-        self.viewport = \
-            view.getViewer().getSoRenderManager().getViewportRegion()
-
         #base (placement) transformation for the alignment
         self.transform = coin.SoTransform()
         self.transform.translation.setValue(
             tuple(alignment.model.data['meta']['Start'])
         )
-        super().__init__(
-            view=view, names=self.names, children=[self.transform]
-        )
+        super().__init__(names=self.names, children=[self.transform])
 
         #scenegraph node structure for editing and dragging operations
         self.groups = {
@@ -140,7 +135,7 @@ class AlignmentTracker(BaseTracker):
         #handle drag operations
         if self.user_dragging:
             self.on_drag(arg['AltDown'], arg['ShiftDown'])
-            self.view.redraw()
+            ViewState().view.redraw()
 
         else:
             self.start_drag()
@@ -213,12 +208,7 @@ class AlignmentTracker(BaseTracker):
         #node trackers
         for _i, _pt in enumerate(_nodes):
 
-            _tr = NodeTracker(
-                view=self.view,
-                names=_names + ['NODE-' + str(_i)],
-                point=_pt
-            )
-
+            _tr = NodeTracker(names=_names + ['NODE-' + str(_i)], point=_pt)
             _result['Nodes'].append(_tr)
 
         _result['Nodes'][0].is_end_node = True
@@ -246,7 +236,6 @@ class AlignmentTracker(BaseTracker):
         for _i in range(0, len(_result['Tangents']) - 1):
 
             _ct = CurveTracker(
-                view=self.view,
                 names=_names + ['CURVE-' + str(_i)],
                 curve=_curves[_i],
                 pi_nodes=_result['Nodes'][_i:_i+3]
@@ -264,7 +253,7 @@ class AlignmentTracker(BaseTracker):
         Convenience function for WireTracker construction
         """
 
-        _wt = WireTracker(view=self.view, names=wire_name)
+        _wt = WireTracker(names=wire_name)
 
         _wt.set_selectability(select)
         _wt.set_selection_nodes(nodes)
@@ -453,10 +442,10 @@ class AlignmentTracker(BaseTracker):
         #define the search path
         _search = coin.SoSearchAction()
         _search.setNode(_sel_group.getChild(1))
-        _search.apply(self.view.getSceneGraph())
+        _search.apply(ViewState().sg_root)
 
         #get the matrix for the transformation
-        _matrix = coin.SoGetMatrixAction(self.viewport)
+        _matrix = coin.SoGetMatrixAction(ViewState().viewport)
         _matrix.apply(_search.getPath())
 
         return _matrix.getMatrix()
@@ -697,7 +686,7 @@ class AlignmentTracker(BaseTracker):
 
         if self.callbacks:
             for _k, _v in self.callbacks.items():
-                self.view.removeEventCallback(_k, _v)
+                ViewState().view.removeEventCallback(_k, _v)
 
             self.callbacks.clear()
 

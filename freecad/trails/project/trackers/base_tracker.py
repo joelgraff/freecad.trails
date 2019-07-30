@@ -30,12 +30,11 @@ from pivy import coin
 
 import FreeCADGui as Gui
 
-import Draft
-
 from DraftGui import todo
 
 from ..containers import TrackerContainer
 from ..support.mouse_state import MouseState
+from ..support.view_state import ViewState
 
 from .coin_style import CoinStyle
 
@@ -58,12 +57,11 @@ class BaseTracker:
         SELECT_ON = 2
         SELECT_PARTIAL = 4
 
-    def __init__(self, view, names, children=None, has_events=True):
+    def __init__(self, names, children=None, has_events=True):
         """
         Constructor
         """
 
-        self.view = view
         self.names = names
         self.name = names[2]
         self.state = TrackerContainer()
@@ -106,11 +104,11 @@ class BaseTracker:
 
             self.callbacks = {
                 'SoLocation2Event':
-                    self.view.addEventCallback(
+                    ViewState().view.addEventCallback(
                         'SoLocation2Event', self.mouse_event),
 
                 'SoMouseButtonEvent':
-                    self.view.addEventCallback(
+                    ViewState().view.addEventCallback(
                         'SoMouseButtonEvent', self.button_event)
             }
 
@@ -359,7 +357,7 @@ class BaseTracker:
         Insert a node into the scenegraph at the top
         """
 
-        Draft.get3DView().getSceneGraph().insertChild(node, 0)
+        ViewState().sg_root.insertChild(node, 0)
 
     def insert_node(self, node, parent=None):
         """
@@ -379,7 +377,7 @@ class BaseTracker:
         """
 
         if not parent:
-            parent = Draft.get3DView().getSceneGraph()
+            parent = ViewState().sg_root
 
         if parent.findChild(node) >= 0:
             todo.delay(parent.removeChild, node)

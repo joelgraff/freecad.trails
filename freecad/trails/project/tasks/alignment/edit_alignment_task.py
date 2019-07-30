@@ -41,15 +41,16 @@ from ....alignment import alignment
 
 from ...support import const, utils
 from ...support.mouse_state import MouseState
+from ...support.view_state import ViewState
 
 from ...trackers.alignment_tracker import AlignmentTracker
 
-def create(doc, view, alignment_data, object_name):
+def create(doc, alignment_data, object_name):
     """
     Class factory method
     """
 
-    return EditAlignmentTask(doc, view, alignment_data, object_name)
+    return EditAlignmentTask(doc, alignment_data, object_name)
 
 class EditAlignmentTask:
     """
@@ -67,10 +68,9 @@ class EditAlignmentTask:
         PI = [(0.0, 0.0, 1.0), 'Solid']
         SELECTED = [(1.0, 0.8, 0.0), 'Solid']
 
-    def __init__(self, doc, view, alignment_data, obj):
+    def __init__(self, doc, alignment_data, obj):
 
         self.panel = None
-        self.view = view
         self.doc = doc
         self.Object = obj
         self.alignment = alignment.create(alignment_data, 'TEMP', True, False)
@@ -88,34 +88,34 @@ class EditAlignmentTask:
             'bound box': None
         }
 
-        self.view_objects = {
+        ViewState().view_objects = {
             'selectables': [],
             'line_colors': [],
         }
 
         #disable selection entirely
-        self.view.getSceneGraph().getField("selectionRole").setValue(0)
+        ViewState().sg_root.getField("selectionRole").setValue(0)
 
         #get all objects with LineColor and set them all to gray
-        self.view_objects['line_colors'] = [
+        ViewState().view_objects['line_colors'] = [
             (_v.ViewObject, _v.ViewObject.LineColor)
             for _v in self.doc.findObjects()
             if hasattr(_v, 'ViewObject')
             if hasattr(_v.ViewObject, 'LineColor')
         ]
 
-        for _v in self.view_objects['line_colors']:
+        for _v in ViewState().view_objects['line_colors']:
             self.set_vobj_style(_v[0], self.STYLES.DISABLED)
 
         #get all objects in the scene that are selectable.
-        self.view_objects['selectable'] = [
+        ViewState().view_objects['selectable'] = [
             (_v.ViewObject, _v.ViewObject.Selectable)
             for _v in self.doc.findObjects()
             if hasattr(_v, 'ViewObject')
             if hasattr(_v.ViewObject, 'Selectable')
         ]
 
-        for _v in self.view_objects['selectable']:
+        for _v in ViewState().view_objects['selectable']:
             _v[0].Selectable = False
 
         #deselect existing selections
@@ -123,18 +123,20 @@ class EditAlignmentTask:
 
         self.callbacks = {
             'SoLocation2Event':
-            self.view.addEventCallback('SoLocation2Event', self.mouse_event),
+            ViewState().view.addEventCallback(
+                'SoLocation2Event', self.mouse_event),
 
             'SoMouseButtonEvent':
-            self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
+            ViewState().view.addEventCallback(
+                'SoMouseButtonEvent', self.button_event)
         }
 
         self.alignment_tracker = AlignmentTracker(
-            self.doc, self.view, self.Object.Name, self.alignment
+            self.doc, self.Object.Name, self.alignment
         )
 
         #save camera state
-        _camera = self.view.getCameraNode()
+        _camera = ViewState().view.getCameraNode()
 
         self.camera_state['position'] = _camera.position.getValue().getValue()
         self.camera_state['height'] = _camera.height.getValue()
@@ -149,7 +151,7 @@ class EditAlignmentTask:
         Fancy routine to smooth zoom the camera
         """
 
-        _camera = self.view.getCameraNode()
+        _camera = ViewState().view.getCameraNode()
 
         _start_pos = Vector(_camera.position.getValue().getValue())
         _start_ht = _camera.height.getValue()
@@ -205,16 +207,14 @@ class EditAlignmentTask:
         for _v in _steps:
 
             #set the camera
-            self.view.getCameraNode().position.setValue(
+            ViewState().view.getCameraNode().position.setValue(
                 tuple(_start_pos + (_d_pos * _v))
             )
 
-            self.view.getCameraNode().height.setValue(
+            ViewState().view.getCameraNode().height.setValue(
                 _start_ht + (_d_ht * _v)
             )
 
-            #DraftTools.redraw3DView()
-            #FreeCAD.ActiveDocument.recompute()
             Gui.updateGui()
 
     def setup(self):
@@ -259,14 +259,14 @@ class EditAlignmentTask:
         SoLocation2Event callback
         """
 
-        self.mouse.update(arg, self.view.getCursorPos())
+        self.mouse.update(arg, ViewState().view.getCursorPos())
 
     def button_event(self, arg):
         """
         SoMouseButtonEvent callback
         """
 
-        self.mouse.update(arg, self.view.getCursorPos())
+        self.mouse.update(arg, ViewState().view.getCursorPos())
 
     def set_vobj_style(self, vobj, style):
         """
@@ -290,20 +290,20 @@ class EditAlignmentTask:
         Task cleanup
         """
 
-        if self.view_objects:
+        if ViewState().view_objects:
 
             #reset line colors
-            for _v in self.view_objects['line_colors']:
+            for _v in ViewState().view_objects['line_colors']:
                 _v[0].LineColor = _v[1]
 
             #reenable object selctables
-            for _v in self.view_objects['selectable']:
+            for _v in ViewState().view_objects['selectable']:
                 _v[0].Selectable = _v[1]
 
-            self.view_objects.clear()
+            ViewState().view_objects.clear()
 
         #re-enable selection
-        self.view.getSceneGraph().getField("selectionRole").setValue(1)
+        ViewState().sg_root.getField("selectionRole").setValue(1)
 
         #close dialog
         Gui.Control.closeDialog()
@@ -312,7 +312,7 @@ class EditAlignmentTask:
         if self.callbacks:
 
             for _k, _v in self.callbacks.items():
-                self.view.removeEventCallback(_k, _v)
+                ViewState().view.removeEventCallback(_k, _v)
 
             self.callbacks.clear()
 

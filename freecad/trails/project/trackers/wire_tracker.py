@@ -26,17 +26,14 @@ Customized wire tracker from DraftTrackers.wireTracker
 
 from pivy import coin
 
-from ..support.mouse_state import MouseState
-
 from .base_tracker import BaseTracker
-from .coin_style import CoinStyle
 
 class WireTracker(BaseTracker):
     """
     Customized wire tracker
     """
 
-    def __init__(self, view, names, nodes=None):
+    def __init__(self, names, nodes=None):
         """
         Constructor
         """
@@ -45,10 +42,7 @@ class WireTracker(BaseTracker):
         self.name = names[2]
         self.coord = coin.SoCoordinate3()
         self.points = None
-
         self.selection_nodes = None
-        self.mouse = MouseState()
-        self.view = view
 
         if not nodes:
             nodes = []
@@ -58,8 +52,7 @@ class WireTracker(BaseTracker):
 
         nodes += [self.coord, self.line]
 
-        super().__init__(
-            view=view, names=names, children=nodes)
+        super().__init__(names=names, children=nodes)
 
     def set_selection_nodes(self, nodes):
         """
@@ -96,12 +89,6 @@ class WireTracker(BaseTracker):
         """
         Cleanup
         """
-
-        if self.callbacks:
-            for _k, _v in self.callbacks.items():
-                self.view.removeEventCallback(_k, _v)
-
-        self.callbacks.clear()
 
         if node is None:
             node = self.switch

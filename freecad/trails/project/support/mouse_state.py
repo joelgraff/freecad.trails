@@ -25,9 +25,9 @@ Mouse state class
 """
 
 from FreeCAD import Vector
-import FreeCADGui as Gui
 
 from .singleton import Singleton
+from .view_state import ViewState
 
 class MouseState(metaclass=Singleton):
     """
@@ -109,7 +109,6 @@ class MouseState(metaclass=Singleton):
         """
 
         self.pos = ()
-        self.view = Gui.ActiveDocument.ActiveView
         self.buttons = {
             'BUTTON1': self.ButtonState(),
             'BUTTON2': self.ButtonState(),
@@ -136,7 +135,7 @@ class MouseState(metaclass=Singleton):
         """
 
         self.pos = _p + (0.0,)
-        _info = self.view.getObjectInfo(self.pos)
+        _info = ViewState().view.getObjectInfo(self.pos)
 
         if _info:
             self.object = _info['Object']
@@ -146,7 +145,7 @@ class MouseState(metaclass=Singleton):
         else:
             self.object = ''
             self.component = ''
-            self.coordinates = self.view.getPoint(self.pos)
+            self.coordinates = ViewState().view.getPoint(self.pos)
 
         _btn = arg.get('Button')
         _state = arg.get('State')
