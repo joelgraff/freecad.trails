@@ -91,7 +91,9 @@ class TrackerContainer():
         NONE = 4
 
     class Property():
-
+        """
+        Property class for TrackerContainer
+        """
         def __init__(self, value):
 
             self._value = value
@@ -167,6 +169,7 @@ class TrackerContainer():
         self.selected = self.Property(self.State.OFF)
         self.multi_select = True
         self.highlighted = False
+        self.dragging = False
 
         if is_undefined:
 

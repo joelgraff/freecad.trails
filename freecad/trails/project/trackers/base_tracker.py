@@ -145,18 +145,13 @@ class BaseTracker:
         if self.state.selected.value:
             return
 
-        _style = None
+        #abort if dragging to avoid highlighting tests
+        self.update_dragging()
 
-        #selection logic - skip if ignore flag is set
-        if not self.state.selected.ignore:
+        if self.state.dragging:
+            return
 
-            _style = self.coin_style
-
-            #test to see if this node is under the cursor
-            if self.name == MouseState().component:
-                _style = CoinStyle.SELECTED
-
-        self.refresh(_style)
+        self.update_highlighting()
 
     def button_event(self, arg):
         """
@@ -196,6 +191,69 @@ class BaseTracker:
             _style = CoinStyle.SELECTED
 
         self.refresh(_style)
+
+    def update_highlighting(self):
+        """
+        Test for highlight conditions and changes
+        """
+
+        _style = None
+
+        #highlight logic - skip if ignore flag is set
+        if not self.state.selected.ignore:
+
+            _style = self.coin_style
+
+            #test to see if this node is under the cursor
+            self.state.highlighted = self.name == MouseState().component
+            
+            if self.state.highlighted:
+                _style = CoinStyle.SELECTED
+
+        self.refresh(_style)
+
+    def update_dragging(self):
+        """
+        Test for drag conditions and changes
+        """
+
+        if MouseState().button1.dragging:
+
+            if not self.state.dragging:
+
+                self.start_drag()
+                self.state.dragging = True
+
+            else:
+                self.on_drag()
+
+        elif self.state.dragging:
+
+            self.end_drag()
+            self.state.dragging = False
+
+        return self.state.dragging
+
+    def start_drag(self):
+        """
+        Initialize drag ops
+        """
+
+        pass
+
+    def on_drag(self):
+        """
+        Ongoing drag ops
+        """
+
+        pass
+
+    def end_drag(self):
+        """
+        Terminate drag ops
+        """
+
+        pass
 
     def set_selectability(self, is_selectable):
         """

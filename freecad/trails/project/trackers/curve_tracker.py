@@ -123,7 +123,7 @@ class CurveTracker(BaseTracker):
 
         for _v in _trackers:
             self.insert_node(_v.switch, _node)
-        
+
     def set_base_style(self, style=None):
         """
         Override of base function
@@ -225,13 +225,12 @@ class CurveTracker(BaseTracker):
         #node trackers - don't create a PI node
         for _i, _pt in enumerate(_coords[:-2]):
 
-            _names = self.names[:]
-            _names[-1] = _names[-1] + '-' + _nn[_i]
+            _name = self.names[-1] + '-' + _nn[_i]
 
-            _tr = NodeTracker(names=_names, point=_pt)
+            _tr = NodeTracker(names=self.names, point=_pt)
 
             _tr.update()
-            _tr.conditions.append('!' + self.name[2])
+            _tr.conditions.append('!' + _name)
             _tr.set_visible(False)
             _tr.state.multi_select = False
 
@@ -240,10 +239,9 @@ class CurveTracker(BaseTracker):
         #wire trackers
         for _i, _v in enumerate(_wn):
 
-            _names = self.names[:]
-            _names[-1] = _names[-1] + '-' + _v[0]
+            _name = self.names[-1] + '-' + _v[0]
 
-            _wt = WireTracker(names=_names)
+            _wt = WireTracker(names=_name)
 
             _wt.set_selectability(False)
             _wt.set_selection_nodes(_result['Nodes'])
