@@ -28,6 +28,8 @@ from pivy import coin
 
 from FreeCAD import Vector
 
+from ..support.mouse_state import MouseState
+
 from .base_tracker import BaseTracker
 
 class NodeTracker(BaseTracker):

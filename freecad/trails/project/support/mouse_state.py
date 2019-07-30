@@ -186,13 +186,15 @@ class MouseState(metaclass=Singleton):
         else:
             _btn.drag_start = ()
 
-    def get_drag_vector(self):
+    def get_drag_vector(self, world=False):
         """
         Return the drag vector pointing toward the current position from
         the point where drag operations began
         """
 
+        _result = Vector()
+
         if not self.button1.dragging:
-            return Vector()
+            return _result
 
         return Vector(self.pos).sub(Vector(self.button1.drag_start))

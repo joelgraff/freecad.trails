@@ -38,6 +38,7 @@ class DragState():
         """
 
         self.start = None
+        self.start_coordinates = Vector()
         self.center = None
         self.rotation = None
         self.position = None

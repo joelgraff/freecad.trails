@@ -33,8 +33,10 @@ import FreeCADGui as Gui
 from DraftGui import todo
 
 from ..containers import TrackerContainer
+
 from ..support.mouse_state import MouseState
 from ..support.view_state import ViewState
+from ..support.drag_state import DragState
 
 from .coin_style import CoinStyle
 
@@ -67,7 +69,7 @@ class BaseTracker:
         self.names = names
         self.name = names[2]
         self.state = TrackerContainer()
-        self.override = TrackerContainer(True)
+        self.drag = DragState()
 
         self.color = coin.SoBaseColor()
         self.draw_style = coin.SoDrawStyle()
@@ -93,12 +95,17 @@ class BaseTracker:
         self.sel_node.subElementName.setValue(names[2])
 
         for child in [
-                self.sel_node, self.picker, self.draw_style, self.color
+                self.picker, self.draw_style, self.color
             ] + children:
 
             self.node.addChild(child)
 
-        self.switch.addChild(self.node)
+        _sep = coin.SoSeparator()
+
+        _sep.addChild(self.sel_node)
+        _sep.addChild(self.node)
+
+        self.switch.addChild(_sep)
         self.callbacks = None
 
         if has_events:
@@ -142,13 +149,13 @@ class BaseTracker:
         if not self.state.visible.value:
             return
 
-        if self.state.selected.value:
-            return
-
         #abort if dragging to avoid highlighting tests
         self.update_dragging()
 
         if self.state.dragging:
+            return
+
+        if self.state.selected.value:
             return
 
         self.update_highlighting()
@@ -175,7 +182,7 @@ class BaseTracker:
 
             if self.name == MouseState().component:
 
-                if MouseState().ctrlDown:
+                if MouseState().ctrlDown and self.state.selected.value:
                     self.state.selected.value = False
 
                 else:
@@ -206,7 +213,7 @@ class BaseTracker:
 
             #test to see if this node is under the cursor
             self.state.highlighted = self.name == MouseState().component
-            
+
             if self.state.highlighted:
                 _style = CoinStyle.SELECTED
 
@@ -217,7 +224,7 @@ class BaseTracker:
         Test for drag conditions and changes
         """
 
-        if MouseState().button1.dragging:
+        if MouseState().button1.dragging and self.state.selected.value:
 
             if not self.state.dragging:
 
@@ -232,28 +239,41 @@ class BaseTracker:
             self.end_drag()
             self.state.dragging = False
 
-        return self.state.dragging
-
     def start_drag(self):
         """
         Initialize drag ops
         """
 
-        pass
+        DragState().add_node(self.copy())
+
+        if not DragState().drag_node:
+
+            DragState().drag_node = self
+            DragState().start_coord = MouseState().coordinates
+            self.insert_node(DragState().node_group, 0)
 
     def on_drag(self):
         """
         Ongoing drag ops
         """
 
-        pass
+        if self == DragState().drag_node:
+
+            DragState().transform.translation.setValue(
+                tuple(MouseState().coordinates.sub(DragState().start_coord))
+            )
 
     def end_drag(self):
         """
         Terminate drag ops
         """
 
-        pass
+        if self == DragState().drag_node:
+
+            self.remove_node(DragState().node_group)
+            DragState().reset()
+
+        self.state.dragging = False
 
     def set_selectability(self, is_selectable):
         """
@@ -342,34 +362,6 @@ class BaseTracker:
 
         self.remove_node(node, parent)
 
-    def _dep_on(self, switch=None, which_child=0):
-        """
-        Make node visible
-        """
-
-        #abort if visible state is to be ignored
-        if self.state.visible.ignore:
-            return
-
-        if not switch:
-            switch = self.switch
-
-        switch.whichChild = which_child
-
-    def _dep_off(self, switch=None):
-        """
-        Make node invisible
-        """
-
-        #abort if visible state is to be ignored
-        if self.state.visible.ignore:
-            return
-
-        if not switch:
-            switch = self.switch
-
-        switch.whichChild = -1
-
     def copy(self, node=None):
         """
         Return a copy of the tracker node
@@ -412,19 +404,12 @@ class BaseTracker:
 
         return _search.getPath()
 
-    def _insert_sg(self, node):
-        """
-        Insert a node into the scenegraph at the top
-        """
-
-        ViewState().sg_root.insertChild(node, 0)
-
     def insert_node(self, node, parent=None):
         """
         Insert a node as a child of the passed node
         """
 
-        _fn = self._insert_sg
+        _fn = lambda _x: ViewState().sg_root.insertChild(_x, 0)
 
         if parent:
             _fn = parent.addChild
