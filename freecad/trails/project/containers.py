@@ -122,6 +122,8 @@ class TrackerContainer():
         self.multi_select = True
         self.highlighted = False
         self.dragging = False
+        self.was_multi_selected = False
+        self.was_dragged = False
 
         if is_undefined:
 

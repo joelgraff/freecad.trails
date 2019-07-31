@@ -165,7 +165,20 @@ class BaseTracker:
         SoMouseButtonEvent callback
         """
 
+        #ignore mouse up unless this not a multi-select click
+        #and the node was not previously multi-selected
+        #allows for node selction state to remain if user multi-selects
+        #the node, then clicks on a different node to begin drag operations
+
+        _persist_multi_select = \
+            not MouseState().ctrlDown and self.state.was_multi_selected
+
         if MouseState().button1.state == 'UP':
+
+            if not _persist_multi_select or self.state.was_dragged:
+                return
+
+        elif _persist_multi_select:
             return
 
         #preemptive abort conditions
@@ -188,8 +201,10 @@ class BaseTracker:
                 else:
                     self.state.selected.value = True
 
-            #deselect unless multi-selecting
-            elif self.state.selected.value and not _multi_select:
+            #deselect unless multi-selecting or at the end of a drag op
+            elif (self.state.selected.value and not _multi_select) \
+                and not self.state.dragging:
+
                 self.state.selected.value = False
 
         _style = self.coin_style
@@ -198,6 +213,11 @@ class BaseTracker:
             _style = CoinStyle.SELECTED
 
         self.refresh(_style)
+
+        _end_of_drag = _persist_multi_select and self.state.was_dragged
+
+        if MouseState().button1.pressed and not _persist_multi_select:
+            self.state.was_multi_selected = MouseState().ctrlDown
 
     def update_highlighting(self):
         """

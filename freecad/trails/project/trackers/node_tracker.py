@@ -68,9 +68,11 @@ class NodeTracker(BaseTracker):
         Override of base function
         """
 
-        self.update(self.transform_nodes([self.point]))
-
         super().end_drag()
+
+        _point = self.transform_nodes([self.point])
+
+        self.update(_point)
 
     def update(self, coord=None):
         """
