@@ -21,7 +21,7 @@
 # *                                                                        *
 # **************************************************************************
 """
-GridTracker test class
+SpriteSplitter Command Class
 """
 
 import FreeCAD as App
@@ -31,7 +31,7 @@ from DraftTools import Modifier
 
 from ... import resources
 
-from ..tasks.grid.grid_tracker_test_task import GridTrackerTestTask
+from ..tasks.sprite_splitter.sprite_splitter_task import SpriteSplitterTask
 
 from ..support.view_state import ViewState
 
@@ -86,11 +86,11 @@ class GridTrackerTest(Modifier):
         ViewState().view = Gui.ActiveDocument.ActiveView
 
         #create alignment editing task
-        self.task = GridTrackerTestTask(self.doc)
+        self.task = SpriteSplitterTask(self.doc)
 
         Gui.Control.showDialog(self.task)
         self.task.setup()
 
-        Modifier.Activated(self, 'GridTrackerTest')
+        Modifier.Activated(self, 'SpriteSplitter')
 
-Gui.addCommand('GridTrackerTest', GridTrackerTest())
+Gui.addCommand('SpriteSplitter', SpriteSplitter())
