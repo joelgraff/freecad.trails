@@ -30,7 +30,7 @@
    </property>
    <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,1,1" columnstretch="0" rowminimumheight="0,0,0,0,0">
     <item row="1" column="0">
-     <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,1,0">
+     <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,1,0,0">
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
@@ -95,7 +95,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Grid Size</string>
+           <string>Cell Size</string>
           </property>
          </widget>
         </item>
@@ -177,7 +177,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Grid Padding</string>
+           <string>Cell Padding</string>
           </property>
          </widget>
         </item>
@@ -253,13 +253,46 @@
              </widget>
             </item>
             <item>
-             <widget class="QSpinBox" name="gridpad_v_val"/>
+             <widget class="QSpinBox" name="grid_pad_v_val"/>
             </item>
            </layout>
           </item>
          </layout>
         </item>
        </layout>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="groupBox">
+        <property name="title">
+         <string>Lock</string>
+        </property>
+        <widget class="QRadioButton" name="radio_cell_size">
+         <property name="geometry">
+          <rect>
+           <x>60</x>
+           <y>0</y>
+           <width>82</width>
+           <height>17</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Cell Size</string>
+         </property>
+        </widget>
+        <widget class="QRadioButton" name="radio_grid_dimension">
+         <property name="geometry">
+          <rect>
+           <x>160</x>
+           <y>0</y>
+           <width>91</width>
+           <height>17</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Gid Dimension</string>
+         </property>
+        </widget>
+       </widget>
       </item>
      </layout>
     </item>

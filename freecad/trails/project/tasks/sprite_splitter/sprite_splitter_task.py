@@ -40,9 +40,12 @@ import DraftTools
 from .... import resources
 
 from ...support import utils
+
+from ...support.drag_state import DragState
 from ...support.mouse_state import MouseState
 from ...support.view_state import ViewState
 
+from ...trackers.box_tracker import BoxTracker
 from ...trackers.base_tracker import BaseTracker
 from ...trackers.wire_tracker import WireTracker
 from ...trackers.grid_tracker import GridTracker
@@ -72,13 +75,17 @@ class SpriteSplitterTask:
         self.image = QtGui.QImage()
 
         self.cursor_trackers = [
-            WireTracker(self.names), WireTracker(self.names)
+            WireTracker(self.names), WireTracker(self.names[:2] + ['CURSOR'])
         ]
+
+        self.rubberband_tracker = BoxTracker(self.names[:2] + ['RUBBERBAND'])
+        self.rubberband_tracker.set_selectability(False)
 
         self.node = BaseTracker(self.names)
 
         self.node.insert_node(self.cursor_trackers[0].switch)
         self.node.insert_node(self.cursor_trackers[1].switch)
+        self.node.insert_node(self.rubberband_tracker.switch)
 
         #deselect existing selections
         Gui.Selection.clearSelection()
@@ -109,7 +116,39 @@ class SpriteSplitterTask:
         form.pick_file = form.findChild(QtGui.QToolButton, 'pick_file')
         form.pick_file.clicked.connect(self.choose_file)
 
+        form.grid_params = [
+            form.findChild(QtGui.QSpinBox, 'grid_dim_h_val'),
+            form.findChild(QtGui.QSpinBox, 'grid_dim_v_val'),
+            form.findChild(QtGui.QSpinBox, 'grid_size_h_val'),
+            form.findChild(QtGui.QSpinBox, 'grid_size_v_val'),
+            form.findChild(QtGui.QSpinBox, 'grid_pad_h_val'),
+            form.findChild(QtGui.QSpinBox, 'grid_pad_v_val'),
+            form.findChild(QtGui.QSpinBox, 'border_pad_h_val'),
+            form.findChild(QtGui.QSpinBox, 'border_pad_v_val')
+        ]
+
+
         self.form = form
+
+        _default_val = [1, 1, 100, 100, 0, 0, 0, 0]
+        _default_max = [100, 100, 1, 1, 50, 50, 98, 98]
+
+        _callbacks = [
+            self._onchange_dim_h, self._onchange_dim_v,
+            self._onchange_size_h, self._onchange_size_v,
+            self._onchange_pad_h, self._onchange_pad_v,
+            self._onchange_border_h, self._onchange_border_v
+        ]
+
+        for _i, _v in enumerate(form.grid_params):
+            _v.setMaximum(_default_max[_i])
+            _v.setValue(_default_val[_i])
+            _v.valueChanged.connect(_callbacks[_i])
+
+        self.grid_tracker.update_border(0, 0)
+        self.grid_tracker.update_dimension(1, 1)
+        self.grid_tracker.update_pad(0, 0)
+        self.grid_tracker.update_size(100, 100)
 
     def load_file(self, file_name = None):
         """
@@ -227,6 +266,43 @@ class SpriteSplitterTask:
                 Vector(MouseState().coordinates.x, 50.0, 0.0)
             ])
 
+        if MouseState().button1.dragging:
+
+            if not DragState().node:
+                self.start_drag()
+
+            else:
+                self.on_drag()
+
+        elif DragState().node:
+            self.end_drag()
+
+    def start_drag(self):
+        """
+        Begin drag ops
+        """
+
+        DragState().node = self.rubberband_tracker.node
+        DragState().add_node(self.rubberband_tracker.node)
+        DragState().start = MouseState().coordinates
+
+    def on_drag(self):
+        """
+        Continue drag ops
+        """
+
+        if MouseState().object != self.plane.Name:
+            return
+
+        self.rubberband_tracker.update()
+
+    def end_drag(self):
+        """
+        Terminate drag ops
+        """
+
+        DragState().reset()
+
     def button_event(self, arg):
         """
         SoMouseButtonEvent callback
@@ -236,6 +312,11 @@ class SpriteSplitterTask:
             return
 
         MouseState().update(arg, ViewState().view.getCursorPos())
+
+        if MouseState().button1.state == 'UP':
+
+            if DragState().node:
+                self.end_drag()
 
     def set_vobj_style(self, vobj, style):
         """
@@ -272,3 +353,40 @@ class SpriteSplitterTask:
                 ViewState().view.removeEventCallback(_k, _v)
 
             self.callbacks.clear()
+
+
+    #------------------------
+    # SPINBOX CALLBACKS
+    #------------------------
+
+    def _onchange_border_h(self, arg):
+        """Spinbox callback"""
+        self.grid_tracker.update_border(horizontal = int(arg))
+
+    def _onchange_border_v(self, arg):
+        """Spinbox callback"""
+        self.grid_tracker.update_border(vertical = int(arg))
+
+    def _onchange_dim_h(self, arg):
+        """Spinbox callback"""
+        self.grid_tracker.update_dimension(horizontal = int(arg))
+
+    def _onchange_dim_v(self, arg):
+        """Spinbox callback"""
+        self.grid_tracker.update_dimension(vertical = int(arg))
+
+    def _onchange_size_h(self, arg):
+        """Spinbox callback"""
+        self.grid_tracker.update_size(horizontal = int(arg))
+
+    def _onchange_size_v(self, arg):
+        """Spinbox callback"""
+        self.grid_tracker.update_size(vertical = int(arg))
+
+    def _onchange_pad_h(self, arg):
+        """Spinbox callback"""
+        self.grid_tracker.update_pad(horizontal = int(arg))
+
+    def _onchange_pad_v(self, arg):
+        """Spinbox callback"""
+        self.grid_tracker.update_pad(vertical = int(arg))

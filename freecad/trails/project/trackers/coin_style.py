@@ -35,9 +35,9 @@ class CoinStyle(Const):
 
     DEFAULT = {
         'id': 'default',
+        'style': coin.SoDrawStyle.FILLED,
         'shape': 'default',
         'line width': None,
-        'line style': coin.SoDrawStyle.LINES,
         'line weight': 3,
         'line pattern': None,
         'size': 9,
@@ -47,8 +47,8 @@ class CoinStyle(Const):
 
     DASHED = {
         'id': 'dashed',
+        'style': coin.SoDrawStyle.FILLED,
         'line width': None,
-        'line style': coin.SoDrawStyle.LINES,
         'line weight': 3,
         'line pattern': 0x0f0f, #oxaaa
         'color': None,
@@ -57,8 +57,8 @@ class CoinStyle(Const):
 
     EDIT = {
         'id': 'edit',
+        'style': coin.SoDrawStyle.FILLED,
         'line width': None,
-        'line style': coin.SoDrawStyle.LINES,
         'line weight': 3,
         'line pattern': 0x0f0f, #oxaaa
         'color': None,
@@ -67,9 +67,9 @@ class CoinStyle(Const):
 
     ROLL_OUTER = {
         'id': 'roll_outer',
+        'style': coin.SoDrawStyle.FILLED,
         'shape': 'circle',
         'line width': None,
-        'line style': coin.SoDrawStyle.LINES,
         'line weight': 3,
         'line pattern': 0x0f0f, #oxaaa
         'size': 9,
@@ -79,9 +79,9 @@ class CoinStyle(Const):
 
     ROLL_INNER = {
         'id': 'roll_inner',
+        'style': coin.SoDrawStyle.FILLED,
         'shape': 'cross',
         'line width': None,
-        'line style': coin.SoDrawStyle.LINES,
         'line weight': 3,
         'line pattern': 0x0f0f, #oxaaa
         'size': 5,
@@ -91,9 +91,9 @@ class CoinStyle(Const):
 
     SELECTED = {
         'id': 'selected',
+        'style': coin.SoDrawStyle.FILLED,
         'shape': 'default',
         'line width': None,
-        'line style': coin.SoDrawStyle.LINES,
         'line weight': 3,
         'line pattern': None,
         'size': 9,
@@ -103,9 +103,9 @@ class CoinStyle(Const):
 
     ERROR = {
         'id': 'error',
+        'style': coin.SoDrawStyle.FILLED,
         'shape': 'default',
         'line width': None,
-        'line style': coin.SoDrawStyle.LINES,
         'line weight': 3,
         'line pattern': None,
         'size': 9,

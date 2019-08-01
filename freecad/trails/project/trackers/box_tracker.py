@@ -21,7 +21,7 @@
 #*                                                                     *
 #***********************************************************************
 """
-Grid tracker
+Box tracker
 """
 
 from pivy import coin
@@ -30,12 +30,14 @@ from FreeCAD import Vector
 
 from .base_tracker import BaseTracker
 from .wire_tracker import WireTracker
+from .coin_style import CoinStyle
 
 from ..support.drag_state import DragState
+from ..support.mouse_state import MouseState
 
-class GridTracker(BaseTracker):
+class BoxTracker(BaseTracker):
     """
-    GridTracker Class
+    BoxTracker Class
 
     self.points - list of Vectors
     self.selction_nodes - 
@@ -47,7 +49,7 @@ class GridTracker(BaseTracker):
         Constructor
         """
 
-        self.line = coin.SoLineSet()
+        self.face = coin.SoFaceSet()
 
         self.coord = coin.SoCoordinate3()
         self.points = None
@@ -60,12 +62,11 @@ class GridTracker(BaseTracker):
         self.drag_idx = None
         self.drag_start = []
 
-        self.grid_dimension = Vector()
-        self.grid_size = Vector()
-        self.grid_border = Vector()
-        self.grid_pad = Vector()
+        self.trackers = []
+        self.start = Vector()
+        self.size = Vector()
 
-        self.grid_cells = []
+        self.transparency = coin.SoTransparencyType()
 
         if not nodes:
             nodes = []
@@ -73,23 +74,25 @@ class GridTracker(BaseTracker):
         elif not isinstance(nodes, list):
             nodes = list(nodes)
 
-        nodes += [self.coord, self.line]
+        nodes += [self.coord, self.transparency, self.face]
 
-        self._build_grid_cells()
+        super().__init__(names, nodes)
 
-        super().__init__(names=names, children=nodes)
+        self._build_trackers()
 
-    def _build_grid_cells(self):
+        for _t in self.trackers:
+            self.node.addChild(_t.switch)
+
+    def _build_trackers(self):
 
         _names = self.names[:]
 
-        _names[2] = 'GRID'
-        _wt = WireTracker(_names)
+        _names[2] = 'BOX'
 
-        _dim = Vector()
-
-        #_dim = self.grid_size.add(self.grid_pad.)
-
+        for _i in range(0, 4):
+            _wt = WireTracker(_names)
+            _wt.set_selectability(False)
+            self.trackers.append(_wt)
 
     def mouse_event(self, arg):
         """
@@ -98,61 +101,33 @@ class GridTracker(BaseTracker):
 
         pass
 
-    def update(self):
+    def update(self, start_pt=None, end_pt=None):
         """
-        Update the grid cells
-        """
-
-        pass
-
-    def update_dimension(self, horizontal=None, vertical=None):
-        """
-        Update the grid overall dimensions
+        Update function
         """
 
-        if horizontal:
-            self.grid_dimension.x = horizontal
+        if start_pt is None:
+            start_pt = DragState().start
 
-        if vertical:
-            self.grid_dimension.y = vertical
+        if end_pt is None:
+            end_pt = MouseState().coordinates
 
-        self.update()
+        dim = end_pt.sub(start_pt)
 
-    def update_size(self, horizontal=None, vertical=None):
-        """
-        Update the grid cell size
-        """
+        self.size.x = abs(dim.x)
+        self.size.y = abs(dim.y)
 
-        if horizontal:
-            self.grid_size.x = horizontal
+        self.points = [
+            start_pt,
+            Vector(end_pt.x, start_pt.y, 0.0),
+            end_pt,
+            Vector(start_pt.x, end_pt.y, 0.0),
+        ]
 
-        if vertical:
-            self.grid_size.y = vertical
+        _points = [tuple(_v) for _v in self.points]
 
-        self.update()
+        self.coord.point.setValues(0, 4, _points)
+        self.face.numVertices.setValue(4)
+        self.coin_style = CoinStyle.DEFAULT
 
-    def update_border(self, horizontal=None, vertical=None):
-        """
-        Update the grid border padding
-        """
-
-        if horizontal is not None:
-            self.grid_border.x = horizontal
-
-        if vertical is not None:
-            self.grid_border.y = vertical
-
-        self.update()
-
-    def update_pad(self, horizontal=None, vertical=None):
-        """
-        Update the grid cell padding
-        """
-
-        if horizontal is not None:
-            self.grid_pad.x = horizontal
-
-        if vertical is not None:
-            self.grid_pad.y = vertical
-
-        self.update()
+        super().refresh()

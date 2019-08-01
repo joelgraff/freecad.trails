@@ -78,6 +78,7 @@ class BaseTracker:
         self.parent = None
         self.picker = coin.SoPickStyle()
         self.switch = coin.SoSwitch()
+
         self.coin_style = CoinStyle.DEFAULT
         self.active_style = None
         self.conditions = []
@@ -355,7 +356,7 @@ class BaseTracker:
         if style['line width']:
             self.draw_style.lineWidth = style['line width']
 
-        self.draw_style.style = style['line style']
+        self.draw_style.style = style['style']
 
         self.draw_style.lineWeight = style['line weight']
 
