@@ -31,39 +31,21 @@ import FreeCADGui as Gui
 
 import DraftTools
 
+from .ff import FF
 from ...support.mouse_state import MouseState
 from ...support.view_state import ViewState
 
-from .trackers.grid_tracker import GridTracker
-
-def create(doc, alignment_data, object_name):
-    """
-    Class factory method
-    """
-
-    return GridTrackerTestTask(doc, alignment_data, object_name)
+from ...trackers.grid_tracker import GridTracker
 
 class GridTrackerTestTask:
     """
     Task to manage alignment editing
     """
 
-    class STYLES(const.Const):
-        """
-        Internal constants used to define ViewObject styles
-        """
-
-        DISABLED = [(0.4, 0.4, 0.4), 'Solid']
-        ENABLED = [(0.8, 0.8, 0.8), 'Solid']
-        HIGHLIGHT = [(0.0, 1.0, 0.0), 'Solid']
-        PI = [(0.0, 0.0, 1.0), 'Solid']
-        SELECTED = [(1.0, 0.8, 0.0), 'Solid']
-
-    def __init__(self, doc, alignment_data, obj):
+    def __init__(self, doc):
 
         self.panel = None
         self.doc = doc
-        self.Object = obj
         self.grid_tracker = None
 
         #deselect existing selections
@@ -80,7 +62,7 @@ class GridTrackerTestTask:
         }
 
         self.grid_tracker = GridTestTracker(
-            self.doc, self.Object.Name, self.alignment
+            self.doc, 'Grid', self.alignment
         )
 
         DraftTools.redraw3DView()

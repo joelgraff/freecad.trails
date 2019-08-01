@@ -31,7 +31,7 @@ from DraftTools import Modifier
 
 from ... import resources
 
-from ..tasks.grid import grid_tracker_test_task
+from ..tasks.grid.grid_tracker_test_task import GridTrackerTestTask
 
 from ..support.view_state import ViewState
 
@@ -61,14 +61,6 @@ class GridTrackerTest(Modifier):
         if not App.ActiveDocument:
             return False
 
-        selected = Gui.Selection.getSelection()
-
-        if not selected:
-            return False
-
-        if not selected[0].Proxy.Type == 'Alignment':
-            return False
-
         return True
 
     def GetResources(self):
@@ -91,15 +83,10 @@ class GridTrackerTest(Modifier):
 
         self.doc = App.ActiveDocument
 
-        #create working, non-visual copy of horizontal alignment
-        obj = Gui.Selection.getSelection()[0]
-        data = obj.Proxy.get_data_copy()
-
-        self.doc = App.ActiveDocument
         ViewState().view = Gui.ActiveDocument.ActiveView
 
         #create alignment editing task
-        self.task = grid_tracker_test_task.create(self.doc, data, obj)
+        self.task = GridTrackerTestTask(self.doc)
 
         Gui.Control.showDialog(self.task)
         self.task.setup()
