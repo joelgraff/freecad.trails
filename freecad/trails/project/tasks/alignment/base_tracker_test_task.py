@@ -26,18 +26,14 @@ Task to edit an alignment
 """
 import math
 
-from PySide import QtGui
-
 from FreeCAD import Vector
 import FreeCADGui as Gui
 
 import DraftTools
 
-from .... import resources
-
 from ....alignment import alignment
 
-from ...support import const, utils
+from ...support import const
 from ...support.mouse_state import MouseState
 from ...support.view_state import ViewState
 
@@ -257,6 +253,9 @@ class BaseTrackerTestTask:
         """
 
         self.mouse.update(arg, ViewState().view.getCursorPos())
+
+        #clear the matrix to force a refresh at the start of every mouse event
+        ViewState().matrix = None
 
     def button_event(self, arg):
         """

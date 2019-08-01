@@ -171,7 +171,7 @@ class AlignmentBaseTestTracker(BaseTracker):
                 self._build_wire_tracker(
                     wire_name=_names + ['WIRE-' + str(_i)],
                     nodes=_nodes,
-                    points=[_v.get() for _v in _nodes],
+                    points=None,
                     select=True
                 )
             )
@@ -189,8 +189,8 @@ class AlignmentBaseTestTracker(BaseTracker):
         _wt = WireTracker(names=wire_name)
 
         _wt.set_selectability(select)
-        _wt.set_selection_nodes(nodes)
-        _wt.update(points)
+        _wt.set_points(points, nodes)
+        _wt.update()
 
         return _wt
 

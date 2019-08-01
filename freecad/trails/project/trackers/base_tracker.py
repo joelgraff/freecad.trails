@@ -67,6 +67,7 @@ class BaseTracker:
         Constructor
         """
 
+        self.node_ok = False
         self.names = names
         self.name = names[2]
         self.state = TrackerContainer()
@@ -264,13 +265,15 @@ class BaseTracker:
         Initialize drag ops
         """
 
+        #copy the tracker node structure to the drag state node for
+        #transformations during drag operations
         DragState().add_node(self.copy())
 
         if not DragState().node:
 
             DragState().node = self
             DragState().start = MouseState().coordinates
-            self.insert_node(DragState().group, 0)
+            DragState().insert()
 
     def on_drag(self):
         """
@@ -408,20 +411,22 @@ class BaseTracker:
                 self.set_visible(False)
                 break
 
-    def transform_nodes(self, nodes):
+    def transform_points(self, points, node=None, refresh=True):
         """
-        Transform selected nodes by the transformation matrix
+        Transform selected points by the transformation matrix
         """
 
         _result = []
 
-        if not DragState().matrix:
+        _matrix = ViewState().get_matrix(node, refresh=refresh)
+
+        if not _matrix:
             return _result
 
-        for _n in nodes:
+        for _p in points:
 
-            _v = coin.SbVec4f(tuple(_n) + (1.0,))
-            _v = DragState().matrix.multVecMatrix(_v).getValue()[:3]
+            _v = coin.SbVec4f(tuple(_p) + (1.0,))
+            _v = _matrix.multVecMatrix(_v).getValue()[:3]
 
             _result.append(Vector(_v)) #.sub(self.datum))
 

@@ -28,6 +28,8 @@ from pivy import coin
 
 from FreeCAD import Vector
 
+from DraftGui import todo
+
 from .singleton import Singleton
 from .view_state import ViewState
 
@@ -42,15 +44,25 @@ class DragState(metaclass=Singleton):
 
         self.group = coin.SoSeparator()
         self.transform = coin.SoTransform()
+        self.transform.translation.setValue(
+            tuple([0.0, 0.0, 0.0])
+        )
 
         self.node = None
         self.matrix = None
         self.group.addChild(self.transform)
+        self.drag_node = None
+
+        self.sg_ok = False
+        self.sg_root = None
 
     def add_node(self, node):
         """
         Add a node to the drag node group
         """
+
+        if not self.drag_node:
+            self.drag_node = node
 
         self.group.addChild(node)
 
@@ -68,18 +80,30 @@ class DragState(metaclass=Singleton):
         if self.group.getNumChildren() < 2:
             return None
 
-        #define the search path
-        _search = coin.SoSearchAction()
-        _search.setNode(self.group.getChild(1))
-        _search.apply(ViewState().sg_root)
-
-        #get the matrix for the transformation
-        _matrix = coin.SoGetMatrixAction(ViewState().viewport)
-        _matrix.apply(_search.getPath())
+        ViewState().get_matrix(self.group.getChild(1))
 
         self.reset()
 
-        self.matrix = _matrix.getMatrix()
+    @staticmethod
+    def _insert(drag_state):
+        """
+        Delayed callback for sg_ok
+        """
+
+        drag_state.sg_root.insertChild(drag_state.group, 0)
+        drag_state.sg_ok = True
+
+    def insert(self):
+        """
+        Custom function to manage drag state insertion and provide
+        flag when scenegraph has been updated
+        """
+
+        self.sg_ok = False
+
+        self.sg_root = ViewState().sg_root
+        todo.delay(DragState()._insert, DragState())
+
 
     def reset(self):
         """

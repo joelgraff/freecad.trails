@@ -28,9 +28,15 @@ from pivy import coin
 
 from .base_tracker import BaseTracker
 
+from ..support.drag_state import DragState
+
 class WireTracker(BaseTracker):
     """
     Customized wire tracker
+
+    self.points - list of Vectors
+    self.selction_nodes - 
+        list of point indices which correspond to node trackers
     """
 
     def __init__(self, names, nodes=None):
@@ -43,23 +49,69 @@ class WireTracker(BaseTracker):
         self.coord = coin.SoCoordinate3()
         self.points = None
         self.selection_nodes = None
+        self.selection_indices = []
+
+        self.group = coin.SoSeparator()
+        self.drag_coord = None
+        self.drag_idx = None
+        self.drag_start = []
 
         if not nodes:
             nodes = []
 
         elif not isinstance(nodes, list):
-            nodes = [nodes]
+            nodes = list(nodes)
 
         nodes += [self.coord, self.line]
 
         super().__init__(names=names, children=nodes)
 
-    def set_selection_nodes(self, nodes):
+    def set_points(self, points, nodes, indices=None):
         """
-        Set the list of node trackers that control wire selection
+        Set the node trackers points
+
+        nodes - references to node trackers
+        indices - index of point in self.points that node updates
         """
 
+        if not nodes:
+            return
+
+        if not points:
+            points = [_v.get() for _v in nodes]
+
+        self.points = points
+
+        _l = len(nodes)
+
+        if _l == 2 and not indices:
+            indices = [0, len(self.points) - 1]
+
+        if _l > 2:
+
+            if not indices or len(indices) != _l:
+
+                print('WireTracker', self.name, 'node mismatch')
+                return
+
         self.selection_nodes = nodes
+        self.selection_indices = indices
+
+    def get_points(self):
+        """
+        Return the list of points with node tracker points uupdated
+        """
+
+        _points = self.points
+
+        if self.selection_indices:
+            _j = 0
+
+            for _i in self.selection_indices:
+                _points[_i] = self.selection_nodes[_j].point
+                _j += 1
+
+        return _points
 
     def update(self, points=None):
         """
@@ -68,7 +120,7 @@ class WireTracker(BaseTracker):
         """
 
         if not points:
-            points = [_v.point for _v in self.selection_nodes]
+            points = self.get_points()
 
         if not points:
             return
@@ -84,6 +136,107 @@ class WireTracker(BaseTracker):
         self.points = _p
 
         super().refresh()
+
+    def button_event(self, arg):
+        """
+        SoMouseButtonEvent callback
+        """
+
+        _sel = [_v.state.selected.value for _v in self.selection_nodes]
+
+        self.state.selected.value = any(_sel)
+        self.state.selected.ignore = True
+
+        super().button_event(arg)
+
+    def start_drag(self):
+        """
+        Override of base function
+        """
+
+        _states = [_v.state.selected.value for _v in self.selection_nodes]
+
+        if all(_states):
+
+            super().start_drag()
+            return
+
+        self.state.dragging = any(_states)
+
+        if not self.state.dragging:
+            return
+
+        self.drag_idx = [_i for _i, _v in enumerate(_states) if _v][0]
+
+        _node = self.copy(self.node)
+
+        self.group.addChild(_node)
+        self.drag_coord = _node.getChild(3)
+        self.drag_start = self.points[:]
+
+        self.insert_node(self.group, 0)
+
+    def on_drag(self):
+        """
+        Override of base function
+        """
+
+        #abort unselected
+        if not self.state.dragging:
+            return
+
+        #partially-selected wires will have a drag_idx.
+        #fully-selected / unselected will not
+        if self.drag_idx is not None:
+
+            if DragState().sg_ok:
+                self._partial_drag()
+
+            return
+
+        super().on_drag()
+
+    def _partial_drag(self):
+        """
+        Perform partial drag if ok
+        """
+
+        if not DragState().sg_ok:
+            return
+
+        #refresh the matrix only if invalid, since all wires will want the
+        #same transformation
+        self.points[self.drag_idx] =\
+             self.transform_points(
+                 [self.drag_start[self.drag_idx]],
+                 DragState().drag_node,
+                 refresh=True
+             )[0]
+
+        self.drag_coord.point.setValues(0, len(self.points), self.points)
+
+    def end_drag(self):
+        """
+        Override of base function
+        """
+
+        super().end_drag()
+
+        #transform all points which are not nodes
+        _points = self.points
+
+        _points = [_points[_i] for _i in range(0, len(_points))\
+            if _i not in self.selection_indices]
+
+        _points = \
+            self.transform_points(_points, DragState().drag_node, refresh=True)
+
+        self.update(_points)
+        self.drag_idx = None
+        self.drag_coord = None
+        self.drag_start = []
+        self.remove_node(self.group)
+        self.group.removeAllChildren()
 
     def finalize(self, node=None, parent=None):
         """

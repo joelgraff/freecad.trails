@@ -24,6 +24,8 @@
 View state class
 """
 
+from pivy import coin
+
 import FreeCADGui as Gui
 
 from .singleton import Singleton
@@ -45,3 +47,34 @@ class ViewState(metaclass=Singleton):
         self.viewport = \
             view.getViewer().getSoRenderManager().getViewportRegion()
         self.sg_root = self.view.getSceneGraph()
+
+        self.matrix = None
+
+    def get_matrix(self, node, parent=None, refresh=True):
+        """
+        Return the matrix for transfomations applied to the passed node
+
+        node - the node with the desired transformation
+        parent - optional - sg root default
+        refresh - if false, retrieves last matrix
+        """
+
+        if not parent:
+            parent = self.sg_root
+
+        if not refresh:
+            if self.matrix:
+                return self.matrix
+
+        #define the search path
+        _search = coin.SoSearchAction()
+        _search.setNode(node)
+        _search.apply(parent)
+
+        #get the matrix for the transformation
+        _matrix = coin.SoGetMatrixAction(ViewState().viewport)
+        _matrix.apply(_search.getPath())
+
+        self.matrix = _matrix.getMatrix()
+
+        return self.matrix

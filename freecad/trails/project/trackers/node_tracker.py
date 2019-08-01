@@ -70,7 +70,7 @@ class NodeTracker(BaseTracker):
 
         super().end_drag()
 
-        _point = self.transform_nodes([self.point])
+        _point = self.transform_points([self.point], DragState().node, True)
 
         self.update(_point)
 
