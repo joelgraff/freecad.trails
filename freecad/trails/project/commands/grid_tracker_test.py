@@ -21,7 +21,7 @@
 # *                                                                        *
 # **************************************************************************
 """
-BaseTracker test class
+GridTracker test class
 """
 
 import FreeCAD as App
@@ -31,11 +31,11 @@ from DraftTools import Modifier
 
 from ... import resources
 
-from ..tasks.alignment import base_tracker_test_task
+from ..tasks.grid import grid_tracker_test_task
 
 from ..support.view_state import ViewState
 
-class BaseTrackerTest(Modifier):
+class GridTrackerTest(Modifier):
     """
     Command Description
     """
@@ -99,11 +99,11 @@ class BaseTrackerTest(Modifier):
         ViewState().view = Gui.ActiveDocument.ActiveView
 
         #create alignment editing task
-        self.task = base_tracker_test_task.create(self.doc, data, obj)
+        self.task = grid_tracker_test_task.create(self.doc, data, obj)
 
         Gui.Control.showDialog(self.task)
         self.task.setup()
 
-        Modifier.Activated(self, 'BaseTrackerTest')
+        Modifier.Activated(self, 'GridTrackerTest')
 
-Gui.addCommand('BaseTrackerTest', BaseTrackerTest())
+Gui.addCommand('GridTrackerTest', GridTrackerTest())
