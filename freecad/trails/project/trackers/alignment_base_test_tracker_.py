@@ -170,8 +170,8 @@ class AlignmentBaseTestTracker(BaseTracker):
             _result['Tangents'].append(
                 self._build_wire_tracker(
                     wire_name=_names + ['WIRE-' + str(_i)],
-                    nodes=_nodes,
-                    points=None,
+                    nodes=None,
+                    points=[_v.point for _v in _nodes],
                     select=True
                 )
             )
@@ -193,35 +193,6 @@ class AlignmentBaseTestTracker(BaseTracker):
         _wt.update()
 
         return _wt
-
-    def set_selectability(self, is_selectable):
-        """
-        Override of the base implementation
-        """
-
-        pass
-
-    def get_matrix(self):
-        """
-        Return the transformation matrix for the provided node
-        """
-
-        _sel_group = self.groups['SELECTED']
-
-        #only one child node means no geometry
-        if _sel_group.getNumChildren() < 2:
-            return None
-
-        #define the search path
-        _search = coin.SoSearchAction()
-        _search.setNode(_sel_group.getChild(1))
-        _search.apply(ViewState().sg_root)
-
-        #get the matrix for the transformation
-        _matrix = coin.SoGetMatrixAction(ViewState().viewport)
-        _matrix.apply(_search.getPath())
-
-        return _matrix.getMatrix()
 
     def _update_rotation(self, vector, modify=False):
         """
@@ -269,62 +240,6 @@ class AlignmentBaseTestTracker(BaseTracker):
 
         #return the +z axis rotation for the transformation
         return coin.SbRotation(coin.SbVec3f(0.0, 0.0, 1.0), self.drag.rotation)
-
-    def _update_pi_nodes(self, world_pos):
-        """
-        Internal function - Update wires with selected nodes
-        """
-
-        _tans = self.trackers['Tangents']
-
-        #transform selected nodes
-        _result = self._transform_nodes(self.drag.nodes)
-
-        #write updated nodes to PI's
-        for _i, _v in enumerate(_result):
-
-            #pi index
-            _j = self.drag.node_idx[_i]
-
-            #save the updated PI coordinate
-            self.trackers['Nodes'][_j].point = _v
-
-            _limits = [_w if _w >= 0 else 0 for _w in [_j - 1, _j + 1]]
-
-            #if there are partially selected tangents, we need to manually
-            #update the scenegraph for the selected vertex
-            for _l, _t in enumerate(_tans[_limits[0]:_limits[1]]):
-
-                if _t.state.selected._value != self.State.SELECT_PARTIAL:
-                    continue
-
-                _pts = [tuple(_w.get()) for _w in _t.selection_nodes]
-
-                if _t.selection_nodes[0].state.selected.value:
-                    _pts[0] = tuple(_v)
-
-                else:
-                    _pts[1] = tuple(_v)
-
-                self.groups['PARTIAL'].getChild(_l).getChild(4)\
-                    .point.setValues(_pts)
-
-    def _transform_nodes(self, nodes):
-        """
-        Transform selected nodes by the transformation matrix
-        """
-
-        _matrix = self.get_matrix()
-        _result = []
-
-        for _n in nodes:
-
-            _v = coin.SbVec4f(tuple(_n) + (1.0,))
-            _v = _matrix.multVecMatrix(_v).getValue()[:3]
-
-            _result.append(Vector(_v).sub(self.datum))
-
-        return _result
 
     def finalize(self):
         """

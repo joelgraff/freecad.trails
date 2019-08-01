@@ -74,19 +74,25 @@ class WireTracker(BaseTracker):
         indices - index of point in self.points that node updates
         """
 
-        if not nodes:
-            return
-
         if not points:
+
+            if not nodes:
+                return
+
             points = [_v.get() for _v in nodes]
 
         self.points = points
 
-        _l = len(nodes)
+        _l = 0
+        
+        if nodes:
+            _l = len(nodes)
 
+        #only two nodes and no indices?  nodes define entire line
         if _l == 2 and not indices:
             indices = [0, len(self.points) - 1]
 
+        #more than two nodes and index mismatch = error
         if _l > 2:
 
             if not indices or len(indices) != _l:
@@ -142,10 +148,16 @@ class WireTracker(BaseTracker):
         SoMouseButtonEvent callback
         """
 
-        _sel = [_v.state.selected.value for _v in self.selection_nodes]
+        _sel = []
 
-        self.state.selected.value = any(_sel)
-        self.state.selected.ignore = True
+        if self.selection_nodes:
+            _sel = [_v.state.selected.value for _v in self.selection_nodes]
+
+        self.state.selected.ignore = False
+
+        if not all(_sel) and any(_sel):
+            self.state.selected.value = True
+            self.state.selected.ignore = True
 
         super().button_event(arg)
 
@@ -154,14 +166,13 @@ class WireTracker(BaseTracker):
         Override of base function
         """
 
-        _states = [_v.state.selected.value for _v in self.selection_nodes]
-
-        if all(_states):
-
+        if self.selection_nodes is None:
             super().start_drag()
             return
 
-        self.state.dragging = any(_states)
+        _states = [_v.state.selected.value for _v in self.selection_nodes]
+
+        self.state.dragging = not all(_states) and any(_states)
 
         if not self.state.dragging:
             return
@@ -223,15 +234,22 @@ class WireTracker(BaseTracker):
         super().end_drag()
 
         #transform all points which are not nodes
-        _points = self.points
+        _points = []
 
-        _points = [_points[_i] for _i in range(0, len(_points))\
-            if _i not in self.selection_indices]
+        if self.selection_indices:
+
+            for _i, _v in enumerate(self.points):
+                if _i not in self.selection_indices:
+                    _points.append(_v)
+
+        else:
+            _points = self.points
 
         _points = \
             self.transform_points(_points, DragState().drag_node, refresh=True)
 
         self.update(_points)
+
         self.drag_idx = None
         self.drag_coord = None
         self.drag_start = []
