@@ -35,7 +35,7 @@ from ..tasks.sprite_splitter.sprite_splitter_task import SpriteSplitterTask
 
 from ..support.view_state import ViewState
 
-class GridTrackerTest(Modifier):
+class SpriteSplitter(Modifier):
     """
     Command Description
     """

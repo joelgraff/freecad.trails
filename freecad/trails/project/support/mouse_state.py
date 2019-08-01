@@ -139,7 +139,11 @@ class MouseState(metaclass=Singleton):
 
         if _info:
             self.object = _info['Object']
-            self.component = _info['Component']
+            self.component = _info.get('Component')
+
+            if not self.component:
+                self.component = ''
+
             self.coordinates = Vector(_info['x'], _info['y'], _info['z'])
 
         else:

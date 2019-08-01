@@ -45,6 +45,16 @@ class CoinStyle(Const):
         'select': True
     }
 
+    DASHED = {
+        'id': 'dashed',
+        'line width': None,
+        'line style': coin.SoDrawStyle.LINES,
+        'line weight': 3,
+        'line pattern': 0x0f0f, #oxaaa
+        'color': None,
+        'select': False
+    }
+
     EDIT = {
         'id': 'edit',
         'line width': None,

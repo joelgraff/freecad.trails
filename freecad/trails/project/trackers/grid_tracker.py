@@ -45,7 +45,7 @@ class GridTracker(BaseTracker):
         """
 
         self.line = coin.SoLineSet()
-        self.name = names[2]
+
         self.coord = coin.SoCoordinate3()
         self.points = None
         self.selection_nodes = None
@@ -65,3 +65,10 @@ class GridTracker(BaseTracker):
         nodes += [self.coord, self.line]
 
         super().__init__(names=names, children=nodes)
+
+    def mouse_event(self, arg):
+        """
+        Override of base function
+        """
+
+        pass

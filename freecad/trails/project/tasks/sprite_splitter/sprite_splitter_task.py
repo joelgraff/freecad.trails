@@ -24,17 +24,30 @@
 """
 Task to edit an alignment
 """
-import math
+import os
 
+import PySide.QtGui as QtGui
+import PySide.QtCore as QtCore
+
+from pivy import coin
+
+import FreeCAD as App
 from FreeCAD import Vector
 import FreeCADGui as Gui
 
 import DraftTools
 
+from .... import resources
+
+from ...support import utils
 from ...support.mouse_state import MouseState
 from ...support.view_state import ViewState
 
+from ...trackers.base_tracker import BaseTracker
+from ...trackers.wire_tracker import WireTracker
 from ...trackers.grid_tracker import GridTracker
+
+from ...trackers.coin_style import CoinStyle
 
 class SpriteSplitterTask:
     """
@@ -43,8 +56,29 @@ class SpriteSplitterTask:
 
     def __init__(self, doc):
 
+
+        self.ui_path = resources.__path__[0] + '/ui/'
+        self.ui = self.ui_path + 'sprite_splitter_task_panel.ui'
+
+        self.form = None
+        self.subtask = None
+
         self.panel = None
         self.doc = doc
+
+        self.plane = None
+        self.names = ['FreeCAD', self.doc.Name, 'Sprite Splitter']
+
+        self.image = QtGui.QImage()
+
+        self.cursor_trackers = [
+            WireTracker(self.names), WireTracker(self.names)
+        ]
+
+        self.node = BaseTracker(self.names)
+
+        self.node.insert_node(self.cursor_trackers[0].switch)
+        self.node.insert_node(self.cursor_trackers[1].switch)
 
         #deselect existing selections
         Gui.Selection.clearSelection()
@@ -59,9 +93,7 @@ class SpriteSplitterTask:
                 'SoMouseButtonEvent', self.button_event)
         }
 
-        self.grid_tracker = GridTracker(
-            self.doc, 'Grid', self.alignment
-        )
+        self.grid_tracker = GridTracker(self.names)
 
         DraftTools.redraw3DView()
 
@@ -69,13 +101,80 @@ class SpriteSplitterTask:
         """
         Initiailze the task window and controls
         """
+        _mw = utils.getMainWindow()
 
-        pass
-        #_mw = utils.getMainWindow()
+        form = _mw.findChild(QtGui.QWidget, 'TaskPanel')
 
-        #form = _mw.findChild(QtGui.QWidget, 'TaskPanel')
+        form.file_path = form.findChild(QtGui.QLineEdit, 'filename')
+        form.pick_file = form.findChild(QtGui.QToolButton, 'pick_file')
+        form.pick_file.clicked.connect(self.choose_file)
 
-        #self.form = form
+        self.form = form
+
+    def load_file(self, file_name = None):
+        """
+        Load the image file onto a plane
+        """
+
+        if not file_name:
+            file_name = self.form.file_path.text()
+
+        if self.plane:
+            self.doc.removeObject(self.plane.Name)
+
+        self.doc.recompute()
+
+        self.image.load(file_name)
+
+        self.cursor_trackers[0].update(
+            [Vector(-50.0, 0.0, 0.0), Vector(50.0, 0.0, 0.0)]
+        )
+
+        self.cursor_trackers[1].update(
+            [Vector(0.0, -50.0, 0.0), Vector(0.0, 50.0, 0.0)]
+        )
+
+        for _v in self.cursor_trackers:
+            _v.set_selectability(False)
+            _v.coin_style = CoinStyle.DASHED
+
+        _plane = self.doc.addObject('Image::ImagePlane', 'SpriteSheet')
+        _plane.ImageFile = file_name
+        _plane.XSize = 100.0
+        _plane.YSize = 100.0
+        _plane.Placement = App.Placement()
+
+        App.ActiveDocument.recompute()
+
+        Gui.Selection.addSelection(_plane)
+
+        Gui.SendMsgToActiveView('ViewFit')
+
+        self.plane = _plane
+
+    def choose_file(self):
+        """
+        Open the file picker dialog and open the file
+        that the user chooses
+        """
+
+        open_path = resources.__path__[0]
+
+        filters = self.form.tr(
+            'All files (*.*);; PNG files (*.png);; JPG files (*.jpg)'
+        )
+
+        #selected_filter = self.form.tr('LandXML files (*.xml)')
+
+        file_name = QtGui.QFileDialog.getOpenFileName(
+            self.form, 'Select File', open_path, filters
+        )
+
+        if not file_name[0]:
+            return
+
+        self.form.file_path.setText(file_name[0])
+        self.load_file(file_name[0])
 
     def accept(self):
         """
@@ -108,15 +207,33 @@ class SpriteSplitterTask:
         SoLocation2Event callback
         """
 
+        if not self.plane:
+            return
+
         MouseState().update(arg, ViewState().view.getCursorPos())
 
         #clear the matrix to force a refresh at the start of every mouse event
         ViewState().matrix = None
 
+        if MouseState().object == self.plane.Name:
+
+            self.cursor_trackers[0].update([
+                Vector(-50.0, MouseState().coordinates.y, 0.0),
+                Vector(50.0, MouseState().coordinates.y, 0.0)
+            ])
+
+            self.cursor_trackers[1].update([
+                Vector(MouseState().coordinates.x, -50.0, 0.0),
+                Vector(MouseState().coordinates.x, 50.0, 0.0)
+            ])
+
     def button_event(self, arg):
         """
         SoMouseButtonEvent callback
         """
+
+        if not self.plane:
+            return
 
         MouseState().update(arg, ViewState().view.getCursorPos())
 
@@ -141,18 +258,6 @@ class SpriteSplitterTask:
         """
         Task cleanup
         """
-
-        if ViewState().view_objects:
-
-            #reset line colors
-            for _v in ViewState().view_objects['line_colors']:
-                _v[0].LineColor = _v[1]
-
-            #reenable object selctables
-            for _v in ViewState().view_objects['selectable']:
-                _v[0].Selectable = _v[1]
-
-            ViewState().view_objects.clear()
 
         #re-enable selection
         ViewState().sg_root.getField("selectionRole").setValue(1)
