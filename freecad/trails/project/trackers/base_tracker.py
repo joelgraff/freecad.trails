@@ -24,20 +24,30 @@
 Customized wire tracker from DraftTrackers.wireTracker
 """
 
+import math
+
 from enum import IntEnum
 
 from pivy import coin
+
+from PySide.QtGui import QCursor
+from PySide import QtGui
+from PySide.QtCore import Qt
 
 import FreeCADGui as Gui
 from FreeCAD import Vector
 
 from DraftGui import todo
 
+from ...geometry import support
+
 from ..containers import TrackerContainer
 
 from ..support.mouse_state import MouseState
 from ..support.view_state import ViewState
 from ..support.drag_state import DragState
+
+from ..support.utils import Constants as C
 
 from .coin_style import CoinStyle
 
@@ -274,18 +284,93 @@ class BaseTracker:
 
             DragState().node = self
             DragState().start = MouseState().coordinates
+            DragState().coordinates = MouseState().coordinates
             DragState().insert()
+            DragState().offset = \
+                Vector(QCursor.pos().toTuple() + (0.0,))
+            DragState().start_pos = MouseState().pos
 
     def on_drag(self):
         """
         Ongoing drag ops
         """
 
-        if self == DragState().node:
+        if self != DragState().node:
+            return
 
-            DragState().transform.translation.setValue(
-                tuple(MouseState().coordinates.sub(DragState().start))
+        _scale = 1.0
+
+        if MouseState().shiftDown:
+            _scale = 0.10
+
+        _drag_line_start = DragState().start
+
+        if MouseState().altDown:
+
+            DragState().rotate_transform.rotation = self._update_rotation()
+
+            _drag_line_start = Vector(
+                DragState().rotate_transform.center.getValue()
+            ).add(
+                Vector(DragState().translate_transform.translation.getValue())
             )
+
+#            _vec = DragState().start.sub(Vector(self.drag_transform.translation.getValue()))
+
+#            self.drag.start = _vec
+
+        else:
+
+            if DragState().rotation_center:
+                DragState().rotation_center = Vector()
+
+            #accumulate the movement from the previous mouse position
+            _delta = MouseState().coordinates.sub(DragState().coordinates)
+            _delta.multiply(_scale)
+
+            DragState().delta = DragState().delta.add(_delta)
+
+            DragState().translate_transform.translation.setValue(
+                tuple(DragState().delta)
+            )
+
+        _mouse_coord = MouseState().coordinates
+
+        if MouseState().shiftDown:
+
+            print(QtGui.QApplication.overrideCursor())
+            QtGui.QApplication.setOverrideCursor(Qt.BlankCursor)
+
+            #get the window position of the updated drag delta coordinate
+            _new_coord = DragState().start.add(DragState().delta)
+
+            _new_pos = Vector(ViewState().view.getPointOnScreen(_new_coord) + (0.0,))
+
+            #set the mouse position at the updated screen coordinate
+            _delta_pos = _new_pos.sub(Vector(MouseState().pos + (0.0,)))
+
+            _pos = Vector(QCursor.pos().toTuple() + (0.0,)).add(
+
+                Vector(_delta_pos.x, -_delta_pos.y))
+
+            QCursor.setPos(_pos[0], _pos[1])
+
+            #get the screen position by adding back the offset to the new
+            #window position
+            _mouse_coord = _new_coord
+
+        elif QtGui.QApplication.overrideCursor():
+
+            print (QtGui.QApplication.overrideCursor().shape())
+
+            if QtGui.QApplication.overrideCursor().shape() == Qt.CursorShape.BlankCursor:
+
+                QtGui.QApplication.restoreOverrideCursor()
+
+        #save the drag state coordinate as the current mouse coordinate
+
+        DragState().coordinates = _mouse_coord
+        DragState().update(start=_drag_line_start)
 
     def end_drag(self):
         """
@@ -294,6 +379,70 @@ class BaseTracker:
 
         DragState().finish()
         self.state.dragging = False
+
+        if QtGui.QApplication.overrideCursor() == Qt.BlankCursor:
+            QtGui.QApplication.restoreOverrideCursor()
+
+    def _update_rotation(self):
+        """
+        Manage rotation during dragging
+        """
+
+        _vec = MouseState().coordinates.sub(DragState().rotation_center)
+
+        _angle = support.get_bearing(_vec)
+
+        if DragState().rotation_center == Vector():
+
+            DragState().rotation_center = MouseState().coordinates
+
+            DragState().rotate_transform.center.setValue(
+                coin.SbVec3f(
+                    tuple(
+                        MouseState().coordinates.sub(
+                            Vector(
+                                DragState().translate_transform.translation.getValue()
+                            )
+                        )
+                    )
+                )
+            )
+
+            #_nodes = [_v.get() \
+            #    for _v in self.trackers['Nodes'] if _v.state.selected.value]
+
+            #_nodes = [_v.sub(_nodes[0]) for _v in _nodes]
+
+            #_avg = Vector()
+
+            #for _v in _nodes:
+            #    _avg = _avg.add(_v)
+
+            #_avg.multiply(1 / len(_nodes)).normalize()
+
+            DragState().rotation = 0.0
+            DragState().angle = _angle
+
+        _scale = 1.0
+
+        if MouseState().shiftDown:
+            _scale = 0.10
+
+        _delta = DragState().angle - _angle
+
+        if _delta < -math.pi:
+            _delta += C.TWO_PI
+
+        elif _delta > math.pi:
+            _delta -= C.TWO_PI
+
+        DragState().rotation += _delta * _scale
+        DragState().angle = _angle
+
+        #return the +z axis rotation for the transformation
+        return coin.SbRotation(
+            coin.SbVec3f(0.0, 0.0, 1.0), DragState().rotation
+        )
 
     def set_selectability(self, is_selectable):
         """

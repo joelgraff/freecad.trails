@@ -24,8 +24,6 @@
 """
 Task to edit an alignment
 """
-import os
-
 import PySide.QtGui as QtGui
 import PySide.QtCore as QtCore
 

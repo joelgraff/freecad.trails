@@ -43,18 +43,64 @@ class DragState(metaclass=Singleton):
         self.start = Vector()
 
         self.group = coin.SoSeparator()
-        self.transform = coin.SoTransform()
-        self.transform.translation.setValue(
+        self.translate_transform = coin.SoTransform()
+        self.translate_transform.translation.setValue(
             tuple([0.0, 0.0, 0.0])
         )
 
+        self.rotate_transform = coin.SoTransform()
+
         self.node = None
         self.matrix = None
-        self.group.addChild(self.transform)
+
+        self.drag_line_coord = coin.SoCoordinate3()
+
+        self._build_drag_line()
+
+        self.group.addChild(self.translate_transform)
+        self.group.addChild(self.rotate_transform)
+
         self.drag_node = None
+
+        self.delta = Vector()
+        self.coordinates = Vector()
+        self.offset = Vector()
+        self.start_pos = tuple()
+
+        self.angle = 0.0
+        self.rotation_center = Vector()
+        self.rotation = 0.0
 
         self.sg_ok = False
         self.sg_root = None
+
+    def update(self, start = None):
+        """
+        Update the drag line
+        """
+
+        if start is None:
+            start = self.start
+
+        _p = [tuple(start), tuple(self.coordinates)]
+
+        self.drag_line_coord.point.setValues(0, 2, _p)
+
+    def _build_drag_line(self):
+        """
+        Build the drag line for drag operations
+        """
+
+        _m = coin.SoMarkerSet()
+        _l = coin.SoLineSet()
+        _g = coin.SoSeparator()
+
+        _g.addChild(self.drag_line_coord)
+        _g.addChild(_m)
+        _g.addChild(_l)
+        _l.numVertices.setValue(2)
+
+        self.group.addChild(_g)
 
     def add_node(self, node):
         """

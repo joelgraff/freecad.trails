@@ -40,7 +40,7 @@ class BoxTracker(BaseTracker):
     BoxTracker Class
 
     self.points - list of Vectors
-    self.selction_nodes - 
+    self.selction_nodes -
         list of point indices which correspond to node trackers
     """
 

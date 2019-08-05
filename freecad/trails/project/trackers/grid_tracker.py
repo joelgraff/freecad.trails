@@ -31,14 +31,12 @@ from FreeCAD import Vector
 from .base_tracker import BaseTracker
 from .wire_tracker import WireTracker
 
-from ..support.drag_state import DragState
-
 class GridTracker(BaseTracker):
     """
     GridTracker Class
 
     self.points - list of Vectors
-    self.selction_nodes - 
+    self.selction_nodes -
         list of point indices which correspond to node trackers
     """
 
