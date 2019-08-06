@@ -67,10 +67,11 @@ class WireTracker(BaseTracker):
 
         super().__init__(names=names, children=nodes)
 
-    def set_points(self, points, nodes, indices=None):
+    def set_points(self, points=None, nodes=None, indices=None):
         """
         Set the node trackers points
 
+        points - actual points which make up the line
         nodes - references to node trackers
         indices - index of point in self.points that node updates
         """
@@ -85,7 +86,7 @@ class WireTracker(BaseTracker):
         self.points = points
 
         _l = 0
-        
+
         if nodes:
             _l = len(nodes)
 
@@ -93,8 +94,8 @@ class WireTracker(BaseTracker):
         if _l == 2 and not indices:
             indices = [0, len(self.points) - 1]
 
-        #more than two nodes and index mismatch = error
-        if _l > 2:
+        #more than two nodes with unequal points and index mismatch = error
+        if _l > 2 and len(points) != _l:
 
             if not indices or len(indices) != _l:
 

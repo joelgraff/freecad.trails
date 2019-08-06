@@ -77,6 +77,8 @@ class BaseTracker:
         Constructor
         """
 
+        print('creating ', names)
+
         self.node_ok = False
         self.names = names
         self.name = names[2]
@@ -161,7 +163,11 @@ class BaseTracker:
             return
 
         if not self.state.visible.value:
-            return
+
+            print(self.name, 'invisible, test refresh')
+            self.refresh()
+            if not self.state.visible.value:
+                return
 
         #abort if dragging to avoid highlighting tests
         self.update_dragging()
@@ -279,7 +285,6 @@ class BaseTracker:
         Initialize drag ops
         """
 
-        print(self.name, 'start_drag()')
         #copy the tracker node structure to the drag state node for
         #transformations during drag operations
         DragState().add_node(self.copy())
@@ -534,8 +539,7 @@ class BaseTracker:
 
         _c = MouseState().component
 
-        if not _c:
-            return
+        self.set_visible(True)
 
         for _cond in self.conditions:
 

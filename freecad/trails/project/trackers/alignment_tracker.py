@@ -172,7 +172,9 @@ class AlignmentTracker(BaseTracker):
         #node trackers
         for _i, _pt in enumerate(_nodes):
 
-            _tr = NodeTracker(names=_names + ['NODE-' + str(_i)], point=_pt)
+            _tr = NodeTracker(
+                names=_names[:2] + ['NODE-' + str(_i)], point=_pt
+            )
             _result['Nodes'].append(_tr)
 
         _result['Nodes'][0].is_end_node = True
@@ -185,10 +187,10 @@ class AlignmentTracker(BaseTracker):
 
             _result['Tangents'].append(
                 self._build_wire_tracker(
-                    wire_name=_names + ['WIRE-' + str(_i)],
+                    wire_name=_names[:2] + ['WIRE-' + str(_i)],
                     nodes=_nodes,
                     points=[], #[_v.point for _v in _nodes],
-                    select=True
+                    select=False
                 )
             )
 
@@ -199,7 +201,7 @@ class AlignmentTracker(BaseTracker):
         for _i in range(0, len(_result['Tangents']) - 1):
 
             _ct = CurveTracker(
-                names=_names + ['CURVE-' + str(_i)],
+                names=_names[:2] + ['CURVE-' + str(_i)],
                 curve=_curves[_i],
                 pi_nodes=_result['Nodes'][_i:_i+3]
             )
