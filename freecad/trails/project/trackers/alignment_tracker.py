@@ -44,6 +44,7 @@ from ..support.drag_state import DragState
 
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
+from .curve_tracker import CurveTracker
 
 class AlignmentTracker(BaseTracker):
     """
@@ -193,6 +194,20 @@ class AlignmentTracker(BaseTracker):
 
         _curves = self.alignment.get_curves()
         _names = self.names[:2]
+
+        #curve trackers
+        for _i in range(0, len(_result['Tangents']) - 1):
+
+            _ct = CurveTracker(
+                names=_names + ['CURVE-' + str(_i)],
+                curve=_curves[_i],
+                pi_nodes=_result['Nodes'][_i:_i+3]
+            )
+
+            _ct.set_selectability(True)
+
+            _result['Nodes'][_i + 1].conditions.append(_ct.name)
+            _result['Curves'].append(_ct)
 
         self.trackers = _result
 
