@@ -109,6 +109,7 @@ class MouseState(metaclass=Singleton):
         """
 
         self.pos = ()
+
         self.buttons = {
             'BUTTON1': self.ButtonState(),
             'BUTTON2': self.ButtonState(),

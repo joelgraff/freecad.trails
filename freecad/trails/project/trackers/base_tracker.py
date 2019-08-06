@@ -93,6 +93,8 @@ class BaseTracker:
         self.active_style = None
         self.conditions = []
 
+        self.matrix = None
+
         if not children:
             children = []
 
@@ -304,6 +306,8 @@ class BaseTracker:
             _scale = 0.10
 
         _drag_line_start = DragState().start
+        _drag_line_end = MouseState().coordinates
+        _mouse_coord = MouseState().coordinates
 
         if MouseState().altDown:
 
@@ -315,9 +319,7 @@ class BaseTracker:
                 Vector(DragState().translate_transform.translation.getValue())
             )
 
-#            _vec = DragState().start.sub(Vector(self.drag_transform.translation.getValue()))
-
-#            self.drag.start = _vec
+            _mouse_coord = DragState().coordinates
 
         else:
 
@@ -334,11 +336,8 @@ class BaseTracker:
                 tuple(DragState().delta)
             )
 
-        _mouse_coord = MouseState().coordinates
-
         if MouseState().shiftDown:
 
-            print(QtGui.QApplication.overrideCursor())
             QtGui.QApplication.setOverrideCursor(Qt.BlankCursor)
 
             #get the window position of the updated drag delta coordinate
@@ -370,7 +369,7 @@ class BaseTracker:
         #save the drag state coordinate as the current mouse coordinate
 
         DragState().coordinates = _mouse_coord
-        DragState().update(start=_drag_line_start)
+        DragState().update(_drag_line_start, _drag_line_end)
 
     def end_drag(self):
         """
@@ -378,7 +377,6 @@ class BaseTracker:
         """
 
         DragState().finish()
-        self.state.dragging = False
 
         if QtGui.QApplication.overrideCursor() == Qt.BlankCursor:
             QtGui.QApplication.restoreOverrideCursor()
@@ -396,29 +394,12 @@ class BaseTracker:
 
             DragState().rotation_center = MouseState().coordinates
 
+            _dx = DragState().translate_transform.translation.getValue()
+            _dx_vec = MouseState().coordinates.sub(Vector(_dx))
+
             DragState().rotate_transform.center.setValue(
-                coin.SbVec3f(
-                    tuple(
-                        MouseState().coordinates.sub(
-                            Vector(
-                                DragState().translate_transform.translation.getValue()
-                            )
-                        )
-                    )
-                )
+                coin.SbVec3f(tuple(_dx_vec))
             )
-
-            #_nodes = [_v.get() \
-            #    for _v in self.trackers['Nodes'] if _v.state.selected.value]
-
-            #_nodes = [_v.sub(_nodes[0]) for _v in _nodes]
-
-            #_avg = Vector()
-
-            #for _v in _nodes:
-            #    _avg = _avg.add(_v)
-
-            #_avg.multiply(1 / len(_nodes)).normalize()
 
             DragState().rotation = 0.0
             DragState().angle = _angle
@@ -568,6 +549,9 @@ class BaseTracker:
 
         _result = []
 
+        #store the view state matrix if a valid node is passed.
+        #subsequent calls with null node will re-use the last valid node matrix
+        refresh = refresh and node is not None
         _matrix = ViewState().get_matrix(node, refresh=refresh)
 
         if not _matrix:

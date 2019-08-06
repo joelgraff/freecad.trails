@@ -48,7 +48,7 @@ class ViewState(metaclass=Singleton):
             view.getViewer().getSoRenderManager().getViewportRegion()
         self.sg_root = self.view.getSceneGraph()
 
-        self.matrix = None
+        self._matrix = None
 
     def get_matrix(self, node, parent=None, refresh=True):
         """
@@ -63,8 +63,8 @@ class ViewState(metaclass=Singleton):
             parent = self.sg_root
 
         if not refresh:
-            if self.matrix:
-                return self.matrix
+            if self._matrix:
+                return self._matrix
 
         #define the search path
         _search = coin.SoSearchAction()
@@ -75,6 +75,6 @@ class ViewState(metaclass=Singleton):
         _matrix = coin.SoGetMatrixAction(ViewState().viewport)
         _matrix.apply(_search.getPath())
 
-        self.matrix = _matrix.getMatrix()
+        self._matrix = coin.SbMatrix(_matrix.getMatrix().getValue())
 
-        return self.matrix
+        return self._matrix

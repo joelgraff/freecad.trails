@@ -231,7 +231,10 @@ class WireTracker(BaseTracker):
         Override of base function
         """
 
-        super().end_drag()
+        _node = None
+
+        if DragState().node:
+            _node = DragState().node_group.getChild(0)
 
         #transform all points which are not nodes
         _points = []
@@ -245,8 +248,7 @@ class WireTracker(BaseTracker):
         else:
             _points = self.points
 
-        _points = \
-            self.transform_points(_points, DragState().drag_node, refresh=True)
+        _points = self.transform_points(_points, _node, refresh=True)
 
         self.update(_points)
 
@@ -255,6 +257,8 @@ class WireTracker(BaseTracker):
         self.drag_start = []
         self.remove_node(self.group)
         self.group.removeAllChildren()
+
+        super().end_drag()
 
     def finalize(self, node=None, parent=None):
         """

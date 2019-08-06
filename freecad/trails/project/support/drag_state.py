@@ -43,6 +43,8 @@ class DragState(metaclass=Singleton):
         self.start = Vector()
 
         self.group = coin.SoSeparator()
+        self.node_group = coin.SoSeparator()
+
         self.translate_transform = coin.SoTransform()
         self.translate_transform.translation.setValue(
             tuple([0.0, 0.0, 0.0])
@@ -59,6 +61,7 @@ class DragState(metaclass=Singleton):
 
         self.group.addChild(self.translate_transform)
         self.group.addChild(self.rotate_transform)
+        self.group.addChild(self.node_group)
 
         self.drag_node = None
 
@@ -74,15 +77,18 @@ class DragState(metaclass=Singleton):
         self.sg_ok = False
         self.sg_root = None
 
-    def update(self, start = None):
+    def update(self, line_start=None, line_end=None):
         """
         Update the drag line
         """
 
-        if start is None:
-            start = self.start
+        if line_start is None:
+            line_start = self.start
 
-        _p = [tuple(start), tuple(self.coordinates)]
+        if line_end is None:
+            line_end = self.coordinates
+
+        _p = [tuple(line_start), tuple(line_end)]
 
         self.drag_line_coord.point.setValues(0, 2, _p)
 
@@ -92,13 +98,23 @@ class DragState(metaclass=Singleton):
         """
 
         _m = coin.SoMarkerSet()
-        _l = coin.SoLineSet()
-        _g = coin.SoSeparator()
 
+        _l = coin.SoLineSet()
+        _l.numVertices.setValue(2)
+
+        _d = coin.SoDrawStyle()
+        _d.linePattern = 0x0f0f
+        _d.lineWeight = 2
+
+        _c = coin.SoBaseColor()
+        _c.rgb = (0.0, 0.0, 1.0)
+
+        _g = coin.SoGroup()
+        _g.addChild(_d)
+        _g.addChild(_c)
         _g.addChild(self.drag_line_coord)
         _g.addChild(_m)
         _g.addChild(_l)
-        _l.numVertices.setValue(2)
 
         self.group.addChild(_g)
 
@@ -110,7 +126,7 @@ class DragState(metaclass=Singleton):
         if not self.drag_node:
             self.drag_node = node
 
-        self.group.addChild(node)
+        self.node_group.addChild(node)
 
     def finish(self):
         """
@@ -125,8 +141,6 @@ class DragState(metaclass=Singleton):
         #abort if no children have been added
         if self.group.getNumChildren() < 2:
             return None
-
-        ViewState().get_matrix(self.group.getChild(1))
 
         self.reset()
 
@@ -149,7 +163,6 @@ class DragState(metaclass=Singleton):
 
         self.sg_root = ViewState().sg_root
         todo.delay(DragState()._insert, DragState())
-
 
     def reset(self):
         """

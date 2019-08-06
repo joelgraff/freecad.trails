@@ -29,6 +29,8 @@ from pivy import coin
 from FreeCAD import Vector
 
 from ..support.drag_state import DragState
+from ..support.mouse_state import MouseState
+from ..support.view_state import ViewState
 
 from .base_tracker import BaseTracker
 
@@ -63,16 +65,46 @@ class NodeTracker(BaseTracker):
 
         self.update()
 
+    def start_drag(self):
+        """
+        Initialize drag ops
+        """
+
+        super().start_drag()
+
+        _pos = Vector(
+            ViewState().view.getPointOnScreen(Vector(self.point)) + (0.0,)
+        )
+
+        if _pos.sub(Vector(MouseState().pos)).Length > 5.0:
+            return
+
+        #if the user clicked on this node, center the drag coordinates on it
+        if DragState().node == self:
+
+            _p = self.point
+
+            if not isinstance(_p, Vector):
+                _p = Vector(_p)
+
+            DragState().start = _p
+            DragState().coordinates = _p
+
     def end_drag(self):
         """
         Override of base function
         """
 
-        super().end_drag()
+        _node = None
 
-        _point = self.transform_points([self.point], DragState().node, True)
+        if DragState().node:
+            _node = DragState().node_group.getChild(0)
+
+        _point = self.transform_points([self.point], _node, True)
 
         self.update(_point)
+
+        super().end_drag()
 
     def update(self, coord=None):
         """

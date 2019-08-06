@@ -194,53 +194,6 @@ class AlignmentBaseTestTracker(BaseTracker):
 
         return _wt
 
-    def _update_rotation(self, vector, modify=False):
-        """
-        Manage rotation during dragging
-        """
-
-        _angle = support.get_bearing(vector)
-
-        if self.drag.rotation is None:
-
-            self.drag_transform.center.setValue(
-                coin.SbVec3f(tuple(self.drag.center))
-            )
-
-            _nodes = [_v.get() \
-                for _v in self.trackers['Nodes'] if _v.state.selected.value]
-
-            _nodes = [_v.sub(_nodes[0]) for _v in _nodes]
-
-            _avg = Vector()
-
-            for _v in _nodes:
-                _avg = _avg.add(_v)
-
-            _avg.multiply(1 / len(_nodes)).normalize()
-
-            self.drag.rotation = 0.0
-            self.drag.angle = _angle
-
-        _scale = 1.0
-
-        if modify:
-            _scale = 0.10
-
-        _delta = self.drag.angle - _angle
-
-        if _delta < -math.pi:
-            _delta += C.TWO_PI
-
-        elif _delta > math.pi:
-            _delta -= C.TWO_PI
-
-        self.drag.rotation += _delta * _scale
-        self.drag.angle = _angle
-
-        #return the +z axis rotation for the transformation
-        return coin.SbRotation(coin.SbVec3f(0.0, 0.0, 1.0), self.drag.rotation)
-
     def finalize(self):
         """
         Cleanup the tracker
