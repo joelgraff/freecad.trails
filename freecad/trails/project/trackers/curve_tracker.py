@@ -133,40 +133,10 @@ class CurveTracker(BaseTracker):
         self.trackers['Curve'][0].set_style(style)
         super().set_style(style)
 
-    def mouse_event(self, arg):
-        """
-        Mouse event callback
-        """
-
-        super().mouse_event(arg)
-        return
-
-        #skip if the curve is selected
-        if self.state.selected.value:
-            return
-
-        #if the curve is under cursor, set state to selected
-        _do_highlight = self.name in MouseState().component
-
-        #skip if there's no state change for highlighting
-        if _do_highlight == self.state.highlighted:
-            return
-
-        #always show trackers if necessary
-        for _v in self.trackers['Nodes'] + self.trackers['Wires']:
-            _v.refresh(visible=_do_highlight)
-
-        self.pi_nodes[1].refresh(visible=not _do_highlight)
-
-        self.state.highlighted = _do_highlight
-
     def button_event(self, arg):
         """
         Manage button actions affecting multiple nodes / wires
         """
-
-        super().button_event(arg)
-        return
 
         if MouseState().button1.state == 'UP':
             return

@@ -118,18 +118,12 @@ class AlignmentTracker(BaseTracker):
             MouseState().component + ' ' + str(tuple(MouseState().coordinates))
         )
 
-    def mouse_event(self, arg):
-        """
-        Manage mouse actions affecting multiple nodes / wires
-        """
-
-        pass
-
     def button_event(self, arg):
         """
         Override base button actions
         """
 
+        #multi-select
         _pick = MouseState().component
 
         if not _pick:

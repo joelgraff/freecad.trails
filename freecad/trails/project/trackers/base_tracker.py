@@ -367,8 +367,6 @@ class BaseTracker:
 
         elif QtGui.QApplication.overrideCursor():
 
-            print (QtGui.QApplication.overrideCursor().shape())
-
             if QtGui.QApplication.overrideCursor().shape() == Qt.CursorShape.BlankCursor:
 
                 QtGui.QApplication.restoreOverrideCursor()
@@ -533,6 +531,9 @@ class BaseTracker:
         """
         Process the conditions which determine node visiblity
         """
+
+        if self.state.visible.ignore:
+            return
 
         if not self.conditions:
             return
