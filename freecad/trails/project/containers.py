@@ -102,7 +102,6 @@ class TrackerContainer():
             _result = self._ignore
 
             if self._ignore_once:
-
                 self._ignore_once = False
                 self._ignore = False
 

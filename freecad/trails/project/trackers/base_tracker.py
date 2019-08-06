@@ -260,8 +260,9 @@ class BaseTracker:
 
         if MouseState().button1.dragging and self.state.selected.value:
 
+            print(self.name, 'drag = ', self.state.dragging)
             if not self.state.dragging:
-
+                print(self.name, 'calling drag')
                 self.start_drag()
                 self.state.dragging = True
 
@@ -278,6 +279,7 @@ class BaseTracker:
         Initialize drag ops
         """
 
+        print(self.name, 'start_drag()')
         #copy the tracker node structure to the drag state node for
         #transformations during drag operations
         DragState().add_node(self.copy())

@@ -26,16 +26,17 @@ Customized wire tracker from DraftTrackers.wireTracker
 
 from pivy import coin
 
-from .base_tracker import BaseTracker
-
 from ..support.drag_state import DragState
+from ..support.mouse_state import MouseState
+
+from .base_tracker import BaseTracker
 
 class WireTracker(BaseTracker):
     """
     Customized wire tracker
 
     self.points - list of Vectors
-    self.selction_nodes - 
+    self.selction_nodes -
         list of point indices which correspond to node trackers
     """
 
@@ -148,6 +149,9 @@ class WireTracker(BaseTracker):
         SoMouseButtonEvent callback
         """
 
+        if MouseState().button1.state == 'UP':
+            return
+
         _sel = []
 
         if self.selection_nodes:
@@ -155,7 +159,7 @@ class WireTracker(BaseTracker):
 
         self.state.selected.ignore = False
 
-        if not all(_sel) and any(_sel):
+        if all(_sel) or (not all(_sel) and any(_sel)):
             self.state.selected.value = True
             self.state.selected.ignore = True
 
@@ -166,12 +170,19 @@ class WireTracker(BaseTracker):
         Override of base function
         """
 
+        #base implementation if no selection nodes
         if self.selection_nodes is None:
             super().start_drag()
             return
 
         _states = [_v.state.selected.value for _v in self.selection_nodes]
 
+        #base implementation if all nodes selected
+        if all(_states):
+            super().start_drag()
+            return
+
+        #custom implementation for partial selection
         self.state.dragging = not all(_states) and any(_states)
 
         if not self.state.dragging:

@@ -45,7 +45,7 @@ from ..support.drag_state import DragState
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
 
-class AlignmentBaseTestTracker(BaseTracker):
+class AlignmentTracker(BaseTracker):
     """
     Tracker class for alignment design
     """
@@ -129,7 +129,22 @@ class AlignmentBaseTestTracker(BaseTracker):
         Override base button actions
         """
 
-        pass
+        _pick = MouseState().component
+
+        if not _pick:
+            return
+
+        if not 'NODE' in _pick:
+            return
+
+        if MouseState().button1.state == 'UP':
+            return
+
+        _idx = int(_pick.split('-')[1])
+
+        for _v in self.trackers['Nodes'][_idx:]:
+            _v.state.selected.value = True
+            _v.state.selected.ignore_once()
 
     def build_trackers(self):
         """
@@ -170,8 +185,8 @@ class AlignmentBaseTestTracker(BaseTracker):
             _result['Tangents'].append(
                 self._build_wire_tracker(
                     wire_name=_names + ['WIRE-' + str(_i)],
-                    nodes=None,
-                    points=[_v.point for _v in _nodes],
+                    nodes=_nodes,
+                    points=[], #[_v.point for _v in _nodes],
                     select=True
                 )
             )
