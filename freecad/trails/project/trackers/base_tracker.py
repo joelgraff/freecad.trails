@@ -164,19 +164,20 @@ class BaseTracker:
 
         if not self.state.visible.value:
 
-            print(self.name, 'invisible, test refresh')
             self.refresh()
             if not self.state.visible.value:
                 return
 
-        #abort if dragging to avoid highlighting tests
-        self.update_dragging()
+        if self.state.draggable:
 
-        if self.state.dragging:
-            return
+            #abort if dragging to avoid highlighting tests
+            self.update_dragging()
+            print(self.name, 'update dragging', self.state.dragging, self.state.selected.value)
+            if self.state.dragging:
+                return
 
-        if self.state.selected.value:
-            return
+            if self.state.selected.value:
+                return
 
         self.update_highlighting()
 

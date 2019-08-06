@@ -34,6 +34,7 @@ import FreeCADGui as Gui
 from ...geometry import support, arc, spiral
 
 from ..support.mouse_state import MouseState
+from ..support.drag_state import DragState
 
 from .base_tracker import BaseTracker
 from .coin_style import CoinStyle
@@ -133,6 +134,37 @@ class CurveTracker(BaseTracker):
         self.trackers['Curve'][0].set_style(style)
         super().set_style(style)
 
+    def mouse_event(self, arg):
+        """
+        Override base function
+        """
+
+        super().mouse_event(arg)
+
+        print('mo 1', self.state.selected.value, self.state.dragging)
+        if not self.state.dragging:
+            return
+
+        print('mo 2')
+
+        if not self.name in DragState().node.name:
+            return
+
+        print('mo 3', DragState().node.name)
+
+        if not 'Center' in DragState().node.name:
+            return
+
+        _curve = {
+            'BearingIn': self.curve['BearingIn'],
+            'BearingOut': self.curve['BearingOut'],
+            'PI': self.pi_nodes[1].get(),
+            'Center': DragState().coordinates
+        }
+
+        print('updating ', _curve)
+        self.update(_curve)
+
     def button_event(self, arg):
         """
         Manage button actions affecting multiple nodes / wires
@@ -141,6 +173,7 @@ class CurveTracker(BaseTracker):
         if MouseState().button1.state == 'UP':
             return
 
+        #test to see if we're operating on the curve
         _do_select = self.name in MouseState().component
 
         for _v in self.trackers['Nodes'] + self.trackers['Wires']:
@@ -150,6 +183,17 @@ class CurveTracker(BaseTracker):
             _v.refresh()
 
         self.state.selected.value = _do_select
+
+        if not _do_select:
+            return
+
+        #still here? test for curve node changes
+        if 'Center' in MouseState().component:
+            print('selected center')
+            self.trackers['Curve'][0].state.selected.value = False
+            #self.trackers['Curve'][0].state.selected.ignore = True
+
+        #super().button_event(arg)
 
     def rebuild_trackers(self):
         """
@@ -204,6 +248,7 @@ class CurveTracker(BaseTracker):
         _wt.set_points(nodes=_result['Nodes'])
         _wt.set_selectability(False)
         _wt.state.multi_select = False
+        #_wt.state.draggable = False
         _wt.conditions.append('!' + self.names[2])
         _wt.set_style(CoinStyle.EDIT)
         _wt.set_visible(False)
@@ -223,24 +268,22 @@ class CurveTracker(BaseTracker):
         _points = _class.get_points(self.curve)
 
         _wt = WireTracker(self.names + [self.curve['Type']])
-
         _wt.set_selectability(True)
+        _wt.state.multi_select = False
+        #_wt.state.draggable = False
 
         _wt.set_points(
-            points=_points, 
+            points=_points,
             nodes=[_result['Nodes'][0], _result['Nodes'][-1]]
         )
-
-        _wt.state.multi_select = False
-
-        _wt.update()
 
         _result['Curve'] = [_wt]
 
         self.trackers = _result
         self._build_edit_group()
+        self.update()
 
-    def update(self):
+    def update(self, curve=None):
         """
         Update the curve based on the passed data points
         """
@@ -250,11 +293,14 @@ class CurveTracker(BaseTracker):
 
         _points = None
 
-        if self.curve['Type'] == 'Spiral':
+        if curve is None:
+            curve = self.curve
+
+        if curve['Type'] == 'Spiral':
             _points = self._generate_spiral()
 
         else:
-            _points = self._generate_arc()
+            _points = self._generate_arc(curve)
 
         if not _points:
             return
@@ -319,23 +365,25 @@ class CurveTracker(BaseTracker):
 
         return spiral.get_points(self.curve)
 
-    def _generate_arc(self):
+    def _generate_arc(self, curve=None):
         """
         Generate a simple arc curve
         """
 
-        _start = Vector(self.pi_nodes[0].point)
-        _pi = Vector(self.pi_nodes[1].point)
-        _end = Vector(self.pi_nodes[2].point)
+        if curve is None:
 
-        _curve = {
-            'BearingIn': support.get_bearing(_pi.sub(_start)),
-            'BearingOut': support.get_bearing(_end.sub(_pi)),
-            'PI': _pi,
-            'Radius': self.curve['Radius'],
-        }
+            _start = Vector(self.pi_nodes[0].point)
+            _pi = Vector(self.pi_nodes[1].point)
+            _end = Vector(self.pi_nodes[2].point)
 
-        self.curve = arc.get_parameters(_curve)
+            curve = {
+                'BearingIn': support.get_bearing(_pi.sub(_start)),
+                'BearingOut': support.get_bearing(_end.sub(_pi)),
+                'PI': _pi,
+                'Radius': self.curve['Radius'],
+            }
+
+        self.curve = arc.get_parameters(curve)
 
         return arc.get_points(self.curve)
 
@@ -345,7 +393,6 @@ class CurveTracker(BaseTracker):
         """
 
         for _v in self.trackers['Nodes'] + self.trackers['Curve']:
-
             _v.set_selectability(is_selectable)
 
     def finalize(self):

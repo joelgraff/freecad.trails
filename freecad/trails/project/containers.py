@@ -118,6 +118,7 @@ class TrackerContainer():
         self.enabled = self.Property(self.State.ON)
         self.visible = self.Property(self.State.ON)
         self.selected = self.Property(self.State.OFF)
+        self.draggable = True
         self.multi_select = True
         self.highlighted = False
         self.dragging = False
