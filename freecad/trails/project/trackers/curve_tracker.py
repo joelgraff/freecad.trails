@@ -27,14 +27,16 @@ Tracker for curve editing
 import math
 
 from pivy import coin
-
+from PySide import QtGui
 from FreeCAD import Vector
+
 import FreeCADGui as Gui
 
 from ...geometry import support, arc, spiral
 
 from ..support.mouse_state import MouseState
 from ..support.drag_state import DragState
+from ..support.view_state import ViewState
 
 from .base_tracker import BaseTracker
 from .coin_style import CoinStyle
@@ -54,8 +56,12 @@ class CurveTracker(BaseTracker):
         self.curve = curve
         self.pi_nodes = pi_nodes
         self.trackers = None
+        self.lock_group = None
 
         self.status_bar = Gui.getMainWindow().statusBar()
+
+        self.drag_lock = ''
+        self.drag_reference = 0.0
 
         super().__init__(names=names)
 
@@ -141,29 +147,42 @@ class CurveTracker(BaseTracker):
 
         super().mouse_event(arg)
 
-        print('mo 1', self.state.selected.value, self.state.dragging)
         if not self.state.dragging:
             return
 
-        print('mo 2')
+        if not DragState().node:
+            return
 
         if not self.name in DragState().node.name:
             return
 
-        print('mo 3', DragState().node.name)
-
         if not 'Center' in DragState().node.name:
             return
 
+        #if we're still here, the user is attempting to change the curve
+        #get the current paramter locks from the UI panel and recalculate
+
+        _vec = self.pi_nodes[1].get().sub(MouseState().coordinates)
+        _offset = Vector(self.drag_reference).multiply(_vec.Length)
+        _center = self.pi_nodes[1].get().sub(_offset)
+
         _curve = {
+            'Type': self.curve['Type'],
             'BearingIn': self.curve['BearingIn'],
             'BearingOut': self.curve['BearingOut'],
             'PI': self.pi_nodes[1].get(),
-            'Center': DragState().coordinates
+            'Center': _center,
+            'Delta': self.curve['Delta']
         }
 
-        print('updating ', _curve)
+        DragState().update(DragState().start, _center)
+        DragState().translate_transform.translation.setValue(
+            tuple(_center.sub(DragState().start))
+        )
+
         self.update(_curve)
+
+        DO CURVE VALIDATION HERE
 
     def button_event(self, arg):
         """
@@ -172,6 +191,19 @@ class CurveTracker(BaseTracker):
 
         if MouseState().button1.state == 'UP':
             return
+
+        if MouseState().button1.state == 'UP':
+            return
+
+        #test to see if curve is being dragged by PI nodes
+        _sel = [_v.state.selected.value for _v in self.pi_nodes]
+        self.state.selected.ignore = False
+
+        if all(_sel) or (not all(_sel) and any(_sel)):
+            self.state.selected.value = True
+            self.state.selected.ignore = True
+
+            super().button_event(arg)
 
         #test to see if we're operating on the curve
         _do_select = self.name in MouseState().component
@@ -189,11 +221,71 @@ class CurveTracker(BaseTracker):
 
         #still here? test for curve node changes
         if 'Center' in MouseState().component:
-            print('selected center')
-            self.trackers['Curve'][0].state.selected.value = False
-            #self.trackers['Curve'][0].state.selected.ignore = True
+            self.trackers['Curve'][0].state.selected.value = True
 
-        #super().button_event(arg)
+    def start_drag(self):
+        """
+        Override base method
+        """
+
+        #test to see if the curve is being manipulated by it's PI's
+        _sel = [_v.state.selected.value for _v in self.pi_nodes]
+
+        #alignment is being dragged, fall back on base implementation
+        if all(_sel):
+            super().start_drag()
+            return
+
+        #alignment dragging, but curve wil lneed to be manually updated
+        self.state.dragging = any(_sel)
+
+        #quit if any of the PI nodes are selected
+        if self.state.dragging:
+            return
+
+        #no PI nodes are selected, test for selected curve ndoes
+        self.drag_reference = \
+            self.pi_nodes[1].get().sub(self.curve['Center']).normalize()
+
+        DragState().override = True
+
+    def on_drag(self):
+        """
+        Override base method
+        """
+
+        #need to update partially-selected curves
+        #and do curve validations
+
+        #abort unselected
+        if not self.state.dragging:
+            return
+
+        #partially-selected wires will have a drag_idx.
+        #fully-selected / unselected will not
+        if self.drag_idx is not None:
+
+            if DragState().sg_ok:
+                self._partial_drag()
+
+            return
+
+        NEED TO VALIDATE THE CURVE CHANGES
+
+        super().on_drag()
+
+    def _partial_drag(self):
+        """
+        Perform partial drag if ok
+        """
+
+        #refresh the matrix only if invalid, since all wires will want the
+        #same transformation
+
+        NEED TO REDEFINE CURVE BASED ON CHANGES TO THE PI NODES, THEN
+        RECALCULATE THE POINTS FOR UPDATING THE LOCAL DRAG GEOMETRY
+
+        self.drag_coord.point.setValues(0, len(self.points), self.points)
 
     def rebuild_trackers(self):
         """
@@ -248,7 +340,6 @@ class CurveTracker(BaseTracker):
         _wt.set_points(nodes=_result['Nodes'])
         _wt.set_selectability(False)
         _wt.state.multi_select = False
-        #_wt.state.draggable = False
         _wt.conditions.append('!' + self.names[2])
         _wt.set_style(CoinStyle.EDIT)
         _wt.set_visible(False)
