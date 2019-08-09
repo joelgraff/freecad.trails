@@ -172,7 +172,7 @@ class BaseTracker:
 
             #abort if dragging to avoid highlighting tests
             self.update_dragging()
-            print(self.name, 'update dragging', self.state.dragging, self.state.selected.value)
+
             if self.state.dragging:
                 return
 
@@ -267,9 +267,8 @@ class BaseTracker:
 
         if MouseState().button1.dragging and self.state.selected.value:
 
-            print(self.name, 'drag = ', self.state.dragging)
             if not self.state.dragging:
-                print(self.name, 'calling drag')
+
                 self.start_drag()
                 self.state.dragging = True
 
@@ -291,14 +290,10 @@ class BaseTracker:
         DragState().add_node(self.copy())
 
         if not DragState().node:
-
             DragState().node = self
             DragState().start = MouseState().coordinates
             DragState().coordinates = MouseState().coordinates
             DragState().insert()
-            DragState().offset = \
-                Vector(QCursor.pos().toTuple() + (0.0,))
-            DragState().start_pos = MouseState().pos
 
     def on_drag(self):
         """
@@ -306,6 +301,9 @@ class BaseTracker:
         """
 
         if self != DragState().node:
+            return
+
+        if DragState().override:
             return
 
         _scale = 1.0
