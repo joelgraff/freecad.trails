@@ -21,48 +21,52 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout">
+    <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0,1">
      <item>
-      <layout class="QVBoxLayout" name="drag_lock_layout">
-       <item>
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Drag Locks</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="radioButton">
-         <property name="text">
-          <string>Radius</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="radioButton_2">
-         <property name="text">
-          <string>Tangent</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="radioButton_3">
-         <property name="text">
-          <string>Angle</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="radioButton_4">
-         <property name="text">
-          <string>Start / End</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QFormLayout" name="formLayout"/>
-       </item>
-      </layout>
+      <widget class="QRadioButton" name="radius_lock">
+       <property name="text">
+        <string>Radius</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">lock_group</string>
+       </attribute>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="tangent_lock">
+       <property name="text">
+        <string>Tangent</string>
+       </property>
+       <property name="checked">
+        <bool>false</bool>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">lock_group</string>
+       </attribute>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="angle_lock">
+       <property name="text">
+        <string>Angle</string>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">lock_group</string>
+       </attribute>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="start_end_lock">
+       <property name="text">
+        <string>Start / End</string>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">lock_group</string>
+       </attribute>
+      </widget>
      </item>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -77,4 +81,7 @@
  </widget>
  <resources/>
  <connections/>
+ <buttongroups>
+  <buttongroup name="lock_group"/>
+ </buttongroups>
 </ui>
