@@ -220,6 +220,91 @@ class AlignmentTracker(BaseTracker):
 
         return _wt
 
+    def _dep_validate_alignment(self):
+        """
+        Given a list of updated curves, validate them against themselves
+        and adjoining geometry
+        """
+
+        curves = [_v.curve for _v in self.trackers['Curves']]
+
+        #append preceding and following curves if first / last curves
+        #aren't being updated
+        if _idx[0] > 0:
+            _idx.insert(0, _idx[0] - 1)
+            curves.insert(0, self.curves[_idx[0]])
+
+        elif _idx[-1] < len(self.curves) - 1:
+            _idx.append(_idx[-1] + 1)
+            curves.append(self.curves[_idx[-1]])
+
+        _styles = [CoinStyle.DEFAULT]*len(curves)
+
+        #validate curves against each other,
+        #ensuring PI distance >= sum  of curve tangents
+        for _i in range(0, len(curves) - 1):
+
+            _tangents = []
+            _pair = [curves[_i], curves[_i + 1]]
+
+            for _c in _pair:
+
+                if _c['Type'] == 'Spiral':
+
+                    _tangents.append(spiral.get_ordered_tangents(_c)[0])
+                    continue
+
+                _tangents.append(_c['Tangent'])
+
+            if (_tangents[0] + _tangents[1])\
+                > (_pair[0]['PI'].distanceToPoint(_pair[1]['PI'])):
+
+                _styles[_i + 1] = CoinStyle.ERROR
+                _styles[_i] = CoinStyle.ERROR
+
+        #do endpoint checks if the first or last curves are changing.
+        _x = []
+
+        #first curve is updating
+        if _idx[0] == 0:
+            _x.append(0)
+
+        #last curve is updating
+        if _idx[-1] == len(self.curves) - 1:
+            _x.append(-1)
+
+        for _i in _x:
+
+            _c = curves[_i]
+            _p = self.trackers['Nodes'][_i].get()
+            _tangent = None
+
+            #disable validation for spirals temporarily
+            if _c['Type'] == 'Spiral':
+
+                _tans = spiral.get_ordered_tangents(_c)
+                _tangent = _tans[1]
+
+                if _i == 0:
+                    _tangent = _tans[0]
+
+            else:
+                _tangent = _c['Tangent']
+
+            if _styles[_i] != CoinStyle.ERROR \
+                and _tangent > _c['PI'].distanceToPoint(_p):
+
+                _styles[_i] = CoinStyle.ERROR
+
+        for _i, _v in enumerate(_styles):
+
+            _t = self.trackers['Curves'][_idx[0] + _i]
+
+            _t.set_base_style(_v)
+            _t.set_style(_v)
+
+        self.drag.is_valid = all([_v != CoinStyle.ERROR for _v in _styles])
+
     def finalize(self):
         """
         Cleanup the tracker
