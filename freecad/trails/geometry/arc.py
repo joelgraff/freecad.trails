@@ -301,6 +301,7 @@ def get_lengths(arc, mat):
 
     return {'Radius': params[0],
             'Tangent': params[1],
+            'Middle': params[2],
             'Chord': params[3]}
 
 def get_delta(arc, mat):
@@ -370,17 +371,39 @@ def get_missing_parameters(arc, new_arc):
     """
 
     #by this point, missing radius / delta is a problem
-    if new_arc.get('Radius') is None or new_arc.get('Delta') is None:
+
+    #missing both?  stop now.
+    if new_arc.get('Radius') is None and new_arc.get('Delta') is None:
         return None
+
+    #missing radius requires middle ordinate (or PI / Center coords)
+    if new_arc.get('Radius') is None:
+
+        _mo = new_arc.get('Middle')
+
+        if _mo is None:
+
+            if new_arc.get('Center') is None or new_arc.get('PI') is None:
+                return None
+
+            _mo = new_arc['PI'].sub(new_arc['Center']).Length
+            new_arc['Middle'] = _mo
+
+        new_arc['Radius'] = math.acos(new_arc['Delta'] / 2.0) * _mo
 
     #pre-calculate values and fill in remaining parameters
     radius = new_arc['Radius']
     delta = new_arc['Delta']
     half_delta = delta / 2.0
 
-    new_arc['Length'] = radius * delta
-    new_arc['External'] = radius * ((1.0 / math.cos(half_delta)) - 1.0)
-    new_arc['MiddleOrdinate'] = radius * (1.0 - math.cos(half_delta))
+    if new_arc.get('Length') is None:
+        new_arc['Length'] = radius * delta
+
+    if new_arc.get('External') is None:
+        new_arc['External'] = radius * ((1.0 / math.cos(half_delta)) - 1.0)
+
+    if new_arc.get('MiddleOrdinate') is None:
+        new_arc['MiddleOrdinate'] = radius * (1.0 - math.cos(half_delta))
 
     if not new_arc.get('Tangent'):
         new_arc['Tangent'] = radius * math.tan(half_delta)
@@ -483,10 +506,11 @@ def get_parameters(arc):
     _p = get_lengths(arc, mat)
 
     if not _p:
-        print("""
+        Console.PrintError("""
         Invalid curve definition: cannot determine radius / tangent lengths.
         Arc:
-        """, arc)
+        """+ str(arc))
+
         arc['Radius'] = 0.0
         return arc
 
@@ -495,16 +519,20 @@ def get_parameters(arc):
     _p = get_delta(arc, mat)
 
     if not _p:
-        print('Invalid curve definition: cannot determine central angle.',
-              '\nArc:\n', arc)
+        Console.PrintError(
+            'Invalid curve definition: cannot determine central angle.' +
+            '\nArc:\n' + str(arc)
+        )
         return None
 
     result.update(_p)
     _p = get_rotation(arc, vecs)
 
     if not _p:
-        print('Invalid curve definition: cannot determine curve direction.',
-              '\nArc:\n', arc)
+        Console.PrintError(
+            'Invalid curve definition: cannot determine curve direction.' +
+            '\nArc:\n' + str(arc)
+        )
         return None
 
     result.update(_p)
@@ -512,23 +540,30 @@ def get_parameters(arc):
     _p = get_bearings(arc, mat, result['Delta'], result['Direction'])
 
     if not _p:
-        print('Invalid curve definition: cannot determine curve bearings.',
-              '\nArc:\n', arc)
+        Console.PrintError(
+            'Invalid curve definition: cannot determine curve bearings.' +
+            '\nArc:\n' + str(arc)
+        )
         return None
 
     result.update(_p)
     _p = get_missing_parameters(result, result)
 
     if not _p:
-        print('Invalid curve definition: cannot calculate all parameters.',
-              '\nArc:\n', arc)
+        Console.PrintError(
+            'Invalid curve definition: cannot calculate all parameters.' +
+            '\nArc:\n' + str(arc)
+        )
         return None
 
     result.update(_p)
     _p = get_coordinates(result, points)
 
     if not _p:
-        print('Invalid curve definition: cannot calculate coordinates')
+        Console.PrintError(
+            'Invalid curve definition: cannot calculate coordinates' +
+            '\nArc:\n' + str(arc)
+        )
         return None
 
     result.update(_p)
