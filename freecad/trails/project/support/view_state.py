@@ -25,8 +25,11 @@ View state class
 """
 
 from pivy import coin
+from PySide import QtGui
 
 import FreeCADGui as Gui
+
+from . import utils
 
 from .singleton import Singleton
 
@@ -48,6 +51,7 @@ class ViewState(metaclass=Singleton):
             view.getViewer().getSoRenderManager().getViewportRegion()
         self.sg_root = self.view.getSceneGraph()
 
+        self.active_task_panel = None
         self._matrix = None
 
     def get_matrix(self, node, parent=None, refresh=True):
@@ -78,3 +82,18 @@ class ViewState(metaclass=Singleton):
         self._matrix = coin.SbMatrix(_matrix.getMatrix().getValue())
 
         return self._matrix
+
+    def get_active_task_panel(self, refresh=False):
+        """
+        Return a reference to the task panel form currently displayed
+        and save a reference to it in the active_task property
+        """
+
+        if self.active_task_panel and not refresh:
+            return self.active_task_panel
+
+        _form = utils.getMainWindow().findChild(QtGui.QWidget, 'TaskPanel')
+
+        self.active_task_panel = _form
+
+        return _form
