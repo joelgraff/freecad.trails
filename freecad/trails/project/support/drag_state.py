@@ -53,7 +53,6 @@ class DragState(metaclass=Singleton):
         self.rotate_transform = coin.SoTransform()
 
         self.node = None
-        self.matrix = None
 
         self.drag_line_coord = coin.SoCoordinate3()
 
@@ -65,17 +64,23 @@ class DragState(metaclass=Singleton):
 
         self.drag_node = None
 
+        #coordinate tracking properties
         self.delta = Vector()
         self.coordinates = Vector()
-        self.offset = Vector()
-        self.start_pos = tuple()
 
+        #cumulate angle, center of rotation and current drag rotation 
         self.angle = 0.0
         self.rotation_center = Vector()
         self.rotation = 0.0
 
+        #flag indicating scenegraph updates are complete
         self.sg_ok = False
-        self.sg_root = None
+
+        #refrence to scenegrapg root node (used internally)
+        self._sg_root = None
+
+        #set to indicate to base tracker not to push updates during on_drag()
+        self.override = False
 
     def update(self, line_start=None, line_end=None):
         """
@@ -150,7 +155,7 @@ class DragState(metaclass=Singleton):
         Delayed callback for sg_ok
         """
 
-        drag_state.sg_root.insertChild(drag_state.group, 0)
+        drag_state._sg_root.insertChild(drag_state.group, 0)
         drag_state.sg_ok = True
 
     def insert(self):
@@ -161,7 +166,7 @@ class DragState(metaclass=Singleton):
 
         self.sg_ok = False
 
-        self.sg_root = ViewState().sg_root
+        self._sg_root = ViewState().sg_root
         todo.delay(DragState()._insert, DragState())
 
     def reset(self):
