@@ -56,6 +56,7 @@ class WireTracker(BaseTracker):
         self.drag_coord = None
         self.drag_idx = None
         self.drag_start = []
+        self.drag_points = []
 
         if not nodes:
             nodes = []
@@ -197,6 +198,7 @@ class WireTracker(BaseTracker):
         self.group.addChild(_node)
         self.drag_coord = _node.getChild(3)
         self.drag_start = self.points[:]
+        self.drag_points = self.points[:]
 
         self.insert_node(self.group, 0)
 
@@ -230,13 +232,14 @@ class WireTracker(BaseTracker):
 
         #refresh the matrix only if invalid, since all wires will want the
         #same transformation
-        self.points[self.drag_idx] =\
+        self.drag_points[self.drag_idx] =\
              self.transform_points(
                  [self.drag_start[self.drag_idx]],
                  DragState().drag_node,
                  refresh=True
              )[0]
 
+        self.points = self.drag_points
         self.drag_coord.point.setValues(0, len(self.points), self.points)
 
     def end_drag(self):

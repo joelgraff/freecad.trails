@@ -75,7 +75,6 @@ class CurveTracker(BaseTracker):
         self.drag_points = []
         self.drag_arc = None
 
-        super().__init__(names=names)
 
         #scenegraph node structure for editing and dragging operations
         self.groups = {
@@ -83,12 +82,14 @@ class CurveTracker(BaseTracker):
             'DRAG': coin.SoGroup(),
         }
 
-        self.node.addChild(self.groups['EDIT'])
-        self.node.addChild(self.groups['DRAG'])
-
         #generate initial node trackers and wire trackers for mouse interaction
         #and add them to the scenegraph
-        self.build_trackers()
+        self.build_trackers(names)
+
+        super().__init__(names=names)
+
+        self.node.addChild(self.groups['EDIT'])
+        self.node.addChild(self.groups['DRAG'])
 
         #insert in the scenegraph root
         self.insert_node(self.node)
@@ -170,6 +171,9 @@ class CurveTracker(BaseTracker):
 
         if not 'Center' in DragState().node.name:
             return
+
+        if self.drag_reference:
+            self._update_curve()
 
         #if we're still here, the user is attempting to change the curve
         #get the current paramter locks from the UI panel and recalculate
@@ -293,14 +297,11 @@ class CurveTracker(BaseTracker):
         Override base method
         """
 
-        #need to update partially-selected curves
-        #and do curve validations
-
         #abort unselected
         if not self.state.dragging:
             return
 
-        #partially-selected wires will have a drag_idx.
+        #partially-selected curves will have a drag_idx / drag_nodes.
         #fully-selected / unselected will not
         if self.drag_nodes:
 
@@ -308,6 +309,11 @@ class CurveTracker(BaseTracker):
                 self._partial_drag()
 
             return
+
+        #otherwise, test for curve-editing drag ops
+        #elif self.drag_reference:
+
+
 
         #NEED TO VALIDATE THE CURVE CHANGES
 
@@ -355,6 +361,13 @@ class CurveTracker(BaseTracker):
         Override base implementation
         """
 
+        #if drag_reference, this is a drag operation on curve nodes
+        if self.drag_reference:
+            self._update_curve()
+            self.rebuild_trackers()
+            return
+
+        #otherwise this is a partial drag at the alignment level
         _pts = [_v.get() for _v in self.pi_nodes]
 
         _arc = {
@@ -381,6 +394,32 @@ class CurveTracker(BaseTracker):
             self.drag_nodes = []
             self.drag_arc = None
 
+    def _update_curve(self):
+        """
+        Update the curve as a result of adjusting it's nodes
+        """
+
+        _center = self.transform_points(
+            [self.trackers['Nodes'][1].get()], DragState().node_group)[0]
+
+        _arc = {
+            'BearingIn': self.curve['BearingIn'],
+            'BearingOut': self.curve['BearingOut'],
+            'Center': _center,
+            'PI': self.pi_nodes[1].get(),
+            'Delta': self.curve['Delta'],
+            'Direction': self.curve['Direction']
+        }
+
+        _arc = arc.get_parameters(_arc)
+
+        self.trackers['Curve'][0].update(arc.get_points(_arc))
+
+        #update the drag geometry for the wire tracker
+        self.trackers['Wires'][0].drag_points[0] = _arc['Start']
+        self.trackers['Wires'][0].drag_points[1] = _arc['Center']
+        self.trackers['Wires'][0].drag_points[2] = _arc['End']
+
     def rebuild_trackers(self):
         """
         Rebuild the existing trackers to match updated curve
@@ -398,7 +437,7 @@ class CurveTracker(BaseTracker):
 
         self._build_edit_group()
 
-    def build_trackers(self):
+    def build_trackers(self, names):
         """
         Build the node and wire trackers that represent the selectable
         portions of the curve geometry
@@ -418,23 +457,23 @@ class CurveTracker(BaseTracker):
         #node trackers - don't create a PI node
         for _i, _pt in enumerate(_coords):
 
-            _name = self.names[-1] + '-' + _names[_i]
+            _name = names[-1] + '-' + _names[_i]
 
-            _tr = NodeTracker(names=self.names[:2] + [_name], point=_pt)
+            _tr = NodeTracker(names=names[:2] + [_name], point=_pt)
 
             _tr.update()
-            _tr.conditions.append('!' + self.names[2])
+            _tr.conditions.append('!' + names[2])
             _tr.set_visible(False)
             _tr.state.multi_select = False
 
             _result['Nodes'].append(_tr)
 
         #wire tracker
-        _wt = WireTracker(self.names[:2] + [self.names[-1] + '-' + 'Radius'])
+        _wt = WireTracker(names[:2] + [names[-1] + '-' + 'Radius'])
         _wt.set_points(nodes=_result['Nodes'])
         _wt.set_selectability(False)
         _wt.state.multi_select = False
-        _wt.conditions.append('!' + self.names[2])
+        _wt.conditions.append('!' + names[2])
         _wt.set_style(CoinStyle.EDIT)
         _wt.set_visible(False)
 
@@ -452,7 +491,7 @@ class CurveTracker(BaseTracker):
 
         _points = _class.get_points(self.curve)
 
-        _wt = WireTracker(self.names + [self.curve['Type']])
+        _wt = WireTracker(names + [self.curve['Type']])
         _wt.set_selectability(True)
         _wt.state.multi_select = False
         #_wt.state.draggable = False
