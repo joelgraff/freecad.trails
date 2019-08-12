@@ -129,17 +129,29 @@ class AlignmentTracker(BaseTracker):
         if not _pick:
             return
 
-        if not 'NODE' in _pick:
-            return
-
         if MouseState().button1.state == 'UP':
             return
 
-        _idx = int(_pick.split('-')[1])
+        #if a curve is picked, set the visibility ignore flag on, so the
+        #curve PI doesn't get redrawn
+        #if 'CURVE' in _pick:
 
-        for _v in self.trackers['Nodes'][_idx:]:
-            _v.state.selected.value = True
-            _v.state.selected.ignore_once()
+        #    _idx = int(_pick.split('-')[1])
+
+        #    self.trackers['Nodes'][_idx + 1].state.visible.ignore = True
+
+        if 'NODE' in _pick:
+
+            _idx = int(_pick.split('-')[1])
+
+            _nodes = [self.trackers['Nodes'][_idx]]
+
+            if MouseState().ctrlDown:
+                _nodes = self.trackers['Nodes'][_idx:]
+
+            for _v in _nodes:
+                _v.state.selected.value = True
+                _v.state.selected.ignore_once()
 
     def build_trackers(self):
         """

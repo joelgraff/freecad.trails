@@ -159,6 +159,7 @@ class WireTracker(BaseTracker):
             _sel = [_v.state.selected.value for _v in self.selection_nodes]
 
         self.state.selected.ignore = False
+        self.state.selected.value = False
 
         if all(_sel) or (not all(_sel) and any(_sel)):
             self.state.selected.value = True

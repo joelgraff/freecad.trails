@@ -63,6 +63,18 @@ class CurveTracker(BaseTracker):
         self.drag_lock = ''
         self.drag_reference = 0.0
 
+        #local drag geometry nodes
+        self.group = coin.SoSeparator()
+        self.drag_coord = coin.SoCoordinate3()
+
+        self.group.addChild(self.drag_coord)
+
+        self.drag_idx = []
+        self.drag_nodes = []
+        self.drag_start = []
+        self.drag_points = []
+        self.drag_arc = None
+
         super().__init__(names=names)
 
         #scenegraph node structure for editing and dragging operations
@@ -182,7 +194,7 @@ class CurveTracker(BaseTracker):
 
         self.update(_curve)
 
-        DO CURVE VALIDATION HERE
+        #DO CURVE VALIDATION HERE
 
     def button_event(self, arg):
         """
@@ -192,18 +204,16 @@ class CurveTracker(BaseTracker):
         if MouseState().button1.state == 'UP':
             return
 
-        if MouseState().button1.state == 'UP':
-            return
-
         #test to see if curve is being dragged by PI nodes
         _sel = [_v.state.selected.value for _v in self.pi_nodes]
+
         self.state.selected.ignore = False
 
-        if all(_sel) or (not all(_sel) and any(_sel)):
+        if all(_sel) or any(_sel):
             self.state.selected.value = True
             self.state.selected.ignore = True
 
-            super().button_event(arg)
+            return
 
         #test to see if we're operating on the curve
         _do_select = self.name in MouseState().component
@@ -215,6 +225,8 @@ class CurveTracker(BaseTracker):
             _v.refresh()
 
         self.state.selected.value = _do_select
+        self.pi_nodes[1].state.visible.ignore = _do_select
+        self.pi_nodes[1].refresh()
 
         if not _do_select:
             return
@@ -236,11 +248,38 @@ class CurveTracker(BaseTracker):
             super().start_drag()
             return
 
-        #alignment dragging, but curve wil lneed to be manually updated
         self.state.dragging = any(_sel)
 
-        #quit if any of the PI nodes are selected
+        #initiate a partial drag and quit if any of the PI nodes are selected
         if self.state.dragging:
+
+            _node = self.trackers['Curve'][0].copy()
+
+            self.group.addChild(_node)
+            self.drag_coord = _node.getChild(3)
+            self.drag_start = [_v.get() for _v in self.pi_nodes]
+            self.drag_idx = [
+                _i for _i, _v in enumerate(self.pi_nodes)\
+                    if _v.state.selected.value
+            ]
+
+            self.drag_nodes = [_v.get() for _v in self.pi_nodes]
+            self.drag_arc = {
+                'BearingIn':
+                support.get_bearing(
+                    self.pi_nodes[1].get().sub(self.pi_nodes[0].get())),
+
+                'BearingOut':
+                support.get_bearing(
+                    self.pi_nodes[2].get().sub(self.pi_nodes[1].get())),
+
+                'PI': self.pi_nodes[1].get(),
+
+                'Radius': self.curve['Radius']
+            }
+
+            self.insert_node(self.group, 0)
+
             return
 
         #no PI nodes are selected, test for selected curve ndoes
@@ -263,14 +302,14 @@ class CurveTracker(BaseTracker):
 
         #partially-selected wires will have a drag_idx.
         #fully-selected / unselected will not
-        if self.drag_idx is not None:
+        if self.drag_nodes:
 
             if DragState().sg_ok:
                 self._partial_drag()
 
             return
 
-        NEED TO VALIDATE THE CURVE CHANGES
+        #NEED TO VALIDATE THE CURVE CHANGES
 
         super().on_drag()
 
@@ -279,13 +318,68 @@ class CurveTracker(BaseTracker):
         Perform partial drag if ok
         """
 
-        #refresh the matrix only if invalid, since all wires will want the
-        #same transformation
+        _drag_pts = []
 
-        NEED TO REDEFINE CURVE BASED ON CHANGES TO THE PI NODES, THEN
-        RECALCULATE THE POINTS FOR UPDATING THE LOCAL DRAG GEOMETRY
+        for _i in self.drag_idx:
+            _drag_pts.append(self.drag_nodes[_i])
 
-        self.drag_coord.point.setValues(0, len(self.points), self.points)
+        #transform the selected PI nodes by the current drag transformation
+        _drag_pts = self.transform_points(_drag_pts, DragState().node_group)
+
+        _points = self.drag_nodes[:]
+
+        _j = 0
+
+        for _i in self.drag_idx:
+            _points[_i] = _drag_pts[_j]
+            _j += 1
+
+        if any([_i in self.drag_idx for _i in [0, 1]]):
+            self.drag_arc['BearingIn'] = \
+                support.get_bearing(_points[1].sub(_points[0]))
+
+        if any([_i in self.drag_idx for _i in [1, 2]]):
+            self.drag_arc['BearingOut'] = \
+                    support.get_bearing(_points[2].sub(_points[1]))
+
+        if 1 in self.drag_idx:
+            self.drag_arc['PI'] = _points[1]
+
+        _arc = arc.get_parameters(self.drag_arc)
+        _points = arc.get_points(_arc)
+
+        self.drag_coord.point.setValues(0, len(_points),_points)
+
+    def end_drag(self):
+        """
+        Override base implementation
+        """
+
+        _pts = [_v.get() for _v in self.pi_nodes]
+
+        _arc = {
+            'BearingIn': support.get_bearing(_pts[1].sub(_pts[0])),
+            'BearingOut': support.get_bearing(_pts[2].sub(_pts[1])),
+            'PI': _pts[1],
+            'Radius': self.curve['Radius']
+        }
+
+        self.curve = arc.get_parameters(_arc)
+
+        _points = arc.get_points(self.curve)
+
+        self.trackers['Curve'][0].update(_points)
+
+        self.rebuild_trackers()
+
+        if self.drag_idx:
+            self.remove_node(self.group)
+            self.group.removeAllChildren()
+            self.drag_coord = None
+            self.drag_start = []
+            self.drag_idx = []
+            self.drag_nodes = []
+            self.drag_arc = None
 
     def rebuild_trackers(self):
         """
@@ -296,8 +390,8 @@ class CurveTracker(BaseTracker):
         #skipping the last (duplicate of center)
         _coords = [self.curve[_k] for _k in ['Start', 'Center', 'End']]
 
-        #rebuild all nodes except for the PI
-        for _i, _v in enumerate([_coords[0], _coords[-1]]):
+        #rebuild all nodes
+        for _i, _v in enumerate(_coords):
             self.trackers['Nodes'][_i].update(_v)
 
         self.trackers['Wires'][0].update(_coords)
