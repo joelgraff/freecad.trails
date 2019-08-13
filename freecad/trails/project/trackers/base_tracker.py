@@ -77,8 +77,6 @@ class BaseTracker:
         Constructor
         """
 
-        print('creating ', names)
-
         self.node_ok = False
         self.names = names
         self.name = names[2]
