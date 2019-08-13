@@ -57,6 +57,7 @@ class WireTracker(BaseTracker):
         self.drag_idx = None
         self.drag_start = []
         self.drag_points = []
+        self.drag_refresh = True
 
         if not nodes:
             nodes = []
@@ -95,14 +96,6 @@ class WireTracker(BaseTracker):
         if _l == 2 and not indices:
             indices = [0, len(self.points) - 1]
 
-        #more than two nodes with unequal points and index mismatch = error
-        if _l > 2 and len(points) != _l:
-
-            if not indices or len(indices) != _l:
-
-                print('WireTracker', self.name, 'node mismatch')
-                return
-
         self.selection_nodes = nodes
         self.selection_indices = indices
 
@@ -117,6 +110,13 @@ class WireTracker(BaseTracker):
             _j = 0
 
             for _i in self.selection_indices:
+
+                if _i is None:
+                    continue
+
+                if _i == -1:
+                    _i = len(_points) - 1
+
                 _points[_i] = self.selection_nodes[_j].point
                 _j += 1
 
@@ -162,7 +162,7 @@ class WireTracker(BaseTracker):
         self.state.selected.ignore = False
         self.state.selected.value = False
 
-        if all(_sel) or (not all(_sel) and any(_sel)):
+        if _sel and (all(_sel) or any(_sel)):
             self.state.selected.value = True
             self.state.selected.ignore = True
 
@@ -232,15 +232,27 @@ class WireTracker(BaseTracker):
 
         #refresh the matrix only if invalid, since all wires will want the
         #same transformation
-        self.drag_points[self.drag_idx] =\
-             self.transform_points(
-                 [self.drag_start[self.drag_idx]],
-                 DragState().drag_node,
-                 refresh=True
-             )[0]
+        self.drag_points[self.drag_idx] = tuple(
+            self.transform_points(
+                [self.drag_start[self.drag_idx]],
+                DragState().drag_node,
+                refresh=True
+            )[0]
+        )
 
         self.points = self.drag_points
-        self.drag_coord.point.setValues(0, len(self.points), self.points)
+
+        if self.drag_refresh:
+            self.refresh_drag()
+
+    def refresh_drag(self):
+        """
+        Refresh the drag coordinates
+        """
+
+        self.drag_coord.point.setValues(
+            0, len(self.drag_points), self.drag_points
+        )
 
     def end_drag(self):
         """
@@ -257,8 +269,14 @@ class WireTracker(BaseTracker):
 
         if self.selection_indices:
 
-            for _i, _v in enumerate(self.points):
-                if _i not in self.selection_indices:
+            _pts = self.points
+
+            if -1 in self.selection_indices:
+                _pts = _pts[:-1]
+
+            for _i, _v in enumerate(_pts):
+
+                if not _i in self.selection_indices:
                     _points.append(_v)
 
         else:

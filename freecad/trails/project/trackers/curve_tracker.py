@@ -182,21 +182,22 @@ class CurveTracker(BaseTracker):
         _offset = Vector(self.drag_reference).multiply(_vec.Length)
         _center = self.pi_nodes[1].get().sub(_offset)
 
-        _curve = {
-            'Type': self.curve['Type'],
-            'BearingIn': self.curve['BearingIn'],
-            'BearingOut': self.curve['BearingOut'],
-            'PI': self.pi_nodes[1].get(),
-            'Center': _center,
-            'Delta': self.curve['Delta']
-        }
-
         DragState().update(DragState().start, _center)
         DragState().translate_transform.translation.setValue(
             tuple(_center.sub(DragState().start))
         )
 
-        self.update(_curve)
+        if not self.drag_reference:
+            _curve = {
+                'Type': self.curve['Type'],
+                'BearingIn': self.curve['BearingIn'],
+                'BearingOut': self.curve['BearingOut'],
+                'PI': self.pi_nodes[1].get(),
+                'Center': _center,
+                'Delta': self.curve['Delta']
+            }
+
+            self.update(_curve)
 
         #DO CURVE VALIDATION HERE
 
@@ -290,6 +291,8 @@ class CurveTracker(BaseTracker):
         self.drag_reference = \
             self.pi_nodes[1].get().sub(self.curve['Center']).normalize()
 
+        self.trackers['Curve'][0].state.selected.value = True
+
         DragState().override = True
 
     def on_drag(self):
@@ -354,28 +357,29 @@ class CurveTracker(BaseTracker):
         _arc = arc.get_parameters(self.drag_arc)
         _points = arc.get_points(_arc)
 
-        self.drag_coord.point.setValues(0, len(_points),_points)
+        self.drag_coord.point.setValues(0, len(_points), _points)
 
     def end_drag(self):
         """
         Override base implementation
         """
 
+        _arc = None
+
         #if drag_reference, this is a drag operation on curve nodes
         if self.drag_reference:
-            self._update_curve()
-            self.rebuild_trackers()
-            return
+            _arc = self.drag_arc
 
-        #otherwise this is a partial drag at the alignment level
-        _pts = [_v.get() for _v in self.pi_nodes]
+        else:
+            #otherwise this is a partial drag at the alignment level
+            _pts = [_v.get() for _v in self.pi_nodes]
 
-        _arc = {
-            'BearingIn': support.get_bearing(_pts[1].sub(_pts[0])),
-            'BearingOut': support.get_bearing(_pts[2].sub(_pts[1])),
-            'PI': _pts[1],
-            'Radius': self.curve['Radius']
-        }
+            _arc = {
+                'BearingIn': support.get_bearing(_pts[1].sub(_pts[0])),
+                'BearingOut': support.get_bearing(_pts[2].sub(_pts[1])),
+                'PI': _pts[1],
+                'Radius': self.curve['Radius']
+            }
 
         self.curve = arc.get_parameters(_arc)
 
@@ -399,8 +403,7 @@ class CurveTracker(BaseTracker):
         Update the curve as a result of adjusting it's nodes
         """
 
-        _center = self.transform_points(
-            [self.trackers['Nodes'][1].get()], DragState().node_group)[0]
+        _center = Vector(self.trackers['Wires'][0].drag_points[1])
 
         #pre-mpt update, if matrix hasn't updated yet
         if any([math.isnan(_v) for _v in _center]):
@@ -418,14 +421,17 @@ class CurveTracker(BaseTracker):
             'Direction': self.curve['Direction']
         }
 
-        _arc = arc.get_parameters(_arc)
+        self.drag_arc = arc.get_parameters(_arc)
 
-        self.trackers['Curve'][0].update(arc.get_points(_arc))
+        self.trackers['Curve'][0].drag_points = [
+            tuple(_v) for _v in arc.get_points(self.drag_arc)
+        ]
+        self.trackers['Curve'][0].refresh_drag()
 
         #update the drag geometry for the wire tracker
-        self.trackers['Wires'][0].drag_points[0] = _arc['Start']
-        self.trackers['Wires'][0].drag_points[1] = _arc['Center']
-        self.trackers['Wires'][0].drag_points[2] = _arc['End']
+        self.trackers['Wires'][0].drag_points[0] = self.drag_arc['Start']
+        self.trackers['Wires'][0].drag_points[2] = self.drag_arc['End']
+        self.trackers['Wires'][0].refresh_drag()
 
     def rebuild_trackers(self):
         """
@@ -461,7 +467,7 @@ class CurveTracker(BaseTracker):
         #build the trackers
         _result = {'Nodes': [], 'Wires': [], 'Curve': None}
 
-        #node trackers - don't create a PI node
+        #node trackers
         for _i, _pt in enumerate(_coords):
 
             _name = names[-1] + '-' + _names[_i]
@@ -483,6 +489,7 @@ class CurveTracker(BaseTracker):
         _wt.conditions.append('!' + names[2])
         _wt.set_style(CoinStyle.EDIT)
         _wt.set_visible(False)
+        _wt.drag_refresh = False
 
         _wt.update()
 
@@ -501,11 +508,12 @@ class CurveTracker(BaseTracker):
         _wt = WireTracker(names + [self.curve['Type']])
         _wt.set_selectability(True)
         _wt.state.multi_select = False
-        #_wt.state.draggable = False
+        _wt.drag_refresh = False
 
         _wt.set_points(
             points=_points,
-            nodes=[_result['Nodes'][0], _result['Nodes'][-1]]
+            nodes=_result['Nodes'],
+            indices=[0, None, -1]
         )
 
         _result['Curve'] = [_wt]
