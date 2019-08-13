@@ -389,7 +389,7 @@ def get_missing_parameters(arc, new_arc):
             _mo = new_arc['PI'].sub(new_arc['Center']).Length
             new_arc['Middle'] = _mo
 
-        new_arc['Radius'] = math.acos(new_arc['Delta'] / 2.0) * _mo
+        new_arc['Radius'] = math.cos(new_arc['Delta'] / 2.0) * _mo
 
     #pre-calculate values and fill in remaining parameters
     radius = new_arc['Radius']
@@ -515,7 +515,6 @@ def get_parameters(arc):
         return arc
 
     result.update(_p)
-
     _p = get_delta(arc, mat)
 
     if not _p:
@@ -536,7 +535,6 @@ def get_parameters(arc):
         return None
 
     result.update(_p)
-
     _p = get_bearings(arc, mat, result['Delta'], result['Direction'])
 
     if not _p:
