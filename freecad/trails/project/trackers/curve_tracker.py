@@ -402,6 +402,13 @@ class CurveTracker(BaseTracker):
         _center = self.transform_points(
             [self.trackers['Nodes'][1].get()], DragState().node_group)[0]
 
+        #pre-mpt update, if matrix hasn't updated yet
+        if any([math.isnan(_v) for _v in _center]):
+            return
+
+        if not ViewState().valid_matrix():
+            return
+
         _arc = {
             'BearingIn': self.curve['BearingIn'],
             'BearingOut': self.curve['BearingOut'],
