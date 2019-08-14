@@ -393,7 +393,7 @@ def get_rotation(arc, vecs):
 
     return {'Direction': _rot}
 
-def get_missing_parameters(arc, new_arc):
+def get_missing_parameters(arc, new_arc, points):
     """
     Calculate any missing parameters from the original arc
     using the values from the new arc.
@@ -407,22 +407,33 @@ def get_missing_parameters(arc, new_arc):
     """
 
     #by this point, missing radius / delta is a problem
-
     #missing both?  stop now.
     if new_arc.get('Radius') is None and new_arc.get('Delta') is None:
         return None
 
+    if not new_arc['Radius'] and not new_arc['Delta']:
+        return None
+
     #missing radius requires middle ordinate (or PI / Center coords)
-    if new_arc.get('Radius') is None:
+    if not new_arc.get('Radius'):
 
         _mo = new_arc.get('Middle')
 
-        if _mo is None:
+        if not _mo:
 
-            if new_arc.get('Center') is None or new_arc.get('PI') is None:
-                return None
+            if not points[2] or not points[3]:
 
-            _mo = new_arc['PI'].sub(new_arc['Center']).Length
+                if arc.get('Tangent') is None:
+                    return
+
+                if not arc['Tangent']:
+                    return
+
+                _mo = arc['Tangent'] / math.sin(arc['Delta'] / 2.0)
+
+            else:
+                _mo = points[3].sub(points[2]).Length
+
             new_arc['Middle'] = _mo
 
         new_arc['Radius'] = math.cos(new_arc['Delta'] / 2.0) * _mo
@@ -582,7 +593,7 @@ def get_parameters(arc):
         return None
 
     result.update(_p)
-    _p = get_missing_parameters(result, result)
+    _p = get_missing_parameters(result, result, points)
 
     if not _p:
         Console.PrintError(
