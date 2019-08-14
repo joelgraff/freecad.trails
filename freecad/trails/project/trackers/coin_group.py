@@ -66,9 +66,9 @@ class CoinGroup():
         if self.style == style:
             return
 
-        self.color.rgb = style['color']
+        self.color.rgb = style.color
         self.marker.markerIndex = \
-            Gui.getMarkerIndex(style['shape'], style['size'])
+            Gui.getMarkerIndex(style.shape, style.size)
 
         self.style = style
 
