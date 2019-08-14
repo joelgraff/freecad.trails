@@ -140,30 +140,30 @@ class AlignmentExporter(object):
 
         #write the alignment attributes
         self._write_tree_data(
-            data['meta'], _align_node, Maps.XML_ATTRIBS['Alignment']
+            data.get('meta'), _align_node, Maps.XML_ATTRIBS['Alignment']
         )
 
         _coord_geo_node = landxml.add_child(_align_node, 'CoordGeom')
 
         #write the geo coordinate attributes
         self._write_tree_data(
-            data['meta'], _coord_geo_node, Maps.XML_ATTRIBS['CoordGeom']
+            data.get('meta'), _coord_geo_node, Maps.XML_ATTRIBS['CoordGeom']
         )
 
         #write the station equation data
-        self.write_station_data(data['station'], _align_node)
+        self.write_station_data(data.get('station'), _align_node)
 
         #write the alignment geometry data
-        for _geo in data['geometry']:
+        for _geo in data.get('geometry'):
 
             _node = None
 
-            if _geo['Type'] == 'Line':
+            if _geo.get('Type') == 'Line':
 
                 _node = landxml.add_child(_coord_geo_node, 'Line')
                 self._write_tree_data(_geo, _node, Maps.XML_ATTRIBS['Line'])
 
-            elif _geo['Type'] == 'Curve':
+            elif _geo.get('Type') == 'Curve':
 
                 _node = landxml.add_child(_coord_geo_node, 'Curve')
                 self._write_tree_data(_geo, _node, Maps.XML_ATTRIBS['Curve'])

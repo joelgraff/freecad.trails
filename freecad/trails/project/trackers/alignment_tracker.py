@@ -24,19 +24,14 @@
 Tracker for alignment editing
 """
 
-import math
-
 from pivy import coin
 
 from FreeCAD import Vector
 
 import FreeCADGui as Gui
 
-from ...geometry import support
-
 from .base_tracker import BaseTracker
 
-from ..support.utils import Constants as C
 from ..support.mouse_state import MouseState
 from ..support.view_state import ViewState
 
@@ -62,14 +57,14 @@ class AlignmentTracker(BaseTracker):
         self.user_dragging = False
         self.status_bar = Gui.getMainWindow().statusBar()
         self.pi_list = []
-        self.datum = alignment.model.data['meta']['Start']
+        self.datum = alignment.model.data.get('meta').get('Start')
 
         self.drag = DragState()
 
         #base (placement) transformation for the alignment
         self.transform = coin.SoTransform()
         self.transform.translation.setValue(
-            tuple(alignment.model.data['meta']['Start'])
+            tuple(alignment.model.data.get('meta').get('Start'))
         )
         super().__init__(names=self.names, children=[self.transform])
 
@@ -164,12 +159,12 @@ class AlignmentTracker(BaseTracker):
         #build a list of coordinates from curves in the geometry
         _nodes = [Vector()]
 
-        for _geo in _model['geometry']:
+        for _geo in _model.get('geometry'):
 
-            if _geo['Type'] != 'Line':
-                _nodes += [_geo['PI']]
+            if _geo.get('Type') != 'Line':
+                _nodes += [_geo.get('PI')]
 
-        _nodes += [_model['meta']['End']]
+        _nodes += [_model.get('meta').get('End')]
 
         #build the trackers
         _names = self.names[:2]
@@ -261,7 +256,7 @@ class AlignmentTracker(BaseTracker):
 
             for _c in _pair:
 
-                if _c['Type'] == 'Spiral':
+                if _c.get('Type') == 'Spiral':
 
                     _tangents.append(spiral.get_ordered_tangents(_c)[0])
                     continue
@@ -269,7 +264,7 @@ class AlignmentTracker(BaseTracker):
                 _tangents.append(_c['Tangent'])
 
             if (_tangents[0] + _tangents[1])\
-                > (_pair[0]['PI'].distanceToPoint(_pair[1]['PI'])):
+                > (_pair[0].get('PI').distanceToPoint(_pair[1].get('PI'))):
 
                 _styles[_i + 1] = CoinStyles.ERROR
                 _styles[_i] = CoinStyles.ERROR
@@ -292,7 +287,7 @@ class AlignmentTracker(BaseTracker):
             _tangent = None
 
             #disable validation for spirals temporarily
-            if _c['Type'] == 'Spiral':
+            if _c.get('Type') == 'Spiral':
 
                 _tans = spiral.get_ordered_tangents(_c)
                 _tangent = _tans[1]
@@ -304,7 +299,7 @@ class AlignmentTracker(BaseTracker):
                 _tangent = _c['Tangent']
 
             if _styles[_i] != CoinStyles.ERROR \
-                and _tangent > _c['PI'].distanceToPoint(_p):
+                and _tangent > _c.get('PI').distanceToPoint(_p):
 
                 _styles[_i] = CoinStyles.ERROR
 

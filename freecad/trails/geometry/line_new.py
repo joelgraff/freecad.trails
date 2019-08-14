@@ -27,23 +27,64 @@ Line generation tools
 
 import math
 
-from FreeCAD import Vector
+from FreeCAD import Vector, Console
 from . import support
 
 class Line():
     """
     Line class object
     """
+    _keys = [
+        'ID', 'Type', 'Start', 'End', 'Bearing', 'Length', 'StartStation',
+        'InternalStation'
+    ]
 
-    def __init__(self):
+    def __init__(self, line_dict=None):
         """
         Line class constructor
         """
 
+        self.id = ''
+        self.type = 'Line'
         self.start = None
         self.end = None
         self.bearing = math.nan
         self.length = 0.0
+        self.start_station = 0.0
+        self.internal_station = 0.0
+
+        #build a list of key pairs fir string-based lookup
+        self._key_pairs = {}
+
+        _keys = list(self.__dict__.keys())
+
+        for _i, _k in enumerate(Line._keys):
+            self._key_pairs[_k] = _keys[_i]
+
+            self._key_pairs['BearingIn'] = 'bearing'
+            self._key_pairs['BearingOut'] = 'bearing'
+
+        if line_dict:
+            for _k, _v in line_dict.items():
+                print(_k, _v)
+                self.set(_k, _v)
+
+    def __str__(self):
+        """
+        String representation
+        """
+
+        return str(self.__dict__)
+
+    def to_dict(self):
+        """
+        Return the object as a dictionary
+        """
+
+        _result = {}
+        _result.update([(_k, self.get(_k)) for _k in Line._keys])
+
+        return _result
 
     def get_bearing(self):
         """
@@ -64,42 +105,24 @@ class Line():
         Generic getter for class attributes
         """
 
-        key = key.lower()
+        if not key in self._key_pairs:
 
-        if key == 'start':
-            return self.start
+            Console.PrintError('\nLine.get(): Bad key: ' + key)
+            return None
 
-        if key == 'end':
-            return self.end
-
-        if key in ('bearing', 'bearing_in', 'bearing_out'):
-            return self.bearing
-
-        if key == 'length':
-            return self.length
-
-        return None
+        return getattr(self, self._key_pairs[key])
 
     def set(self, key, value):
         """
         Generic setter for class attributes
         """
 
-        key = key.lower()
+        if not key in self._key_pairs:
 
-        if key == 'start':
-            self.start = value
+            Console.PrintError('\nLine.set(): Bad key' + key)
+            return
 
-        if key == 'end':
-            self.end = value
-
-        if key in ('bearing', 'bearing_in', 'bearing_out'):
-            self.bearing = value
-
-        if key == 'length':
-            self.length = value
-
-        return None
+        setattr(self, self._key_pairs[key], value)
 
     #alias bearing_in / bearing_out with the bearing attribute
     #provides compatibility with curve classes
@@ -111,8 +134,13 @@ def get_parameters(line):
     Return a fully-defined line
     """
 
-    _coord_truth = [not line.start, not line.end]
-    _param_truth = [not math.isnan(line.bearing), line.length > 0.0]
+    _result = line
+
+    if isinstance(line, dict):
+        _result = Line(line)
+
+    _coord_truth = [_result.start, _result.end]
+    _param_truth = [not math.isnan(_result.bearing), _result.length > 0.0]
 
     #both coordinates defined
     _case_one = all(_coord_truth)
@@ -124,39 +152,40 @@ def get_parameters(line):
 
     if _case_one:
 
-        line_vec = line.end.sub(line.start)
+        line_vec = _result.end.sub(_result.start)
         _bearing = support.get_bearing(line_vec)
         _length = line_vec.Length
 
         #test for missing parameters, preserving the existing ones
-        if not math.isnan(line.bearing):
-            if support.within_tolerance(line.bearing, _bearing):
-                _bearing = line.bearing
+        if not math.isnan(_result.bearing):
+            if support.within_tolerance(_result.bearing, _bearing):
+                _bearing = _result.bearing
 
-        if line.length:
-            if support.within_tolerance(line.length, _length):
-                _length = line.length
+        if _result.length:
+            if support.within_tolerance(_result.length, _length):
+                _length = _result.length
 
-        line.length = _length
+        _result.length = _length
 
     elif _case_two:
 
-        _vec = support.vector_from_angle(line.bearing).multiply(line.length)
+        _vec = \
+            support.vector_from_angle(_result.bearing).multiply(_result.length)
 
-        if line.start:
-            line.end = line.start.add(_vec)
+        if _result.start:
+            _result.end = _result.start.add(_vec)
         else:
-            line.start = line.end.add(_vec)
+            _result.start = _result.end.add(_vec)
 
     else:
-        print('Unable to calculate parameters for line', line)
+        print('Unable to calculate parameters for line', _result)
 
-    result = None
+    #result = None
 
-    if _case_one or _case_two:
-        result = {**{'Type': 'Line'}, **line}
+    #if _case_one or _case_two:
+    #    result = {**{'Type': 'Line'}, **line}
 
-    return result
+    return _result
 
 def get_coordinate(start, bearing, distance):
     """

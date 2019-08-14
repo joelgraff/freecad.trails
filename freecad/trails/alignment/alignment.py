@@ -202,9 +202,9 @@ class Alignment(Draft._Wire):
 
         if not stations:
             stations = [
-                self.model.data['meta']['StartStation'],
-                self.model.data['meta']['StartStation'] \
-                    + self.model.data['meta']['Length'] / 1000.0
+                self.model.data.get('meta').get('StartStation'),
+                self.model.data.get('meta').get('StartStation') \
+                    + self.model.data.get('meta').get('Length') / 1000.0
             ]
 
         _pos = stations[0]
@@ -225,7 +225,7 @@ class Alignment(Draft._Wire):
             _start = _v[0]
             _end = _start + _v[1] * 100000.0
 
-            _pt = [self.model.data['meta']['Start']]*2
+            _pt = [self.model.data.get('meta').get('Start')]*2
             _pt[0] = _pt[0].add(_start)
             _pt[1] = _pt[1].add(_end)
 
@@ -243,17 +243,17 @@ class Alignment(Draft._Wire):
         """
 
         curve_dict = {}
-        curves = self.model.data['geometry']
+        curves = self.model.data.get('geometry')
 
         #iterate the curves, creating the dictionary for each curve
         #that lists it's wire edges keyed by it's Edge index
         for curve in curves:
 
-            if curve['Type'] == 'Line':
+            if curve.get('Type') == 'Line':
                 continue
 
             curve_edges = self.Object.Shape.Edges
-            curve_pts = [curve['Start'], curve['End']]
+            curve_pts = [curve.get('Start'), curve.get('End')]
             edge_dict = {}
 
             #iterate edge list, add edges that fall within curve limits
@@ -314,15 +314,15 @@ class Alignment(Draft._Wire):
         Return the alignment length
         """
 
-        return self.model.data['meta']['Length']
+        return self.model.data.get('meta').get('Length')
 
     def get_curves(self):
         """
         Return a list of only the curves
         """
 
-        return [_v for _v in self.model.data['geometry'] \
-            if _v['Type'] != 'Line']
+        return [_v for _v in self.model.data.get('geometry') \
+            if _v.get('Type') != 'Line']
 
     def get_geometry(self, curve_hash=None):
         """
@@ -331,9 +331,9 @@ class Alignment(Draft._Wire):
         """
 
         if not curve_hash:
-            return self.model.data['geometry']
+            return self.model.data.get('geometry')
 
-        for _geo in self.model.data['geometry']:
+        for _geo in self.model.data.get('geometry'):
 
             if _geo['Hash'] == curve_hash:
                 return _geo
@@ -349,11 +349,11 @@ class Alignment(Draft._Wire):
             'meta': {
                 'Start': pi_list[0],
                 'StartStation':
-                    self.model.data['meta']['StartStation'],
+                    self.model.data.get('meta').get('StartStation'),
                 'End': pi_list[-1],
             },
             'geometry': curves,
-            'station': self.model.data['station']
+            'station': self.model.data.get('station')
         }
 
         self.set_geometry(_model, zero_reference)
@@ -386,25 +386,25 @@ class Alignment(Draft._Wire):
 
         obj = self.Object
 
-        meta = self.model.data['meta']
+        meta = self.model.data.get('meta')
 
         if meta.get('ID'):
-            obj.ID = meta['ID']
+            obj.ID = meta.get('ID')
 
         if meta.get('Description'):
-            obj.Description = meta['Description']
+            obj.Description = meta.get('Description')
 
         if meta.get('ObjectID'):
-            obj.ObjectID = meta['ObjectID']
+            obj.ObjectID = meta.get('ObjectID')
 
         if meta.get('Length'):
-            obj.Length = meta['Length']
+            obj.Length = meta.get('Length')
 
         if meta.get('Status'):
-            obj.Status = meta['Status']
+            obj.Status = meta.get('Status')
 
         if meta.get('StartStation'):
-            obj.Start_Station = str(meta['StartStation']) + ' ft'
+            obj.Start_Station = str(meta.get('StartStation')) + ' ft'
 
     def onChanged(self, obj, prop):
         """
@@ -445,7 +445,7 @@ class Alignment(Draft._Wire):
         self.Object.Points = points
 
         _pl = App.Placement()
-        _pl.Base = self.model.data['meta']['Start']
+        _pl.Base = self.model.data.get('meta').get('Start')
 
         self.Object.Placement = _pl
 

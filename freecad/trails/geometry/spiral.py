@@ -245,7 +245,7 @@ def solve_unk_length(curve):
     curve['vTotalX'] = _start_point.add(_total_vec_x)
     curve['vTotalY'] = _end_point.sub(curve['vTotalX'])
     curve['vTotal'] = _total_vec_x.add(curve['vTotalY'])
-    
+
     curve['TanShort'] = _short_tan.Length
     curve['TanLong'] = _long_tan.Length
     curve['Direction'] = support.get_rotation(_long_tan, _short_tan)
