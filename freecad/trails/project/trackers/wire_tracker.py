@@ -58,6 +58,7 @@ class WireTracker(BaseTracker):
         self.drag_start = []
         self.drag_points = []
         self.drag_refresh = True
+        self.drag_override = False
 
         if not nodes:
             nodes = []
@@ -173,6 +174,9 @@ class WireTracker(BaseTracker):
         Override of base function
         """
 
+        if not self.state.draggable:
+            return
+
         #base implementation if no selection nodes
         if self.selection_nodes is None:
             super().start_drag()
@@ -207,6 +211,9 @@ class WireTracker(BaseTracker):
         Override of base function
         """
 
+        if self.drag_override:
+            return
+
         #abort unselected
         if not self.state.dragging:
             return
@@ -232,13 +239,14 @@ class WireTracker(BaseTracker):
 
         #refresh the matrix only if invalid, since all wires will want the
         #same transformation
-        self.drag_points[self.drag_idx] = tuple(
-            self.transform_points(
-                [self.drag_start[self.drag_idx]],
-                DragState().drag_node,
-                refresh=True
-            )[0]
+
+        _pts = self.transform_points(
+            [self.drag_start[self.drag_idx]],
+            DragState().drag_node, 
+            refresh=True
         )
+
+        self.drag_points[self.drag_idx] = tuple(_pts[0])
 
         self.points = self.drag_points
 
