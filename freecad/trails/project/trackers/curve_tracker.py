@@ -27,7 +27,7 @@ Tracker for curve editing
 import math
 
 from pivy import coin
-from PySide import QtGui
+
 from FreeCAD import Vector
 
 import FreeCADGui as Gui

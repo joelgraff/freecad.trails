@@ -30,12 +30,15 @@ from ..support.const import Const
 
 class CoinStyles(Const):
     """
-    Useful math constants
+    Pre-defined styles for use with Coin3d scenegraph nodes
     """
 
     class Style():
+        """
+        Style internal class for CoinStyles class
+        """
 
-        def __init__(self, id, style=coin.SoDrawStyle.FILLED,
+        def __init__(self, style_id, style=coin.SoDrawStyle.FILLED,
                      shape='default', line_wdith=0.0, point_size=0.0,
                      line_pattern=0xffff, size=9, color=(1.0, 1.0, 1.0),
                      select=True):
@@ -43,7 +46,7 @@ class CoinStyles(Const):
             """
             Style constructor
             """
-            self.id = id
+            self.id = style_id
             self.style = style
             self.shape = shape
             self.line_width = line_wdith

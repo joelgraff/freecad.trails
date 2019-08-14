@@ -187,7 +187,7 @@ class BaseTracker:
         #allows for node selction state to remain if user multi-selects
         #the node, then clicks on a different node to begin drag operations
 
-        #persist multi select is true if a button click occurs 
+        #persist multi select is true if a button click occurs
         #in single-select mode after the item itself was multiselected
         _persist_multi_select = \
             not MouseState().ctrlDown and self.state.was_multi_selected
@@ -351,7 +351,8 @@ class BaseTracker:
             #get the window position of the updated drag delta coordinate
             _new_coord = DragState().start.add(DragState().delta)
 
-            _new_pos = Vector(ViewState().view.getPointOnScreen(_new_coord) + (0.0,))
+            _new_pos = \
+                Vector(ViewState().view.getPointOnScreen(_new_coord) + (0.0,))
 
             #set the mouse position at the updated screen coordinate
             _delta_pos = _new_pos.sub(Vector(MouseState().pos + (0.0,)))
@@ -368,7 +369,8 @@ class BaseTracker:
 
         elif QtGui.QApplication.overrideCursor():
 
-            if QtGui.QApplication.overrideCursor().shape() == Qt.CursorShape.BlankCursor:
+            if QtGui.QApplication.overrideCursor().shape() == \
+                Qt.CursorShape.BlankCursor:
 
                 QtGui.QApplication.restoreOverrideCursor()
 

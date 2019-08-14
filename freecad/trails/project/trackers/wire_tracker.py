@@ -242,7 +242,7 @@ class WireTracker(BaseTracker):
 
         _pts = self.transform_points(
             [self.drag_start[self.drag_idx]],
-            DragState().drag_node, 
+            DragState().drag_node,
             refresh=True
         )
 

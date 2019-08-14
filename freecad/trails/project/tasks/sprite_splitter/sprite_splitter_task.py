@@ -25,9 +25,6 @@
 Task to edit an alignment
 """
 import PySide.QtGui as QtGui
-import PySide.QtCore as QtCore
-
-from pivy import coin
 
 import FreeCAD as App
 from FreeCAD import Vector
@@ -148,7 +145,7 @@ class SpriteSplitterTask:
         self.grid_tracker.update_pad(0, 0)
         self.grid_tracker.update_size(100, 100)
 
-    def load_file(self, file_name = None):
+    def load_file(self, file_name=None):
         """
         Load the image file onto a plane
         """
@@ -359,32 +356,32 @@ class SpriteSplitterTask:
 
     def _onchange_border_h(self, arg):
         """Spinbox callback"""
-        self.grid_tracker.update_border(horizontal = int(arg))
+        self.grid_tracker.update_border(horizontal=int(arg))
 
     def _onchange_border_v(self, arg):
         """Spinbox callback"""
-        self.grid_tracker.update_border(vertical = int(arg))
+        self.grid_tracker.update_border(vertical=int(arg))
 
     def _onchange_dim_h(self, arg):
         """Spinbox callback"""
-        self.grid_tracker.update_dimension(horizontal = int(arg))
+        self.grid_tracker.update_dimension(horizontal=int(arg))
 
     def _onchange_dim_v(self, arg):
         """Spinbox callback"""
-        self.grid_tracker.update_dimension(vertical = int(arg))
+        self.grid_tracker.update_dimension(vertical=int(arg))
 
     def _onchange_size_h(self, arg):
         """Spinbox callback"""
-        self.grid_tracker.update_size(horizontal = int(arg))
+        self.grid_tracker.update_size(horizontal=int(arg))
 
     def _onchange_size_v(self, arg):
         """Spinbox callback"""
-        self.grid_tracker.update_size(vertical = int(arg))
+        self.grid_tracker.update_size(vertical=int(arg))
 
     def _onchange_pad_h(self, arg):
         """Spinbox callback"""
-        self.grid_tracker.update_pad(horizontal = int(arg))
+        self.grid_tracker.update_pad(horizontal=int(arg))
 
     def _onchange_pad_v(self, arg):
         """Spinbox callback"""
-        self.grid_tracker.update_pad(vertical = int(arg))
+        self.grid_tracker.update_pad(vertical=int(arg))
