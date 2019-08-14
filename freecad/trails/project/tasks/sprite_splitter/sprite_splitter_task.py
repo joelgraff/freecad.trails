@@ -48,7 +48,7 @@ from ...trackers.base_tracker import BaseTracker
 from ...trackers.wire_tracker import WireTracker
 from ...trackers.grid_tracker import GridTracker
 
-from ...trackers.coin_style import CoinStyle
+from ...trackers.coin_styles import CoinStyles
 
 class SpriteSplitterTask:
     """
@@ -173,7 +173,7 @@ class SpriteSplitterTask:
 
         for _v in self.cursor_trackers:
             _v.set_selectability(False)
-            _v.coin_style = CoinStyle.DASHED
+            _v.coin_style = CoinStyles.DASHED
 
         _plane = self.doc.addObject('Image::ImagePlane', 'SpriteSheet')
         _plane.ImageFile = file_name

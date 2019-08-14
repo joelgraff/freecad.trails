@@ -30,7 +30,7 @@ from FreeCAD import Vector
 
 from .base_tracker import BaseTracker
 from .wire_tracker import WireTracker
-from .coin_style import CoinStyle
+from .coin_styles import CoinStyles
 
 from ..support.drag_state import DragState
 from ..support.mouse_state import MouseState
@@ -128,6 +128,6 @@ class BoxTracker(BaseTracker):
 
         self.coord.point.setValues(0, 4, _points)
         self.face.numVertices.setValue(4)
-        self.coin_style = CoinStyle.DEFAULT
+        self.coin_style = CoinStyles.DEFAULT
 
         super().refresh()

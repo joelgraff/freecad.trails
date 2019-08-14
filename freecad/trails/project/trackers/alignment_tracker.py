@@ -250,7 +250,7 @@ class AlignmentTracker(BaseTracker):
             _idx.append(_idx[-1] + 1)
             curves.append(self.curves[_idx[-1]])
 
-        _styles = [CoinStyle.DEFAULT]*len(curves)
+        _styles = [CoinStyles.DEFAULT]*len(curves)
 
         #validate curves against each other,
         #ensuring PI distance >= sum  of curve tangents
@@ -271,8 +271,8 @@ class AlignmentTracker(BaseTracker):
             if (_tangents[0] + _tangents[1])\
                 > (_pair[0]['PI'].distanceToPoint(_pair[1]['PI'])):
 
-                _styles[_i + 1] = CoinStyle.ERROR
-                _styles[_i] = CoinStyle.ERROR
+                _styles[_i + 1] = CoinStyles.ERROR
+                _styles[_i] = CoinStyles.ERROR
 
         #do endpoint checks if the first or last curves are changing.
         _x = []
@@ -303,10 +303,10 @@ class AlignmentTracker(BaseTracker):
             else:
                 _tangent = _c['Tangent']
 
-            if _styles[_i] != CoinStyle.ERROR \
+            if _styles[_i] != CoinStyles.ERROR \
                 and _tangent > _c['PI'].distanceToPoint(_p):
 
-                _styles[_i] = CoinStyle.ERROR
+                _styles[_i] = CoinStyles.ERROR
 
         for _i, _v in enumerate(_styles):
 
@@ -315,7 +315,7 @@ class AlignmentTracker(BaseTracker):
             _t.set_base_style(_v)
             _t.set_style(_v)
 
-        self.drag.is_valid = all([_v != CoinStyle.ERROR for _v in _styles])
+        self.drag.is_valid = all([_v != CoinStyles.ERROR for _v in _styles])
 
     def finalize(self):
         """

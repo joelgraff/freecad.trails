@@ -39,7 +39,7 @@ from ..support.drag_state import DragState
 from ..support.view_state import ViewState
 
 from .base_tracker import BaseTracker
-from .coin_style import CoinStyle
+from .coin_styles import CoinStyles
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
 
@@ -531,7 +531,7 @@ class CurveTracker(BaseTracker):
         _wt.set_selectability(False)
         _wt.state.multi_select = False
         _wt.conditions.append('!' + names[2])
-        _wt.set_style(CoinStyle.EDIT)
+        _wt.set_style(CoinStyles.DASHED)
         _wt.set_visible(False)
         _wt.drag_refresh = False
 

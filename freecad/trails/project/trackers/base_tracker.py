@@ -49,7 +49,7 @@ from ..support.drag_state import DragState
 
 from ..support.utils import Constants as C
 
-from .coin_style import CoinStyle
+from .coin_styles import CoinStyles
 
 class BaseTracker:
     """
@@ -89,7 +89,7 @@ class BaseTracker:
         self.picker = coin.SoPickStyle()
         self.switch = coin.SoSwitch()
 
-        self.coin_style = CoinStyle.DEFAULT
+        self.coin_style = CoinStyles.DEFAULT
         self.active_style = None
         self.conditions = []
 
@@ -135,7 +135,7 @@ class BaseTracker:
             }
 
         #bypass overrides on intialization
-        BaseTracker.set_style(self, CoinStyle.DEFAULT)
+        BaseTracker.set_style(self, CoinStyles.DEFAULT)
         BaseTracker.set_visible(self, True)
 
     def refresh(self, style=None, visible=None):
@@ -233,7 +233,7 @@ class BaseTracker:
         _style = self.coin_style
 
         if self.state.selected.value:
-            _style = CoinStyle.SELECTED
+            _style = CoinStyles.SELECTED
 
         self.refresh(_style)
 
@@ -258,7 +258,7 @@ class BaseTracker:
             self.state.highlighted = self.name == MouseState().component
 
             if self.state.highlighted:
-                _style = CoinStyle.SELECTED
+                _style = CoinStyles.SELECTED
 
         self.refresh(_style)
 
@@ -474,7 +474,7 @@ class BaseTracker:
         """
 
         if style is None:
-            style = CoinStyle.DEFAULT
+            style = CoinStyles.DEFAULT
 
         self.coin_style = style
 
@@ -489,22 +489,14 @@ class BaseTracker:
         if self.active_style == style:
             return
 
-        if style['line width']:
-            self.draw_style.lineWidth = style['line width']
-
-        self.draw_style.style = style['style']
-
-        self.draw_style.lineWeight = style['line weight']
-
-        if style['line pattern']:
-            self.draw_style.linePattern = style['line pattern']
+        self.draw_style.lineWidth = style.line_width
+        self.draw_style.style = style.style
+        self.draw_style.linePattern = style.line_pattern
+        self.color.rgb = style.color
 
         if hasattr(self, 'marker'):
             self.marker.markerIndex = \
-                Gui.getMarkerIndex(style['shape'], style['size'])
-
-        if style.get('color'):
-            self.color.rgb = style['color']
+                Gui.getMarkerIndex(style.shape, style.size)
 
         self.active_style = style
 

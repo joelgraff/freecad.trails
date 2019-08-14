@@ -28,7 +28,7 @@ from pivy import coin
 
 import FreeCADGui as Gui
 
-from .coin_style import CoinStyle
+from .coin_styles import CoinStyles
 
 class CoinGroup():
     """
@@ -46,7 +46,7 @@ class CoinGroup():
         self.line = coin.SoLineSet()
         self.color = coin.SoBaseColor()
 
-        self.style = CoinStyle.DEFAULT
+        self.style = CoinStyles.DEFAULT
 
         self.group.addChild(self.coord)
         self.group.addChild(self.color)
@@ -60,7 +60,7 @@ class CoinGroup():
 
     def set_style(self, style):
         """
-        Set the geometry styles based on the passed CoinStyle structure
+        Set the geometry styles based on the passed CoinStyles structure
         """
 
         if self.style == style:
