@@ -71,7 +71,8 @@ class AlignmentModel:
         """
 
         result = [Vector()]
-        result += [_v.get('PI') for _v in self.data.get('geometry') if _v.get('PI')]
+        result += [
+            _v.get('PI') for _v in self.data.get('geometry') if _v.get('PI')]
 
         result.append(self.data.get('meta').get('End'))
 
@@ -151,7 +152,8 @@ class AlignmentModel:
                 _geo[_key] = _geo[_key].sub(datum)
 
         if self.data.get('meta').get('End'):
-            self.data.get('meta')['End'] = self.data.get('meta').get('End').sub(datum)
+            self.data.get('meta')['End'] = \
+                self.data.get('meta').get('End').sub(datum)
 
     def validate_alignment(self):
         """
@@ -171,6 +173,7 @@ class AlignmentModel:
             _coord = _geo.get('Start')
             _d = abs(_coord.Length - _prev_coord.Length)
 
+            print('\n\tgeo =\n',_geo,'\n\t_d = ', _d)
             if not support.within_tolerance(_d, tolerance=0.01):
 
                 #build the line using the provided parameters and add it
@@ -178,10 +181,12 @@ class AlignmentModel:
                     line_new.get_parameters({
                         'Start': Vector(_prev_coord),
                         'End': Vector(_coord),
-                        'BearingIn': _geo.get('BearingIn'),
-                        'BearingOut': _geo.get('BearingOut'),
+                        'Bearing': _geo.get('BearingIn'),
                     }).to_dict()
                 )
+
+                print('\n\tStart is past previous end')
+                print('\tAPPENDED LINE\n', _geo_list[-1])
 
             _geo_list.append(_geo)
             _prev_coord = _geo.get('End')
@@ -203,10 +208,12 @@ class AlignmentModel:
                     line_new.get_parameters({
                         'Start': _prev.get('End'),
                         'End': _end,
-                        'BearingIn': _prev.get('BearingOut'),
-                        'BearingOut': _prev.get('BearingOut')
+                        'Bearing': _prev.get('BearingOut')
                     }).to_dict()
                 )
+
+                print('\n\tLast curve ends too soon')
+                print('\tAPPENDED LINE\n', _geo_list[-1])
 
             self.data.get('meta')['Length'] = 0.0
 
@@ -232,10 +239,12 @@ class AlignmentModel:
                     line_new.get_parameters({
                         'Start': _start,
                         'End': _end,
-                        'BearingIn': bearing,
                         'BearingOut': bearing
                     }).to_dict()
                 )
+
+                print('\n\tLength too short')
+                print('\tAPPENDED LINE\n', _geo_list[-1])
 
         self.data['geometry'] = _geo_list
 
