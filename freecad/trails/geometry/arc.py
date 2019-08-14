@@ -87,6 +87,16 @@ class _GEO(Const):
     '''
     FUNC = _create_geo_func()
 
+    #list of vector pairs to calcualte rotations
+    ROT_PAIRS = [
+        [1,2,4,5],
+        [3,5],
+        [1,3,5],
+        [0],
+        [1,2,3,5],
+        [3]
+    ]
+
 def get_scalar_matrix(vecs):
     """
     Calculate the square matrix of scalars
@@ -132,6 +142,7 @@ def get_scalar_matrix(vecs):
         _d1 = result.A[_i][_i]
 
         for _j in range(0, _i):
+
             _denom = _d1 * result.A[_j][_j]
             _n = result.A[_i][_j]
 
@@ -184,7 +195,13 @@ def get_bearings(arc, mat, delta, rot):
         _deltas = [abs(_i - _j) for _i in _b for _j in _b]
 
         #check to ensure all tangent start bearing values are identical
-        if not support.within_tolerance(_deltas):
+        if not support.within_tolerance(_deltas[0:2]):
+            return None
+
+        if not support.within_tolerance(_deltas[2:4]):
+            return None
+
+        if not support.within_tolerance(_deltas[4:6]):
             return None
 
         #default to calculated if different from supplied bearing
@@ -272,6 +289,10 @@ def get_lengths(arc, mat):
         if not _s:
             continue
 
+        #duplicate the only calculated length
+        if len(_s) == 1:
+            _s.append(_s[0])
+
         #if both were calculated and they aren't the same, quit
         if all(_s) and not support.within_tolerance(_s[0], _s[1]):
 
@@ -336,15 +357,30 @@ def get_rotation(arc, vecs):
     """
     Determine the dirction of rotation
     """
-    _v1 = [_v for _v in vecs[0:3] if _v and _v != Vector()]
-    _v2 = [_v for _v in vecs[3:] if _v and _v != Vector()]
 
-    if _v1 and _v2:
-        _v1 = _v1[0]
-        _v2 = _v2[1]
+    #list all valid vector indices
+    _idx = [_i for _i, _v in enumerate(vecs) if _v != Vector()]
 
-    else:
+    _v1 = None
+    _v2 = None
+
+    for _i in _idx:
+
+        _l = _GEO.ROT_PAIRS[_i]
+
+        _m = [_j for _j in _l if vecs[_j] != Vector()]
+
+        if (_m):
+
+            _v1 = vecs[_i]
+            _v2 = vecs[_m[0]]
+
+            break
+
+    if not _v1:
         _v1 = support.vector_from_angle(arc.get('BearingIn'))
+
+    if not _v2:
         _v2 = support.vector_from_angle(arc.get('BearingOut'))
 
     _rot = None
@@ -481,6 +517,7 @@ def get_parameters(arc):
     """
     Given a minimum of existing parameters, return a fully-described arc
     """
+
     #Vector order:
     #Radius in / out, Tangent in / out, Middle, and Chord
     points = [arc.get('Start'), arc.get('End'),
