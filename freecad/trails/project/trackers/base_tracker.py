@@ -95,6 +95,8 @@ class BaseTracker:
 
         self.matrix = None
 
+        self.drag_group = None
+
         if not children:
             children = []
 
@@ -289,7 +291,7 @@ class BaseTracker:
 
         #copy the tracker node structure to the drag state node for
         #transformations during drag operations
-        DragState().add_node(self.copy())
+        self.drag_group = DragState().add_node(self.copy())
 
         if not DragState().node:
             DragState().node = self
@@ -480,10 +482,13 @@ class BaseTracker:
 
         self.coin_style = style
 
-    def set_style(self, style=None):
+    def set_style(self, style=None, node=None):
         """
         Update the tracker style
         """
+
+        if not node:
+            node = self.draw_style
 
         if not style:
             style = self.coin_style
@@ -491,9 +496,9 @@ class BaseTracker:
         if self.active_style == style:
             return
 
-        self.draw_style.lineWidth = style.line_width
-        self.draw_style.style = style.style
-        self.draw_style.linePattern = style.line_pattern
+        self.node.lineWidth = style.line_width
+        self.node.style = style.style
+        self.node.linePattern = style.line_pattern
         self.color.rgb = style.color
 
         if hasattr(self, 'marker'):

@@ -131,7 +131,14 @@ class DragState(metaclass=Singleton):
         if not self.drag_node:
             self.drag_node = node
 
-        self.node_group.addChild(node)
+        drag_group = coin.SoSeparator()
+
+        drag_group.addChild(coin.SoDrawStyle())
+        drag_group.addChild(node)
+
+        self.node_group.addChild(drag_group)
+
+        return drag_group
 
     def finish(self):
         """

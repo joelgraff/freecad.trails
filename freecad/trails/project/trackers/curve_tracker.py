@@ -57,6 +57,7 @@ class CurveTracker(BaseTracker):
         self.pi_nodes = pi_nodes
         self.trackers = None
         self.lock_group = None
+        self.is_valid = True
 
         self.status_bar = Gui.getMainWindow().statusBar()
 
@@ -75,6 +76,7 @@ class CurveTracker(BaseTracker):
         self.drag_points = []
         self.drag_arc = None
         self.drag_node = None
+        self.drag_style = None
 
         #scenegraph node structure for editing and dragging operations
         self.groups = {
@@ -267,6 +269,7 @@ class CurveTracker(BaseTracker):
 
             self.group.addChild(_node)
             self.drag_coord = _node.getChild(3)
+            self.drag_style = _node.getChild(1)
             self.drag_start = [_v.get() for _v in self.pi_nodes]
             self.drag_idx = [
                 _i for _i, _v in enumerate(self.pi_nodes)\
@@ -355,29 +358,44 @@ class CurveTracker(BaseTracker):
         #transform the selected PI nodes by the current drag transformation
         _drag_pts = self.transform_points(_drag_pts, DragState().node_group)
 
-        _points = self.drag_nodes[:]
+        _pis = self.drag_nodes[:]
 
         _j = 0
 
         for _i in self.drag_idx:
-            _points[_i] = _drag_pts[_j]
+            _pis[_i] = _drag_pts[_j]
             _j += 1
 
+        _arc = {
+            'BearingIn': self.curve['BearingIn'],
+            'BearingOut': self.curve['BearingOut'],
+            'PI': self.pi_nodes[1].get(),
+            'Radius': self.curve['Radius'],
+            'Direction': self.curve['Direction']
+        }
+
         if any([_i in self.drag_idx for _i in [0, 1]]):
-            self.drag_arc['BearingIn'] = \
-                support.get_bearing(_points[1].sub(_points[0]))
+            _arc['BearingIn'] = support.get_bearing(_pis[1].sub(_pis[0]))
 
         if any([_i in self.drag_idx for _i in [1, 2]]):
-            self.drag_arc['BearingOut'] = \
-                    support.get_bearing(_points[2].sub(_points[1]))
+            _arc['BearingOut'] = support.get_bearing(_pis[2].sub(_pis[1]))
 
         if 1 in self.drag_idx:
-            self.drag_arc['PI'] = _points[1]
+            _arc['PI'] = _pis[1]
 
-        _arc = arc.get_parameters(self.drag_arc)
-        _points = arc.get_points(_arc)
+        self.drag_arc = arc.get_parameters(_arc)
+        _points = arc.get_points(self.drag_arc)
 
         self.drag_coord.point.setValues(0, len(_points), _points)
+
+        self.is_valid = self.validate(_pis)
+
+        if not self.is_valid:
+            print(self.name, 'invalid')
+            super().set_style(CoinStyles.ERROR, self.drag_style)
+        else:
+            print(self.name, '!!valid!!')
+            super().set_style(CoinStyles.DEFAULT, self.drag_style)
 
     def end_drag(self):
         """
@@ -575,6 +593,10 @@ class CurveTracker(BaseTracker):
         #if not self.state.selected.value:
         #    return
 
+        if not self.is_valid:
+            self.is_valid = True
+            return
+
         _points = None
 
         if curve is None:
@@ -656,9 +678,9 @@ class CurveTracker(BaseTracker):
 
         if curve is None:
 
-            _start = Vector(self.pi_nodes[0].point)
-            _pi = Vector(self.pi_nodes[1].point)
-            _end = Vector(self.pi_nodes[2].point)
+            _start = self.pi_nodes[0].get()
+            _pi = self.pi_nodes[1].get()
+            _end = self.pi_nodes[2].get()
 
             curve = {
                 'BearingIn': support.get_bearing(_pi.sub(_start)),
@@ -670,6 +692,25 @@ class CurveTracker(BaseTracker):
         self.curve = arc.get_parameters(curve)
 
         return arc.get_points(self.curve)
+
+    def validate(self, points):
+        """
+        Validate the arc's tangents against it's PI's
+        """
+
+        _t = self.drag_arc['Tangent']
+
+        _lt = points[0].sub(points[1])
+
+        if _t > _lt.Length:
+            return False
+
+        _rt = points[1].sub(points[2])
+
+        if _t > _rt.Length:
+            return False
+
+        return True
 
     def set_selectability(self, is_selectable):
         """
