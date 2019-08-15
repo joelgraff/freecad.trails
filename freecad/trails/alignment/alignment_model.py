@@ -28,7 +28,7 @@ Class for managing 2D Horizontal Alignment data
 from FreeCAD import Vector
 
 from ..project.support import units
-from ..geometry import arc, line_new, spiral, support
+from ..geometry import arc, line, spiral, support
 
 _CLASS_NAME = 'AlignmentModel'
 _TYPE = 'AlignmentModel'
@@ -178,7 +178,7 @@ class AlignmentModel:
 
                 #build the line using the provided parameters and add it
                 _geo_list.append(
-                    line_new.get_parameters({
+                    line.get_parameters({
                         'Start': Vector(_prev_coord),
                         'End': Vector(_coord),
                         'StartStation': self.get_alignment_station(_prev_sta),
@@ -204,7 +204,7 @@ class AlignmentModel:
             if _prev.get('End').distanceToPoint(_end) > 0.0:
 
                 _geo_list.append(
-                    line_new.get_parameters({
+                    line.get_parameters({
                         'Start': _prev.get('End'),
                         'End': _end,
                         'StartStation': self.get_alignment_station(
@@ -229,12 +229,12 @@ class AlignmentModel:
                 _start = _geo_list[-1].get('End')
                 bearing = _geo_list[-1].get('BearingOut')
 
-                _end = line_new.get_coordinate(
+                _end = line.get_coordinate(
                     _start, bearing, align_length - _length
                     )
 
                 _geo_list.append(
-                    line_new.get_parameters({
+                    line.get_parameters({
                         'Start': _start,
                         'End': _end,
                         'StartStation': self.get_alignment_station(
@@ -585,7 +585,7 @@ class AlignmentModel:
         """
 
         _matches = []
-        _classes = {'Line': line_new, 'Curve': arc, 'Spiral': spiral}
+        _classes = {'Line': line, 'Curve': arc, 'Spiral': spiral}
 
         #iterate the geometry, creating a list of potential matches
         for _i, _v in enumerate(self.data.get('geometry')):
@@ -650,7 +650,7 @@ class AlignmentModel:
         distance = int_sta - curve.get('InternalStation')[0]
 
         _fn = {
-            'Line': line_new,
+            'Line': line,
             'Curve': arc,
             'Spiral': spiral,
         }
@@ -675,7 +675,7 @@ class AlignmentModel:
         distance = int_sta - curve.get('InternalStation')[0]
 
         _fn = {
-            'Line': line_new,
+            'Line': line,
             'Curve': arc,
             'Spiral': spiral,
         }
@@ -759,14 +759,14 @@ class AlignmentModel:
                     points.append(_pts)
 
             else:
-                _start_coord = line_new.get_coordinate(
+                _start_coord = line.get_coordinate(
                     curve.get('Start'), curve.get('BearingIn'), _arc_int[0]
                 )
 
                 points.append(
                     [
                         _start_coord,
-                        line_new.get_coordinate(
+                        line.get_coordinate(
                             _start_coord, curve.get('BearingIn'), _arc_int[1])
                     ]
                 )
