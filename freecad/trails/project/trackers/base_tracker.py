@@ -136,13 +136,13 @@ class BaseTracker:
                         'SoMouseButtonEvent', self.button_event)
             }
 
-        #bypass overrides on intialization
+        #bypass overrides on initialization
         BaseTracker.set_style(self, CoinStyles.DEFAULT)
         BaseTracker.set_visible(self, True)
 
     def refresh(self, style=None, visible=None):
         """
-        Upate the tracker to reflect state changes
+        Update the tracker to reflect state changes
         """
 
         if not style:
@@ -186,7 +186,7 @@ class BaseTracker:
         SoMouseButtonEvent callback
         """
 
-        #allows for node selction state to remain if user multi-selects
+        #allows for node selection state to remain if user multi-selects
         #the node, then clicks on a different node to begin drag operations
 
         #persist multi select is true if a button click occurs
@@ -529,7 +529,7 @@ class BaseTracker:
 
     def _process_conditions(self):
         """
-        Process the conditions which determine node visiblity
+        Process the conditions which determine node visibility
         """
 
         if self.state.visible.ignore:

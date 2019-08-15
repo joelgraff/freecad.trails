@@ -76,7 +76,7 @@ class DragState(metaclass=Singleton):
         #flag indicating scenegraph updates are complete
         self.sg_ok = False
 
-        #refrence to scenegrapg root node (used internally)
+        #reference to scenegrapg root node (used internally)
         self._sg_root = None
 
         #set to indicate to base tracker not to push updates during on_drag()

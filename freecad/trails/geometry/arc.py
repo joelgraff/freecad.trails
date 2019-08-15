@@ -87,7 +87,7 @@ class _GEO(Const):
     '''
     FUNC = _create_geo_func()
 
-    #list of vector pairs to calcualte rotations
+    #list of vector pairs to calculate rotations
     ROT_PAIRS = [
         [1,2,4,5],
         [3,5],
