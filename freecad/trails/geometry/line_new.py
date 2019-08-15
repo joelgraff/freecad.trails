@@ -82,7 +82,9 @@ class Line():
         """
 
         _result = {}
-        _result.update([(_k, self.get(_k)) for _k in Line._keys])
+
+        _result.update(
+            [(_k, getattr(self, _v)) for _k, _v in self._key_pairs.items()])
 
         return _result
 

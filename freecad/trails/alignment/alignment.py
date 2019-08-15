@@ -362,7 +362,6 @@ class Alignment(Draft._Wire):
         """
         Assign geometry to the alignment object
         """
-
         self.model = alignment_model.AlignmentModel(geometry, zero_reference)
 
         if self.model.errors:

@@ -162,7 +162,8 @@ class AlignmentModel:
         must be filled by a completely defined line
         """
 
-        _prev_coord = self.get_datum()
+        _prev_sta = 0.0
+        _prev_coord = self.data['meta']['Start']
         _geo_list = []
 
         for _geo in self.data.get('geometry'):
@@ -173,7 +174,6 @@ class AlignmentModel:
             _coord = _geo.get('Start')
             _d = abs(_coord.Length - _prev_coord.Length)
 
-            print('\n\tgeo =\n',_geo,'\n\t_d = ', _d)
             if not support.within_tolerance(_d, tolerance=0.01):
 
                 #build the line using the provided parameters and add it
@@ -181,15 +181,14 @@ class AlignmentModel:
                     line_new.get_parameters({
                         'Start': Vector(_prev_coord),
                         'End': Vector(_coord),
+                        'StartStation': self.get_alignment_station(_prev_sta),
                         'Bearing': _geo.get('BearingIn'),
                     }).to_dict()
                 )
 
-                print('\n\tStart is past previous end')
-                print('\tAPPENDED LINE\n', _geo_list[-1])
-
             _geo_list.append(_geo)
             _prev_coord = _geo.get('End')
+            _prev_sta = _geo.get('InternalStation')[1]
 
         _length = 0.0
 
@@ -208,12 +207,11 @@ class AlignmentModel:
                     line_new.get_parameters({
                         'Start': _prev.get('End'),
                         'End': _end,
+                        'StartStation': self.get_alignment_station(
+                            _prev['InternalStation'][0]),
                         'Bearing': _prev.get('BearingOut')
                     }).to_dict()
                 )
-
-                print('\n\tLast curve ends too soon')
-                print('\tAPPENDED LINE\n', _geo_list[-1])
 
             self.data.get('meta')['Length'] = 0.0
 
@@ -239,12 +237,11 @@ class AlignmentModel:
                     line_new.get_parameters({
                         'Start': _start,
                         'End': _end,
+                        'StartStation': self.get_alignment_station(
+                            _geo['InternalStation'][0]),
                         'BearingOut': bearing
                     }).to_dict()
                 )
-
-                print('\n\tLength too short')
-                print('\tAPPENDED LINE\n', _geo_list[-1])
 
         self.data['geometry'] = _geo_list
 
@@ -536,13 +533,13 @@ class AlignmentModel:
         for _eq in eqs[1:]:
 
             #if station falls within equation, quit
-            if start_sta < station < _eq.x:
+            if start_sta < station < _eq['Back']:
                 break
 
             #increment the position by the equaion length and
             #set the starting station to the next equation
-            position += _eq.x - start_sta
-            start_sta = _eq.y
+            position += _eq['Back'] - start_sta
+            start_sta = _eq['Ahead']
 
         #add final distance to position
         position += station - start_sta
@@ -551,6 +548,35 @@ class AlignmentModel:
             position = 0.0
 
         return position * units.scale_factor()
+
+    def get_alignment_station(self, internal_station=None, coordinate=None):
+        """
+        Return the alignment station given an internal station or coordinate
+        Coordinate overrides internal station
+        """
+
+        if coordinate is not None:
+            internal_station = self.get_station_offset(coordinate)[0]
+
+        if internal_station is None:
+            return None
+
+        _start_sta = self.data.get('meta').get('StartStation')
+        _dist = internal_station
+
+        for _eq in self.data.get('station'):
+
+            #if the raw station exceeds the end of the first station
+            #deduct the length of the first equation
+            if _eq['Back'] >= _start_sta + _dist:
+                break
+
+            _dist -= _eq['Back'] - _start_sta
+            _start_sta = _eq['Ahead']
+
+        #start station represents beginning of enclosing equation
+        #and raw station represents distance within equation to point
+        return _start_sta + _dist
 
     def get_station_offset(self, coordinate):
         """
@@ -566,15 +592,18 @@ class AlignmentModel:
 
             _class = _classes[_v.get('Type')]
 
-            _p, _d, _b = _class.get_position_offset(_v, coordinate)
+            _pos, _dist, _b = _class.get_position_offset(_v, coordinate)
 
+            #if position is before geometry, quit
             if _b < 0:
                 break
 
+            #if position is after geometry, skip to next
             if _b > 0:
                 continue
 
-            _matches.append((_p, _d, _i))
+            #save result
+            _matches.append((_pos, _dist, _i))
 
         if not _matches:
             return None, None
