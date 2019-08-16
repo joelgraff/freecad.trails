@@ -158,7 +158,7 @@ class BaseTracker:
         SoLocation2Event callback
         """
 
-        #pre-empptive abort conditions
+        #pre-emptive abort conditions
         if not self.state.enabled.value:
             return
 
@@ -574,7 +574,7 @@ class BaseTracker:
             _v = coin.SbVec4f(tuple(_p) + (1.0,))
             _v = _matrix.multVecMatrix(_v).getValue()[:3]
 
-            _result.append(Vector(_v)) #.sub(self.datum))
+            _result.append(_v) #.sub(self.datum))
 
         return _result
 

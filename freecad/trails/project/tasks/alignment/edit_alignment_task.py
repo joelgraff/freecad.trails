@@ -69,6 +69,7 @@ class EditAlignmentTask:
 
     def __init__(self, doc, alignment_data, obj):
 
+        self.name = 'EditAlignmentTask'
         self.panel = None
         self.doc = doc
         self.Object = obj

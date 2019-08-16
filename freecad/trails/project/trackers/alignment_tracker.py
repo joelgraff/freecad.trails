@@ -213,7 +213,7 @@ class AlignmentTracker(BaseTracker):
                 self._build_wire_tracker(
                     wire_name=_names[:2] + ['WIRE-' + str(_i)],
                     nodes=_nodes,
-                    points=[], #[_v.point for _v in _nodes],
+                    points=[],
                     select=False
                 )
             )

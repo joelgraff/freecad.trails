@@ -355,26 +355,38 @@ class CurveTracker(BaseTracker):
         Perform partial drag if ok
         """
 
-        _drag_pts = []
+        #_drag_pts = []
 
-        for _i in self.drag_idx:
-            _drag_pts.append(self.drag_nodes[_i])
+        #for _i in self.drag_idx:
+        #    _drag_pts.append(self.drag_nodes[_i])
 
         #transform the selected PI nodes by the current drag transformation
         #_drag_pts = self.transform_points(_drag_pts, DragState().node_group)
 
-        _j = 0
+        #_j = 0
 
-        _pts = self.drag_nodes[:]
+        #_pts = self.drag_nodes[:]
 
-        for _i in self.drag_idx:
-            _pts[_i] = _drag_pts[_j]
-            _j += 1
+        #for _i in self.drag_idx:
+        #    _pts[_i] = _drag_pts[_j]
+        #    _j += 1
+
+
+        _pts = []
+
+        for _v in self.pi_nodes:
+
+            if _v.state.dragging:
+                _pts.append(Vector(_v.drag_point))
+            else:
+                _pts.append(Vector(_v.point))
+
+        print('\n\t', self.name, 'partial points: ', _pts)
 
         _arc = {
             'BearingIn': self.curve['BearingIn'],
             'BearingOut': self.curve['BearingOut'],
-            'PI': self.pi_nodes[1].get(),
+            'PI': _pts[1],
             'Radius': self.curve['Radius'],
             'Direction': self.curve['Direction']
         }
@@ -385,11 +397,11 @@ class CurveTracker(BaseTracker):
         if any([_i in self.drag_idx for _i in [1, 2]]):
             _arc['BearingOut'] = support.get_bearing(_pts[2].sub(_pts[1]))
 
-        if 1 in self.drag_idx:
-            _arc['PI'] = _pts[1]
+        #if 1 in self.drag_idx:
+        #    _arc['PI'] = _pts[1]
 
         self.drag_arc = arc.get_parameters(_arc)
-        _points = arc.get_points(self.drag_arc)
+        _points = arc.get_points(self.drag_arc, _dtype=tuple)
 
         self.drag_coord.point.setValues(0, len(_points), _points)
 

@@ -237,9 +237,6 @@ class WireTracker(BaseTracker):
         if not DragState().sg_ok:
             return
 
-        #refresh the matrix only if invalid, since all wires will want the
-        #same transformation
-
         _pt = self.selection_nodes[self.drag_idx].drag_point
 
         if not _pt:

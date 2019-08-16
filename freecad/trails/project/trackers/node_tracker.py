@@ -114,7 +114,7 @@ class NodeTracker(BaseTracker):
         if DragState().node:
             _node = DragState().node_group.getChild(0)
 
-        _point = self.transform_points([self.point], _node, True)
+        _point = self.transform_points([self.point], _node, True)[0]
 
         self.update(_point)
 
