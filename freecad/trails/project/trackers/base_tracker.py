@@ -482,13 +482,16 @@ class BaseTracker:
 
         self.coin_style = style
 
-    def set_style(self, style=None, node=None):
+    def set_style(self, style=None, draw=None, color=None):
         """
         Update the tracker style
         """
 
-        if not node:
-            node = self.draw_style
+        if not draw:
+            draw = self.draw_style
+
+        if not color:
+            color = self.color
 
         if not style:
             style = self.coin_style
@@ -496,10 +499,10 @@ class BaseTracker:
         if self.active_style == style:
             return
 
-        self.node.lineWidth = style.line_width
-        self.node.style = style.style
-        self.node.linePattern = style.line_pattern
-        self.color.rgb = style.color
+        draw.lineWidth = style.line_width
+        draw.style = style.style
+        draw.linePattern = style.line_pattern
+        color.rgb = style.color
 
         if hasattr(self, 'marker'):
             self.marker.markerIndex = \

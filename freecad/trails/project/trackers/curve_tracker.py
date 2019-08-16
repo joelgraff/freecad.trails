@@ -77,6 +77,7 @@ class CurveTracker(BaseTracker):
         self.drag_arc = None
         self.drag_node = None
         self.drag_style = None
+        self.drag_color = None
 
         #scenegraph node structure for editing and dragging operations
         self.groups = {
@@ -270,6 +271,8 @@ class CurveTracker(BaseTracker):
             self.group.addChild(_node)
             self.drag_coord = _node.getChild(3)
             self.drag_style = _node.getChild(1)
+            self.drag_color = _node.getChild(2)
+
             self.drag_start = [_v.get() for _v in self.pi_nodes]
             self.drag_idx = [
                 _i for _i, _v in enumerate(self.pi_nodes)\
@@ -391,11 +394,12 @@ class CurveTracker(BaseTracker):
         self.is_valid = self.validate(_pis)
 
         if not self.is_valid:
-            print(self.name, 'invalid')
-            super().set_style(CoinStyles.ERROR, self.drag_style)
+            super().set_style(style=CoinStyles.ERROR, draw=self.drag_style,
+                              color=self.drag_color)
+
         else:
-            print(self.name, '!!valid!!')
-            super().set_style(CoinStyles.DEFAULT, self.drag_style)
+            super().set_style(style=CoinStyles.DEFAULT, draw=self.drag_style,
+                              color=self.drag_color)
 
     def end_drag(self):
         """

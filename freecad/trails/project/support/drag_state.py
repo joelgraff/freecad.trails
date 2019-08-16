@@ -68,7 +68,7 @@ class DragState(metaclass=Singleton):
         self.delta = Vector()
         self.coordinates = Vector()
 
-        #cumulate angle, center of rotation and current drag rotation 
+        #cumulate angle, center of rotation and current drag rotation
         self.angle = 0.0
         self.rotation_center = Vector()
         self.rotation = 0.0
@@ -133,7 +133,6 @@ class DragState(metaclass=Singleton):
 
         drag_group = coin.SoSeparator()
 
-        drag_group.addChild(coin.SoDrawStyle())
         drag_group.addChild(node)
 
         self.node_group.addChild(drag_group)

@@ -342,7 +342,8 @@ class AlignmentModel:
         if _geo_truth[1]:
 
             #scale the length to the document units
-            delta = _geo_start.sub(_datum.get('Start')).Length/units.scale_factor()
+            delta = \
+                _geo_start.sub(_datum.get('Start')).Length/units.scale_factor()
 
             _datum['StartStation'] -= delta
 
@@ -374,7 +375,8 @@ class AlignmentModel:
             #and the station distance
             _vector = _geo.get('Start').sub(_prev_geo.get('End'))
             _sta_len = abs(
-                _geo.get('InternalStation')[0] - _prev_geo.get('InternalStation')[1]
+                _geo.get('InternalStation')[0] \
+                    - _prev_geo.get('InternalStation')[1]
             )
 
             #calculate the difference between the vector length
@@ -388,7 +390,7 @@ class AlignmentModel:
 
                 #fix station if coordinate vector bearings match
                 if support.within_tolerance(
-                    bearing_angle, _geo.get('BearingIn')):
+                        bearing_angle, _geo.get('BearingIn')):
 
                     _int_sta = (
                         _prev_geo.get('InternalStation')[1] \
@@ -656,7 +658,8 @@ class AlignmentModel:
         }
 
         if curve.get('Type') in _fn:
-            return _fn[curve.get('Type')].get_ortho_vector(curve, distance, side)
+            return _fn[curve.get('Type')].get_ortho_vector(
+                curve, distance, side)
 
         return None
 
@@ -795,7 +798,8 @@ class AlignmentModel:
 
         #add a line segment for the last tangent if it exists
         last_tangent = abs(
-            self.data.get('meta').get('Length') - last_curve.get('InternalStation')[1]
+            self.data.get('meta').get('Length') \
+                - last_curve.get('InternalStation')[1]
         )
 
         if not support.within_tolerance(last_tangent):
