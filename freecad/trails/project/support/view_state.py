@@ -58,7 +58,7 @@ class ViewState(metaclass=Singleton):
         """
         Return the matrix for transfomations applied to the passed node
 
-        node - the node with the desired transformation
+        node - the Coin3D SoNode with the desired transformation
         parent - optional - sg root default
         refresh - if false, retrieves last matrix
         """

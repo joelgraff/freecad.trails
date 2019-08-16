@@ -319,6 +319,7 @@ class BaseTracker:
         _drag_line_end = MouseState().coordinates
         _mouse_coord = MouseState().coordinates
 
+        #rotation transformations
         if MouseState().altDown:
 
             DragState().rotate_transform.rotation = self._update_rotation()
@@ -346,6 +347,7 @@ class BaseTracker:
                 tuple(DragState().delta)
             )
 
+        #multiselection
         if MouseState().shiftDown:
 
             QtGui.QApplication.setOverrideCursor(Qt.BlankCursor)

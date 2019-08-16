@@ -40,6 +40,7 @@ from ....alignment import alignment
 from ...support import const, utils
 from ...support.mouse_state import MouseState
 from ...support.view_state import ViewState
+from ...support.drag_state import DragState
 
 from ...trackers.alignment_tracker import AlignmentTracker
 
@@ -256,6 +257,10 @@ class EditAlignmentTask:
         """
         SoLocation2Event callback
         """
+
+        #force refresh the view matrix if dragging
+        if DragState().node_group:
+            ViewState().get_matrix(DragState().node_group)
 
         self.mouse.update(arg, ViewState().view.getCursorPos())
 
