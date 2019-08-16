@@ -280,18 +280,23 @@ class CurveTracker(BaseTracker):
             ]
 
             self.drag_nodes = [_v.get() for _v in self.pi_nodes]
+
+            #create a partially-complete arc for drag tracking based on
+            #the original curve
             self.drag_arc = {
-                'BearingIn':
-                support.get_bearing(
-                    self.pi_nodes[1].get().sub(self.pi_nodes[0].get())),
+                'BearingIn': self.curve['BearingIn'],
+                #support.get_bearing(
+                    #self.pi_nodes[1].get().sub(self.pi_nodes[0].get())),
 
-                'BearingOut':
-                support.get_bearing(
-                    self.pi_nodes[2].get().sub(self.pi_nodes[1].get())),
+                'BearingOut': self.curve['BearingOut'],
+                #support.get_bearing(
+                    #self.pi_nodes[2].get().sub(self.pi_nodes[1].get())),
 
-                'PI': self.pi_nodes[1].get(),
+                'PI': self.curve['PI'],
+                #self.pi_nodes[1].get(),
 
-                'Radius': self.curve['Radius']
+                'Radius': self.curve['Radius'],
+                'Tangent': self.curve['Tangent']
             }
 
             self.insert_node(self.group, 0)
@@ -340,11 +345,8 @@ class CurveTracker(BaseTracker):
             return
 
         #otherwise, test for curve-editing drag ops
-        #elif self.drag_reference:
-
-
-
-        #NEED TO VALIDATE THE CURVE CHANGES
+        if self.drag_reference:
+            self.validate()
 
         super().on_drag()
 
@@ -359,14 +361,14 @@ class CurveTracker(BaseTracker):
             _drag_pts.append(self.drag_nodes[_i])
 
         #transform the selected PI nodes by the current drag transformation
-        _drag_pts = self.transform_points(_drag_pts, DragState().node_group)
-
-        _pis = self.drag_nodes[:]
+        #_drag_pts = self.transform_points(_drag_pts, DragState().node_group)
 
         _j = 0
 
+        _pts = self.drag_nodes[:]
+
         for _i in self.drag_idx:
-            _pis[_i] = _drag_pts[_j]
+            _pts[_i] = _drag_pts[_j]
             _j += 1
 
         _arc = {
@@ -378,28 +380,18 @@ class CurveTracker(BaseTracker):
         }
 
         if any([_i in self.drag_idx for _i in [0, 1]]):
-            _arc['BearingIn'] = support.get_bearing(_pis[1].sub(_pis[0]))
+            _arc['BearingIn'] = support.get_bearing(_pts[1].sub(_pts[0]))
 
         if any([_i in self.drag_idx for _i in [1, 2]]):
-            _arc['BearingOut'] = support.get_bearing(_pis[2].sub(_pis[1]))
+            _arc['BearingOut'] = support.get_bearing(_pts[2].sub(_pts[1]))
 
         if 1 in self.drag_idx:
-            _arc['PI'] = _pis[1]
+            _arc['PI'] = _pts[1]
 
         self.drag_arc = arc.get_parameters(_arc)
         _points = arc.get_points(self.drag_arc)
 
         self.drag_coord.point.setValues(0, len(_points), _points)
-
-        self.is_valid = self.validate(_pis)
-
-        if not self.is_valid:
-            super().set_style(style=CoinStyles.ERROR, draw=self.drag_style,
-                              color=self.drag_color)
-
-        else:
-            super().set_style(style=CoinStyles.DEFAULT, draw=self.drag_style,
-                              color=self.drag_color)
 
     def end_drag(self):
         """
@@ -697,24 +689,41 @@ class CurveTracker(BaseTracker):
 
         return arc.get_points(self.curve)
 
-    def validate(self, points):
+    def validate(self, lt_tan=0.0, rt_tan=0.0):
         """
         Validate the arc's tangents against it's PI's
+        points - the corodinates of the three PI nodes
+        lt_tan, rt_tan - the length of the tangents of adjoining curves
         """
 
+        if not self.drag_arc:
+            return
+
+        if not self.drag_nodes:
+            return
+
+        if not self.drag_style:
+            return
+
         _t = self.drag_arc['Tangent']
+        _style = CoinStyles.DEFAULT
 
-        _lt = points[0].sub(points[1])
+        #test of left-side tangent validity
+        _lt = self.drag_nodes[0].sub(self.drag_nodes[1]).Length
 
-        if _t > _lt.Length:
-            return False
+        self.is_valid = _t + lt_tan <= _lt
 
-        _rt = points[1].sub(points[2])
+        #test for right-side tangent validity
+        if self.is_valid:
 
-        if _t > _rt.Length:
-            return False
+            _rt = self.drag_nodes[1].sub(self.drag_nodes[2]).Length
+            self.is_valid = _t + rt_tan <= _rt
 
-        return True
+        #update styles accordingly
+        if not self.is_valid:
+            _style = CoinStyles.ERROR
+
+        super().set_style(_style, self.drag_style, self.drag_color)
 
     def set_selectability(self, is_selectable):
         """

@@ -240,13 +240,12 @@ class WireTracker(BaseTracker):
         #refresh the matrix only if invalid, since all wires will want the
         #same transformation
 
-        _pts = self.transform_points(
-            [self.drag_start[self.drag_idx]],
-            DragState().drag_node,
-            refresh=True
-        )
+        _pt = self.selection_nodes[self.drag_idx].drag_point
 
-        self.drag_points[self.drag_idx] = tuple(_pts[0])
+        if not _pt:
+            return
+
+        self.drag_points[self.drag_idx] = tuple(_pt)
 
         self.points = self.drag_points
 
@@ -259,8 +258,7 @@ class WireTracker(BaseTracker):
         """
 
         self.drag_coord.point.setValues(
-            0, len(self.drag_points), self.drag_points
-        )
+            0, len(self.drag_points), self.drag_points)
 
     def end_drag(self):
         """

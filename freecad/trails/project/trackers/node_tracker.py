@@ -58,6 +58,7 @@ class NodeTracker(BaseTracker):
         #build node structure for the node tracker
         self.coord = coin.SoCoordinate3()
         self.marker = coin.SoMarkerSet()
+        self.drag_point = None
 
         super().__init__(
             names=names, children=[self.coord, self.marker] + nodes
@@ -76,6 +77,7 @@ class NodeTracker(BaseTracker):
             ViewState().view.getPointOnScreen(Vector(self.point)) + (0.0,)
         )
 
+        #abort if the mouse click was too far from the node's center
         if _pos.sub(Vector(MouseState().pos)).Length > 5.0:
             return
 
@@ -89,6 +91,18 @@ class NodeTracker(BaseTracker):
 
             DragState().start = _p
             DragState().coordinates = _p
+            self.drag_point = _p
+
+    def on_drag(self):
+        """
+        Override of base function
+        """
+
+        super().on_drag()
+
+        if self.drag_point:
+            self.drag_point = self.transform_points(
+                [self.point], DragState().drag_node, False)[0]
 
     def end_drag(self):
         """
