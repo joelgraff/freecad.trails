@@ -54,7 +54,6 @@ class WireTracker(BaseTracker):
 
         self.group = coin.SoSeparator()
         self.drag_coord = None
-        self.drag_idx = None
         self.drag_start = []
         self.drag_points = []
         self.drag_refresh = True
@@ -130,7 +129,7 @@ class WireTracker(BaseTracker):
         """
 
         if not points:
-            points = self.get_points()
+            points = self.points
 
         if not points:
             return
@@ -169,6 +168,16 @@ class WireTracker(BaseTracker):
 
         super().button_event(arg)
 
+    def before_drag(self):
+        """
+        Override base fucntion
+        """
+
+        if not self.state.selected.value:
+            return
+
+        super().before_drag()
+
     def start_drag(self):
         """
         Override of base function
@@ -195,8 +204,6 @@ class WireTracker(BaseTracker):
         if not self.state.dragging:
             return
 
-        self.drag_idx = [_i for _i, _v in enumerate(_states) if _v][0]
-
         _node = self.copy(self.node)
 
         self.group.addChild(_node)
@@ -214,20 +221,15 @@ class WireTracker(BaseTracker):
         if self.drag_override:
             return
 
-        #abort unselected
+        #abort unselected / non-partial drag
         if not self.state.dragging:
             return
 
-        #partially-selected wires will have a drag_idx.
-        #fully-selected / unselected will not
-        if self.drag_idx is not None:
-
-            if DragState().sg_ok:
-                self._partial_drag()
-
+        if not self.state.selected.value:
             return
 
-        super().on_drag()
+        if DragState().sg_ok:
+            self._partial_drag()
 
     def _partial_drag(self):
         """
@@ -237,14 +239,14 @@ class WireTracker(BaseTracker):
         if not DragState().sg_ok:
             return
 
-        _pt = self.selection_nodes[self.drag_idx].drag_point
+        self.drag_points = []
 
-        if not _pt:
-            return
+        for _v in self.selection_nodes:
 
-        self.drag_points[self.drag_idx] = tuple(_pt)
-
-        self.points = self.drag_points
+            if _v.state.dragging:
+                self.drag_points.append(_v.drag_point)
+            else:
+                self.drag_points.append(_v.point)
 
         if self.drag_refresh:
             self.refresh_drag()
@@ -254,6 +256,7 @@ class WireTracker(BaseTracker):
         Refresh the drag coordinates
         """
 
+        print(self.name)
         self.drag_coord.point.setValues(
             0, len(self.drag_points), self.drag_points)
 
@@ -264,32 +267,8 @@ class WireTracker(BaseTracker):
 
         _node = None
 
-        if DragState().node:
-            _node = DragState().node_group.getChild(0)
+        self.update(self.drag_points)
 
-        #transform all points which are not nodes
-        _points = []
-
-        if self.selection_indices:
-
-            _pts = self.points
-
-            if -1 in self.selection_indices:
-                _pts = _pts[:-1]
-
-            for _i, _v in enumerate(_pts):
-
-                if not _i in self.selection_indices:
-                    _points.append(_v)
-
-        else:
-            _points = self.points
-
-        _points = self.transform_points(_points, _node, refresh=True)
-
-        self.update(_points)
-
-        self.drag_idx = None
         self.drag_coord = None
         self.drag_start = []
         self.remove_node(self.group)

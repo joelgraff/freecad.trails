@@ -70,7 +70,6 @@ class CurveTracker(BaseTracker):
 
         self.group.addChild(self.drag_coord)
 
-        self.drag_idx = []
         self.drag_nodes = []
         self.drag_start = []
         self.drag_points = []
@@ -253,6 +252,9 @@ class CurveTracker(BaseTracker):
         Override base method
         """
 
+        if not self.state.selected.value:
+            return
+
         #test to see if the curve is being manipulated by it's PI's
         _sel = [_v.state.selected.value for _v in self.pi_nodes]
 
@@ -274,27 +276,14 @@ class CurveTracker(BaseTracker):
             self.drag_color = _node.getChild(2)
 
             self.drag_start = [_v.get() for _v in self.pi_nodes]
-            self.drag_idx = [
-                _i for _i, _v in enumerate(self.pi_nodes)\
-                    if _v.state.selected.value
-            ]
-
-            self.drag_nodes = [_v.get() for _v in self.pi_nodes]
+            self.drag_nodes = [_v for _v in self.pi_nodes if _v.state.dragging]
 
             #create a partially-complete arc for drag tracking based on
             #the original curve
             self.drag_arc = {
                 'BearingIn': self.curve['BearingIn'],
-                #support.get_bearing(
-                    #self.pi_nodes[1].get().sub(self.pi_nodes[0].get())),
-
                 'BearingOut': self.curve['BearingOut'],
-                #support.get_bearing(
-                    #self.pi_nodes[2].get().sub(self.pi_nodes[1].get())),
-
                 'PI': self.curve['PI'],
-                #self.pi_nodes[1].get(),
-
                 'Radius': self.curve['Radius'],
                 'Tangent': self.curve['Tangent']
             }
@@ -304,7 +293,6 @@ class CurveTracker(BaseTracker):
             return
 
         #no PI nodes are selected, test for selected curve ndoes
-
         #get the node that's being dragged
         _key = [
             _k for _k in ['Start', 'Center', 'End']\
@@ -355,33 +343,17 @@ class CurveTracker(BaseTracker):
         Perform partial drag if ok
         """
 
-        #_drag_pts = []
-
-        #for _i in self.drag_idx:
-        #    _drag_pts.append(self.drag_nodes[_i])
-
-        #transform the selected PI nodes by the current drag transformation
-        #_drag_pts = self.transform_points(_drag_pts, DragState().node_group)
-
-        #_j = 0
-
-        #_pts = self.drag_nodes[:]
-
-        #for _i in self.drag_idx:
-        #    _pts[_i] = _drag_pts[_j]
-        #    _j += 1
-
-
         _pts = []
+        _idx = []
 
-        for _v in self.pi_nodes:
+        for _i, _v in enumerate(self.pi_nodes):
 
             if _v.state.dragging:
                 _pts.append(Vector(_v.drag_point))
+                _idx.append(_i)
+
             else:
                 _pts.append(Vector(_v.point))
-
-        print('\n\t', self.name, 'partial points: ', _pts)
 
         _arc = {
             'BearingIn': self.curve['BearingIn'],
@@ -391,14 +363,12 @@ class CurveTracker(BaseTracker):
             'Direction': self.curve['Direction']
         }
 
-        if any([_i in self.drag_idx for _i in [0, 1]]):
+        if 0 in _idx or 1 in _idx:
             _arc['BearingIn'] = support.get_bearing(_pts[1].sub(_pts[0]))
 
-        if any([_i in self.drag_idx for _i in [1, 2]]):
+        if 1 in _idx or 2 in _idx:
             _arc['BearingOut'] = support.get_bearing(_pts[2].sub(_pts[1]))
 
-        #if 1 in self.drag_idx:
-        #    _arc['PI'] = _pts[1]
 
         self.drag_arc = arc.get_parameters(_arc)
         _points = arc.get_points(self.drag_arc, _dtype=tuple)
@@ -437,12 +407,11 @@ class CurveTracker(BaseTracker):
 
         self.state.dragging = False
 
-        if self.drag_idx:
+        if self.drag_start:
             self.remove_node(self.group)
             self.group.removeAllChildren()
             self.drag_coord = None
             self.drag_start = []
-            self.drag_idx = []
             self.drag_nodes = []
             self.drag_arc = None
 
@@ -711,7 +680,7 @@ class CurveTracker(BaseTracker):
         if not self.drag_arc:
             return
 
-        if not self.drag_nodes:
+        if not self.state.dragging:
             return
 
         if not self.drag_style:
@@ -720,15 +689,28 @@ class CurveTracker(BaseTracker):
         _t = self.drag_arc['Tangent']
         _style = CoinStyles.DEFAULT
 
-        #test of left-side tangent validity
-        _lt = self.drag_nodes[0].sub(self.drag_nodes[1]).Length
+        _nodes = []
 
+        for _v in self.pi_nodes:
+
+            if _v.drag_point:
+                _nodes.append(Vector(_v.drag_point))
+
+            else:
+                _nodes.append(Vector(_v.point))
+
+        #test of left-side tangent validity
+        _lt = _nodes[0].sub(_nodes[1]).Length
+
+        print('\n\t',self.name)
+        print('left ->', _t, lt_tan, _t + lt_tan, _lt)
         self.is_valid = _t + lt_tan <= _lt
 
         #test for right-side tangent validity
         if self.is_valid:
+            _rt = _nodes[1].sub(_nodes[2]).Length
+            print('right ->', _t, rt_tan, _t + rt_tan, _rt)
 
-            _rt = self.drag_nodes[1].sub(self.drag_nodes[2]).Length
             self.is_valid = _t + rt_tan <= _rt
 
         #update styles accordingly

@@ -100,9 +100,6 @@ class BaseTracker:
         if not children:
             children = []
 
-        #if group:
-        #    self.node = coin.SoGroup()
-
         self.sel_node = \
             coin.SoType.fromName("SoFCSelection").createInstance()
 
@@ -171,7 +168,7 @@ class BaseTracker:
         if self.state.draggable:
 
             #abort if dragging to avoid highlighting tests
-            self.update_dragging()
+            self.before_drag()
 
             if self.state.dragging:
                 return
@@ -264,13 +261,12 @@ class BaseTracker:
 
         self.refresh(_style)
 
-    def update_dragging(self):
+    def before_drag(self):
         """
         Test for drag conditions and changes
         """
 
-        if MouseState().button1.dragging and self.state.selected.value:
-
+        if MouseState().button1.dragging:
             if not self.state.dragging:
 
                 self.start_drag()

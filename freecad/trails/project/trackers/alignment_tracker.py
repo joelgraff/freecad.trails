@@ -112,7 +112,14 @@ class AlignmentTracker(BaseTracker):
             MouseState().component + ' ' + str(tuple(MouseState().coordinates))
         )
 
-    def update_dragging(self):
+    def start_drag(self):
+        """
+        Override base function
+        """
+
+        pass
+
+    def on_drag(self):
         """
         Override base function
         """
@@ -120,14 +127,24 @@ class AlignmentTracker(BaseTracker):
         if not MouseState().button1.dragging:
             return
 
-        for _v in self.drag_curves:
-            _v.validate()
+        print(self.name, 'drag curves = ', self.drag_curves)
+
+        #get the list of tangents
+        _tans = [0.0] \
+            + [_v.drag_arc['Tangent'] for _v in self.drag_curves] + [0.0]
+
+        print('tangents', _tans)
+        #enumerate all but the last tangent,
+        #getting the curve one in
+        for _i, _v in enumerate(_tans[:-2]):
+            self.drag_curves[_i].validate(lt_tan=_v, rt_tan=_tans[_i + 2])
 
     def end_drag(self):
         """
         Override base fucntion
         """
 
+        print(self.name, 'end drag')
         self.drag_curves = []
 
     def button_event(self, arg):
@@ -144,6 +161,20 @@ class AlignmentTracker(BaseTracker):
         if MouseState().button1.state == 'UP':
             return
 
+        _i = 0
+
+        #abort if nodes are selected - this routine is only for multi-selecting
+        for _v in self.trackers['Nodes']:
+
+            if _v.state.selected.value:
+                _i += 1
+
+        if MouseState().ctrlDown and _i > 1:
+            return
+
+        elif _i > 0:
+            return
+
         #if a curve is picked, set the visibility ignore flag on, so the
         #curve PI doesn't get redrawn
         #if 'CURVE' in _pick:
@@ -153,6 +184,8 @@ class AlignmentTracker(BaseTracker):
         #    self.trackers['Nodes'][_idx + 1].state.visible.ignore = True
 
         if 'NODE' in _pick:
+
+            print(self.name, 'button', MouseState().component)
 
             _idx = int(_pick.split('-')[1])
 
@@ -165,8 +198,16 @@ class AlignmentTracker(BaseTracker):
                 _v.state.selected.value = True
                 _v.state.selected.ignore_once()
 
-            _lower = min(0, _idx - 1)
-            _upper = min(len(self.trackers['Curves']), _idx + 2)
+            _lower = max(0, _idx - 2)
+
+            _max = 1
+
+            if MouseState().ctrlDown:
+                _max = 0
+
+            _upper = min(len(self.trackers['Curves']), _idx + _max)
+
+            print('picking curves ', _lower, _upper)
 
             for _i in range(_lower, _upper):
                 self.drag_curves.append(self.trackers['Curves'][_i])

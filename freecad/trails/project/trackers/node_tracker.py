@@ -66,6 +66,16 @@ class NodeTracker(BaseTracker):
 
         self.update()
 
+    def before_drag(self):
+        """
+        Override base fucntion
+        """
+
+        if not self.state.selected.value:
+            return
+
+        super().before_drag()
+
     def start_drag(self):
         """
         Initialize drag ops
@@ -114,7 +124,7 @@ class NodeTracker(BaseTracker):
         if DragState().node:
             _node = DragState().node_group.getChild(0)
 
-        _point = self.transform_points([self.point], _node, True)[0]
+        _point = self.transform_points([self.point], _node, True)
 
         self.update(_point)
 
