@@ -112,7 +112,7 @@ class TrackerContainer():
 
     def __init__(self, is_undefined=False):
         """
-        Cosntructor
+        Constructor
         """
 
         self.enabled = self.Property(self.State.ON)

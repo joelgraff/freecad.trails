@@ -193,10 +193,10 @@ class Alignment(Draft._Wire):
 
     def _plot_vectors(self, stations, interval=1.0, is_ortho=True):
         """
-        Testing function to plot coordiantes and vectors between specified
+        Testing function to plot coordinates and vectors between specified
         stations.
 
-        stations - tuple / list of startnig / ending stations
+        stations - tuple / list of starting / ending stations
         is_ortho - bool, False plots tangent, True plots orthogonal
         """
 

@@ -181,7 +181,7 @@ class CurveTracker(BaseTracker):
             self._update_curve()
 
         #if we're still here, the user is attempting to change the curve
-        #get the current paramter locks from the UI panel and recalculate
+        #get the current parameter locks from the UI panel and recalculate
 
         _vec = self.pi_nodes[1].get().sub(MouseState().coordinates)
         _offset = Vector(self.drag_reference).multiply(_vec.Length)
@@ -623,7 +623,7 @@ class CurveTracker(BaseTracker):
             _start = self.curve['Start']
 
             #last curve uses the end point.
-            #otherwise, calcualte a point halfway between.
+            #otherwise, calculate a point halfway between.
             if _start.is_end_node:
 
                 _end = _pi.add(
