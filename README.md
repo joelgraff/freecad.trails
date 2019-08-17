@@ -6,9 +6,9 @@ This workbench is being developed to provide functionality specific to transport
 
 ## Installation
 
-Download and extract the ZIP file into the .FreeCAD/Mod folder or use git to clone into .FreeCAD/Mod
+Download and extract the ZIP file into the `.FreeCAD/Mod` folder or use git to clone into `.FreeCAD/Mod`
 
-Note:  .FreeCAD/Ext is also a valid file path and may eventually become the target path for external workbenches
+**Note:** `.FreeCAD/Ext` is also a valid file path and may eventually become the target path for external workbenches
 
 ## Feedback 
 Discuss this Workbench on the FreeCAD forum thread dedicated to this topic: 
@@ -18,4 +18,4 @@ FYI, this thread was born of a parent thread:
 [Civil Engineering Design functions](https://forum.freecadweb.org/viewtopic.php?f=8&t=6973)
 
 ## Developer 
-Joel Graff (@joelgraff) with inspiration and help from the FreeCAD community
+Joel Graff ([@joelgraff](https://github.com/joelgraff) with inspiration and help from the FreeCAD community
