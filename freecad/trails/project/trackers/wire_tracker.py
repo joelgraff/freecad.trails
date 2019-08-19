@@ -28,6 +28,7 @@ from pivy import coin
 
 from ..support.drag_state import DragState
 from ..support.mouse_state import MouseState
+from ..support.view_state import ViewState
 
 from .base_tracker import BaseTracker
 
@@ -53,6 +54,7 @@ class WireTracker(BaseTracker):
         self.selection_indices = []
 
         self.group = coin.SoSeparator()
+        self.drag_node = None
         self.drag_coord = None
         self.drag_start = []
         self.drag_points = []
@@ -204,14 +206,14 @@ class WireTracker(BaseTracker):
         if not self.state.dragging:
             return
 
-        _node = self.copy(self.node)
+        _drag_indices = [
+            _i for _i, _v in enumerate(self.selection_nodes)\
+                if _v.state.dragging
+        ]
 
-        self.group.addChild(_node)
-        self.drag_coord = _node.getChild(3)
-        self.drag_start = self.points[:]
-        self.drag_points = self.points[:]
+        self.drag_node = self.copy()
 
-        self.insert_node(self.group, 0)
+        DragState().add_partial_node(self.drag_node, _drag_indices)
 
     def on_drag(self):
         """
@@ -228,8 +230,7 @@ class WireTracker(BaseTracker):
         if not self.state.selected.value:
             return
 
-        if DragState().sg_ok:
-            self._partial_drag()
+        super().on_drag()
 
     def _partial_drag(self):
         """
@@ -248,31 +249,31 @@ class WireTracker(BaseTracker):
             else:
                 self.drag_points.append(_v.point)
 
-        if self.drag_refresh:
-            self.refresh_drag()
-
-    def refresh_drag(self):
-        """
-        Refresh the drag coordinates
-        """
-
-        print(self.name)
-        self.drag_coord.point.setValues(
-            0, len(self.drag_points), self.drag_points)
+        #if self.drag_refresh:
+           # self.refresh_drag()
 
     def end_drag(self):
         """
         Override of base function
         """
 
-        _node = None
+        #pull the updated tuples from the drag node
+        _values = []
+        _node = self.drag_node
 
-        self.update(self.drag_points)
+        if not _node:
+            _node = self.drag_group.getChild(0)
 
-        self.drag_coord = None
-        self.drag_start = []
-        self.remove_node(self.group)
-        self.group.removeAllChildren()
+        _values = [_v.getValue() for _v in _node.getChild(3).point.getValues()]
+
+        if _values:
+            self.update(_values)
+
+        _coords = ViewState().transform_points(_values, DragState().drag_node)
+
+        self.update(_coords)
+        self.drag_node = None
+        self.drag_group = None
 
         super().end_drag()
 

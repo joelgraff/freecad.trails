@@ -68,7 +68,7 @@ class NodeTracker(BaseTracker):
 
     def before_drag(self):
         """
-        Override base fucntion
+        Override base function
         """
 
         if not self.state.selected.value:
@@ -83,13 +83,18 @@ class NodeTracker(BaseTracker):
 
         super().start_drag()
 
-        _pos = Vector(
-            ViewState().view.getPointOnScreen(Vector(self.point)) + (0.0,)
-        )
+        #quick test to see if click was near node, in case user didn't click
+        #directly on it
 
-        #abort if the mouse click was too far from the node's center
-        if _pos.sub(Vector(MouseState().pos)).Length > 5.0:
-            return
+        if not DragState().node == self:
+
+            _pos = Vector(
+                ViewState().view.getPointOnScreen(Vector(self.point)) + (0.0,)
+            )
+
+            #abort if the mouse click was too far from the node's center
+            if _pos.sub(Vector(MouseState().pos)).Length < 5.0:
+                DragState().node = self
 
         #if the user clicked on this node, center the drag coordinates on it
         if DragState().node == self:
@@ -101,32 +106,34 @@ class NodeTracker(BaseTracker):
 
             DragState().start = _p
             DragState().coordinates = _p
-            self.drag_point = _p
+
+        self.drag_point = tuple(self.point)
 
     def on_drag(self):
         """
         Override of base function
         """
 
+        if DragState().abort:
+            return
+
+        if not DragState().node:
+            DragState().abort = True
+
         super().on_drag()
 
-        if self.drag_point:
-            self.drag_point = self.transform_points(
-                [self.point], DragState().drag_node, False)[0]
+        if not self.drag_point:
+            return
+
+        self.drag_point = ViewState().transform_points(
+            [self.point], DragState().drag_node)[0]
 
     def end_drag(self):
         """
         Override of base function
         """
 
-        _node = None
-
-        if DragState().node:
-            _node = DragState().node_group.getChild(0)
-
-        _point = self.transform_points([self.point], _node, True)
-
-        self.update(_point)
+        self.update([self.drag_point])
 
         super().end_drag()
 
@@ -147,7 +154,7 @@ class NodeTracker(BaseTracker):
         if not isinstance(coord, tuple):
             _c = tuple(_c)
 
-        self.coord.point.setValue(_c)
+        self.coord.point.setValue(_c[:3])
 
         self.point = _c
 

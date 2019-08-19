@@ -45,6 +45,9 @@ class DragState(metaclass=Singleton):
         self.group = coin.SoSeparator()
         self.node_group = coin.SoSeparator()
 
+        self.partial_coords = []
+        self.partial_indices = []
+
         self.translate_transform = coin.SoTransform()
         self.translate_transform.translation.setValue(
             tuple([0.0, 0.0, 0.0])
@@ -63,6 +66,8 @@ class DragState(metaclass=Singleton):
         self.group.addChild(self.node_group)
 
         self.drag_node = None
+
+        self.abort = False
 
         #coordinate tracking properties
         self.delta = Vector()
@@ -83,6 +88,43 @@ class DragState(metaclass=Singleton):
         self.override = False
 
     def update(self, line_start=None, line_end=None):
+        """
+        Update the drag line and partially-selected nodes
+        """
+
+        self._update_drag_line(line_start, line_end)
+
+        if self.partial_coords:
+            self._update_partial_nodes()
+
+    def _update_partial_nodes(self):
+        """
+        Update partially selected drag nodes
+        """
+
+        #iterate SoCoordinate3 nodes and update the coordinates at the
+        #locations specified by the accompanying indices list
+        _coords = []
+
+        #retrieve the coordinates to transform
+        for _i, _v in self.partial_coords:
+
+            for _j in self.partial_indices[_i]:
+                _coords.append(_v.point.getValues()[_j].getValue())
+
+        #transform coordinates
+        _coords = ViewState().transform_points(_coords, self.node_group)
+        _k = 0
+
+        #write transformed coordinates back to scenegraph nodes
+        for _i, _v in self.partial_coords:
+
+            for _j in self.partial_indices[_i]:
+
+                _v.point.set1Value(_j, _coords[_k])
+                _k += 1
+
+    def _update_drag_line(self, line_start, line_end):
         """
         Update the drag line
         """
@@ -138,6 +180,36 @@ class DragState(metaclass=Singleton):
         self.node_group.addChild(drag_group)
 
         return drag_group
+
+    def add_partial_node(self, node, indices):
+        """
+        Add a partially-dragged node to the tree, updating only the
+        coordiantes in the passed index.
+
+        node - a group containing the geometry to be rendered.
+               must include an SoCoordinate3 node.
+
+        indices - index value(s) of coordiantes in coordiante node to
+                  be updated by the drag transform
+        """
+
+
+        if not self.drag_node:
+            self.drag_node = node
+
+        _rng = range(0, node.getNumChildren())
+
+        for _i in _rng:
+
+            _n = node.getChild(_i)
+
+            if isinstance(_n, coin.SoCoordinate3):
+                self.partial_coords.append(_n)
+                break
+
+        self.partial_indices.append(indices)
+        self.node.partial_group.addChild(node)
+
 
     def finish(self):
         """

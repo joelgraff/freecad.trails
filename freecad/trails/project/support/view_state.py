@@ -108,3 +108,45 @@ class ViewState(metaclass=Singleton):
             return False
 
         return self._matrix.getValue()[3][3] == 1.0
+
+    def transform_points(self, points, node=None, refresh=True):
+        """
+        Transform selected points by the transformation matrix
+        """
+
+        #store the view state matrix if a valid node is passed.
+        #subsequent calls with null node will re-use the last valid node matrix
+        refresh = refresh and node is not None
+        _matrix = self.get_matrix(node, refresh=refresh)
+
+        if not _matrix:
+            return []
+
+        #append fourth point to each coordinate
+        _pts = [_v + (1.0,) for _v in points]
+
+        _s = 0
+        _result = []
+
+        #one point - do vector - matix multiply and return
+        if len(_pts) == 1:
+
+            return [
+                _matrix.multVecMatrix(coin.SbVec4f(_pts[0])).getValue()[:3]
+            ]
+
+
+        #iterate the list, processing it in sets of four coordinates at a time
+        while _s < len(_pts):
+
+            _mat_pts = _pts[_s:_s + 4]
+
+            for _i in range(len(_mat_pts), 4):
+                _mat_pts.append((0.0, 0.0, 0.0, 1.0))
+
+            _mat = coin.SbMatrix(_mat_pts)
+            _result.extend(_mat.multRight(_matrix).getValue()[:2])
+
+            _s += 4
+
+        return _result

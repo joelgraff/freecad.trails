@@ -272,7 +272,7 @@ class BaseTracker:
                 self.start_drag()
                 self.state.dragging = True
 
-            else:
+            elif not DragState().abort:
                 self.on_drag()
 
         elif self.state.dragging:
@@ -290,6 +290,7 @@ class BaseTracker:
         self.drag_group = DragState().add_node(self.copy())
 
         if not DragState().node:
+
             DragState().node = self
             DragState().start = MouseState().coordinates
             DragState().coordinates = MouseState().coordinates
@@ -549,30 +550,6 @@ class BaseTracker:
 
                 self.set_visible(False)
                 break
-
-    def transform_points(self, points, node=None, refresh=True):
-        """
-        Transform selected points by the transformation matrix
-        """
-
-        _result = []
-
-        #store the view state matrix if a valid node is passed.
-        #subsequent calls with null node will re-use the last valid node matrix
-        refresh = refresh and node is not None
-        _matrix = ViewState().get_matrix(node, refresh=refresh)
-
-        if not _matrix:
-            return _result
-
-        for _p in points:
-
-            _v = coin.SbVec4f(tuple(_p) + (1.0,))
-            _v = _matrix.multVecMatrix(_v).getValue()[:3]
-
-            _result.append(_v) #.sub(self.datum))
-
-        return _result
 
     def insert_node(self, node, parent=None):
         """

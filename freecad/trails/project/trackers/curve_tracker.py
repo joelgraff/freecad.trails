@@ -459,7 +459,7 @@ class CurveTracker(BaseTracker):
         _p = arc.get_points(self.drag_arc)
 
         self.trackers['Curve'][0].drag_points = [tuple(_v) for _v in _p]
-        self.trackers['Curve'][0].refresh_drag()
+        #self.trackers['Curve'][0].refresh_drag()
 
         #update the drag geometry for the wire tracker
         for _i, _k in enumerate(['Start', 'Center', 'End']):
@@ -470,7 +470,7 @@ class CurveTracker(BaseTracker):
             self.trackers['Wires'][0].drag_points[_i] =\
                 self.drag_arc[_k]
 
-        self.trackers['Wires'][0].refresh_drag()
+        #self.trackers['Wires'][0].refresh_drag()
 
     def rebuild_trackers(self):
         """
