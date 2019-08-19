@@ -39,7 +39,7 @@ class BaseTrackerTest(Modifier):
     """
     Command Description
     """
-    def __init__(self):
+    def __init__(self, is_linked=False):
         """
         Constructor
         """
@@ -49,6 +49,7 @@ class BaseTrackerTest(Modifier):
         self.is_activated = False
         self.call = None
         self.tmp_group = None
+        self.is_linked = is_linked
 
     def IsActive(self):
         """
@@ -78,10 +79,17 @@ class BaseTrackerTest(Modifier):
 
         icon_path = resources.__path__[0] + '/icons/new_alignment.svg'
 
+        _tool_tip = 'Tracker Test'
+
+        if self.is_linked:
+            _tool_tip += ' (linked)'
+        else:
+            _tool_tip += ' (unlinked)'
+
         return {'Pixmap'  : icon_path,
                 'Accel'   : 'Ctrl+Shift+D',
                 'MenuText': 'Draft Alignment',
-                'ToolTip' : 'Draft a horizontal alignment',
+                'ToolTip' : _tool_tip,
                 'CmdType' : 'ForEdit'}
 
     def Activated(self):
@@ -99,7 +107,8 @@ class BaseTrackerTest(Modifier):
         ViewState().view = Gui.ActiveDocument.ActiveView
 
         #create alignment editing task
-        self.task = base_tracker_test_task.create(self.doc, data, obj)
+        self.task = \
+            base_tracker_test_task.create(self.doc, data, obj, self.is_linked)
 
         Gui.Control.showDialog(self.task)
         self.task.setup()
@@ -107,3 +116,4 @@ class BaseTrackerTest(Modifier):
         Modifier.Activated(self, 'BaseTrackerTest')
 
 Gui.addCommand('BaseTrackerTest', BaseTrackerTest())
+Gui.addCommand('BaseTrackerLinkedTest', BaseTrackerTest(True))

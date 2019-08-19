@@ -35,7 +35,7 @@ class CoinGroup():
     Local class to facilitate tracking nodes in groups
     """
 
-    def __init__(self, node_id, no_marker=False):
+    def __init__(self, marker=False, line=False, color=False, style=False):
         """
         Constructor
         """
@@ -57,30 +57,3 @@ class CoinGroup():
         self.group.addChild(self.line)
 
         self.group.setName(node_id)
-
-    def set_style(self, style):
-        """
-        Set the geometry styles based on the passed CoinStyles structure
-        """
-
-        if self.style == style:
-            return
-
-        self.color.rgb = style.color
-        self.marker.markerIndex = \
-            Gui.getMarkerIndex(style.shape, style.size)
-
-        self.style = style
-
-
-    def set_coordinates(self, coords):
-        """
-        Set the coordinate node values
-        """
-
-        _count = len(coords)
-
-        self.coord.point.setNum(_count)
-        self.coord.point.setValues(0, _count, [list(_v) for _v in coords])
-
-        self.line.numVertices.setValue(_count)

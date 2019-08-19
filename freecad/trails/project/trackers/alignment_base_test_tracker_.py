@@ -24,19 +24,14 @@
 Tracker for alignment editing
 """
 
-import math
-
 from pivy import coin
 
 from FreeCAD import Vector
 
 import FreeCADGui as Gui
 
-from ...geometry import support
-
 from .base_tracker import BaseTracker
 
-from ..support.utils import Constants as C
 from ..support.mouse_state import MouseState
 from ..support.view_state import ViewState
 
@@ -50,7 +45,7 @@ class AlignmentBaseTestTracker(BaseTracker):
     Tracker class for alignment design
     """
 
-    def __init__(self, doc, object_name, alignment, datum=Vector()):
+    def __init__(self, doc, object_name, alignment, is_linked, datum=Vector()):
         """
         Constructor
         """
@@ -96,7 +91,7 @@ class AlignmentBaseTestTracker(BaseTracker):
         #generate initial node trackers and wire trackers for mouse interaction
         #and add them to the scenegraph
         self.trackers = None
-        self.build_trackers()
+        self.build_trackers(is_linked)
 
         _trackers = []
         for _v in self.trackers.values():
@@ -131,7 +126,7 @@ class AlignmentBaseTestTracker(BaseTracker):
 
         pass
 
-    def build_trackers(self):
+    def build_trackers(self, is_linked):
         """
         Build the node and wire trackers that represent the selectable
         portions of the alignment geometry
@@ -166,12 +161,18 @@ class AlignmentBaseTestTracker(BaseTracker):
         for _i in range(0, len(_result['Nodes']) - 1):
 
             _nodes = _result['Nodes'][_i:_i + 2]
+            _points = [_v.point for _v in _nodes]
+
+            if is_linked:
+                _points = None
+            else:
+                _nodes = None
 
             _result['Tangents'].append(
                 self._build_wire_tracker(
                     wire_name=_names + ['WIRE-' + str(_i)],
-                    nodes=None,
-                    points=[_v.point for _v in _nodes],
+                    nodes=_nodes,
+                    points=_points,
                     select=True
                 )
             )

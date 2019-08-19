@@ -82,7 +82,7 @@ class TrailsWorkbench(Gui.Workbench):
             #},
             'Test': {
                 'gui': self.menu + self.toolbar,
-                'cmd': ['BaseTrackerTest', 'SpriteSplitter']
+                'cmd': ['BaseTrackerTest', 'BaseTrackerLinkedTest']
             }
         }
 

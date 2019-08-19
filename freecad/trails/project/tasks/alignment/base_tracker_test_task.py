@@ -39,12 +39,12 @@ from ...support.view_state import ViewState
 
 from ...trackers.alignment_base_test_tracker_ import AlignmentBaseTestTracker
 
-def create(doc, alignment_data, object_name):
+def create(doc, alignment_data, object_name, is_linked):
     """
     Class factory method
     """
 
-    return BaseTrackerTestTask(doc, alignment_data, object_name)
+    return BaseTrackerTestTask(doc, alignment_data, object_name, is_linked)
 
 class BaseTrackerTestTask:
     """
@@ -62,7 +62,7 @@ class BaseTrackerTestTask:
         PI = [(0.0, 0.0, 1.0), 'Solid']
         SELECTED = [(1.0, 0.8, 0.0), 'Solid']
 
-    def __init__(self, doc, alignment_data, obj):
+    def __init__(self, doc, alignment_data, obj, is_linked):
 
         self.panel = None
         self.doc = doc
@@ -124,7 +124,7 @@ class BaseTrackerTestTask:
         }
 
         self.alignment_tracker = AlignmentBaseTestTracker(
-            self.doc, self.Object.Name, self.alignment
+            self.doc, self.Object.Name, self.alignment, is_linked
         )
 
         #save camera state
