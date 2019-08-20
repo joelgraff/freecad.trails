@@ -47,30 +47,24 @@ class DragState(metaclass=Singleton):
 
         self.start = Vector()
 
-        self.group = coin.SoSeparator()
+        self.root = coin.SoSeparator()
         self.node_group = coin.SoSeparator()
+        self.partial_group = coin.SoSeparator()
 
         self.partial_coords = []
         self.partial_indices = []
 
         self.node_translate = coin.SoTransform()
-        self.node_translate.translation.setValue(
-            tuple([0.0, 0.0, 0.0])
-        )
-
         self.node_rotate = coin.SoTransform()
-
-        self.node = None
+        self.drag_node = None
 
         self.drag_line_coord = coin.SoCoordinate3()
 
         self._build_drag_line()
 
-        self.group.addChild(self.node_translate)
-        self.group.addChild(self.node_rotate)
-        self.group.addChild(self.node_group)
-
-        self.drag_node = None
+        self.root.addChild(self.node_translate)
+        self.root.addChild(self.node_rotate)
+        self.root.addChild(self.node_group)
 
         self.abort = False
 
@@ -168,18 +162,14 @@ class DragState(metaclass=Singleton):
         _g.addChild(_m)
         _g.addChild(_l)
 
-        self.group.addChild(_g)
+        self.root.addChild(_g)
 
     def add_node(self, node):
         """
         Add a node to the drag node group
         """
 
-        if not self.drag_node:
-            self.drag_node = node
-
         drag_group = coin.SoSeparator()
-
         drag_group.addChild(node)
 
         self.node_group.addChild(drag_group)
@@ -198,10 +188,6 @@ class DragState(metaclass=Singleton):
                   be updated by the drag transform
         """
 
-
-        if not self.drag_node:
-            self.drag_node = node
-
         _rng = range(0, node.getNumChildren())
 
         for _i in _rng:
@@ -213,24 +199,31 @@ class DragState(metaclass=Singleton):
                 break
 
         self.partial_indices.append(indices)
-        self.node.partial_group.addChild(node)
-
+        self.partial_group.addChild(node)
 
     def finish(self):
         """
         Return the transformation matrix for the provided node
         """
 
-        if not self.node:
+        if not self.root or not self._sg_root:
             return
 
-        self.node.remove_node(self.group)
+        self.sg_ok = False
 
-        #abort if no children have been added
-        if self.group.getNumChildren() < 2:
-            return None
+        todo.delay(DragState()._remove, DragState())
 
-        self.reset()
+    @staticmethod
+    def _remove(drag_state):
+        """
+        Delayed callback for sg_ok
+        """
+
+        if drag_state._sg_root:
+            drag_state._sg_root.removeChild(drag_state.root)
+
+        drag_state.sg_ok = True
+        drag_state.reset()
 
     @staticmethod
     def _insert(drag_state):
@@ -238,7 +231,7 @@ class DragState(metaclass=Singleton):
         Delayed callback for sg_ok
         """
 
-        drag_state._sg_root.insertChild(drag_state.group, 0)
+        drag_state._sg_root.insertChild(drag_state.root, 0)
         drag_state.sg_ok = True
 
     def insert(self):
@@ -257,7 +250,7 @@ class DragState(metaclass=Singleton):
         State reset function
         """
 
-        self.group.removeAllChildren()
+        self.root.removeAllChildren()
 
         self.__init__()
 
