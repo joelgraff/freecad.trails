@@ -159,7 +159,7 @@ class BaseTrackerTestTask:
             _center = Vector(_bound_box.Center)
             _center.z = 1.0
 
-            #calcualte the camera height = bounding box larger dim + 15%
+            #calculate the camera height = bounding box larger dim + 15%
             _height = _bound_box.XMax - _bound_box.XMin
             _dy = _bound_box.YMax - _bound_box.YMin
 
@@ -292,7 +292,7 @@ class BaseTrackerTestTask:
             for _v in ViewState().view_objects['line_colors']:
                 _v[0].LineColor = _v[1]
 
-            #reenable object selctables
+            #re-enable object selectables
             for _v in ViewState().view_objects['selectable']:
                 _v[0].Selectable = _v[1]
 

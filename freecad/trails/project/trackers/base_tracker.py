@@ -134,7 +134,7 @@ class BaseTracker:
                         'SoMouseButtonEvent', self.button_event)
             }
 
-        #bypass overrides on intialization
+        #bypass overrides on initialization
         BaseTracker.set_style(self, CoinStyles.DEFAULT)
         BaseTracker.set_visible(self, True)
 
@@ -147,7 +147,7 @@ class BaseTracker:
 
     def refresh(self, style=None, visible=None):
         """
-        Upate the tracker to reflect state changes
+        Update the tracker to reflect state changes
         """
 
         if not style:
@@ -491,7 +491,7 @@ class BaseTracker:
 
     def _process_conditions(self):
         """
-        Process the conditions which determine node visiblity
+        Process the conditions which determine node visibility
         """
 
         if self.state.visible.ignore or not self.conditions:
