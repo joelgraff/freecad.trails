@@ -143,22 +143,17 @@ class MouseState(metaclass=Singleton):
         Update the current mouse state
         """
 
-        self.pos = _p + (0.0,)
+        _pos = _p + (0.0,)
+        _coord = self.coordinates
+
+        if _pos != self.pos:
+            self.pos = _pos
+            _coord = None
+
         _info = ViewState().view.getObjectInfo(self.pos)
 
-        if _info:
-            self.object = _info['Object']
-            self.component = _info.get('Component')
-
-            if not self.component:
-                self.component = ''
-
-            self.coordinates = Vector(_info['x'], _info['y'], _info['z'])
-
-        else:
-            self.object = ''
-            self.component = ''
-            self.coordinates = ViewState().view.getPoint(self.pos)
+        if not _coord:
+            _coord = ViewState().view.getPoint(self.pos)
 
         _btn = arg.get('Button')
         _state = arg.get('State')
@@ -174,6 +169,25 @@ class MouseState(metaclass=Singleton):
 
         for _v in _b_list:
             _v.update(_state, self.pos)
+
+        if _info:
+
+            if not self.button1.dragging:
+
+                self.object = _info['Object']
+                self.component = _info.get('Component')
+
+            if self.component is None:
+                self.component = ''
+
+            _coord = Vector(_info['x'], _info['y'], _info['z'])
+
+        elif self.component:
+
+            self.object = ''
+            self.component = ''
+
+        self.coordinates = _coord
 
     def get_drag_vector(self, world=False):
         """
