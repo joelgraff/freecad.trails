@@ -70,11 +70,17 @@ class SelectState(metaclass=Singleton):
 
         if not MouseState().ctrlDown:
 
-            #clear if: if no element is passed,
-            #or either the element is being picked or it already exists
-            #DO NOT CLEAR if the element is both picked and exists
-            #or is #neither picked and does not exist.
-            if element is None or (_exists != _picking):
+            #clear if no element is passed or no component is picked
+            if element is None or not MouseState().component:
+                self._selected.clear()
+
+            #abort if multiple selections exist
+            if len(self._selected) > 1:
+                return
+
+            #clear ONLY IF either the element is selected
+            #or it is picked, but not both.
+            if _exists != _picking:
                 self._selected.clear()
 
             #if the element does not exist and we are picking it, append
