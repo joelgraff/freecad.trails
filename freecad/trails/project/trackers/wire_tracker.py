@@ -152,6 +152,9 @@ class WireTracker(BaseTracker):
         """
         SoMouseButtonEvent callback
         """
+        super().button_event(arg)
+
+        return
 
         if MouseState().button1.state == 'UP':
             return
@@ -168,18 +171,27 @@ class WireTracker(BaseTracker):
 
         super().button_event(arg)
 
-    def update_drag(self):
+    #def update_dragging(self):
         """
         Override base fucntion
         """
 
-        if self.is_selected():
-            super().update_drag()
+
+    #    if self.is_selected():
+    #        super().update_dragging()
 
     def start_drag(self):
         """
         Override of base function
         """
+
+        if not self.is_selected():
+            return
+
+        super().start_drag()
+
+        return
+
 
         if not self.state.draggable:
             return
@@ -217,6 +229,10 @@ class WireTracker(BaseTracker):
         Override of base function
         """
 
+        super().on_drag()
+
+        return
+
         if self.drag_override:
             return
 
@@ -253,6 +269,9 @@ class WireTracker(BaseTracker):
         """
         Override of base function
         """
+
+        super().end_drag()
+        return
 
         #pull the updated tuples from the drag node
         _values = []

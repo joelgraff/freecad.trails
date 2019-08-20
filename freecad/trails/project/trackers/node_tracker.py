@@ -65,45 +65,15 @@ class NodeTracker(BaseTracker):
 
         self.update()
 
-    def update_drag(self):
-        """
-        Override base function
-        """
-
-        if self.is_selected():
-            super().update_drag()
-
     def start_drag(self):
         """
         Initialize drag ops
         """
 
+        if not self.is_selected():
+            return
+
         super().start_drag()
-
-        #quick test to see if click was near node, in case user didn't click
-        #directly on it
-
-        #if not DragState().node == self \
-        #    and self.name == MouseState().component:
-
-        #    _pos = Vector(
-        #        ViewState().view.getPointOnScreen(Vector(self.point)) + (0.0,)
-        #    )
-
-            #abort if the mouse click was too far from the node's center
-        #    if _pos.sub(Vector(MouseState().pos)).Length < 5.0:
-        #        DragState().node = self
-
-        #if the user clicked on this node, center the drag coordinates on it
-        if DragState().node == self:
-
-            _p = self.point
-
-            if not isinstance(_p, Vector):
-                _p = Vector(_p)
-
-            DragState().start = _p
-            DragState().coordinates = _p
 
         self.drag_point = tuple(self.point)
 
@@ -111,14 +81,6 @@ class NodeTracker(BaseTracker):
         """
         Override of base function
         """
-
-        print(self.name, 'on drag')
-
-        if DragState().abort:
-            return
-
-        if not DragState().node:
-            DragState().abort = True
 
         super().on_drag()
 
@@ -128,14 +90,11 @@ class NodeTracker(BaseTracker):
         self.drag_point = ViewState().transform_points(
             [self.point], DragState().drag_node)[0]
 
-        print(self.name, 'drag point', self.drag_point)
-
     def end_drag(self):
         """
         Override of base function
         """
 
-        print(self.name, 'end drag')
         self.update([self.drag_point])
 
         super().end_drag()
@@ -145,12 +104,12 @@ class NodeTracker(BaseTracker):
         Update the coordinate position
         """
 
-        if not coord:
-            coord = self.point
-
         #if we have a list of points, pick the first
         if isinstance(coord, list):
             coord = coord[0]
+
+        if not coord:
+            coord = self.point
 
         _c = coord
 
@@ -160,9 +119,6 @@ class NodeTracker(BaseTracker):
         self.coord.point.setValue(_c[:3])
 
         self.point = _c
-
-        #update style / state changes
-        super().refresh()
 
     def get(self):
         """
