@@ -49,6 +49,13 @@ class MouseState(metaclass=Singleton):
             self.dragging = False
             self.drag_start = ()
 
+        def reset(self):
+            """
+            Reset button parameters
+            """
+
+            self.__init__()
+
         def __str__(self):
             """
             Button string representation
@@ -180,16 +187,18 @@ class MouseState(metaclass=Singleton):
         if _btn.dragging:
             _btn.dragging = _btn.pressed and (_btn.state != 'UP')
 
-        else:
-            _btn.dragging = _btn.pressed and (_btn.drag_start != self.pos)
-
-        #set drag states
-        if _btn.dragging:
-            _btn.drag_start = self.pos
-            _btn.state = 'DRAG'
+            #reset if ending drag
+            if not _btn.dragging:
+                _btn.darg_start = ()
 
         else:
-            _btn.drag_start = ()
+            _btn.dragging = _btn.pressed \
+                and _btn.drag_start and (_btn.drag_start != self.pos)
+
+            #set initial drag states
+            if _btn.dragging:
+                _btn.drag_start = self.pos
+                _btn.state = 'DRAG'
 
     def get_drag_vector(self, world=False):
         """

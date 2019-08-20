@@ -46,6 +46,7 @@ from ..containers import TrackerContainer
 from ..support.mouse_state import MouseState
 from ..support.view_state import ViewState
 from ..support.drag_state import DragState
+from ..support.select_state import SelectState
 
 from ..support.utils import Constants as C
 
@@ -137,16 +138,26 @@ class BaseTracker:
         BaseTracker.set_style(self, CoinStyles.DEFAULT)
         BaseTracker.set_visible(self, True)
 
+    def is_selected(self):
+        """
+        Return selection state
+        """
+
+        return SelectState().exists(self)
+
     def refresh(self, style=None, visible=None):
         """
         Upate the tracker to reflect state changes
         """
 
         if not style:
-            style = self.active_style
+
+            style = self.coin_style
+
+            if self.is_selected():
+                style = CoinStyles.SELECTED
 
         self._process_conditions()
-
         self.set_style(style)
         self.set_visible(visible)
 
@@ -162,20 +173,11 @@ class BaseTracker:
         if not self.state.visible.value:
 
             self.refresh()
+
             if not self.state.visible.value:
                 return
 
-        if self.state.draggable:
-
-            #abort if dragging to avoid highlighting tests
-            self.before_drag()
-
-            if self.state.dragging:
-                return
-
-            if self.state.selected.value:
-                return
-
+        self.update_dragging()
         self.update_highlighting()
 
     def button_event(self, arg):
@@ -183,90 +185,48 @@ class BaseTracker:
         SoMouseButtonEvent callback
         """
 
-        #allows for node selction state to remain if user multi-selects
-        #the node, then clicks on a different node to begin drag operations
-
-        #persist multi select is true if a button click occurs
-        #in single-select mode after the item itself was multiselected
-        _persist_multi_select = \
-            not MouseState().ctrlDown and self.state.was_multi_selected
-
-        #ignore mouse up unless this not a multi-select click
-        #and the node was not previously multi-selected
-        if MouseState().button1.state == 'UP':
-
-            if not _persist_multi_select or self.state.was_dragged:
-                return
-
-        #abort processing to allow for persistence of multi-select,
-        #only if another element was picked
-        elif _persist_multi_select and MouseState().component:
+        #preemptive abort if not both enabled and visible
+        if not (self.state.enabled.value and self.state.visible.value):
             return
 
-        #preemptive abort conditions
-        if not self.state.enabled.value:
-            return
+        if MouseState().button1.state == 'DOWN':
+            SelectState().update(self)
 
-        if not self.state.visible.value:
-            return
-
-        _multi_select = MouseState().ctrlDown and self.state.multi_select
-
-        #selection logic - skip once if ignore flag is set
-        if not self.state.selected.ignore:
-
-            if self.name == MouseState().component:
-
-                if MouseState().ctrlDown and self.state.selected.value:
-                    self.state.selected.value = False
-
-                else:
-                    self.state.selected.value = True
-
-            #deselect unless multi-selecting or at the end of a drag op
-            elif (self.state.selected.value and not _multi_select) \
-                and not self.state.dragging:
-
-                self.state.selected.value = False
-
-        _style = self.coin_style
-
-        if self.state.selected.value:
-            _style = CoinStyles.SELECTED
-
-        self.refresh(_style)
-
-        _end_of_drag = _persist_multi_select and self.state.was_dragged
-
-        if MouseState().button1.pressed and not _persist_multi_select:
-            self.state.was_multi_selected = MouseState().ctrlDown
+        self.refresh()
 
     def update_highlighting(self):
         """
         Test for highlight conditions and changes
         """
 
-        _style = None
+        if self.state.dragging or self.is_selected():
+            return
 
         #highlight logic - skip if ignore flag is set
-        if not self.state.selected.ignore:
+        #if not self.state.selected.ignore:
 
-            _style = self.coin_style
+        _style = self.coin_style
 
-            #test to see if this node is under the cursor
-            self.state.highlighted = self.name == MouseState().component
+        #test to see if this node is under the cursor
+        self.state.highlighted = self.name == MouseState().component
 
-            if self.state.highlighted:
-                _style = CoinStyles.SELECTED
+        if self.state.highlighted:
+            _style = CoinStyles.SELECTED
 
         self.refresh(_style)
 
-    def before_drag(self):
+    def update_dragging(self):
         """
         Test for drag conditions and changes
         """
 
+        #all draggable objects get drag events
+        if not self.state.draggable:
+            return
+
+        #if mouse is dragging, then start / on drag are viable events
         if MouseState().button1.dragging:
+
             if not self.state.dragging:
 
                 self.start_drag()
@@ -275,6 +235,7 @@ class BaseTracker:
             elif not DragState().abort:
                 self.on_drag()
 
+        #otherwise, end_drag is the only option
         elif self.state.dragging:
 
             self.end_drag()
@@ -289,7 +250,7 @@ class BaseTracker:
         #transformations during drag operations
         self.drag_group = DragState().add_node(self.copy())
 
-        if not DragState().node:
+        if not DragState().node and self.name == MouseState().component:
 
             DragState().node = self
             DragState().start = MouseState().coordinates
@@ -396,7 +357,6 @@ class BaseTracker:
         """
 
         _vec = MouseState().coordinates.sub(DragState().rotation_center)
-
         _angle = support.get_bearing(_vec)
 
         if DragState().rotation_center == Vector():
@@ -486,6 +446,9 @@ class BaseTracker:
         Update the tracker style
         """
 
+        if self.active_style == style:
+            return
+
         if not draw:
             draw = self.draw_style
 
@@ -494,9 +457,6 @@ class BaseTracker:
 
         if not style:
             style = self.coin_style
-
-        if self.active_style == style:
-            return
 
         draw.lineWidth = style.line_width
         draw.style = style.style
@@ -534,10 +494,7 @@ class BaseTracker:
         Process the conditions which determine node visiblity
         """
 
-        if self.state.visible.ignore:
-            return
-
-        if not self.conditions:
+        if self.state.visible.ignore or not self.conditions:
             return
 
         _c = MouseState().component

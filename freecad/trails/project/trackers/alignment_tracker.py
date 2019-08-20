@@ -166,7 +166,7 @@ class AlignmentTracker(BaseTracker):
         #abort if nodes are selected - this routine is only for multi-selecting
         for _v in self.trackers['Nodes']:
 
-            if _v.state.selected.value:
+            if _v.state.is_selected():
                 _i += 1
 
         if MouseState().ctrlDown and _i > 1:
@@ -195,7 +195,7 @@ class AlignmentTracker(BaseTracker):
                 _nodes = self.trackers['Nodes'][_idx:]
 
             for _v in _nodes:
-                _v.state.selected.value = True
+                _v.state.set_selected(True)
                 _v.state.selected.ignore_once()
 
             _lower = max(0, _idx - 2)
