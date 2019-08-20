@@ -85,16 +85,16 @@ class MouseState(metaclass=Singleton):
             if state and (self.state != state):
 
                 self.state = state
-                self.pressed = state == 'DOWN'
+                self.pressed = state != 'UP'
 
                 #assign position at down click
-                if self.pressed:
+                if self.pressed and not self.pos:
                     self.pos = pos
 
             #if we're already dragging, continue only if the button
             #hasn't been released
             if self.dragging:
-                self.dragging = self.pressed and (self.state != 'UP')
+                self.dragging = self.pressed
 
             #otherwise, start only if the button is pressed and the
             #mouse has moved
@@ -105,6 +105,7 @@ class MouseState(metaclass=Singleton):
 
             if self.dragging:
                 self.state = 'DRAG'
+
             else:
                 self.drag_start = ()
 
@@ -166,39 +167,13 @@ class MouseState(metaclass=Singleton):
         self.ctrlDown = arg['CtrlDown']
         self.shiftDown = arg['ShiftDown']
 
-        if not _state:
-            return
+        _b_list = self.buttons.values()
 
-        if not _btn:
-            return
+        if _btn:
+            _b_list = [self.buttons[_btn]]
 
-        _btn = self.buttons[_btn]
-
-        if _btn.state == _state:
-            return
-
-        _btn.pressed = _state == 'DOWN'
-        _btn.state = _state
-
-        #drag condition depends on whether drag ops are only starting or
-        #continuing.  If starting, drag does not begin unil button is
-        #pressed and mouse moves.
-        #If continuing, drag ends when button is up
-        if _btn.dragging:
-            _btn.dragging = _btn.pressed and (_btn.state != 'UP')
-
-            #reset if ending drag
-            if not _btn.dragging:
-                _btn.darg_start = ()
-
-        else:
-            _btn.dragging = _btn.pressed \
-                and _btn.drag_start and (_btn.drag_start != self.pos)
-
-            #set initial drag states
-            if _btn.dragging:
-                _btn.drag_start = self.pos
-                _btn.state = 'DRAG'
+        for _v in _b_list:
+            _v.update(_state, self.pos)
 
     def get_drag_vector(self, world=False):
         """
