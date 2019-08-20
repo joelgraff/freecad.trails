@@ -165,14 +165,14 @@ class CurveTracker(BaseTracker):
         if not self.state.dragging:
             return
 
-        if not DragState().node:
+        if not DragState().drag_node:
             return
 
-        if not self.name in DragState().node.name:
+        if not self.name in DragState().drag_node.name:
             return
 
         if not any([
-                _v in DragState().node.name \
+                _v in DragState().drag_node.name \
                     for _v in ['Start', 'Center', 'End']]):
 
             return

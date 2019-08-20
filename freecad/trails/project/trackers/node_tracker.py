@@ -77,25 +77,28 @@ class NodeTracker(BaseTracker):
 
         self.drag_point = tuple(self.point)
 
+        print(self.name, self.drag_point)
     def on_drag(self):
         """
         Override of base function
         """
+        if not (self.drag_point and DragState().drag_node):
+            return
 
         super().on_drag()
 
-        if not self.drag_point:
-            return
-
         self.drag_point = ViewState().transform_points(
-            [self.point], DragState().drag_node)[0]
+            [self.point], DragState().node_group)[0]
+
+        print(self.name, self.drag_point)
 
     def end_drag(self):
         """
         Override of base function
         """
 
-        self.update([self.drag_point])
+        if self.drag_point and DragState().drag_node:
+            self.update([self.drag_point])
 
         super().end_drag()
 

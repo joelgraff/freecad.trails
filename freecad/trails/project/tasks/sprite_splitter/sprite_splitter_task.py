@@ -263,13 +263,13 @@ class SpriteSplitterTask:
 
         if MouseState().button1.dragging:
 
-            if not DragState().node:
+            if not DragState().drag_node:
                 self.start_drag()
 
             else:
                 self.on_drag()
 
-        elif DragState().node:
+        elif DragState().drag_node:
             self.end_drag()
 
     def start_drag(self):
@@ -277,7 +277,7 @@ class SpriteSplitterTask:
         Begin drag ops
         """
 
-        DragState().node = self.rubberband_tracker.node
+        DragState().drag_node = self.rubberband_tracker.node
         DragState().add_node(self.rubberband_tracker.node)
         DragState().start = MouseState().coordinates
 
@@ -310,7 +310,7 @@ class SpriteSplitterTask:
 
         if MouseState().button1.state == 'UP':
 
-            if DragState().node:
+            if DragState().drag_node:
                 self.end_drag()
 
     def set_vobj_style(self, vobj, style):

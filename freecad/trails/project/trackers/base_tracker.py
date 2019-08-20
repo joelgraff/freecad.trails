@@ -250,7 +250,7 @@ class BaseTracker:
 
         if self.name == MouseState().component:
 
-            DragState().node = self
+            DragState().drag_node = self
             DragState().start = MouseState().coordinates
             DragState().coordinates = MouseState().coordinates
             DragState().insert()
@@ -260,7 +260,7 @@ class BaseTracker:
         Ongoing drag ops
         """
 
-        if not self.state.dragging or self != DragState().node:
+        if not self.state.dragging or self != DragState().drag_node:
             return
 
         #if DragState().override:
@@ -275,7 +275,7 @@ class BaseTracker:
         _drag_line_end = MouseState().coordinates
         _mouse_coord = MouseState().coordinates
 
-        #rotation transformation
+        #drag rotation
         if MouseState().altDown:
 
             DragState().rotate(_mouse_coord, MouseState().shiftDown)

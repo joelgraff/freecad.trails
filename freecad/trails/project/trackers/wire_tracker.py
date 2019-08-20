@@ -270,22 +270,19 @@ class WireTracker(BaseTracker):
         Override of base function
         """
 
-        super().end_drag()
-        return
-
         #pull the updated tuples from the drag node
         _values = []
-        _node = self.drag_node
+#        _node = self.drag_node
 
-        if not _node:
-            _node = self.drag_group.getChild(0)
+#        if not _node:
+        _node = self.drag_group.getChild(0)
 
         _values = [_v.getValue() for _v in _node.getChild(3).point.getValues()]
 
-        if _values:
-            self.update(_values)
+#        if _values:
+#            self.update(_values)
 
-        _coords = ViewState().transform_points(_values, DragState().drag_node)
+        _coords = ViewState().transform_points(_values, DragState().node_group)
 
         self.update(_coords)
         self.drag_node = None
