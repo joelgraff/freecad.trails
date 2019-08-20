@@ -27,6 +27,8 @@ View state class
 from pivy import coin
 from PySide import QtGui
 
+from FreeCAD import Vector
+
 import FreeCADGui as Gui
 
 from . import utils
@@ -150,3 +152,10 @@ class ViewState(metaclass=Singleton):
             _s += 4
 
         return _result
+
+    def getPointOnScreen(self, point):
+        """
+        Convenience function for view.getPointOnScreen()
+        """
+
+        return Vector(self.view.getPointOnScreen(point) + (0.0,))
