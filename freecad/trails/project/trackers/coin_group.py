@@ -26,8 +26,6 @@ Support class for managing Coin3D SoGroup nodes
 
 from pivy import coin
 
-import FreeCADGui as Gui
-
 from .coin_styles import CoinStyles
 
 class CoinGroup():
@@ -51,9 +49,9 @@ class CoinGroup():
         self.group.addChild(self.coord)
         self.group.addChild(self.color)
 
-        if not no_marker:
+        if marker:
             self.group.addChild(self.marker)
 
         self.group.addChild(self.line)
 
-        self.group.setName(node_id)
+        #self.group.setName(node_id)

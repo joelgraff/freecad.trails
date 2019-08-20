@@ -156,29 +156,25 @@ class WireTracker(BaseTracker):
         if MouseState().button1.state == 'UP':
             return
 
-        _sel = []
-
+        #adjust wire selection state based on existing selection nodes
         if self.selection_nodes:
-            _sel = [_v.state.selected.value for _v in self.selection_nodes]
+            print('selnodes')
+            _sel = any(
+                [_v.is_selected() for _v in self.selection_nodes]
+            )
 
-        self.state.selected.ignore = False
-        self.state.selected.value = False
-
-        if _sel and (all(_sel) or any(_sel)):
-            self.state.selected.value = True
-            self.state.selected.ignore = True
+            self.state.selected.ignore = _sel
+            self.set_selected(_sel)
 
         super().button_event(arg)
 
-    def before_drag(self):
+    def update_drag(self):
         """
         Override base fucntion
         """
 
-        if not self.state.selected.value:
-            return
-
-        super().before_drag()
+        if self.is_selected():
+            super().update_drag()
 
     def start_drag(self):
         """
@@ -190,10 +186,11 @@ class WireTracker(BaseTracker):
 
         #base implementation if no selection nodes
         if self.selection_nodes is None:
+
             super().start_drag()
             return
 
-        _states = [_v.state.selected.value for _v in self.selection_nodes]
+        _states = [_v.is_selected() for _v in self.selection_nodes]
 
         #base implementation if all nodes selected
         if all(_states):
@@ -227,7 +224,7 @@ class WireTracker(BaseTracker):
         if not self.state.dragging:
             return
 
-        if not self.state.selected.value:
+        if not self.is_selected():
             return
 
         super().on_drag()

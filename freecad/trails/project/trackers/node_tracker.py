@@ -29,7 +29,6 @@ from pivy import coin
 from FreeCAD import Vector
 
 from ..support.drag_state import DragState
-from ..support.mouse_state import MouseState
 from ..support.view_state import ViewState
 
 from .base_tracker import BaseTracker
@@ -66,15 +65,13 @@ class NodeTracker(BaseTracker):
 
         self.update()
 
-    def before_drag(self):
+    def update_drag(self):
         """
         Override base function
         """
 
-        if not self.state.selected.value:
-            return
-
-        super().before_drag()
+        if self.is_selected():
+            super().update_drag()
 
     def start_drag(self):
         """
@@ -86,15 +83,16 @@ class NodeTracker(BaseTracker):
         #quick test to see if click was near node, in case user didn't click
         #directly on it
 
-        if not DragState().node == self:
+        #if not DragState().node == self \
+        #    and self.name == MouseState().component:
 
-            _pos = Vector(
-                ViewState().view.getPointOnScreen(Vector(self.point)) + (0.0,)
-            )
+        #    _pos = Vector(
+        #        ViewState().view.getPointOnScreen(Vector(self.point)) + (0.0,)
+        #    )
 
             #abort if the mouse click was too far from the node's center
-            if _pos.sub(Vector(MouseState().pos)).Length < 5.0:
-                DragState().node = self
+        #    if _pos.sub(Vector(MouseState().pos)).Length < 5.0:
+        #        DragState().node = self
 
         #if the user clicked on this node, center the drag coordinates on it
         if DragState().node == self:
@@ -114,6 +112,8 @@ class NodeTracker(BaseTracker):
         Override of base function
         """
 
+        print(self.name, 'on drag')
+
         if DragState().abort:
             return
 
@@ -128,11 +128,14 @@ class NodeTracker(BaseTracker):
         self.drag_point = ViewState().transform_points(
             [self.point], DragState().drag_node)[0]
 
+        print(self.name, 'drag point', self.drag_point)
+
     def end_drag(self):
         """
         Override of base function
         """
 
+        print(self.name, 'end drag')
         self.update([self.drag_point])
 
         super().end_drag()
