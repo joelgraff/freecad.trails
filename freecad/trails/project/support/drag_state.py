@@ -24,6 +24,8 @@
 Drag state class
 """
 
+import math
+
 from pivy import coin
 
 from FreeCAD import Vector
@@ -32,6 +34,9 @@ from DraftGui import todo
 
 from .singleton import Singleton
 from .view_state import ViewState
+
+from ..support.utils import Constants as C
+from ...geometry import support
 
 class DragState(metaclass=Singleton):
     """
@@ -48,12 +53,12 @@ class DragState(metaclass=Singleton):
         self.partial_coords = []
         self.partial_indices = []
 
-        self.translate_transform = coin.SoTransform()
-        self.translate_transform.translation.setValue(
+        self.node_translate = coin.SoTransform()
+        self.node_translate.translation.setValue(
             tuple([0.0, 0.0, 0.0])
         )
 
-        self.rotate_transform = coin.SoTransform()
+        self.node_rotate = coin.SoTransform()
 
         self.node = None
 
@@ -61,8 +66,8 @@ class DragState(metaclass=Singleton):
 
         self._build_drag_line()
 
-        self.group.addChild(self.translate_transform)
-        self.group.addChild(self.rotate_transform)
+        self.group.addChild(self.node_translate)
+        self.group.addChild(self.node_rotate)
         self.group.addChild(self.node_group)
 
         self.drag_node = None
@@ -75,7 +80,7 @@ class DragState(metaclass=Singleton):
 
         #cumulate angle, center of rotation and current drag rotation
         self.angle = 0.0
-        self.rotation_center = Vector()
+        self.rotation_center = None
         self.rotation = 0.0
 
         #flag indicating scenegraph updates are complete
@@ -255,3 +260,69 @@ class DragState(metaclass=Singleton):
         self.group.removeAllChildren()
 
         self.__init__()
+
+##########################
+## Transformation routines
+##########################
+
+    def translate(self, coord, micro_drag=False):
+        """
+        Manage drag geometry translation
+        """
+
+        #accumulate the movement from the previous mouse position
+        _delta = coord.sub(self.coordinates)
+
+        self.delta = Vector(self.node_translate.translation.getValue())
+        _scale = 1.0
+
+        if micro_drag:
+            _scale = 0.10
+
+        self.delta = self.delta.add(_delta.multiply(_scale))
+
+        self.node_translate.translation.setValue(tuple(self.delta))
+
+
+    def rotate(self, coord, micro_drag=False):
+        """
+        Manage rotation during dragging
+        coord - coordinates for the rotation update
+        """
+
+        _angle = 0.0
+
+        if self.rotation_center:
+            _angle = support.get_bearing(coord.sub(self.rotation_center))
+
+        else:
+
+            _dx_vec = coord.sub(
+                Vector(self.node_translate.translation.getValue())
+            )
+
+            self.node_rotate.center.setValue(coin.SbVec3f(tuple(_dx_vec)))
+
+            self.rotation_center = coord
+            self.rotation = 0.0
+            self.angle = 0.0
+
+        _scale = 1.0
+
+        if micro_drag:
+            _scale = 0.10
+
+        _delta = self.angle - _angle
+
+        if _delta < -math.pi:
+            _delta += C.TWO_PI
+
+        elif _delta > math.pi:
+            _delta -= C.TWO_PI
+
+        self.rotation += _delta * _scale
+        self.angle = _angle
+
+        #update the +z axis rotation for the transformation
+        self.node_rotate.rotation =\
+            coin.SbRotation(coin.SbVec3f(0.0, 0.0, 1.0), self.rotation)

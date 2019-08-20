@@ -39,16 +39,12 @@ from FreeCAD import Vector
 
 from DraftGui import todo
 
-from ...geometry import support
-
 from ..containers import TrackerContainer
 
 from ..support.mouse_state import MouseState
 from ..support.view_state import ViewState
 from ..support.drag_state import DragState
 from ..support.select_state import SelectState
-
-from ..support.utils import Constants as C
 
 from .coin_styles import CoinStyles
 
@@ -227,12 +223,12 @@ class BaseTracker:
         #if mouse is dragging, then start / on drag are viable events
         if MouseState().button1.dragging:
 
+            print(self.name, 'base update drag')
             if not self.state.dragging:
 
                 self.start_drag()
-                self.state.dragging = True
 
-            elif not DragState().abort:
+            else:
                 self.on_drag()
 
         #otherwise, end_drag is the only option
@@ -248,9 +244,11 @@ class BaseTracker:
 
         #copy the tracker node structure to the drag state node for
         #transformations during drag operations
-        self.drag_group = DragState().add_node(self.copy())
 
-        if not DragState().node and self.name == MouseState().component:
+        self.drag_group = DragState().add_node(self.copy())
+        self.state.dragging = True
+
+        if self.name == MouseState().component:
 
             DragState().node = self
             DragState().start = MouseState().coordinates
@@ -262,11 +260,11 @@ class BaseTracker:
         Ongoing drag ops
         """
 
-        if self != DragState().node:
+        if not self.state.dragging or self != DragState().node:
             return
 
-        if DragState().override:
-            return
+        #if DragState().override:
+        #    return
 
         _scale = 1.0
 
@@ -277,67 +275,45 @@ class BaseTracker:
         _drag_line_end = MouseState().coordinates
         _mouse_coord = MouseState().coordinates
 
-        #rotation transformations
+        #rotation transformation
         if MouseState().altDown:
 
-            DragState().rotate_transform.rotation = self._update_rotation()
+            DragState().rotate(_mouse_coord, MouseState().shiftDown)
 
-            _drag_line_start = Vector(
-                DragState().rotate_transform.center.getValue()
-            ).add(
-                Vector(DragState().translate_transform.translation.getValue())
-            )
+            _ctr = Vector(DragState().node_rotate.center.getValue())
+            _offset = Vector(DragState().node_translate.translation.getValue())
+
+            _drag_line_start = _ctr.add(_offset)
 
             _mouse_coord = DragState().coordinates
 
+        #translation transformation
         else:
+            DragState().translate(_mouse_coord, MouseState().shiftDown)
 
-            if DragState().rotation_center:
-                DragState().rotation_center = Vector()
-
-            #accumulate the movement from the previous mouse position
-            _delta = MouseState().coordinates.sub(DragState().coordinates)
-            _delta.multiply(_scale)
-
-            DragState().delta = DragState().delta.add(_delta)
-
-            DragState().translate_transform.translation.setValue(
-                tuple(DragState().delta)
-            )
-
-        #multiselection
+        #micro-dragging cursor control
         if MouseState().shiftDown:
 
             QtGui.QApplication.setOverrideCursor(Qt.BlankCursor)
 
             #get the window position of the updated drag delta coordinate
-            _new_coord = DragState().start.add(DragState().delta)
-
-            _new_pos = \
-                Vector(ViewState().view.getPointOnScreen(_new_coord) + (0.0,))
+            _mouse_coord = DragState().start.add(DragState().delta)
+            _new_pos = ViewState().getPointOnScreen(_mouse_coord)
 
             #set the mouse position at the updated screen coordinate
             _delta_pos = _new_pos.sub(Vector(MouseState().pos + (0.0,)))
 
+            #get screen position by adding offset to the new window position
             _pos = Vector(QCursor.pos().toTuple() + (0.0,)).add(
-
                 Vector(_delta_pos.x, -_delta_pos.y))
 
             QCursor.setPos(_pos[0], _pos[1])
 
-            #get the screen position by adding back the offset to the new
-            #window position
-            _mouse_coord = _new_coord
-
+        #no micro-drag?  shut off cursor override
         elif QtGui.QApplication.overrideCursor():
-
-            if QtGui.QApplication.overrideCursor().shape() == \
-                Qt.CursorShape.BlankCursor:
-
-                QtGui.QApplication.restoreOverrideCursor()
+            QtGui.QApplication.restoreOverrideCursor()
 
         #save the drag state coordinate as the current mouse coordinate
-
         DragState().coordinates = _mouse_coord
         DragState().update(_drag_line_start, _drag_line_end)
 
@@ -346,53 +322,13 @@ class BaseTracker:
         Terminate drag ops
         """
 
+        if not self.state.dragging:
+            return
+
         DragState().finish()
 
         if QtGui.QApplication.overrideCursor() == Qt.BlankCursor:
             QtGui.QApplication.restoreOverrideCursor()
-
-    def _update_rotation(self):
-        """
-        Manage rotation during dragging
-        """
-
-        _vec = MouseState().coordinates.sub(DragState().rotation_center)
-        _angle = support.get_bearing(_vec)
-
-        if DragState().rotation_center == Vector():
-
-            DragState().rotation_center = MouseState().coordinates
-
-            _dx = DragState().translate_transform.translation.getValue()
-            _dx_vec = MouseState().coordinates.sub(Vector(_dx))
-
-            DragState().rotate_transform.center.setValue(
-                coin.SbVec3f(tuple(_dx_vec))
-            )
-
-            DragState().rotation = 0.0
-            DragState().angle = _angle
-
-        _scale = 1.0
-
-        if MouseState().shiftDown:
-            _scale = 0.10
-
-        _delta = DragState().angle - _angle
-
-        if _delta < -math.pi:
-            _delta += C.TWO_PI
-
-        elif _delta > math.pi:
-            _delta -= C.TWO_PI
-
-        DragState().rotation += _delta * _scale
-        DragState().angle = _angle
-
-        #return the +z axis rotation for the transformation
-        return coin.SbRotation(
-            coin.SbVec3f(0.0, 0.0, 1.0), DragState().rotation
-        )
 
     def set_selectability(self, is_selectable):
         """
