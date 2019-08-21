@@ -97,12 +97,18 @@ class SelectState(metaclass=Singleton):
         if not element in self._partial_selected[parent]:
             self._partial_selected[parent].append(element)
 
-    def select(self, element=None):
+    def select(self, element=None, force=False):
         """
         Select or unselect the passed element
         A null element will clear the selection for single select and
         will have no effect for multi-select
         """
+
+        #force-select a node
+        if force:
+            if not element in self._selected:
+                self._selected.append(element)
+            return
 
         #is it already selected?  are we picking it?
         _exists = element in self._selected
@@ -122,7 +128,7 @@ class SelectState(metaclass=Singleton):
             #2. Support single-select click to begin drag operations
             # -> abort if multiple selections exist
             # -> this ignores partially selected elements
-            if len(self._selected) > 1:
+            if len(self._selected) > 1 and element in self._selected:
                 return
 
             #3. Don't de-select a picked and selected element

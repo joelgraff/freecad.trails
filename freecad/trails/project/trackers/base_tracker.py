@@ -223,6 +223,7 @@ class BaseTracker:
         if MouseState().button1.dragging:
 
             if not self.state.dragging:
+                self.before_drag()
                 self.start_drag()
 
             else:
@@ -233,6 +234,13 @@ class BaseTracker:
 
             self.end_drag()
             self.state.dragging = False
+
+    def before_drag(self):
+        """
+        Default implementation
+        """
+
+        pass
 
     def start_drag(self, partial_indices=None):
         """
@@ -270,11 +278,6 @@ class BaseTracker:
 
         #if DragState().override:
         #    return
-
-        _scale = 1.0
-
-        if MouseState().shiftDown:
-            _scale = 0.10
 
         _drag_line_start = DragState().start
         _drag_line_end = MouseState().coordinates

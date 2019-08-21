@@ -159,6 +159,73 @@ class WireTracker(BaseTracker):
 
         super().button_event(arg)
 
+        _sel = []
+
+        if self.selection_nodes:
+            _sel = [_v.is_selected() for _v in self.selection_nodes]
+
+        #if wire is clicked, select the end selection nodes
+        if SelectState().is_selected(self):
+
+            if _sel:
+
+                for _i, _v in enumerate(_sel):
+
+                    if not _v:
+
+                        SelectState().select(
+                            self.selection_nodes[_i], force=True)
+
+                        self.selection_nodes[_i].refresh()
+
+        #otherwise if any of the selection nodes are picked, select the wire
+        elif _sel:
+
+            if all(_sel):
+                SelectState().select(self, force=True)
+
+            elif any(_sel):
+
+                for _i, _v in enumerate(_sel):
+
+                    if not _v:
+                        continue
+
+                    _node = self.selection_nodes[_i]
+
+                    SelectState().partial_select(
+                        parent = _node, element = self)
+
+        self.refresh()
+
+    def before_drag(self):
+        """
+        Override of base function
+        """
+
+        #test to see if wire should be partially selected as a result
+        #of it's nodes being selected in button_event by adjacent wire
+        if self.is_selected() or not self.selection_nodes:
+            return
+
+        _sel = [_v.is_selected() for _v in self.selection_nodes]
+
+        if all(_sel):
+            SelectState().select(self, force=True)
+
+        elif any(_sel):
+
+            for _i, _v in enumerate(_sel):
+
+                if _v:
+
+                    _node = self.selection_nodes[_i]
+
+                    SelectState().partial_select(
+                        parent = _node, element = self)
+
+        self.refresh()
+
     def start_drag(self):
         """
         Override of base function
@@ -183,18 +250,10 @@ class WireTracker(BaseTracker):
             if not _sel:
                 return
 
-            #self.state.selected.ignore = _sel
-
             #fully selected node defaults to base start_drag
             if len(_sel) == len(self.selection_nodes):
                 super().start_drag()
                 return
-
-            #otherwise, partially-select the node...
-            for _i in _sel:
-                SelectState().partial_select(self.selection_nodes[_i], self)
-
-            self.refresh()
 
         super().start_drag(_sel)
 
@@ -237,6 +296,14 @@ class WireTracker(BaseTracker):
         if _node:
 
             _coords = [_v.getValue() for _v in _node.getValues()]
+
+            #nodes and partially selected lines do not need
+            #a final transformation
+            if SelectState().is_selected(self) and DragState().drag_node:
+
+                _coords = ViewState().transform_points(
+                    _coords, DragState().node_group)
+
             self.update(_coords)
 
         self.drag_node = None
