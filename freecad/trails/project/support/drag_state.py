@@ -51,6 +51,7 @@ class DragState(metaclass=Singleton):
         self.node_group = coin.SoSeparator()
         self.partial_group = coin.SoSeparator()
 
+        self.partial_nodes = []
         self.partial_coords = []
         self.partial_indices = []
 
@@ -62,6 +63,7 @@ class DragState(metaclass=Singleton):
 
         self._build_drag_line()
 
+        self.root.addChild(self.partial_group)
         self.root.addChild(self.node_translate)
         self.root.addChild(self.node_rotate)
         self.root.addChild(self.node_group)
@@ -101,26 +103,16 @@ class DragState(metaclass=Singleton):
         Update partially selected drag nodes
         """
 
-        #iterate SoCoordinate3 nodes and update the coordinates at the
-        #locations specified by the accompanying indices list
-        _coords = []
-
-        #retrieve the coordinates to transform
-        for _i, _v in self.partial_coords:
-
-            for _j in self.partial_indices[_i]:
-                _coords.append(_v.point.getValues()[_j].getValue())
-
         #transform coordinates
-        _coords = ViewState().transform_points(_coords, self.node_group)
+        _coords = ViewState().transform_points(self.partial_coords, self.node_group)
         _k = 0
 
         #write transformed coordinates back to scenegraph nodes
-        for _i, _v in self.partial_coords:
+        for _i, _v in enumerate(self.partial_nodes):
 
             for _j in self.partial_indices[_i]:
 
-                _v.point.set1Value(_j, _coords[_k])
+                _v.point.set1Value(_j, _coords[_k][:3])
                 _k += 1
 
     def _update_drag_line(self, line_start, line_end):
@@ -184,7 +176,7 @@ class DragState(metaclass=Singleton):
         node - a group containing the geometry to be rendered.
                must include an SoCoordinate3 node.
 
-        indices - index value(s) of coordiantes in coordiante node to
+        indices - index value(s) of coordinates in node to
                   be updated by the drag transform
         """
 
@@ -195,18 +187,32 @@ class DragState(metaclass=Singleton):
             _n = node.getChild(_i)
 
             if isinstance(_n, coin.SoCoordinate3):
-                self.partial_coords.append(_n)
+
+                self.partial_nodes.append(_n)
+
+                _coords = _n.point.getValues()
+
+                for _i in indices:
+                    self.partial_coords.append(_coords[_i])
+
                 break
 
+        _drag_group = coin.SoSeparator()
+        _drag_group.addChild(node)
+
         self.partial_indices.append(indices)
-        self.partial_group.addChild(node)
+        self.partial_group.addChild(_drag_group)
+
+        return _drag_group
 
     def finish(self):
         """
         Return the transformation matrix for the provided node
         """
 
+        #node was never added, but drag state members may have changed
         if not self.root or not self._sg_root:
+            self.reset()
             return
 
         self.sg_ok = False

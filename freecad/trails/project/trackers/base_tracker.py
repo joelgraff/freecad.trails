@@ -24,8 +24,6 @@
 Customized wire tracker from DraftTrackers.wireTracker
 """
 
-import math
-
 from enum import IntEnum
 
 from pivy import coin
@@ -139,7 +137,8 @@ class BaseTracker:
         Return selection state
         """
 
-        return SelectState().exists(self)
+        return SelectState().is_selected(self) \
+            or SelectState().is_partial_selected(self)
 
     def refresh(self, style=None, visible=None):
         """
@@ -186,7 +185,7 @@ class BaseTracker:
             return
 
         if MouseState().button1.state == 'DOWN':
-            SelectState().update(self)
+            SelectState().select(self)
 
         self.refresh()
 
@@ -223,9 +222,7 @@ class BaseTracker:
         #if mouse is dragging, then start / on drag are viable events
         if MouseState().button1.dragging:
 
-            print(self.name, 'base update drag')
             if not self.state.dragging:
-
                 self.start_drag()
 
             else:
@@ -237,7 +234,7 @@ class BaseTracker:
             self.end_drag()
             self.state.dragging = False
 
-    def start_drag(self):
+    def start_drag(self, partial_indices=None):
         """
         Initialize drag ops
         """
@@ -245,7 +242,15 @@ class BaseTracker:
         #copy the tracker node structure to the drag state node for
         #transformations during drag operations
 
-        self.drag_group = DragState().add_node(self.copy())
+        if SelectState().is_selected(self):
+            self.drag_group = DragState().add_node(self.copy())
+
+        elif SelectState().is_partial_selected(self):
+
+            if partial_indices:
+                self.drag_group = \
+                    DragState().add_partial_node(self.copy(), partial_indices)
+
         self.state.dragging = True
 
         if self.name == MouseState().component:

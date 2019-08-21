@@ -38,6 +38,7 @@ class SelectState(metaclass=Singleton):
         """
 
         self._selected = []
+        self._partial_selected = {}
 
     def count(self):
         """
@@ -46,18 +47,61 @@ class SelectState(metaclass=Singleton):
 
         return len(self._selected)
 
-    def exists(self, element):
+    def is_selected(self, element):
         """
         Return whether or not the element exists in the list
         """
 
         return element in self._selected
 
-    def update(self, element=None):
+    def is_partial_selected(self, element):
+        """
+        Return whether or not the element is partially-selected
+        """
+
+        for _v in self._partial_selected.values():
+            if element in _v:
+                return True
+
+    def clear_state(self):
+        """
+        Clear the select state completely
+        """
+
+        self._selected.clear()
+        self._partial_selected.clear()
+
+    def partial_select(self, parent=None, element=None):
+        """
+        Partial selection is useful for elements that need a selection
+        state because related elements have been selected
+        No testing is done to validate partial selections
+        """
+
+        #all partial selections must have a parent element
+        if not parent:
+            return
+
+        #parent element must exist in selection
+        if not self.is_selected(parent):
+            return
+
+        #no element?  clear all partial selections
+        if not element:
+            self._partial_selected.clear()
+
+        if not parent in self._partial_selected:
+            self._partial_selected[parent] = []
+
+        #append if not already added
+        if not element in self._partial_selected[parent]:
+            self._partial_selected[parent].append(element)
+
+    def select(self, element=None):
         """
         Select or unselect the passed element
         A null element will clear the selection for single select and
-        will have no effec for multi-select
+        will have no effect for multi-select
         """
 
         #is it already selected?  are we picking it?
@@ -70,18 +114,22 @@ class SelectState(metaclass=Singleton):
 
         if not MouseState().ctrlDown:
 
-            #clear if no element is passed or no component is picked
+            #1. Force clear conditions (choose nothing)
+            # -> clear if no element is passed or no component is picked
             if element is None or not MouseState().component:
-                self._selected.clear()
+                self.clear_state()
 
-            #abort if multiple selections exist
+            #2. Support single-select click to begin drag operations
+            # -> abort if multiple selections exist
+            # -> this ignores partially selected elements
             if len(self._selected) > 1:
                 return
 
-            #clear ONLY IF either the element is selected
-            #or it is picked, but not both.
+            #3. Don't de-select a picked and selected element
+            # -> clear ONLY IF either the element is selected
+            # -> or it is picked, but not both.
             if _exists != _picking:
-                self._selected.clear()
+                self.clear_state()
 
             #if the element does not exist and we are picking it, append
             if element and not _exists and _picking:
@@ -100,6 +148,10 @@ class SelectState(metaclass=Singleton):
         #remove if it exists, append if not
         if _exists:
             self._selected.remove(element)
+
+            if element in self._partial_selected:
+                del self._partial_selected[element]
+
         else:
             self._selected.append(element)
 

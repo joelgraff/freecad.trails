@@ -29,6 +29,7 @@ from pivy import coin
 from ..support.drag_state import DragState
 from ..support.mouse_state import MouseState
 from ..support.view_state import ViewState
+from ..support.select_state import SelectState
 
 from .base_tracker import BaseTracker
 
@@ -152,77 +153,50 @@ class WireTracker(BaseTracker):
         """
         SoMouseButtonEvent callback
         """
-        super().button_event(arg)
-
-        return
 
         if MouseState().button1.state == 'UP':
             return
 
-        #adjust wire selection state based on existing selection nodes
-        if self.selection_nodes:
-            print('selnodes')
-            _sel = any(
-                [_v.is_selected() for _v in self.selection_nodes]
-            )
-
-            self.state.selected.ignore = _sel
-            self.set_selected(_sel)
-
         super().button_event(arg)
-
-    #def update_dragging(self):
-        """
-        Override base fucntion
-        """
-
-
-    #    if self.is_selected():
-    #        super().update_dragging()
 
     def start_drag(self):
         """
         Override of base function
         """
 
-        if not self.is_selected():
-            return
+        _parents = None
 
-        super().start_drag()
+        #must be selected unless it's controlled by selection nodes
+        if not self.selection_nodes:
 
-        return
+            if not self.is_selected():
+                return
 
+        else:
 
-        if not self.state.draggable:
-            return
+            #adjust wire selection state based on existing selection nodes
+            _sel = [
+                _i for _i, _v in enumerate(self.selection_nodes)\
+                if _v.is_selected()
+            ]
 
-        #base implementation if no selection nodes
-        if self.selection_nodes is None:
+            if not _sel:
+                return
 
-            super().start_drag()
-            return
+            #self.state.selected.ignore = _sel
 
-        _states = [_v.is_selected() for _v in self.selection_nodes]
+            #fully selected node defaults to base start_drag
+            if len(_sel) == len(self.selection_nodes):
+                super().start_drag()
+                return
 
-        #base implementation if all nodes selected
-        if all(_states):
-            super().start_drag()
-            return
+            #otherwise, partially-select the node...
+            for _i in _sel:
+                SelectState().partial_select(self.selection_nodes[_i], self)
 
-        #custom implementation for partial selection
-        self.state.dragging = not all(_states) and any(_states)
+            self.refresh()
 
-        if not self.state.dragging:
-            return
-
-        _drag_indices = [
-            _i for _i, _v in enumerate(self.selection_nodes)\
-                if _v.state.dragging
-        ]
-
-        self.drag_node = self.copy()
-
-        DragState().add_partial_node(self.drag_node, _drag_indices)
+        super().start_drag(_sel)
 
     def on_drag(self):
         """
@@ -245,26 +219,6 @@ class WireTracker(BaseTracker):
 
         super().on_drag()
 
-    def _partial_drag(self):
-        """
-        Perform partial drag if ok
-        """
-
-        if not DragState().sg_ok:
-            return
-
-        self.drag_points = []
-
-        for _v in self.selection_nodes:
-
-            if _v.state.dragging:
-                self.drag_points.append(_v.drag_point)
-            else:
-                self.drag_points.append(_v.point)
-
-        #if self.drag_refresh:
-           # self.refresh_drag()
-
     def end_drag(self):
         """
         Override of base function
@@ -272,19 +226,19 @@ class WireTracker(BaseTracker):
 
         #pull the updated tuples from the drag node
         _values = []
-#        _node = self.drag_node
+        _node = None
 
-#        if not _node:
-        _node = self.drag_group.getChild(0)
+        for _n in self.drag_group.getChild(0).getChildren():
 
-        _values = [_v.getValue() for _v in _node.getChild(3).point.getValues()]
+            if isinstance(_n, coin.SoCoordinate3):
+                _node = _n.point
+                break
 
-#        if _values:
-#            self.update(_values)
+        if _node:
 
-        _coords = ViewState().transform_points(_values, DragState().node_group)
+            _coords = [_v.getValue() for _v in _node.getValues()]
+            self.update(_coords)
 
-        self.update(_coords)
         self.drag_node = None
         self.drag_group = None
 
