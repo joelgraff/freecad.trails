@@ -317,9 +317,14 @@ class BaseTracker:
 
             QCursor.setPos(_pos[0], _pos[1])
 
+            _drag_line_end = _mouse_coord
+
         #no micro-drag?  shut off cursor override
-        elif QtGui.QApplication.overrideCursor():
+        #elif QtGui.QApplication.overrideCursor():
+        else:
             QtGui.QApplication.restoreOverrideCursor()
+
+        QtGui.QApplication.processEvents()
 
         #save the drag state coordinate as the current mouse coordinate
         DragState().coordinates = _mouse_coord
@@ -329,14 +334,17 @@ class BaseTracker:
         """
         Terminate drag ops
         """
+        QtGui.QApplication.restoreOverrideCursor()
+        QtGui.QApplication.processEvents()
 
+        print(self.name, 'end drag', self.state.dragging)
         if not self.state.dragging:
             return
 
         DragState().finish()
 
-        if QtGui.QApplication.overrideCursor() == Qt.BlankCursor:
-            QtGui.QApplication.restoreOverrideCursor()
+        #if QtGui.QApplication.overrideCursor() == Qt.BlankCursor:
+        #    QtGui.QApplication.restoreOverrideCursor()
 
     def set_selectability(self, is_selectable):
         """
