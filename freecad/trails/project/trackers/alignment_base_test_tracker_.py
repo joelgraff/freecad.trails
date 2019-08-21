@@ -173,12 +173,9 @@ class AlignmentBaseTestTracker(BaseTracker):
                     wire_name=_names + ['WIRE-' + str(_i)],
                     nodes=_nodes,
                     points=_points,
-                    select=not is_linked
+                    select=True
                 )
             )
-
-        _curves = self.alignment.get_curves()
-        _names = self.names[:2]
 
         self.trackers = _result
 

@@ -155,13 +155,8 @@ def get_parameters(line):
     if _case_one:
 
         line_vec = _result.end.sub(_result.start)
-        _bearing = support.get_bearing(line_vec)
-        _length = line_vec.Length
 
-        #test for missing parameters, preserving the existing ones
-        if not math.isnan(_result.bearing):
-            if support.within_tolerance(_result.bearing, _bearing):
-                _bearing = _result.bearing
+        _length = line_vec.Length
 
         if _result.length:
             if support.within_tolerance(_result.length, _length):

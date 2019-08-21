@@ -79,12 +79,13 @@ class GridTracker(BaseTracker):
 
     def _build_grid_cells(self):
 
-        _names = self.names[:]
+        pass
+        #_names = self.names[:]
 
-        _names[2] = 'GRID'
-        _wt = WireTracker(_names)
+        #_names[2] = 'GRID'
+        #_wt = WireTracker(_names)
 
-        _dim = Vector()
+        #_dim = Vector()
 
         #_dim = self.grid_size.add(self.grid_pad.)
 
