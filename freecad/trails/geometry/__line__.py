@@ -27,122 +27,22 @@ Line generation tools
 
 import math
 
-from FreeCAD import Vector, Console
+from FreeCAD import Vector
 from . import support
-
-class Line():
-    """
-    Line class object
-    """
-    _keys = [
-        'ID', 'Type', 'Start', 'End', 'Bearing', 'Length', 'StartStation',
-        'InternalStation'
-    ]
-
-    def __init__(self, line_dict=None):
-        """
-        Line class constructor
-        """
-
-        self.id = ''
-        self.type = 'Line'
-        self.start = None
-        self.end = None
-        self.bearing = math.nan
-        self.length = 0.0
-        self.start_station = 0.0
-        self.internal_station = 0.0
-
-        #build a list of key pairs fir string-based lookup
-        self._key_pairs = {}
-
-        _keys = list(self.__dict__.keys())
-
-        for _i, _k in enumerate(Line._keys):
-            self._key_pairs[_k] = _keys[_i]
-
-            self._key_pairs['BearingIn'] = 'bearing'
-            self._key_pairs['BearingOut'] = 'bearing'
-
-        if line_dict:
-            for _k, _v in line_dict.items():
-                print(_k, _v)
-                self.set(_k, _v)
-
-    def __str__(self):
-        """
-        String representation
-        """
-
-        return str(self.__dict__)
-
-    def to_dict(self):
-        """
-        Return the object as a dictionary
-        """
-
-        _result = {}
-
-        _result.update(
-            [(_k, getattr(self, _v)) for _k, _v in self._key_pairs.items()])
-
-        return _result
-
-    def get_bearing(self):
-        """
-        Getter function for bearing_in / bearing_out aliasing
-        """
-
-        return self.bearing
-
-    def set_bearing(self, value):
-        """
-        Setter function for bearing_in / beraing_out aliasing
-        """
-
-        self.bearing = value
-
-    def get(self, key):
-        """
-        Generic getter for class attributes
-        """
-
-        if not key in self._key_pairs:
-
-            Console.PrintError('\nLine.get(): Bad key: ' + key)
-            return None
-
-        return getattr(self, self._key_pairs[key])
-
-    def set(self, key, value):
-        """
-        Generic setter for class attributes
-        """
-
-        if not key in self._key_pairs:
-
-            Console.PrintError('\nLine.set(): Bad key' + key)
-            return
-
-        setattr(self, self._key_pairs[key], value)
-
-    #alias bearing_in / bearing_out with the bearing attribute
-    #provides compatibility with curve classes
-    bearing_in = property(get_bearing, set_bearing)
-    bearing_out = property(get_bearing, set_bearing)
 
 def get_parameters(line):
     """
     Return a fully-defined line
     """
 
-    _result = line
-
-    if isinstance(line, dict):
-        _result = Line(line)
-
-    _coord_truth = [_result.start, _result.end]
-    _param_truth = [not math.isnan(_result.bearing), _result.length > 0.0]
+    _coord_truth = [
+        not line.get('Start') is None,
+        not line.get('End') is None
+    ]
+    _param_truth = [
+        not line.get('BearingIn') is None,
+        not line.get('Length') is None
+    ]
 
     #both coordinates defined
     _case_one = all(_coord_truth)
@@ -154,40 +54,43 @@ def get_parameters(line):
 
     if _case_one:
 
-        line_vec = _result.end.sub(_result.start)
+        line_vec = line['End'].sub(line['Start'])
         _bearing = support.get_bearing(line_vec)
         _length = line_vec.Length
 
         #test for missing parameters, preserving the existing ones
-        if not math.isnan(_result.bearing):
-            if support.within_tolerance(_result.bearing, _bearing):
-                _bearing = _result.bearing
+        if line.get('BearingIn'):
+            if support.within_tolerance(line['BearingIn'], _bearing):
+                _bearing = line['BearingIn']
 
-        if _result.length:
-            if support.within_tolerance(_result.length, _length):
-                _length = _result.length
+        line['BearingIn'] = line['BearingOut'] = _bearing
 
-        _result.length = _length
+        if line.get('Length'):
+            if support.within_tolerance(line['Length'], _length):
+                _length = line['Length']
+
+        line['Length'] = _length
 
     elif _case_two:
 
-        _vec = \
-            support.vector_from_angle(_result.bearing).multiply(_result.length)
+        _vec = support.vector_from_angle(
+            line['BearingIn']
+            ).multiply(line['Length'])
 
-        if _result.start:
-            _result.end = _result.start.add(_vec)
+        if line.get('Start'):
+            line['End'] = line['Start'].add(_vec)
         else:
-            _result.start = _result.end.add(_vec)
+            line['Start'] = line['End'].add(_vec)
 
     else:
-        print('Unable to calculate parameters for line', _result)
+        print('Unable to calculate parameters for line', line)
 
-    #result = None
+    result = None
 
-    #if _case_one or _case_two:
-    #    result = {**{'Type': 'Line'}, **line}
+    if _case_one or _case_two:
+        result = {**{'Type': 'Line'}, **line}
 
-    return _result
+    return result
 
 def get_coordinate(start, bearing, distance):
     """
@@ -198,13 +101,13 @@ def get_coordinate(start, bearing, distance):
 
     return start.add(_vec.multiply(distance))
 
-def get_tangent_vector(line, distance):
+def get_tangent_vector(line_dict, distance):
     """
     Return the directed tangent vector
     """
 
-    _start = line.start
-    _end = line.end
+    _start = line_dict['Start']
+    _end = line_dict['End']
 
     if _start is None or _end is None:
         return None, None
@@ -212,12 +115,12 @@ def get_tangent_vector(line, distance):
     _slope = Vector(-(_end.y - _start.y), _end.x - _start.x).normalize()
 
     _coord = get_coordinate(
-        line.start, line.bearing, distance
+        line_dict['Start'], line_dict['BearingIn'], distance
         ).add(_slope)
 
     return _coord, _slope
 
-def get_ortho_vector(line, distance, side=''):
+def get_ortho_vector(line_dict, distance, side=''):
     """
     Return the orthogonal vector pointing toward the indicated side at the
     provided position.  Defaults to left-hand side
@@ -230,8 +133,8 @@ def get_ortho_vector(line, distance, side=''):
     if _side in ['r', 'rt', 'right']:
         _dir = -1.0
 
-    start = line.start
-    end = line.end
+    start = line_dict['Start']
+    end = line_dict['End']
 
     if (start is None) or (end is None):
         return None, None
@@ -239,7 +142,9 @@ def get_ortho_vector(line, distance, side=''):
     _delta = end.sub(start).normalize()
     _left = Vector(-_delta.y, _delta.x, 0.0)
 
-    _coord = get_coordinate(line.start, line.end, distance)
+    _coord = get_coordinate(
+        line_dict['Start'], line_dict['BearingIn'], distance
+    )
 
     return _coord, _left.multiply(_dir)
 
@@ -261,7 +166,7 @@ def get_orthogonal_point(start_pt, end_pt, coord):
         0.0
     )
 
-def get_position_offset(line, coord):
+def get_position_offset(line_dict, coord):
     """
     Return the projection of the coordinate onto the line, the distance
     from the line, and a bounding value [-1, 0, 1] that indicate if
@@ -273,20 +178,23 @@ def get_position_offset(line, coord):
 
     #calculate the orthogonals on either end
     _orthos = [
-        get_ortho_vector(line, 0, 'lt'),
-        get_ortho_vector(line, line.length, 'lt')
+        get_ortho_vector(line_dict, 0, 'lt'),
+        get_ortho_vector(line_dict, line_dict['Length'], 'lt')
     ]
 
+    _start = line_dict['Start']
+    _end = line_dict['End']
+
     #quit successfully if we're on endpoints
-    if support.within_tolerance(coord.distanceToPoint(line.start)):
+    if support.within_tolerance(coord.distanceToPoint(_start)):
         return 0.0, 0.0, 0.0
 
-    if support.within_tolerance(coord.distanceToPoint(line.end)):
-        return line.length, 0.0, 0.0
+    if support.within_tolerance(coord.distanceToPoint(_end)):
+        return line_dict['Length'], 0.0, 0.0
 
     #get the point projection, and test to see if it's within the limits
     #of the line
-    _r = get_orthogonal_point(line.start, line.end, coord)
+    _r = get_orthogonal_point(_start, _end, coord)
 
     _ortho = coord.sub(_r)
 
@@ -298,16 +206,14 @@ def get_position_offset(line, coord):
 
         _dir = 1.0
 
-    _llim = \
-        min(line.start.x, line.end.x) < _r[0] < max(line.start.x, line.end.x)
+    in_limits = \
+        min(_start.x, _end.x) < _r[0] < max(_start.x, _end.x)\
+        and min(_start.y, _end.y) < _r[1] < max(_start.y, _end.y)
 
-    _ulim = \
-        min(line.start.y, line.end.y) < _r[1] < max(line.start.y, line.end.y)
-
-    if _llim and _ulim:
+    if in_limits:
 
         _point, _vec = get_tangent_vector(
-            line, line.start.distanceToPoint(_r)
+            line_dict, _start.distanceToPoint(_r)
         )
 
         return _point, coord.distanceToPoint(_r) * _dir, 0
@@ -316,8 +222,8 @@ def get_position_offset(line, coord):
     _o = _orthos[0][1]
 
     _pts = [
-        get_orthogonal_point(line.start, _o.add(line.start), coord),
-        get_orthogonal_point(line.end, _o.add(line.end), coord)
+        get_orthogonal_point(_start, _o.add(_start), coord),
+        get_orthogonal_point(_end, _o.add(_end), coord)
     ]
 
     _dist = [

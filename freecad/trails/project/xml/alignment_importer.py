@@ -128,7 +128,7 @@ class AlignmentImporter(object):
         """
         result = {}
 
-        #test to ensure all required tags are in the imrpoted XML data
+        #test to ensure all required tags are in the imported XML data
         missing_tags = set(
             tags[0]).difference(set(list(attrib.keys())))
 

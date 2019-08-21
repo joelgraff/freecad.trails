@@ -26,17 +26,22 @@ Customized wire tracker from DraftTrackers.wireTracker
 
 from pivy import coin
 
+from ..support.drag_state import DragState
 from ..support.mouse_state import MouseState
+from ..support.view_state import ViewState
 
 from .base_tracker import BaseTracker
-from .coin_style import CoinStyle
 
 class WireTracker(BaseTracker):
     """
     Customized wire tracker
+
+    self.points - list of Vectors
+    self.selction_nodes -
+        list of point indices which correspond to node trackers
     """
 
-    def __init__(self, view, names, nodes=None):
+    def __init__(self, names, nodes=None):
         """
         Constructor
         """
@@ -45,41 +50,79 @@ class WireTracker(BaseTracker):
         self.name = names[2]
         self.coord = coin.SoCoordinate3()
         self.points = None
-        self.view = view
-        self.enabled = True
-        self.state = 'UNSELECTED'
-
-        self.coin_style = None
         self.selection_nodes = None
-        self.mouse = MouseState()
+        self.selection_indices = []
+
+        self.group = coin.SoSeparator()
+        self.drag_node = None
+        self.drag_coord = None
+        self.drag_start = []
+        self.drag_points = []
+        self.drag_refresh = True
+        self.drag_override = False
 
         if not nodes:
             nodes = []
 
         elif not isinstance(nodes, list):
-            nodes = [nodes]
+            nodes = list(nodes)
 
         nodes += [self.coord, self.line]
 
-        super().__init__(
-            names=names, children=nodes)
+        super().__init__(names=names, children=nodes)
 
-        self.set_style(CoinStyle.DEFAULT)
-
-        self.callbacks = {
-            'SoLocation2Event':
-            self.view.addEventCallback('SoLocation2Event', self.mouse_event),
-
-            'SoMouseButtonEvent':
-            self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
-        }
-
-    def set_selection_nodes(self, nodes):
+    def set_points(self, points=None, nodes=None, indices=None):
         """
-        Set the list of node trackers that control wire selection
+        Set the node trackers points
+
+        points - actual points which make up the line
+        nodes - references to node trackers
+        indices - index of point in self.points that node updates
         """
+
+        if not points:
+
+            if not nodes:
+                return
+
+            points = [_v.get() for _v in nodes]
+
+        self.points = points
+
+        _l = 0
+
+        if nodes:
+            _l = len(nodes)
+
+        #only two nodes and no indices?  nodes define entire line
+        if _l == 2 and not indices:
+            indices = [0, len(self.points) - 1]
 
         self.selection_nodes = nodes
+        self.selection_indices = indices
+
+    def get_points(self):
+        """
+        Return the list of points with node tracker points uupdated
+        """
+
+        _points = self.points
+
+        if self.selection_indices:
+            _j = 0
+
+            for _i in self.selection_indices:
+
+                if _i is None:
+                    continue
+
+                if _i == -1:
+                    _i = len(_points) - 1
+
+                _points[_i] = self.selection_nodes[_j].point
+                _j += 1
+
+        return _points
 
     def update(self, points=None):
         """
@@ -103,106 +146,156 @@ class WireTracker(BaseTracker):
 
         self.points = _p
 
-
-    def transform_points(self, points, matrix):
-        """
-        Update the points with the appropriate transformation and return
-        """
-
-        pass
-
-    def set_style(self, style):
-        """
-        Update the tracker style
-        """
-
-        if self.coin_style == style:
-            return
-
-        if style['line width']:
-            self.draw_style.lineWidth = style['line width']
-
-        self.draw_style.style = style['line style']
-        self.draw_style.lineWeight = style['line weight']
-
-        if style['line pattern']:
-            self.draw_style.linePattern = style['line pattern']
-
-        self.color.rgb = style['color']
-
-        self.set_selectability(style['select'])
-
-        self.coin_style = style
+        super().refresh()
 
     def button_event(self, arg):
         """
-        Mouse button actions
+        SoMouseButtonEvent callback
         """
-        #if the wire is not selected, or we're not multi-selected, abort
-#        if not (self.state == 'SELECTED' or arg['AltDown']):
-#            return
+        super().button_event(arg)
 
-        #get selection state of the selectable nodes
-        _sel_state = [_v.state == 'SELECTED' for _v in self.selection_nodes]
+        return
 
-        self.state = 'UNSELECTED'
+        if MouseState().button1.state == 'UP':
+            return
 
-        #set selection states of the wrire
-        if all(_sel_state):
-            self.state = 'SELECTED'
+        #adjust wire selection state based on existing selection nodes
+        if self.selection_nodes:
+            print('selnodes')
+            _sel = any(
+                [_v.is_selected() for _v in self.selection_nodes]
+            )
 
-        elif any(_sel_state):
-            self.state = 'PARTIAL'
+            self.state.selected.ignore = _sel
+            self.set_selected(_sel)
 
-        #set selection style
-        if self.state == 'SELECTED':
-            self.set_style(CoinStyle.SELECTED)
-        else:
-            self.set_style(CoinStyle.DEFAULT)
+        super().button_event(arg)
 
-    def mouse_event(self, arg):
+    #def update_dragging(self):
         """
-        Mouse movement actions
+        Override base fucntion
         """
 
-        #skip if currently disabled for various actions
-        if not self.enabled:
+
+    #    if self.is_selected():
+    #        super().update_dragging()
+
+    def start_drag(self):
+        """
+        Override of base function
+        """
+
+        if not self.is_selected():
             return
 
-        #no mouseover processing if the element can't be selected
-        if not self.is_selectable():
+        super().start_drag()
+
+        return
+
+
+        if not self.state.draggable:
             return
 
-        #no mouseover processing if the node is currently selected
-        if self.state:
+        #base implementation if no selection nodes
+        if self.selection_nodes is None:
+
+            super().start_drag()
             return
 
-        #test to see if this node is under the cursor
+        _states = [_v.is_selected() for _v in self.selection_nodes]
 
-        _info = self.view.getObjectInfo(self.mouse.pos)
-
-        if not _info:
-            self.set_style(CoinStyle.DEFAULT)
+        #base implementation if all nodes selected
+        if all(_states):
+            super().start_drag()
             return
 
-        if not self.name in _info['Component']:
-            self.set_style(CoinStyle.DEFAULT)
+        #custom implementation for partial selection
+        self.state.dragging = not all(_states) and any(_states)
+
+        if not self.state.dragging:
             return
 
-        self.set_style(CoinStyle.SELECTED)
+        _drag_indices = [
+            _i for _i, _v in enumerate(self.selection_nodes)\
+                if _v.state.dragging
+        ]
+
+        self.drag_node = self.copy()
+
+        DragState().add_partial_node(self.drag_node, _drag_indices)
+
+    def on_drag(self):
+        """
+        Override of base function
+        """
+
+        super().on_drag()
+
+        return
+
+        if self.drag_override:
+            return
+
+        #abort unselected / non-partial drag
+        if not self.state.dragging:
+            return
+
+        if not self.is_selected():
+            return
+
+        super().on_drag()
+
+    def _partial_drag(self):
+        """
+        Perform partial drag if ok
+        """
+
+        if not DragState().sg_ok:
+            return
+
+        self.drag_points = []
+
+        for _v in self.selection_nodes:
+
+            if _v.state.dragging:
+                self.drag_points.append(_v.drag_point)
+            else:
+                self.drag_points.append(_v.point)
+
+        #if self.drag_refresh:
+           # self.refresh_drag()
+
+    def end_drag(self):
+        """
+        Override of base function
+        """
+
+        #pull the updated tuples from the drag node
+        _values = []
+#        _node = self.drag_node
+
+#        if not _node:
+        _node = self.drag_group.getChild(0)
+
+        _values = [_v.getValue() for _v in _node.getChild(3).point.getValues()]
+
+#        if _values:
+#            self.update(_values)
+
+        _coords = ViewState().transform_points(_values, DragState().node_group)
+
+        self.update(_coords)
+        self.drag_node = None
+        self.drag_group = None
+
+        super().end_drag()
 
     def finalize(self, node=None, parent=None):
         """
         Cleanup
         """
 
-        if self.callbacks:
-            for _k, _v in self.callbacks.items():
-                self.view.removeEventCallback(_k, _v)
-
-        self.callbacks.clear()
-
         if node is None:
-            node = self.node
+            node = self.switch
 
         super().finalize(node, parent)

@@ -26,32 +26,27 @@ Task to edit an alignment
 """
 import math
 
-from PySide import QtGui
-
 from FreeCAD import Vector
 import FreeCADGui as Gui
 
 import DraftTools
 
-from .... import resources
-
 from ....alignment import alignment
 
-from ...support import const, utils
+from ...support import const
 from ...support.mouse_state import MouseState
 from ...support.view_state import ViewState
-from ...support.drag_state import DragState
 
-from ...trackers.alignment_tracker import AlignmentTracker
+from ...trackers.alignment_base_test_tracker_ import AlignmentBaseTestTracker
 
-def create(doc, alignment_data, object_name):
+def create(doc, alignment_data, object_name, is_linked):
     """
     Class factory method
     """
 
-    return EditAlignmentTask(doc, alignment_data, object_name)
+    return BaseTrackerTestTask(doc, alignment_data, object_name, is_linked)
 
-class EditAlignmentTask:
+class BaseTrackerTestTask:
     """
     Task to manage alignment editing
     """
@@ -67,9 +62,8 @@ class EditAlignmentTask:
         PI = [(0.0, 0.0, 1.0), 'Solid']
         SELECTED = [(1.0, 0.8, 0.0), 'Solid']
 
-    def __init__(self, doc, alignment_data, obj):
+    def __init__(self, doc, alignment_data, obj, is_linked):
 
-        self.name = 'EditAlignmentTask'
         self.panel = None
         self.doc = doc
         self.Object = obj
@@ -79,9 +73,7 @@ class EditAlignmentTask:
         self.alignment_tracker = None
         self.callbacks = {}
         self.mouse = MouseState()
-        self.form = None
-        self.ui_path = resources.__path__[0] + '/ui/'
-        self.ui = self.ui_path + 'edit_alignment_task.ui'
+
         self.camera_state = {
             'position': None,
             'height': None,
@@ -131,8 +123,8 @@ class EditAlignmentTask:
                 'SoMouseButtonEvent', self.button_event)
         }
 
-        self.alignment_tracker = AlignmentTracker(
-            self.doc, self.Object.Name, self.alignment
+        self.alignment_tracker = AlignmentBaseTestTracker(
+            self.doc, self.Object.Name, self.alignment, is_linked
         )
 
         #save camera state
@@ -222,11 +214,12 @@ class EditAlignmentTask:
         Initiailze the task window and controls
         """
 
-        _mw = utils.getMainWindow()
+        pass
+        #_mw = utils.getMainWindow()
 
-        form = _mw.findChild(QtGui.QWidget, 'TaskPanel')
+        #form = _mw.findChild(QtGui.QWidget, 'TaskPanel')
 
-        self.form = form
+        #self.form = form
 
     def accept(self):
         """
@@ -259,11 +252,10 @@ class EditAlignmentTask:
         SoLocation2Event callback
         """
 
-        #force refresh the view matrix if dragging
-        if DragState().node_group:
-            ViewState().get_matrix(DragState().node_group)
-
         self.mouse.update(arg, ViewState().view.getCursorPos())
+
+        #clear the matrix to force a refresh at the start of every mouse event
+        ViewState().matrix = None
 
     def button_event(self, arg):
         """
@@ -330,10 +322,6 @@ class EditAlignmentTask:
             self.pi_tracker.finalize()
             self.pi_tracker = None
             Gui.Selection.addSelection(self.Object)
-
-        if self.drag_tracker:
-            self.drag_tracker.finalize()
-            self.drag_tracker = None
 
         if self.alignment_tracker:
             self.alignment_tracker.finalize()

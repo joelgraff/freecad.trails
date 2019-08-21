@@ -28,67 +28,35 @@ from pivy import coin
 
 from ..support.const import Const
 
-class CoinStyle(Const):
+class CoinStyles(Const):
     """
-    Useful math constants
+    Pre-defined styles for use with Coin3d scenegraph nodes
     """
 
-    DEFAULT = {
-        'id': 'default',
-        'shape': 'default',
-        'line width': None,
-        'line style': coin.SoDrawStyle.LINES,
-        'line weight': 3,
-        'line pattern': None,
-        'size': 9,
-        'color': (0.8, 0.8, 0.8),
-        'select': True
-    }
+    class Style():
+        """
+        Style internal class for CoinStyles class
+        """
 
-    EDIT = {
-        'line width': None,
-        'line style': coin.SoDrawStyle.LINES,
-        'line weight': 3,
-        'line pattern': 0x0f0f, #oxaaa
-        'select': False
-    }
+        def __init__(self, style_id, style=coin.SoDrawStyle.FILLED,
+                     shape='default', line_wdith=0.0, point_size=0.0,
+                     line_pattern=0xffff, size=9, color=(1.0, 1.0, 1.0),
+                     select=True):
 
-    ROLL_OUTER = {
-        'id': 'roll_outer',
-        'shape': 'circle',
-        'size': 9,
-        'color': (0.4, 0.8, 0.4),
-        'select': True
-    }
+            """
+            Style constructor
+            """
+            self.id = style_id
+            self.style = style
+            self.shape = shape
+            self.line_width = line_wdith
+            self.point_size = point_size
+            self.line_pattern = line_pattern
+            self.size = size
+            self.color = color
+            self.select = select
 
-    ROLL_INNER = {
-        'id': 'roll_inner',
-        'shape': 'cross',
-        'size': 5,
-        'color': (0.4, 0.8, 0.4),
-        'select': True
-    }
-
-    SELECTED = {
-        'id': 'selected',
-        'shape': 'default',
-        'line width': None,
-        'line style': coin.SoDrawStyle.LINES,
-        'line weight': 3,
-        'line pattern': None,
-        'size': 9,
-        'color': (1.0, 0.9, 0.0),
-        'select': True
-    }
-
-    ERROR = {
-        'id': 'error',
-        'shape': 'default',
-        'line width': None,
-        'line style': coin.SoDrawStyle.LINES,
-        'line weight': 3,
-        'line pattern': None,
-        'size': 9,
-        'color': (1.0, 0.0, 0.0),
-        'select': True
-    }
+    DEFAULT = Style('default', color=(0.8, 0.8, 0.8))
+    DASHED = Style('dashed', line_pattern=0x0f0f, select=False)
+    SELECTED = Style('selected', color=(1.0, 0.9, 0.0))
+    ERROR = Style('error', color=(1.0, 0.0, 0.0))

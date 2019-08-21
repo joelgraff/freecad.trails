@@ -87,6 +87,16 @@ class _GEO(Const):
     '''
     FUNC = _create_geo_func()
 
+    #list of vector pairs to calculate rotations
+    ROT_PAIRS = [
+        [1, 2, 4, 5],
+        [3, 5],
+        [1, 3, 5],
+        [0],
+        [1, 2, 3, 5],
+        [3]
+    ]
+
 def get_scalar_matrix(vecs):
     """
     Calculate the square matrix of scalars
@@ -132,6 +142,7 @@ def get_scalar_matrix(vecs):
         _d1 = result.A[_i][_i]
 
         for _j in range(0, _i):
+
             _denom = _d1 * result.A[_j][_j]
             _n = result.A[_i][_j]
 
@@ -184,7 +195,13 @@ def get_bearings(arc, mat, delta, rot):
         _deltas = [abs(_i - _j) for _i in _b for _j in _b]
 
         #check to ensure all tangent start bearing values are identical
-        if not support.within_tolerance(_deltas):
+        if not support.within_tolerance(_deltas[0:2]):
+            return None
+
+        if not support.within_tolerance(_deltas[2:4]):
+            return None
+
+        if not support.within_tolerance(_deltas[4:6]):
             return None
 
         #default to calculated if different from supplied bearing
@@ -272,6 +289,10 @@ def get_lengths(arc, mat):
         if not _s:
             continue
 
+        #duplicate the only calculated length
+        if len(_s) == 1:
+            _s.append(_s[0])
+
         #if both were calculated and they aren't the same, quit
         if all(_s) and not support.within_tolerance(_s[0], _s[1]):
 
@@ -280,7 +301,9 @@ def get_lengths(arc, mat):
             if _i == 1:
                 _attribs = ['tangent', 'Start-PI-End']
 
-            Console.PrintWarning('\nArc {0} length and {1} distance mismatch by {2:f} mm. Using calculated value of {3:f} mm'\
+            Console.PrintWarning("""
+            \nArc {0} length and {1} distance mismatch by {2:f} mm. Using calculated value of {3:f} mm
+            """\
                 .format(_attribs[0], _attribs[1], abs(_s[1] - _s[0]), _s[0]))
 
         if _s[0] and support.within_tolerance(_s[0], params[_i]):
@@ -301,6 +324,7 @@ def get_lengths(arc, mat):
 
     return {'Radius': params[0],
             'Tangent': params[1],
+            'Middle': params[2],
             'Chord': params[3]}
 
 def get_delta(arc, mat):
@@ -335,15 +359,26 @@ def get_rotation(arc, vecs):
     """
     Determine the dirction of rotation
     """
-    _v1 = [_v for _v in vecs[0:3] if _v and _v != Vector()]
-    _v2 = [_v for _v in vecs[3:] if _v and _v != Vector()]
 
-    if _v1 and _v2:
-        _v1 = _v1[0]
-        _v2 = _v2[1]
+    #list all valid vector indices
+    _idx = [_i for _i, _v in enumerate(vecs) if _v != Vector()]
 
-    else:
+    _v1 = None
+    _v2 = None
+
+    for _i in _idx:
+        _l = _GEO.ROT_PAIRS[_i]
+        _m = [_j for _j in _l if vecs[_j] != Vector()]
+
+        if _m:
+            _v1 = vecs[_i]
+            _v2 = vecs[_m[0]]
+            break
+
+    if not _v1:
         _v1 = support.vector_from_angle(arc.get('BearingIn'))
+
+    if not _v2:
         _v2 = support.vector_from_angle(arc.get('BearingOut'))
 
     _rot = None
@@ -356,7 +391,7 @@ def get_rotation(arc, vecs):
 
     return {'Direction': _rot}
 
-def get_missing_parameters(arc, new_arc):
+def get_missing_parameters(arc, new_arc, points):
     """
     Calculate any missing parameters from the original arc
     using the values from the new arc.
@@ -370,17 +405,50 @@ def get_missing_parameters(arc, new_arc):
     """
 
     #by this point, missing radius / delta is a problem
-    if new_arc.get('Radius') is None or new_arc.get('Delta') is None:
+    #missing both?  stop now.
+    if new_arc.get('Radius') is None and new_arc.get('Delta') is None:
         return None
+
+    if not new_arc['Radius'] and not new_arc['Delta']:
+        return None
+
+    #missing radius requires middle ordinate (or PI / Center coords)
+    if not new_arc.get('Radius'):
+
+        _mo = new_arc.get('Middle')
+
+        if not _mo:
+
+            if not points[2] or not points[3]:
+
+                if arc.get('Tangent') is None:
+                    return
+
+                if not arc['Tangent']:
+                    return
+
+                _mo = arc['Tangent'] / math.sin(arc['Delta'] / 2.0)
+
+            else:
+                _mo = points[3].sub(points[2]).Length
+
+            new_arc['Middle'] = _mo
+
+        new_arc['Radius'] = math.cos(new_arc['Delta'] / 2.0) * _mo
 
     #pre-calculate values and fill in remaining parameters
     radius = new_arc['Radius']
     delta = new_arc['Delta']
     half_delta = delta / 2.0
 
-    new_arc['Length'] = radius * delta
-    new_arc['External'] = radius * ((1.0 / math.cos(half_delta)) - 1.0)
-    new_arc['MiddleOrdinate'] = radius * (1.0 - math.cos(half_delta))
+    if new_arc.get('Length') is None:
+        new_arc['Length'] = radius * delta
+
+    if new_arc.get('External') is None:
+        new_arc['External'] = radius * ((1.0 / math.cos(half_delta)) - 1.0)
+
+    if new_arc.get('MiddleOrdinate') is None:
+        new_arc['MiddleOrdinate'] = radius * (1.0 - math.cos(half_delta))
 
     if not new_arc.get('Tangent'):
         new_arc['Tangent'] = radius * math.tan(half_delta)
@@ -458,6 +526,7 @@ def get_parameters(arc):
     """
     Given a minimum of existing parameters, return a fully-described arc
     """
+
     #Vector order:
     #Radius in / out, Tangent in / out, Middle, and Chord
     points = [arc.get('Start'), arc.get('End'),
@@ -483,52 +552,62 @@ def get_parameters(arc):
     _p = get_lengths(arc, mat)
 
     if not _p:
-        print("""
+        Console.PrintError("""
         Invalid curve definition: cannot determine radius / tangent lengths.
         Arc:
-        """, arc)
+        """+ str(arc))
+
         arc['Radius'] = 0.0
         return arc
 
     result.update(_p)
-
     _p = get_delta(arc, mat)
 
     if not _p:
-        print('Invalid curve definition: cannot determine central angle.',
-              '\nArc:\n', arc)
+        Console.PrintError(
+            'Invalid curve definition: cannot determine central angle.' +
+            '\nArc:\n' + str(arc)
+        )
         return None
 
     result.update(_p)
     _p = get_rotation(arc, vecs)
 
     if not _p:
-        print('Invalid curve definition: cannot determine curve direction.',
-              '\nArc:\n', arc)
+        Console.PrintError(
+            'Invalid curve definition: cannot determine curve direction.' +
+            '\nArc:\n' + str(arc)
+        )
         return None
 
     result.update(_p)
-
     _p = get_bearings(arc, mat, result['Delta'], result['Direction'])
 
     if not _p:
-        print('Invalid curve definition: cannot determine curve bearings.',
-              '\nArc:\n', arc)
+        Console.PrintError(
+            'Invalid curve definition: cannot determine curve bearings.' +
+            '\nArc:\n' + str(arc)
+        )
         return None
 
     result.update(_p)
-    _p = get_missing_parameters(result, result)
+    _p = get_missing_parameters(result, result, points)
 
     if not _p:
-        print('Invalid curve definition: cannot calculate all parameters.',
-              '\nArc:\n', arc)
+        Console.PrintError(
+            'Invalid curve definition: cannot calculate all parameters.' +
+            '\nArc:\n' + str(arc)
+        )
         return None
 
     result.update(_p)
     _p = get_coordinates(result, points)
 
     if not _p:
-        print('Invalid curve definition: cannot calculate coordinates')
+        Console.PrintError(
+            'Invalid curve definition: cannot calculate coordinates' +
+            '\nArc:\n' + str(arc)
+        )
         return None
 
     result.update(_p)
@@ -575,137 +654,6 @@ def convert_units(arc, to_document=False):
             result[_k] = _v * scale_factor
 
     return result
-
-def parameter_test(excludes=None):
-    """
-    Testing routine
-    """
-    scale_factor = 1.0 / units.scale_factor()
-
-    radius = 670.00
-    delta = 50.3161
-    half_delta = math.radians(delta) / 2.0
-
-    arc = {
-        'Type': 'arc',
-        'Direction': -1,
-        'Delta': delta,
-        'Radius': radius,
-        'Length': radius * math.radians(delta),
-        'Tangent': radius * math.tan(half_delta),
-        'Chord': 2 * radius * math.sin(half_delta),
-        'External': radius * ((1 / math.cos(half_delta) - 1)),
-        'MiddleOrd': radius * (1 - math.cos(half_delta)),
-        'BearingIn': 139.3986,
-        'BearingOut': 89.0825,
-
-        'Start': Vector(
-            122056.0603640062, -142398.20717496306, 0.0
-            ).multiply(scale_factor),
-
-        'Center': Vector(
-            277108.1622932797, -9495.910944558627, 0.0
-            ).multiply(scale_factor),
-
-        'End': Vector(
-            280378.2141876281, -213685.7280672748, 0.0
-            ).multiply(scale_factor),
-
-        'PI': Vector(
-            184476.32163324804, -215221.57431973785, 0.0
-            ).multiply(scale_factor)
-    }
-
-    #convert the arc to system units before processing
-    #and back to document units on return
-
-    comp = {'Type': 'Curve',
-            'Radius': 670.0,
-            'Tangent': 314.67910063712156,
-            'Chord': 569.6563702820052,
-            'Delta': 50.31609999999997,
-            'Direction': -1.0,
-            'BearingIn': 139.3986,
-            'BearingOut': 89.0825,
-            'Length': 588.3816798810212,
-            'External': 70.21816809491217,
-            'Middle': 63.5571709144523,
-            'Start': Vector(400.4463922703616, -467.1857190779628, 0.0),
-            'Center': Vector(909.147514086, -31.1545634664, 0.0),
-            'End': Vector(919.8760307993049, -701.0686616380407, 0.0),
-            'PI': Vector(605.2372756996326, -706.1075272957279, 0.0)
-            }
-
-
-    if excludes:
-        return run_test(arc, comp, excludes)
-
-    keys = ['Start', 'End', 'Center', 'PI']
-
-    run_test(arc, comp, None)
-
-    for i in range(0, 4):
-        run_test(arc, comp, [keys[i]])
-        for j in range(i + 1, 4):
-            run_test(arc, comp, [keys[i], keys[j]])
-            for k in range(j + 1, 4):
-                run_test(arc, comp, [keys[i], keys[j], keys[k]])
-
-    run_test(arc, comp, keys)
-
-    return arc
-
-def run_test(arc, comp, excludes):
-    """
-    Testing routine
-    """
-    import copy
-    dct = copy.deepcopy(arc)
-
-    if excludes:
-        for _exclude in excludes:
-            dct[_exclude] = None
-
-    result = convert_units(get_parameters(convert_units(dct)), True)
-
-    print('----------- Comparison errors: ------------- \n')
-    print('Exclusions: ', excludes)
-
-    for _k, _v in comp.items():
-
-        _w = result[_k]
-        _x = _v
-
-        if isinstance(_v, Vector):
-            _x = _v.Length
-            _w = _w.Length
-
-        if not support.within_tolerance(_x, _w):
-            print('Mismatch on %s: %f (%f)' % (_k, _w, _x))
-
-    return result
-
-#############
-#test output:
-#############
-#Radius vectors:  [Vector (-508.7011218152017, -436.03115561156324, 0.0),
-#Vector (10.728516713741602, -669.914098171641, 0.0)]
-
-#Tangent vectors:  [Vector (204.79088342927093, -238.92180821776492, -0.0),
-#Vector (314.63875509967215, 5.038865657687206, 0.0)]
-
-#Middle vector:  Vector (-303.9102383859307, -674.9529638293282, 0.0)
-#bearings:  [2.4329645426705673, 1.5547829309078485]
-
-#{'Direction': -1.0, 'Delta': 50.3161, 'Radius': 670.0, 'Length':
-#588.3816798810216, 'Tangent': 314.67910063712156, 'Chord': 569.6563702820052,
-# 'External': 70.21816809491217, 'MiddleOrd': 63.55717091445238, 'BearingIn':
-# 139.3986, 'BearingOut': 89.0825, 'Start': Vector (400.44639227036157,
-# -467.1857190779628, 0.0), 'Center': Vector (909.1475140855633,
-# -31.154563466399697, 0.0), 'End': Vector (919.8760307993049,
-# -701.0686616380407, 0.0), 'PI': Vector (605.2372756996326,
-# -706.1075272957279,
-# 0.0)}
 
 def get_coord_on_arc(start, radius, direction, distance):
     """
@@ -885,7 +833,7 @@ def get_points(
     start = arc['Start']
 
     if not radius:
-        return [arc['PI']], None
+        return [arc['PI']]
 
     if not interval:
         interval = [0.0, 0.0]
@@ -932,17 +880,4 @@ def get_points(
         _start_angle, segment_deltas, direction, start, radius, _dtype
     )
 
-    #hashes = []
-
-    #_prev = None
-
-    #for _pt in points:
-
-        #store the hash of the starting and ending coordinates
-        #aka - the segment hash
-    #    if _prev:
-    #        hashes.append(hash(tuple(_prev) + tuple(_pt)))
-
-    #    _prev = _pt
-
-    return points, None
+    return points

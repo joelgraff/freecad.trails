@@ -245,7 +245,7 @@ def solve_unk_length(curve):
     curve['vTotalX'] = _start_point.add(_total_vec_x)
     curve['vTotalY'] = _end_point.sub(curve['vTotalX'])
     curve['vTotal'] = _total_vec_x.add(curve['vTotalY'])
-    
+
     curve['TanShort'] = _short_tan.Length
     curve['TanLong'] = _long_tan.Length
     curve['Direction'] = support.get_rotation(_long_tan, _short_tan)
@@ -300,8 +300,6 @@ def solve_by_relative(spiral_dict):
     #swap if inbound where long tangent comes first
     if _is_inbound:
         _tan_len[0], _tan_len[1] = _tan_len[1], _tan_len[0]
-
-    _pi = spiral_dict['PI']
 
     _dir = support.get_rotation(_tangents[0], _tangents[1])
 
@@ -509,7 +507,7 @@ def get_points(
     if segment_deltas[-1] < angle:
         segment_deltas.append(angle)
 
-    return get_segments(spiral, segment_deltas, _dtype), None
+    return get_segments(spiral, segment_deltas, _dtype)
 
 def get_ordered_tangents(curve):
     """

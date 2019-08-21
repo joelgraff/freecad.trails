@@ -27,74 +27,79 @@ Customized edit tracker from DraftTrackers.editTracker
 from pivy import coin
 
 from FreeCAD import Vector
-import FreeCADGui as Gui
 
-from .coin_style import CoinStyle
+from ..support.drag_state import DragState
+from ..support.view_state import ViewState
+
 from .base_tracker import BaseTracker
-
-from ..support.mouse_state import MouseState
 
 class NodeTracker(BaseTracker):
     """
     Tracker object for nodes
     """
 
-    def __init__(self, view, names, point, nodes=None):
+    def __init__(self, names, point, nodes=None):
         """
         Constructor
         """
 
         self.type = 'NODE'
+
         if not nodes:
             nodes = []
 
         elif not isinstance(nodes, list):
             nodes = [nodes]
 
-        self.state = 'UNSELECTED'
-
-        self.enabled = True
-        self.coin_style = None
-        self.view = view
-        self.name = names[2]
-        self.mouse = MouseState()
+        self.is_end_node = False
+        self.point = point
 
         #build node structure for the node tracker
         self.coord = coin.SoCoordinate3()
         self.marker = coin.SoMarkerSet()
+        self.drag_point = None
 
         super().__init__(
-            names=names, children=[self.coord, self.marker] + nodes, group=True
+            names=names, children=[self.coord, self.marker] + nodes
         )
 
-        self.set_style(CoinStyle.DEFAULT)
+        self.update()
 
-        self.callbacks = {
-            'SoLocation2Event':
-            self.view.addEventCallback('SoLocation2Event', self.mouse_event),
-
-            'SoMouseButtonEvent':
-            self.view.addEventCallback('SoMouseButtonEvent', self.button_event)
-        }
-
-    def set_style(self, style):
+    def start_drag(self):
         """
-        Set the node style
+        Initialize drag ops
         """
 
-        if self.coin_style == style:
+        if not self.is_selected():
             return
 
-        self.color.rgb = style['color']
+        super().start_drag()
 
-        self.marker.markerIndex = \
-            Gui.getMarkerIndex(style['shape'], style['size'])
+        self.drag_point = tuple(self.point)
 
-        self.set_selectability(style['select'])
+    def on_drag(self):
+        """
+        Override of base function
+        """
+        if not (self.drag_point and DragState().drag_node):
+            return
 
-        self.coin_style = style
+        super().on_drag()
 
-    def update(self, coord):
+        self.drag_point = ViewState().transform_points(
+            [self.point], DragState().node_group)[0]
+
+    def end_drag(self):
+        """
+        Override of base function
+        """
+
+        if self.drag_point and DragState().drag_node:
+            self.update([self.drag_point])
+
+        super().end_drag()
+
+    def update(self, coord=None):
         """
         Update the coordinate position
         """
@@ -103,12 +108,17 @@ class NodeTracker(BaseTracker):
         if isinstance(coord, list):
             coord = coord[0]
 
+        if not coord:
+            coord = self.point
+
         _c = coord
 
         if not isinstance(coord, tuple):
             _c = tuple(_c)
 
-        self.coord.point.setValue(_c)
+        self.coord.point.setValue(_c[:3])
+
+        self.point = _c
 
     def get(self):
         """
@@ -117,76 +127,9 @@ class NodeTracker(BaseTracker):
 
         return Vector(self.coord.point.getValues()[0].getValue())
 
-    def mouse_event(self, arg):
-        """
-        Mouse movement actions
-        """
-
-        #skip if currently disabled for various actions
-        if not self.enabled:
-            return
-
-        #skip if the node can't be selected
-        if not self.is_selectable():
-            return
-
-        #no mouseover processing if the node is currently selected
-        if self.state == 'SELECTED':
-            return
-
-        #test to see if this node is under the cursor
-        _info = self.view.getObjectInfo(self.mouse.pos)
-
-        if not _info:
-            self.set_style(CoinStyle.DEFAULT)
-            return
-
-        if not self.name == _info['Component']:
-            self.set_style(CoinStyle.DEFAULT)
-            return
-
-        self.set_style(CoinStyle.SELECTED)
-
-    def button_event(self, arg):
-        """
-        Button click trapping
-        """
-
-        if not self.enabled:
-            return
-
-        self.state = 'UNSELECTED'
-
-        _info = self.view.getObjectInfo(self.mouse.pos)
-
-        if not _info:
-            self.set_style(CoinStyle.DEFAULT)
-            return
-
-        _name = _info['Component']
-
-        if arg['AltDown']:
-
-            if int(_name.split('-')[1]) > int(self.name.split('-')[1]):
-                self.set_style(CoinStyle.DEFAULT)
-                return
-
-        elif not self.name in _name:
-            self.set_style(CoinStyle.DEFAULT)
-            return
-
-        self.set_style(CoinStyle.SELECTED)
-        self.state = 'SELECTED'
-
     def finalize(self, node=None, parent=None):
         """
         Cleanup
         """
-
-        if self.callbacks:
-            for _k, _v in self.callbacks.items():
-                self.view.removeEventCallback(_k, _v)
-
-            self.callbacks.clear()
 
         super().finalize(self.node, parent)

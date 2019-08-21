@@ -31,6 +31,8 @@ from ... import resources
 
 from ..tasks.alignment import edit_alignment_task
 
+from ..support.view_state import ViewState
+
 class EditAlignmentCmd():
     """
     Initiates and manages drawing activities for alignment creation
@@ -42,8 +44,7 @@ class EditAlignmentCmd():
         """
 
         self.doc = None
-        self.view = None
-        self.edit_alignment_task = None
+        self.task = None
         self.is_activated = False
         self.call = None
         self.tmp_group = None
@@ -94,15 +95,12 @@ class EditAlignmentCmd():
         data = obj.Proxy.get_data_copy()
 
         self.doc = App.ActiveDocument
-        self.view = Gui.ActiveDocument.ActiveView
-
-        #self.call = self.view.addEventCallback('SoEvent', self.action)
+        ViewState().view = Gui.ActiveDocument.ActiveView
 
         #create alignment editing task
-        self.edit_alignment_task = \
-            edit_alignment_task.create(self.doc, self.view, data, obj)
+        self.task = edit_alignment_task.create(self.doc, data, obj)
 
-        Gui.Control.showDialog(self.edit_alignment_task)
-        self.edit_alignment_task.setup()
+        Gui.Control.showDialog(self.task)
+        self.task.setup()
 
 Gui.addCommand('EditAlignmentCmd', EditAlignmentCmd())

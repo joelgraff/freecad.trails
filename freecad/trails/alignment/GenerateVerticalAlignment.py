@@ -204,7 +204,7 @@ class GenerateVerticalAlignment():
 
     def _get_reference_coordinates(self, alignment, station):
         """
-        Return the x,y,z coordiantes of a station along the specified alignment
+        Return the x,y,z coordinates of a station along the specified alignment
         """
 
         spline = App.ActiveDocument.getObject('HA_' + alignment)

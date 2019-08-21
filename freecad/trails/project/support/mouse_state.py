@@ -27,6 +27,7 @@ Mouse state class
 from FreeCAD import Vector
 
 from .singleton import Singleton
+from .view_state import ViewState
 
 class MouseState(metaclass=Singleton):
     """
@@ -47,6 +48,13 @@ class MouseState(metaclass=Singleton):
             self.pos = ()
             self.dragging = False
             self.drag_start = ()
+
+        def reset(self):
+            """
+            Reset button parameters
+            """
+
+            self.__init__()
 
         def __str__(self):
             """
@@ -77,26 +85,27 @@ class MouseState(metaclass=Singleton):
             if state and (self.state != state):
 
                 self.state = state
-                self.pressed = state == 'DOWN'
+                self.pressed = state != 'UP'
 
                 #assign position at down click
-                if self.pressed:
+                if self.pressed and not self.pos:
                     self.pos = pos
 
             #if we're already dragging, continue only if the button
             #hasn't been released
             if self.dragging:
-                self.dragging = self.pressed and (self.state != 'UP')
+                self.dragging = self.pressed
 
             #otherwise, start only if the button is pressed and the
             #mouse has moved
             elif self.pressed and (self.pos != pos):
-                    print('start drag!')
-                    self.dragging = True
-                    self.drag_start = pos
+
+                self.dragging = True
+                self.drag_start = pos
 
             if self.dragging:
                 self.state = 'DRAG'
+
             else:
                 self.drag_start = ()
 
@@ -108,7 +117,7 @@ class MouseState(metaclass=Singleton):
         """
 
         self.pos = ()
- 
+
         self.buttons = {
             'BUTTON1': self.ButtonState(),
             'BUTTON2': self.ButtonState(),
@@ -119,6 +128,14 @@ class MouseState(metaclass=Singleton):
         self.button2 = self.buttons['BUTTON2']
         self.button3 = self.buttons['BUTTON3']
 
+        self.altDown = False
+        self.ctrlDown = False
+        self.shiftDown = False
+
+        self.object = ''
+        self.component = ''
+        self.coordinates = Vector()
+
         self.state = [self.buttons, self.pos]
 
     def update(self, arg, _p):
@@ -126,47 +143,61 @@ class MouseState(metaclass=Singleton):
         Update the current mouse state
         """
 
-        self.pos = _p + (0.0,)
+        _pos = _p + (0.0,)
+        _coord = self.coordinates
+
+        if _pos != self.pos:
+            self.pos = _pos
+            _coord = None
+
+        _info = ViewState().view.getObjectInfo(self.pos)
+
+        if not _coord:
+            _coord = ViewState().view.getPoint(self.pos)
 
         _btn = arg.get('Button')
         _state = arg.get('State')
 
-        if not _state:
-            return
+        self.altDown = arg['AltDown']
+        self.ctrlDown = arg['CtrlDown']
+        self.shiftDown = arg['ShiftDown']
 
-        if not _btn:
-            return
+        _b_list = self.buttons.values()
 
-        _btn = self.buttons[_btn]
+        if _btn:
+            _b_list = [self.buttons[_btn]]
 
-        if _btn.state == _state:
-            return
+        for _v in _b_list:
+            _v.update(_state, self.pos)
 
-        _btn.pressed = _state == 'DOWN'
-        _btn.state = _state
+        if _info:
 
-        #drag condition depends on whether drag ops are only starting or 
-        #continuing.  If only starting, drag does not begin unil button is
-        #pressed and mouse moves.  If continuing, drag ends when button is up
-        if _btn.dragging:
-            _btn.dragging = _btn.pressed and (_btn.state != 'UP')
-        else:
-            _btn.dragging = _btn.pressed and (_btn.drag_start != self.pos)
+            if not self.button1.dragging:
 
-        #set drag states
-        if _btn.dragging:
-            _btn.drag_start = self.pos
-            _btn.state = 'DRAG'
+                self.object = _info['Object']
+                self.component = _info.get('Component')
 
-        else:
-            _btn.drag_start = ()
+            if self.component is None:
+                self.component = ''
 
-    def get_drag_vector(self):
+            _coord = Vector(_info['x'], _info['y'], _info['z'])
+
+        elif self.component:
+
+            self.object = ''
+            self.component = ''
+
+        self.coordinates = _coord
+
+    def get_drag_vector(self, world=False):
         """
-        Return the drag vector pointing toward the current position from the point where drag operations began
+        Return the drag vector pointing toward the current position from
+        the point where drag operations began
         """
+
+        _result = Vector()
 
         if not self.button1.dragging:
-            return Vector()
+            return _result
 
         return Vector(self.pos).sub(Vector(self.button1.drag_start))

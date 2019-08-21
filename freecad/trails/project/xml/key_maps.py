@@ -54,7 +54,7 @@ class KeyMaps(Const):
             ['chord', 'constant', 'delta', 'dir', 'dirEnd', 'dirStart',
              'external', 'length', 'midOrd', 'radius', 'radiusEnd',
              'radiusStart', 'staBack', 'staIncrement', 'staInternal',
-             'staStart', 'tangent'],
+             'staStart', 'tangent', 'staAhead', 'staBack'],
 
         'string':
             ['crvType', 'desc', 'name', 'note', 'manufacturer',
