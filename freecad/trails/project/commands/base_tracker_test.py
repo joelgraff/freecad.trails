@@ -35,7 +35,7 @@ from ..tasks.alignment import base_tracker_test_task
 
 from ..support.view_state import ViewState
 
-class BaseTrackerTest():
+class BaseTrackerTest(Modifier):
     """
     Command Description
     """

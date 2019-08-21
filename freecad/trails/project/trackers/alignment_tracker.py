@@ -34,6 +34,7 @@ from .base_tracker import BaseTracker
 
 from ..support.mouse_state import MouseState
 from ..support.view_state import ViewState
+from ..support.select_state import SelectState
 
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
@@ -166,7 +167,7 @@ class AlignmentTracker(BaseTracker):
         #abort if nodes are selected - this routine is only for multi-selecting
         for _v in self.trackers['Nodes']:
 
-            if _v.state.is_selected():
+            if _v.is_selected():
                 _i += 1
 
         if MouseState().ctrlDown and _i > 1:
@@ -195,7 +196,7 @@ class AlignmentTracker(BaseTracker):
                 _nodes = self.trackers['Nodes'][_idx:]
 
             for _v in _nodes:
-                _v.state.set_selected(True)
+                SelectState()._selected.append(_v)
                 _v.state.selected.ignore_once()
 
             _lower = max(0, _idx - 2)

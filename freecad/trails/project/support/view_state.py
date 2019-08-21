@@ -124,6 +124,10 @@ class ViewState(metaclass=Singleton):
         if not _matrix:
             return []
 
+        #list of coin vectors requires conversion to tuples
+        if isinstance(points[0], coin.SbVec3f):
+            points = [_v.getValue() for _v in points]
+
         #append fourth point to each coordinate
         _pts = [_v + (1.0,) for _v in points]
 

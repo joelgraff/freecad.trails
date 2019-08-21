@@ -173,7 +173,7 @@ class AlignmentBaseTestTracker(BaseTracker):
                     wire_name=_names + ['WIRE-' + str(_i)],
                     nodes=_nodes,
                     points=_points,
-                    select=True
+                    select=not is_linked
                 )
             )
 
