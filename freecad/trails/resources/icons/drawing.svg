@@ -1,101 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:cc="http://creativecommons.org/ns#"
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="32"
-   height="32"
-   viewBox="0 0 8.4666665 8.4666669"
-   version="1.1"
    id="svg8"
-   inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
-   sodipodi:docname="drawing.svg">
+   version="1.1"
+   viewBox="0 0 8.4666665 8.4666669"
+   height="32"
+   width="32">
   <defs
-     id="defs2">
-    <linearGradient
-       inkscape:collect="always"
-       id="linearGradient4534">
-      <stop
-         style="stop-color:#808080;stop-opacity:1;"
-         offset="0"
-         id="stop4530" />
-      <stop
-         style="stop-color:#808080;stop-opacity:0;"
-         offset="1"
-         id="stop4532" />
-    </linearGradient>
-    <radialGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient4534"
-       id="radialGradient4538"
-       cx="0.55124336"
-       cy="289.3494"
-       fx="0.55124336"
-       fy="289.3494"
-       r="0.56660461"
-       gradientTransform="matrix(1.218398,0,0,1.1980788,4.8187227,-54.134746)"
-       gradientUnits="userSpaceOnUse" />
-    <radialGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient4534"
-       id="radialGradient4538-3"
-       cx="0.55124336"
-       cy="289.3494"
-       fx="0.55124336"
-       fy="289.3494"
-       r="0.56660461"
-       gradientTransform="matrix(1.218398,0,0,1.1980788,7.0905136,-50.543298)"
-       gradientUnits="userSpaceOnUse" />
-    <radialGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient4534"
-       id="radialGradient4538-3-3"
-       cx="0.55124336"
-       cy="289.3494"
-       fx="0.55124336"
-       fy="289.3494"
-       r="0.56660461"
-       gradientTransform="matrix(1.218398,0,0,1.1980788,1.5613758,-54.134757)"
-       gradientUnits="userSpaceOnUse" />
-    <radialGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient4534"
-       id="radialGradient4538-3-3-9"
-       cx="0.55124336"
-       cy="289.3494"
-       fx="0.55124336"
-       fy="289.3494"
-       r="0.56660461"
-       gradientTransform="matrix(1.2183981,0,0,1.1980789,0.05798474,-57.27528)"
-       gradientUnits="userSpaceOnUse" />
-  </defs>
-  <sodipodi:namedview
-     id="base"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageopacity="0.0"
-     inkscape:pageshadow="2"
-     inkscape:zoom="15.839192"
-     inkscape:cx="-0.31075562"
-     inkscape:cy="18.113245"
-     inkscape:document-units="mm"
-     inkscape:current-layer="layer1"
-     showgrid="false"
-     units="px"
-     inkscape:pagecheckerboard="true"
-     inkscape:window-width="1920"
-     inkscape:window-height="1016"
-     inkscape:window-x="0"
-     inkscape:window-y="27"
-     inkscape:window-maximized="1" />
+     id="defs2" />
   <metadata
      id="metadata5">
     <rdf:RDF>
@@ -109,42 +25,87 @@
     </rdf:RDF>
   </metadata>
   <g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     id="layer1"
-     transform="translate(0,-288.53332)">
+     transform="translate(0,-288.53332)"
+     id="layer1">
     <path
-       style="fill:none;stroke:#808080;stroke-width:0.30670634px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 0.70341446,289.30706 1.38836314,3.29243 3.4804169,-0.0394 2.1110726,3.62757"
-       id="path3721"
-       inkscape:connector-curvature="0" />
+       id="path4732"
+       d="m 6.581512,291.75483 0.6514695,3.19053"
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <path
+       id="path4730"
+       d="m 3.1571212,293.70923 2.4388345,-2.13816"
+       style="fill:none;stroke:#002800;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <path
+       style="fill:none;stroke:#00ff00;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 6.581512,291.75483 0.6514695,3.19053"
+       id="path4794" />
+    <path
+       style="fill:none;stroke:#00fc00;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 3.1571212,293.70923 2.4388345,-2.13816"
+       id="path4796" />
     <ellipse
-       style="fill:#ffff33;fill-opacity:1;stroke:url(#radialGradient4538);stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="ellipse4832"
+       ry="0.95249903"
+       rx="0.95249891"
+       cy="290.89157"
+       cx="6.3923912" />
+    <ellipse
+       cx="6.3923912"
+       cy="290.89157"
+       rx="0.95249891"
+       ry="0.95249903"
        id="path4528"
-       cx="5.4903569"
-       cy="292.52859"
-       rx="0.52916604"
-       ry="0.52916616" />
+       style="fill:none;fill-opacity:1;stroke:#ffff3b;stroke-width:0.5;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
     <ellipse
-       style="fill:#fffffe;fill-opacity:1;stroke:url(#radialGradient4538-3);stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="ellipse4834"
+       cx="7.1440873"
+       cy="295.68573"
+       rx="0.95249891"
+       ry="0.95249903" />
+    <ellipse
+       ry="0.95249903"
+       rx="0.95249891"
+       cy="295.68573"
+       cx="7.1440873"
        id="path4528-5"
-       cx="7.7621479"
-       cy="296.12003"
-       rx="0.52916604"
-       ry="0.52916616" />
+       style="fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:0.5;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <path
+       id="path4728"
+       d="m 1.3697563,290.55211 0.9020347,2.77291"
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <path
+       style="fill:none;stroke:#00ff00;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 1.3697563,290.55211 0.9020347,2.77291"
+       id="path4798" />
     <ellipse
-       style="fill:#fffffe;fill-opacity:1;stroke:url(#radialGradient4538-3-3);stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="ellipse4838"
+       cx="2.4167571"
+       cy="294.28247"
+       rx="0.95249891"
+       ry="0.95249903" />
+    <ellipse
+       ry="0.95249903"
+       rx="0.95249891"
+       cy="294.28247"
+       cx="2.4167571"
        id="path4528-5-2"
-       cx="2.2330093"
-       cy="292.52853"
-       rx="0.52916604"
-       ry="0.52916616" />
+       style="fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:0.5;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
     <ellipse
-       style="fill:#fffffe;fill-opacity:1;stroke:url(#radialGradient4538-3-3-9);stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="ellipse4836"
+       cx="1.3977922"
+       cy="289.92252"
+       rx="0.95249933"
+       ry="0.95249921" />
+    <ellipse
+       ry="0.95249921"
+       rx="0.95249933"
+       cy="289.92252"
+       cx="1.3977922"
        id="path4528-5-2-7"
-       cx="0.72961849"
-       cy="289.38797"
-       rx="0.52916628"
-       ry="0.52916622" />
+       style="fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:0.5;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
   </g>
 </svg>
