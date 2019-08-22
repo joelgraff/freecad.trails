@@ -302,7 +302,10 @@ class BaseTracker:
         #micro-dragging cursor control
         if MouseState().shiftDown:
 
-            QtGui.QApplication.setOverrideCursor(Qt.BlankCursor)
+            #Gui.getMainWindow().setCursor(Qt.BlankCursor)
+            #Gui.getMainWindow().update()
+            #Gui.getMainWindow().repaint()
+            #QtGui.QApplication.processEvents()
 
             #get the window position of the updated drag delta coordinate
             _mouse_coord = DragState().start.add(DragState().delta)
@@ -321,10 +324,10 @@ class BaseTracker:
 
         #no micro-drag?  shut off cursor override
         #elif QtGui.QApplication.overrideCursor():
-        else:
-            QtGui.QApplication.restoreOverrideCursor()
+        #elif Gui.getMainWindow().cursor() == Qt.BlankCursor:
+        #    Gui.getMainWindow().unsetCursor()
 
-        QtGui.QApplication.processEvents()
+        #QtGui.QApplication.processEvents()
 
         #save the drag state coordinate as the current mouse coordinate
         DragState().coordinates = _mouse_coord
@@ -334,8 +337,6 @@ class BaseTracker:
         """
         Terminate drag ops
         """
-        QtGui.QApplication.restoreOverrideCursor()
-        QtGui.QApplication.processEvents()
 
         print(self.name, 'end drag', self.state.dragging)
         if not self.state.dragging:

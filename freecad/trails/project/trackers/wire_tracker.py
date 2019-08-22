@@ -232,6 +232,7 @@ class WireTracker(BaseTracker):
         """
 
         _parents = None
+        _sel = []
 
         #must be selected unless it's controlled by selection nodes
         if not self.selection_nodes:
