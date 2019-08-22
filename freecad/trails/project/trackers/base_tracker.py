@@ -92,6 +92,8 @@ class BaseTracker:
 
         self.drag_group = None
 
+        self.do_unset = False
+
         if not children:
             children = []
 
@@ -301,11 +303,13 @@ class BaseTracker:
 
         #micro-dragging cursor control
         if MouseState().shiftDown:
-
+            
+            #QtGui.QApplication.setOverrideCursor(Qt.BlankCursor)
             #Gui.getMainWindow().setCursor(Qt.BlankCursor)
             #Gui.getMainWindow().update()
             #Gui.getMainWindow().repaint()
             #QtGui.QApplication.processEvents()
+            #self.do_unset = True
 
             #get the window position of the updated drag delta coordinate
             _mouse_coord = DragState().start.add(DragState().delta)
@@ -324,9 +328,16 @@ class BaseTracker:
 
         #no micro-drag?  shut off cursor override
         #elif QtGui.QApplication.overrideCursor():
-        #elif Gui.getMainWindow().cursor() == Qt.BlankCursor:
-        #    Gui.getMainWindow().unsetCursor()
+        #elif QtGui.QApplication.overrideCursor() == Qt.BlankCursor:
 
+        #    if self.do_unset:
+        #        print('UNSET')
+        #        QtGui.QApplication.restoreOverrideCursor()
+        #        QtGui.QApplication.processEvents()
+        #        self.do_unset = False
+            #Gui.getMainWindow().unsetCursor()
+
+        #print(QtGui.QApplication.overrideCursor())
         #QtGui.QApplication.processEvents()
 
         #save the drag state coordinate as the current mouse coordinate
