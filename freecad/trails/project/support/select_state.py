@@ -63,6 +63,8 @@ class SelectState(metaclass=Singleton):
             if element in _v:
                 return True
 
+        return False
+
     def clear_state(self):
         """
         Clear the select state completely

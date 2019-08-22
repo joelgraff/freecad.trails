@@ -194,7 +194,7 @@ class WireTracker(BaseTracker):
                     _node = self.selection_nodes[_i]
 
                     SelectState().partial_select(
-                        parent = _node, element = self)
+                        parent=_node, element=self)
 
         self.refresh()
 
@@ -284,10 +284,10 @@ class WireTracker(BaseTracker):
         Override of base function
         """
 
-        #pull the updated tuples from the drag node
         _values = []
         _node = None
 
+        #pull the updated tuples from the drag node
         for _n in self.drag_group.getChild(0).getChildren():
 
             if isinstance(_n, coin.SoCoordinate3):

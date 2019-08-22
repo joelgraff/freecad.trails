@@ -141,17 +141,20 @@ class ViewState(metaclass=Singleton):
                 _matrix.multVecMatrix(coin.SbVec4f(_pts[0])).getValue()[:3]
             ]
 
-
         #iterate the list, processing it in sets of four coordinates at a time
         while _s < len(_pts):
 
             _mat_pts = _pts[_s:_s + 4]
 
+            _last_point = len(_mat_pts)
+
+            #pad the list if less than four points
             for _i in range(len(_mat_pts), 4):
                 _mat_pts.append((0.0, 0.0, 0.0, 1.0))
 
+            #convert and transform
             _mat = coin.SbMatrix(_mat_pts)
-            _result.extend(_mat.multRight(_matrix).getValue()[:2])
+            _result.extend(_mat.multRight(_matrix).getValue()[:_last_point])
 
             _s += 4
 
