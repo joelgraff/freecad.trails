@@ -192,8 +192,8 @@ class DragState(metaclass=Singleton):
 
                 _coords = _n.point.getValues()
 
-                for _i in indices:
-                    self.partial_coords.append(_coords[_i])
+                for _j in indices:
+                    self.partial_coords.append(_coords[_j])
 
                 break
 

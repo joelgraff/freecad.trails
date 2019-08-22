@@ -231,7 +231,6 @@ class WireTracker(BaseTracker):
         Override of base function
         """
 
-        _parents = None
         _sel = []
 
         #must be selected unless it's controlled by selection nodes
@@ -284,7 +283,6 @@ class WireTracker(BaseTracker):
         Override of base function
         """
 
-        _values = []
         _node = None
 
         #pull the updated tuples from the drag node

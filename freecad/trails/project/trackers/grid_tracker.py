@@ -29,7 +29,6 @@ from pivy import coin
 from FreeCAD import Vector
 
 from .base_tracker import BaseTracker
-from .wire_tracker import WireTracker
 
 class GridTracker(BaseTracker):
     """
