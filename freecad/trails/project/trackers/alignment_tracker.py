@@ -128,8 +128,8 @@ class AlignmentTracker(BaseTracker):
             + [_v.drag_arc['Tangent'] for _v in self.drag_curves] + [0.0]
 
         #validate the drag curves
-        for _i, _v in enumerate(_tans[:-2]):
-            self.drag_curves[_i].validate(lt_tan=_v, rt_tan=_tans[_i + 2])
+        #for _i, _v in enumerate(_tans[:-2]):
+        #    self.drag_curves[_i].validate(lt_tan=_v, rt_tan=_tans[_i + 2])
 
     def end_drag(self):
         """
@@ -144,18 +144,35 @@ class AlignmentTracker(BaseTracker):
         """
 
         #abort if not multi-selecting or button up
-        if not MouseState().ctrlDown or MouseState().button1.state == 'UP':
+        if MouseState().button1.state == 'UP':
             return
 
-        #abort if a node isn't picked
-        if not 'NODE' in MouseState().component:
-            return
+        _pick = MouseState().component
 
-        #get the nodes we need to select, and select them
-        _idx = int(MouseState().component.split('-')[1]) + 1
+        for _v in self.trackers['Nodes']:
 
-        for _v in self.trackers['Nodes'][_idx:]:
-            SelectState().select(_v, force=True)
+            if not _v.state.visible.value:
+                _v.state.visible.value = True
+
+        #node selection is multi-select only
+        if 'NODE' in _pick and MouseState().ctrlDown:
+
+            #get the nodes we need to select, and select them
+            _idx = int(_pick.split('-')[1]) + 1
+
+            for _v in self.trackers['Nodes'][_idx:]:
+                SelectState().select(_v, force=True)
+
+        elif 'CURVE' in _pick:
+
+            #select the PI node for the selected curve and hide it
+            _idx = int(_pick.split('-')[1])
+            _pi = self.trackers['Nodes'][_idx + 1]
+
+            _pi.state.visible.value = False
+            SelectState().select(self.trackers['Curves'][_idx])
+            SelectState().select(_pi, force=True)
+            _pi.refresh()
 
     def build_trackers(self):
         """

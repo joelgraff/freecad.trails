@@ -139,6 +139,9 @@ class BaseTracker:
         Return selection state
         """
 
+        _full = SelectState().is_selected(self)
+        _partial = SelectState().is_partial_selected(self)
+
         return SelectState().is_selected(self) \
             or SelectState().is_partial_selected(self)
 
@@ -154,7 +157,7 @@ class BaseTracker:
             if self.is_selected():
                 style = CoinStyles.SELECTED
 
-        self._process_conditions()
+        #self._process_conditions()
         self.set_style(style)
         self.set_visible(visible)
 
