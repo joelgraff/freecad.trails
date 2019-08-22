@@ -86,7 +86,6 @@ class BaseTracker:
 
         self.coin_style = CoinStyles.DEFAULT
         self.active_style = None
-        self.conditions = []
 
         self.matrix = None
 
@@ -455,25 +454,6 @@ class BaseTracker:
             node = self.node
 
         return node.copy()
-
-    def _process_conditions(self):
-        """
-        Process the conditions which determine node visibility
-        """
-
-        if self.state.visible.ignore or not self.conditions:
-            return
-
-        _c = MouseState().component
-
-        self.set_visible(True)
-
-        for _cond in self.conditions:
-
-            if (_cond[0] == '!' and _cond[1:] not in _c) or (_cond in _c):
-
-                self.set_visible(False)
-                break
 
     def insert_node(self, node, parent=None):
         """

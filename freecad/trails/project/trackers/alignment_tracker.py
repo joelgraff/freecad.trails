@@ -228,7 +228,6 @@ class AlignmentTracker(BaseTracker):
 
             _ct.set_selectability(True)
 
-            _result['Nodes'][_i + 1].conditions.append(_ct.name)
             _result['Curves'].append(_ct)
 
         self.trackers = _result
