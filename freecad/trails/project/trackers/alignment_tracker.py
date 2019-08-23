@@ -167,12 +167,7 @@ class AlignmentTracker(BaseTracker):
 
             #select the PI node for the selected curve and hide it
             _idx = int(_pick.split('-')[1])
-            _pi = self.trackers['Nodes'][_idx + 1]
-
-            _pi.state.visible.value = False
             SelectState().select(self.trackers['Curves'][_idx])
-            SelectState().select(_pi, force=True)
-            _pi.refresh()
 
     def build_trackers(self):
         """
