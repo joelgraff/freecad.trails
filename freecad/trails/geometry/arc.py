@@ -646,7 +646,7 @@ def get_parameters(source_arc):
     Given a minimum of existing parameters, return a fully-described arc
     """
 
-    _result = Arc(source_arc
+    _result = Arc(source_arc)
 
     #Vector order:
     #Radius in / out, Tangent in / out, Middle, and Chord
