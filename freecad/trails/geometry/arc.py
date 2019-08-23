@@ -1005,7 +1005,4 @@ def get_points(
         _start_angle, segment_deltas, direction, start, radius, _dtype
     )
 
-    print('\n\t generated points for arc', arc)
-    print('\n\t points = ', points)
-
     return points
