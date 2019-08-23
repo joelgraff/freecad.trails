@@ -25,13 +25,14 @@ Tracker for curve editing
 """
 
 from FreeCAD import Vector
+from pivy import coin
 
 from ...geometry import support, arc, spiral
 
 from ..support.mouse_state import MouseState
+from ..support.drag_state import DragState
 
 from .wire_tracker import WireTracker
-from .base_tracker import BaseTracker
 from .coin_styles import CoinStyles
 
 class CurveTracker(WireTracker):
@@ -49,6 +50,12 @@ class CurveTracker(WireTracker):
         self.curve = curve
         self.pi_nodes = pi_nodes
         self.is_valid = True
+        self.drag_arc = None
+        self.drag_style = None
+        self.drag_start_dist = 0.0
+
+        if isinstance(self.curve, dict):
+            self.curve = arc.Arc(self.curve)
 
         self.update_curve()
 
@@ -59,6 +66,26 @@ class CurveTracker(WireTracker):
 
         #do nothing as curve selection is handled in alignment tracker
         pass
+
+    def start_drag(self):
+        """
+        Override base implementation
+        """
+
+        super().start_drag()
+
+        self.drag_start_dist = DragState().start.sub(self.curve.pi).Length
+
+    def on_drag(self):
+        """
+        Override base implementation
+        """
+
+        _curve = self._generate_arc(lock_attr='Tangent')
+        _points = arc.get_points(_curve, _dtype=tuple)
+
+        _node = self.drag_group.getChild(0).getChild(3).point
+        _node.setValues(0, len(_points), _points)
 
     def update_curve(self, curve=None):
         """
@@ -71,20 +98,24 @@ class CurveTracker(WireTracker):
         if curve is None:
             curve = self.curve
 
+        else:
+            self.curve = curve
+
         _points = None
 
-        if curve['Type'] == 'Spiral':
+        #print('\n\tcurve = \n', curve)
+        if curve.type == 'Spiral':
             _points = self._generate_spiral()
 
         else:
-            _points = self._generate_arc(curve)
+            _points = arc.get_points(self.curve)
 
         if not _points:
             return
 
         super().update(_points)
 
-    def _generate_spiral(self):
+    def _generate_spiral(self, is_dragging=False):
         """
         Generate a spiral curve
         """
@@ -142,27 +173,33 @@ class CurveTracker(WireTracker):
 
         return spiral.get_points(self.curve)
 
-    def _generate_arc(self, curve=None):
+    def _generate_arc(self, lock_attr='Radius', on_drag=False):
         """
         Generate a simple arc curve
         """
 
-        if curve is None:
+        _pos = MouseState().coordinates
+        _scale = MouseState().coordinates.sub(self.curve.pi).Length\
+            / self.drag_start_dist
 
-            _start = self.pi_nodes[0].get()
-            _pi = self.pi_nodes[1].get()
-            _end = self.pi_nodes[2].get()
+        _vec = self.curve.center.sub(self.curve.pi).normalize()
 
-            curve = {
-                'BearingIn': support.get_bearing(_pi.sub(_start)),
-                'BearingOut': support.get_bearing(_end.sub(_pi)),
-                'PI': _pi,
-                'Radius': self.curve['Radius'],
-            }
+        if MouseState().shiftDown:
+            _scale *= 0.10
 
-        self.curve = arc.get_parameters(curve)
+        DragState().node_translate.translation.setValue(
+            tuple(_vec.multiply(_scale))
+        )
 
-        return arc.get_points(self.curve)
+        _ctr = self.curve.pi.add(_vec.multiply(self.curve.middle))
+
+        _curve = arc.Arc()
+        _curve.bearing_in = self.curve.bearing_in
+        _curve.bearing_out = self.curve.bearing_out
+        _curve.pi = self.curve.pi
+        _curve.center = _ctr
+
+        return arc.get_parameters(_curve, False)
 
     def validate(self, lt_tan=0.0, rt_tan=0.0):
         """
@@ -180,7 +217,7 @@ class CurveTracker(WireTracker):
         if not self.drag_style:
             return
 
-        _t = self.drag_arc['Tangent']
+        _t = self.drag_arc.tangent
         _style = CoinStyles.DEFAULT
 
         _nodes = []
@@ -196,7 +233,7 @@ class CurveTracker(WireTracker):
         #test of left-side tangent validity
         _lt = _nodes[0].sub(_nodes[1]).Length
 
-        print('\n\t',self.name)
+        print('\n\t', self.name)
         print('left ->', _t, lt_tan, _t + lt_tan, _lt)
         self.is_valid = _t + lt_tan <= _lt
 
