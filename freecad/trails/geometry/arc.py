@@ -246,24 +246,24 @@ def get_scalar_matrix(vecs):
     mat_list.append(list(C.UP))
 
     mat = numpy.matrix(mat_list)
-    result = mat * mat.T
+    _result = mat * mat.T
 
     #abort for non-square matrices
-    if (result.shape[0] != result.shape[1]) or (result.shape[0] != 7):
+    if (_result.shape[0] != _result.shape[1]) or (_result.shape[0] != 7):
         return None
 
     #calculate the magnitudes first (minus the UP vector)
     for _i in range(0, 6):
-        result.A[_i][_i] = math.sqrt(result.A[_i][_i])
+        _result.A[_i][_i] = math.sqrt(_result.A[_i][_i])
 
     #calculate the delta for the lower left side
     for _i in range(0, 7):
-        _d1 = result.A[_i][_i]
+        _d1 = _result.A[_i][_i]
 
         for _j in range(0, _i):
 
-            _denom = _d1 * result.A[_j][_j]
-            _n = result.A[_i][_j]
+            _denom = _d1 * _result.A[_j][_j]
+            _n = _result.A[_i][_j]
 
             _angle = None
 
@@ -282,10 +282,10 @@ def get_scalar_matrix(vecs):
                     if _angle < 0.0:
                         _angle += C.TWO_PI
 
-            result.A[_i][_j] = _angle
+            _result.A[_i][_j] = _angle
 
     #lower left half contains angles, diagonal contains scalars
-    return result
+    return _result
 
 def get_bearings(arc, mat, delta, rot):
     """
@@ -658,7 +658,7 @@ def get_parameters(source_arc):
     if point_count == 0:
         points[0] = Vector()
 
-    vecs = [support.safe_sub(_result.start, _reault.center, True),
+    vecs = [support.safe_sub(_result.start, _result.center, True),
             support.safe_sub(_result.end, _result.center, True),
             support.safe_sub(_result.pi, _result.start, True),
             support.safe_sub(_result.end, _result.pi, True),
@@ -667,74 +667,74 @@ def get_parameters(source_arc):
            ]
 
     mat = get_scalar_matrix(vecs)
-    _p = get_lengths(arc, mat)
+    _p = get_lengths(_result, mat)
 
     if not _p:
         Console.PrintError("""
         Invalid curve definition: cannot determine radius / tangent lengths.
         Arc:
-        """+ str(arc))
+        """+ str(_result))
 
-        arc.radius = 0.0
-        return arc
+        _result.radius = 0.0
+        return _result
 
-    result.update(_p)
-    _p = get_delta(arc, mat)
+    _result.update(_p)
+    _p = get_delta(_result, mat)
 
     if not _p:
         Console.PrintError(
             'Invalid curve definition: cannot determine central angle.' +
-            '\nArc:\n' + str(arc)
+            '\nArc:\n' + str(_result)
         )
         return None
 
-    result.update(_p)
-    _p = get_rotation(arc, vecs)
+    _result.update(_p)
+    _p = get_rotation(_result, vecs)
 
     if not _p:
         Console.PrintError(
             'Invalid curve definition: cannot determine curve direction.' +
-            '\nArc:\n' + str(arc)
+            '\nArc:\n' + str(_result)
         )
         return None
 
-    result.update(_p)
-    _p = get_bearings(arc, mat, result.get('Delta'), result.get('Direction'))
+    _result.update(_p)
+    _p = get_bearings(_result, mat, _result.get('Delta'), _result.get('Direction'))
 
     if not _p:
         Console.PrintError(
             'Invalid curve definition: cannot determine curve bearings.' +
-            '\nArc:\n' + str(arc)
+            '\nArc:\n' + str(_result)
         )
         return None
 
-    result.update(_p)
-    _p = get_missing_parameters(result, result, points)
+    _result.update(_p)
+    _p = get_missing_parameters(_result, _result, points)
 
     if not _p:
         Console.PrintError(
             'Invalid curve definition: cannot calculate all parameters.' +
-            '\nArc:\n' + str(arc)
+            '\nArc:\n' + str(_result)
         )
         return None
 
-    result.update(_p)
-    _p = get_coordinates(result, points)
+    _result.update(_p)
+    _p = get_coordinates(_result, points)
 
     if not _p:
         Console.PrintError(
             'Invalid curve definition: cannot calculate coordinates' +
-            '\nArc:\n' + str(arc)
+            '\nArc:\n' + str(_result)
         )
         return None
 
-    result.update(_p)
+    _result.update(_p)
 
     #get rid of the Bearings dict since we're done using it
-    #result.pop('Bearings')
+    #_result.pop('Bearings')
 
-    #merge the result with the original dict to preserve other values
-    return {**arc.to_dict(), **result.to_dict()}
+    #merge the _result with the original dict to preserve other values
+    return _result.to_dict()
 
     #scale_factor = 1.0 / Units.scale_factor()
 
@@ -748,7 +748,7 @@ def convert_units(arc, to_document=False):
 
     angle_keys = ['Delta', 'BearingIn', 'BearingOut']
 
-    result = {}
+    _result = {}
 
     angle_fn = math.radians
     scale_factor = units.scale_factor()
@@ -759,19 +759,19 @@ def convert_units(arc, to_document=False):
 
     for _k, _v in arc.items():
 
-        result[_k] = _v
+        _result[_k] = _v
 
         if _v is None:
             continue
 
         if _k in angle_keys:
-            result[_k] = angle_fn(_v)
+            _result[_k] = angle_fn(_v)
             continue
 
         if _k != 'Direction':
-            result[_k] = _v * scale_factor
+            _result[_k] = _v * scale_factor
 
-    return result
+    return _result
 
 def get_coord_on_arc(start, radius, direction, distance):
     """
