@@ -135,14 +135,17 @@ class Arc():
         Generic setter for class attributes
         """
 
-        if not key in self._key_pairs:
+        if not key in self.__dict__:
 
-            Console.PrintError('\nArc.set(): Bad key: ' + key + '\n')
-            return
+            if not key in self._key_pairs:
 
-        print(key, '-::->', self._key_pairs[key], '=', str(value))
-        setattr(self, self._key_pairs[key], value)
-        print('\t-::->', getattr(self, self._key_pairs[key]))
+                Console.PrintError('\nArc.set(): Bad key: ' + key + '\n')
+                return
+            
+            else:
+                key = self._key_pairs[key]
+
+        setattr(self, key, value)
 
     def update(self, values):
         """
