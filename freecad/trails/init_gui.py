@@ -28,7 +28,7 @@ import FreeCADGui as Gui
 
 from .project.commands \
     import new_project_cmd, import_alignment_cmd, edit_alignment_cmd, \
-    spiral_test, base_tracker_test, sprite_splitter_cmd
+    spiral_test, base_tracker_test, sprite_splitter_cmd, test_zoom_cmd
 
 from .corridor.template import ViewTemplateLibrary
 from . import resources
@@ -82,7 +82,7 @@ class TrailsWorkbench(Gui.Workbench):
             #},
             'Test': {
                 'gui': self.menu + self.toolbar,
-                'cmd': ['BaseTrackerTest', 'BaseTrackerLinkedTest']
+                'cmd': ['BaseTrackerTest', 'BaseTrackerLinkedTest', 'TestZoom']
             }
         }
 
