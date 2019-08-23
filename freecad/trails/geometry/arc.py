@@ -556,7 +556,7 @@ def get_missing_parameters(arc, new_arc, points):
 
             new_arc.middle = _mo
 
-        new_arc.get('Radius', math.cos(new_arc.get('Delta') / 2.0) * _mo)
+        new_arc.radius = math.cos(new_arc.get('Delta') / 2.0) * _mo
 
     #pre-calculate values and fill in remaining parameters
     radius = new_arc.get('Radius')
@@ -644,7 +644,7 @@ def get_coordinates(arc, points):
 
     return {'Start': _start, 'Center': _center, 'End': _end, 'PI': _pi}
 
-def get_parameters(source_arc):
+def get_parameters(source_arc, as_dict=True):
     """
     Given a minimum of existing parameters, return a fully-described arc
     """
@@ -737,7 +737,11 @@ def get_parameters(source_arc):
     #_result.pop('Bearings')
 
     #merge the _result with the original dict to preserve other values
-    return _result.to_dict()
+
+    if as_dict:
+        return _result.to_dict()
+
+    return _result
 
     #scale_factor = 1.0 / Units.scale_factor()
 
