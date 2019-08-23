@@ -170,11 +170,7 @@ class BaseTracker:
             return
 
         if not self.state.visible.value:
-
             self.refresh()
-
-            if not self.state.visible.value:
-                return
 
         self.update_dragging()
         self.update_highlighting()
@@ -198,7 +194,10 @@ class BaseTracker:
         Test for highlight conditions and changes
         """
 
-        if self.state.dragging or self.is_selected():
+        if self.state.dragging \
+            or self.is_selected() \
+            or not self.state.visible.value:
+
             return
 
         #highlight logic - skip if ignore flag is set
@@ -327,6 +326,9 @@ class BaseTracker:
             QCursor.setPos(_pos[0], _pos[1])
 
             _drag_line_end = _mouse_coord
+
+            MouseState().coordinates = _mouse_coord
+            MouseState().pos = _pos
 
         #no micro-drag?  shut off cursor override
         #elif QtGui.QApplication.overrideCursor():
