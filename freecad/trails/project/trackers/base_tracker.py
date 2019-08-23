@@ -90,7 +90,7 @@ class BaseTracker:
         self.matrix = None
 
         self.drag_group = None
-
+        self.partial_idx = []   #list to store indices for partial selections
         self.do_unset = False
 
         if not children:
@@ -246,7 +246,7 @@ class BaseTracker:
 
         pass
 
-    def start_drag(self, partial_indices=None):
+    def start_drag(self):
         """
         Initialize drag ops
         """
@@ -259,9 +259,9 @@ class BaseTracker:
 
         elif SelectState().is_partial_selected(self):
 
-            if partial_indices:
+            if self.partial_idx:
                 self.drag_group = \
-                    DragState().add_partial_node(self.copy(), partial_indices)
+                    DragState().add_partial_node(self.copy(), self.partial_idx)
 
         self.state.dragging = True
 

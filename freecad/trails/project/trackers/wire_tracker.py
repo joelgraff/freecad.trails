@@ -255,7 +255,8 @@ class WireTracker(BaseTracker):
                 super().start_drag()
                 return
 
-        super().start_drag(_sel)
+        self.partial_idx = _sel
+        super().start_drag()
 
     def on_drag(self):
         """
