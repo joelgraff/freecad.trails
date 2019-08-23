@@ -33,6 +33,125 @@ from ..project.support import units, utils
 from . import support
 from ..project.support.utils import Const, Constants as C
 
+
+class Arc():
+    """
+    Arc class object
+    """
+
+    _keys = [
+        'ID', 'Type', 'Start', 'End', 'PI', 'Center', 'BearingIn',
+        'BearingOut', 'Length', 'StartStation', 'InternalStation', 'Delta',
+        'Direction', 'Tangent', 'Radius', 'Chord', 'Middle', 'MiddleOrdinate',
+        'External', 'CurveType', 'Hash', 'Description', 'Status', 'ObjectID',
+        'Note', 'Bearings'
+    ]
+
+    def __init__(self, source_arc=None):
+        """
+        Arc class constructor
+        """
+
+        self.id = ''
+        self.type = 'Curve'
+        self.start = None
+        self.end = None
+        self.pi = None
+        self.center = None
+        self.bearing_in = math.nan
+        self.bearing_out = math.nan
+        self.length = 0.0
+        self.start_station = 0.0
+        self.internal_station = 0.0
+        self.delta = 0.0
+        self.direction = 0.0
+        self.tangent = 0.0
+        self.radius = 0.0
+        self.chord = 0.0
+        self.middle = 0.0
+        self.middle_ordinate = 0.0
+        self.external = 0.0
+        self.curve_type = 'Arc'
+        self.hash = ''
+        self.description = ''
+        self.status = ''
+        self.object_id = ''
+        self.note = ''
+        self.bearings = None
+
+        if isinstance(source_arc, Arc):
+            self.__dict__ = source_arc.__dict__.copy()
+            self._key_pairs = source_arc._key_pairs.copy()
+            return
+
+        #build a list of key pairs fir string-based lookup
+        self._key_pairs = {}
+
+        _keys = list(self.__dict__.keys())
+
+        for _i, _k in enumerate(Arc._keys):
+            self._key_pairs[_k] = _keys[_i]
+
+        if not source_arc:
+            return
+
+        if isinstance(source_arc, dict):
+            for _k, _v in source_arc.items():
+                self.set(_k, _v)
+
+    def __str__(self):
+        """
+        String representation
+        """
+
+        return str(self.__dict__)
+
+    def to_dict(self):
+        """
+        Return the object as a dictionary
+        """
+
+        _result = {}
+
+        _result.update(
+            [(_k, getattr(self, _v)) for _k, _v in self._key_pairs.items()])
+
+        return _result
+
+    def get(self, key):
+        """
+        Generic getter for class attributes
+        """
+
+        if not key in self._key_pairs:
+
+            Console.PrintError('\nArc.get(): Bad key: ' + key + '\n')
+            return None
+
+        return getattr(self, self._key_pairs[key])
+
+    def set(self, key, value):
+        """
+        Generic setter for class attributes
+        """
+
+        if not key in self._key_pairs:
+
+            Console.PrintError('\nArc.set(): Bad key: ' + key + '\n')
+            return
+
+        print(key, '-::->', self._key_pairs[key], '=', str(value))
+        setattr(self, self._key_pairs[key], value)
+        print('\t-::->', getattr(self, self._key_pairs[key]))
+
+    def update(self, values):
+        """
+        Update the parameters of the arc with values in passed dictionary
+        """
+
+        for _k, _v in values.items():
+            self.set(_k, _v)
+
 def _create_geo_func():
 
     _fn = []
@@ -249,13 +368,13 @@ def get_bearings(arc, mat, delta, rot):
         _int[1] = _rad[0] + rot * ((math.pi + delta) / 2.0)
 
     if _rad is None:
-        _rad = arc['Radius']
+        _rad = arc.get('Radius')
 
     if _tan is None:
-        _tan = arc['Tangent']
+        _tan = arc.get('Tangent')
 
     if _int is None:
-        _int = arc['Delta']
+        _int = arc.get('Delta')
 
     mat_bearings = {
         'Radius': _rad,
@@ -339,7 +458,7 @@ def get_delta(arc, mat):
     #calculate the delta from the provided bearings, if they exist
     if not delta:
         if arc.get('BearingIn') and arc.get('BearingOut'):
-            delta = abs(arc['BearingOut'] - arc['BearingIn'])
+            delta = abs(arc.get('BearingOut') - arc.get('BearingIn'))
 
     #find the first occurrence of the delta value in the matrix
     if not delta:
@@ -409,7 +528,7 @@ def get_missing_parameters(arc, new_arc, points):
     if new_arc.get('Radius') is None and new_arc.get('Delta') is None:
         return None
 
-    if not new_arc['Radius'] and not new_arc['Delta']:
+    if not new_arc.get('Radius') and not new_arc.get('Delta'):
         return None
 
     #missing radius requires middle ordinate (or PI / Center coords)
@@ -424,37 +543,37 @@ def get_missing_parameters(arc, new_arc, points):
                 if arc.get('Tangent') is None:
                     return
 
-                if not arc['Tangent']:
+                if not arc.get('Tangent'):
                     return
 
-                _mo = arc['Tangent'] / math.sin(arc['Delta'] / 2.0)
+                _mo = arc.get('Tangent') / math.sin(arc.get('Delta') / 2.0)
 
             else:
                 _mo = points[3].sub(points[2]).Length
 
-            new_arc['Middle'] = _mo
+            new_arc.middle = _mo
 
-        new_arc['Radius'] = math.cos(new_arc['Delta'] / 2.0) * _mo
+        new_arc.get('Radius', math.cos(new_arc.get('Delta') / 2.0) * _mo)
 
     #pre-calculate values and fill in remaining parameters
-    radius = new_arc['Radius']
-    delta = new_arc['Delta']
+    radius = new_arc.get('Radius')
+    delta = new_arc.get('Delta')
     half_delta = delta / 2.0
 
-    if new_arc.get('Length') is None:
-        new_arc['Length'] = radius * delta
+    if not new_arc.get('Length'):
+        new_arc.length = radius * delta
 
-    if new_arc.get('External') is None:
-        new_arc['External'] = radius * ((1.0 / math.cos(half_delta)) - 1.0)
+    if not new_arc.get('External'):
+        new_arc.external = radius * ((1.0 / math.cos(half_delta)) - 1.0)
 
-    if new_arc.get('MiddleOrdinate') is None:
-        new_arc['MiddleOrdinate'] = radius * (1.0 - math.cos(half_delta))
+    if not new_arc.get('MiddleOrdinate'):
+        new_arc.middle_ordinate = radius * (1.0 - math.cos(half_delta))
 
     if not new_arc.get('Tangent'):
-        new_arc['Tangent'] = radius * math.tan(half_delta)
+        new_arc.tangent = radius * math.tan(half_delta)
 
     if not new_arc.get('Chord'):
-        new_arc['Chord'] = 2.0 * radius * math.sin(half_delta)
+        new_arc.chord = 2.0 * radius * math.sin(half_delta)
 
     #quality-check - ensure everything is defined and default to
     #existing where within tolerance
@@ -485,7 +604,7 @@ def get_coordinates(arc, points):
 
     vectors = {}
 
-    for _k, _v in arc['Bearings'].items():
+    for _k, _v in arc.get('Bearings').items():
         vectors[_k] = [support.vector_from_angle(_x) for _x in _v]
 
     _start = points[0]
@@ -493,9 +612,9 @@ def get_coordinates(arc, points):
     _center = points[2]
     _pi = points[3]
 
-    _vr = vectors['Radius'][0].multiply(arc['Radius'])
-    _vt = vectors['Tangent'][0].multiply(arc['Tangent'])
-    _vc = vectors['Internal'][1].multiply(arc['Chord'])
+    _vr = vectors.get('Radius')[0].multiply(arc.get('Radius'))
+    _vt = vectors.get('Tangent')[0].multiply(arc.get('Tangent'))
+    _vc = vectors.get('Internal')[1].multiply(arc.get('Chord'))
 
     if not _start:
 
@@ -522,15 +641,16 @@ def get_coordinates(arc, points):
 
     return {'Start': _start, 'Center': _center, 'End': _end, 'PI': _pi}
 
-def get_parameters(arc):
+def get_parameters(source_arc):
     """
     Given a minimum of existing parameters, return a fully-described arc
     """
 
+    _result = Arc(source_arc
+
     #Vector order:
     #Radius in / out, Tangent in / out, Middle, and Chord
-    points = [arc.get('Start'), arc.get('End'),
-              arc.get('Center'), arc.get('PI')]
+    points = [_result.start, _result.end, _result.center, _result.pi]
 
     point_count = len([_v for _v in points if _v])
 
@@ -538,15 +658,13 @@ def get_parameters(arc):
     if point_count == 0:
         points[0] = Vector()
 
-    vecs = [support.safe_sub(arc.get('Start'), arc.get('Center'), True),
-            support.safe_sub(arc.get('End'), arc.get('Center'), True),
-            support.safe_sub(arc.get('PI'), arc.get('Start'), True),
-            support.safe_sub(arc.get('End'), arc.get('PI'), True),
-            support.safe_sub(arc.get('PI'), arc.get('Center'), True),
-            support.safe_sub(arc.get('End'), arc.get('Start'), True)
+    vecs = [support.safe_sub(_result.start, _reault.center, True),
+            support.safe_sub(_result.end, _result.center, True),
+            support.safe_sub(_result.pi, _result.start, True),
+            support.safe_sub(_result.end, _result.pi, True),
+            support.safe_sub(_result.pi, _result.center, True),
+            support.safe_sub(_result.end, _result.start, True)
            ]
-
-    result = {'Type': 'Curve'}
 
     mat = get_scalar_matrix(vecs)
     _p = get_lengths(arc, mat)
@@ -557,7 +675,7 @@ def get_parameters(arc):
         Arc:
         """+ str(arc))
 
-        arc['Radius'] = 0.0
+        arc.radius = 0.0
         return arc
 
     result.update(_p)
@@ -581,7 +699,7 @@ def get_parameters(arc):
         return None
 
     result.update(_p)
-    _p = get_bearings(arc, mat, result['Delta'], result['Direction'])
+    _p = get_bearings(arc, mat, result.get('Delta'), result.get('Direction'))
 
     if not _p:
         Console.PrintError(
@@ -613,10 +731,10 @@ def get_parameters(arc):
     result.update(_p)
 
     #get rid of the Bearings dict since we're done using it
-    result.pop('Bearings')
+    #result.pop('Bearings')
 
     #merge the result with the original dict to preserve other values
-    return {**arc, **result}
+    return {**arc.to_dict(), **result.to_dict()}
 
     #scale_factor = 1.0 / Units.scale_factor()
 
@@ -679,10 +797,10 @@ def get_ortho_vector(arc_dict, distance, side=''):
                 regardless of case
     """
 
-    direction = arc_dict['Direction']
-    bearing = arc_dict['BearingIn']
-    radius = arc_dict['Radius']
-    start = arc_dict['Start']
+    direction = arc_dict.get('Direction')
+    bearing = arc_dict.get('BearingIn')
+    radius = arc_dict.get('Radius')
+    start = arc_dict.get('Start')
     _side = side.lower()
     _x = 1.0
 
@@ -697,7 +815,7 @@ def get_ortho_vector(arc_dict, distance, side=''):
     if not coord:
         return None, None
 
-    ortho = Vector(arc_dict['Center']).sub(coord).multiply(_x).normalize()
+    ortho = Vector(arc_dict.get('Center')).sub(coord).multiply(_x).normalize()
 
     return coord, ortho
 
@@ -756,14 +874,14 @@ def get_position_offset(arc, coord):
     Find the distance along the arc and the offset for the given coordinate
     """
 
-    _center = arc['Center']
+    _center = arc.get('Center')
 
     #vectors from center point toward start, end, and coordinate
     _vecs = [
-        _v.sub(_center).normalize() for _v in [arc['Start'], arc['End'], coord]
+        _v.sub(_center).normalize() for _v in [arc.get('Start'), arc.get('End'), coord]
     ]
 
-    _rad = arc['Radius']
+    _rad = arc.get('Radius')
 
     #polar angles
     _thetas = [math.acos(_v.x) for _v in _vecs]
@@ -783,7 +901,7 @@ def get_position_offset(arc, coord):
 
     if _min_theta <= _thetas[2] <= _max_theta:
 
-        return _center.add(_vecs[2].multiply(_rad)), _offset * arc['Direction'], 0
+        return _center.add(_vecs[2].multiply(_rad)), _offset * arc.get('Direction'), 0
 
     #otherwise, if the offset is less than the radius,
     #determine which theta is closer (start or end) and return
@@ -826,14 +944,14 @@ def get_points(
     Points are returned references to start_coord
     """
 
-    angle = arc['Delta']
-    direction = arc['Direction']
-    bearing_in = arc['BearingIn']
-    radius = arc['Radius']
-    start = arc['Start']
+    angle = arc.get('Delta')
+    direction = arc.get('Direction')
+    bearing_in = arc.get('BearingIn')
+    radius = arc.get('Radius')
+    start = arc.get('Start')
 
     if not radius:
-        return [arc['PI']]
+        return [arc.get('PI')]
 
     if not interval:
         interval = [0.0, 0.0]
@@ -879,5 +997,8 @@ def get_points(
     points = get_segments(
         _start_angle, segment_deltas, direction, start, radius, _dtype
     )
+
+    print('\n\t generated points for arc', arc)
+    print('\n\t points = ', points)
 
     return points
