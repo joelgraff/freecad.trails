@@ -52,12 +52,12 @@ class NodeTracker(BaseTracker):
             nodes = [nodes]
 
         self.is_end_node = False
-        self.point = point
+        self.point =tuple(point)
 
         #build node structure for the node tracker
         self.coord = coin.SoCoordinate3()
         self.marker = coin.SoMarkerSet()
-        self.drag_point = None
+        self.drag_point = self.point
 
         super().__init__(
             names=names, children=[self.coord, self.marker] + nodes
@@ -75,7 +75,7 @@ class NodeTracker(BaseTracker):
 
         super().start_drag()
 
-        self.drag_point = tuple(self.point)
+        self.drag_point = self.point
 
     def on_drag(self):
         """
