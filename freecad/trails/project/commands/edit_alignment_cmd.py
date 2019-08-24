@@ -32,8 +32,10 @@ from ... import resources
 from ..tasks.alignment import edit_alignment_task
 
 from ..support.view_state import ViewState
+from DraftTools import Modifier
+from . import camera_zoom as cz
 
-class EditAlignmentCmd():
+class EditAlignmentCmd(Modifier):
     """
     Initiates and manages drawing activities for alignment creation
     """
@@ -98,9 +100,13 @@ class EditAlignmentCmd():
         ViewState().view = Gui.ActiveDocument.ActiveView
 
         #create alignment editing task
-        self.task = edit_alignment_task.create(self.doc, data, obj)
+        #self.task = edit_alignment_task.create(self.doc, data, obj)
 
-        Gui.Control.showDialog(self.task)
-        self.task.setup()
+        cz._zoom_camera(cz.Camera())
+
+        #Gui.Control.showDialog(self.task)
+        #self.task.setup()
+
+        Modifier.Activated(self, 'EditAlignmentCommand')
 
 Gui.addCommand('EditAlignmentCmd', EditAlignmentCmd())

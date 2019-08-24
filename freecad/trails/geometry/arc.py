@@ -142,7 +142,7 @@ class Arc():
 
                 Console.PrintError('\nArc.set(): Bad key: ' + key + '\n')
                 return
-            
+
             else:
                 key = self._key_pairs[key]
 
