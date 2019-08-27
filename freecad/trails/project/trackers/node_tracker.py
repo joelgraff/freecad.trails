@@ -132,4 +132,4 @@ class NodeTracker(BaseTracker):
         Cleanup
         """
 
-        super().finalize(self.node, parent)
+        super().finalize(self.get_node(), parent)

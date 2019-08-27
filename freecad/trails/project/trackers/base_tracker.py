@@ -90,6 +90,7 @@ class BaseTracker:
         self.matrix = None
 
         self.drag_group = None
+
         self.partial_idx = []   #list to store indices for partial selections
         self.do_unset = False
 
@@ -109,12 +110,12 @@ class BaseTracker:
 
             self.node.addChild(child)
 
-        _sep = coin.SoSeparator()
+        self.separator = coin.SoSeparator()
 
-        _sep.addChild(self.sel_node)
-        _sep.addChild(self.node)
+        self.separator.addChild(self.sel_node)
+        self.separator.addChild(self.node)
 
-        self.switch.addChild(_sep)
+        self.switch.addChild(self.separator)
         self.callbacks = None
 
         if has_events:
@@ -131,7 +132,17 @@ class BaseTracker:
 
         #bypass overrides on initialization
         BaseTracker.set_style(self, CoinStyles.DEFAULT)
-        BaseTracker.set_visible(self, True)
+        BaseTracker.set_visibility(self, True)
+
+        self.switch.whichChild = 0
+
+    def get_node(self):
+        """
+        Return the root scenegraph node for the base tracker.
+        Provided for overriding to allow for different node structures
+        """
+
+        return self.separator
 
     def is_selected(self):
         """
@@ -158,7 +169,9 @@ class BaseTracker:
 
         #self._process_conditions()
         self.set_style(style)
-        self.set_visible(visible)
+
+        if visible is not None:
+            self.set_visibility(visible)
 
     def mouse_event(self, arg):
         """
@@ -169,7 +182,7 @@ class BaseTracker:
         if not self.state.enabled.value:
             return
 
-        if not self.state.visible.value:
+        if not self.is_visible():
             self.refresh()
 
         self.update_dragging()
@@ -181,7 +194,7 @@ class BaseTracker:
         """
 
         #preemptive abort if not both enabled and visible
-        if not (self.state.enabled.value and self.state.visible.value):
+        if not (self.state.enabled.value and self.is_visible()):
             return
 
         if MouseState().button1.state == 'DOWN':
@@ -194,10 +207,7 @@ class BaseTracker:
         Test for highlight conditions and changes
         """
 
-        if self.state.dragging \
-            or self.is_selected() \
-            or not self.state.visible.value:
-
+        if self.state.dragging or self.is_selected() or not self.is_visible():
             return
 
         #highlight logic - skip if ignore flag is set
@@ -304,7 +314,7 @@ class BaseTracker:
 
         #micro-dragging cursor control
         if MouseState().shiftDown:
-            
+
             #QtGui.QApplication.setOverrideCursor(Qt.BlankCursor)
             #Gui.getMainWindow().setCursor(Qt.BlankCursor)
             #Gui.getMainWindow().update()
@@ -313,22 +323,8 @@ class BaseTracker:
             #self.do_unset = True
 
             #get the window position of the updated drag delta coordinate
-            _mouse_coord = DragState().start.add(DragState().delta)
-            _new_pos = ViewState().getPointOnScreen(_mouse_coord)
-
-            #set the mouse position at the updated screen coordinate
-            _delta_pos = _new_pos.sub(Vector(MouseState().pos + (0.0,)))
-
-            #get screen position by adding offset to the new window position
-            _pos = Vector(QCursor.pos().toTuple() + (0.0,)).add(
-                Vector(_delta_pos.x, -_delta_pos.y))
-
-            QCursor.setPos(_pos[0], _pos[1])
-
+            self.set_mouse_position(DragState().start.add(DragState().delta))
             _drag_line_end = _mouse_coord
-
-            MouseState().coordinates = _mouse_coord
-            MouseState().pos = _pos
 
         #no micro-drag?  shut off cursor override
         #elif QtGui.QApplication.overrideCursor():
@@ -348,12 +344,30 @@ class BaseTracker:
         DragState().coordinates = _mouse_coord
         DragState().update(_drag_line_start, _drag_line_end)
 
+    def set_mouse_position(self, coord):
+        """
+        Update the mouse cursor position independently for micro-dragging
+        """
+
+        _new_pos = ViewState().getPointOnScreen(coord)
+
+        #set the mouse position at the updated screen coordinate
+        _delta_pos = _new_pos.sub(Vector(MouseState().pos + (0.0,)))
+
+        #get screen position by adding offset to the new window position
+        _pos = Vector(QCursor.pos().toTuple() + (0.0,)).add(
+            Vector(_delta_pos.x, -_delta_pos.y))
+
+        QCursor.setPos(_pos[0], _pos[1])
+
+        MouseState().coordinates = coord
+        MouseState().pos = _pos
+
     def end_drag(self):
         """
         Terminate drag ops
         """
 
-        print(self.name, 'end drag', self.state.dragging)
         if not self.state.dragging:
             return
 
@@ -381,23 +395,23 @@ class BaseTracker:
 
         return self.picker.style.getValue() != coin.SoPickStyle.UNPICKABLE
 
-    def set_visible(self, visible=None):
+    def set_visibility(self, visible=True):
         """
         Update the tracker visibility
         """
 
-        if self.state.visible.ignore:
-            return
-
-        if visible is None:
-            visible = self.state.visible.value
-
         if visible:
-            self.switch.whichChild = 0
-        else:
-            self.switch.whichChild = -1
+            self.switch.whichChild.setValue(0)
 
-        self.state.visible.value = visible
+        else:
+            self.switch.whichChild.setValue(-1)
+
+    def is_visible(self):
+        """
+        Return the visibility of the tracker
+        """
+
+        return self.switch.whichChild.getValue() == 0
 
     def set_base_style(self, style=None):
         """
@@ -443,7 +457,7 @@ class BaseTracker:
         """
 
         if node is None:
-            node = self.node
+            node = self.get_node()
 
         self.remove_node(node, parent)
 
@@ -452,6 +466,8 @@ class BaseTracker:
         Return a copy of the tracker node
         """
 
+        #copy operation assumes the geometry should not be controlled
+        #by the node switch.  To copy with switch, call copy(self.get_node())
         if not node:
             node = self.node
 

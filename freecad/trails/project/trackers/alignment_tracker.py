@@ -99,10 +99,10 @@ class AlignmentTracker(BaseTracker):
             _trackers.extend(_v)
 
         for _v in _trackers:
-            self.insert_node(_v.switch, self.groups['EDIT'])
+            self.insert_node(_v.get_node(), self.groups['EDIT'])
 
         #insert in the scenegraph root
-        self.insert_node(self.switch)
+        self.insert_node(self.get_node())
 
     def _update_status_bar(self):
         """
@@ -151,8 +151,8 @@ class AlignmentTracker(BaseTracker):
 
         for _v in self.trackers['Nodes']:
 
-            if not _v.state.visible.value:
-                _v.state.visible.value = True
+            if not _v.is_visible():
+                _v.set_visibility(True)
 
         #node selection is multi-select only
         if 'NODE' in _pick and MouseState().ctrlDown:
@@ -236,8 +236,8 @@ class AlignmentTracker(BaseTracker):
             for _u in _t:
                 _u.finalize()
 
-        self.remove_node(self.groups['EDIT'], self.node)
-        self.remove_node(self.groups['DRAG'], self.node)
+        self.remove_node(self.groups['EDIT'], self.get_node())
+        self.remove_node(self.groups['DRAG'], self.get_node())
 
         if self.callbacks:
             for _k, _v in self.callbacks.items():
