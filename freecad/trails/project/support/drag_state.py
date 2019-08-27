@@ -58,6 +58,10 @@ class DragState(metaclass=Singleton):
         self.node_translate = coin.SoTransform()
         self.node_rotate = coin.SoTransform()
         self.drag_node = None
+        self.drag_point = None
+
+        self.update_translate = True
+        self.update_rotate = True
 
         self.drag_line_coord = coin.SoCoordinate3()
 
@@ -104,7 +108,8 @@ class DragState(metaclass=Singleton):
         """
 
         #transform coordinates
-        _coords = ViewState().transform_points(self.partial_coords, self.node_group)
+        _coords = ViewState().transform_points(
+            self.partial_coords, self.node_group)
         _k = 0
 
         #write transformed coordinates back to scenegraph nodes
@@ -129,6 +134,9 @@ class DragState(metaclass=Singleton):
         _p = [tuple(line_start), tuple(line_end)]
 
         self.drag_line_coord.point.setValues(0, 2, _p)
+
+        #current drag point is set to the end of the drag line by default
+        self.drag_point = _p[1]
 
     def _build_drag_line(self):
         """
@@ -272,7 +280,9 @@ class DragState(metaclass=Singleton):
         #accumulate the movement from the previous mouse position
         _delta = coord.sub(self.coordinates)
 
-        self.delta = Vector(self.node_translate.translation.getValue())
+        if self.update_translate:
+            self.delta = Vector(self.node_translate.translation.getValue())
+
         _scale = 1.0
 
         if micro_drag:
@@ -280,7 +290,8 @@ class DragState(metaclass=Singleton):
 
         self.delta = self.delta.add(_delta.multiply(_scale))
 
-        self.node_translate.translation.setValue(tuple(self.delta))
+        if self.update_translate:
+            self.node_translate.translation.setValue(tuple(self.delta))
 
 
     def rotate(self, coord, micro_drag=False):
@@ -288,6 +299,9 @@ class DragState(metaclass=Singleton):
         Manage rotation during dragging
         coord - coordinates for the rotation update
         """
+
+        if not self.update_rotate:
+            return
 
         _angle = 0.0
 
