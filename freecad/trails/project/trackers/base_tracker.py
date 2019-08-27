@@ -88,6 +88,7 @@ class BaseTracker:
         self.matrix = None
 
         self.drag_group = None
+        self.show_drag_line = True
 
         self.partial_idx = []   #list to store indices for partial selections
         self.do_unset = False
@@ -337,7 +338,9 @@ class BaseTracker:
 
         #save the drag state coordinate as the current mouse coordinate
         DragState().coordinates = _mouse_coord
-        DragState().update(_drag_line_start, _drag_line_end)
+
+        if self.show_drag_line:
+            DragState().update(_drag_line_start, _drag_line_end)
 
     def set_mouse_position(self, coord):
         """
