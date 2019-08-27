@@ -135,6 +135,8 @@ class MouseState(metaclass=Singleton):
         self.object = ''
         self.component = ''
         self.coordinates = Vector()
+        self.last_coord = Vector
+        self.last_pos = ()
 
         self.state = [self.buttons, self.pos]
 
@@ -147,6 +149,7 @@ class MouseState(metaclass=Singleton):
         _coord = self.coordinates
 
         if _pos != self.pos:
+            self.last_pos = self.pos
             self.pos = _pos
             _coord = None
 
@@ -187,6 +190,7 @@ class MouseState(metaclass=Singleton):
             self.object = ''
             self.component = ''
 
+        self.last_coord = self.coordinates
         self.coordinates = _coord
 
     def get_drag_vector(self, world=False):
