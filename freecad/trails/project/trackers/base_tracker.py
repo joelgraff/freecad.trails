@@ -468,14 +468,24 @@ class BaseTracker:
 
         return node.copy()
 
-    def insert_node(self, node, parent=None):
+    def insert_node(self, node, parent=None, index=None):
         """
         Insert a node as a child of the passed node
         """
 
-        _fn = lambda _x: ViewState().sg_root.insertChild(_x, 0)
+        _idx = index
+        _fn = None
 
-        if parent:
+        if not parent:
+            if _idx is None:
+                _idx = 0
+
+            _fn = lambda _x: ViewState().sg_root.insertChild(_x, _idx)
+
+        elif _idx is not None:
+            _fn = lambda _x: parent.insertChild(_x, _idx)
+
+        else:
             _fn = parent.addChild
 
         todo.delay(_fn, node)
