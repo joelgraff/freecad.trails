@@ -90,6 +90,7 @@ class WireTracker(BaseTracker):
                 return
 
             points = [_v.get() for _v in nodes]
+            indices = list(range(0, len(points)))
 
         self.points = points
 
