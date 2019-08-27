@@ -23,15 +23,18 @@
 """
 Tracker for curve editing
 """
+import math
+
+from pivy import coin
 
 from FreeCAD import Vector
-from pivy import coin
 
 from ...geometry import support, arc, spiral
 
 from ..support.mouse_state import MouseState
 from ..support.drag_state import DragState
 
+from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
 from .coin_styles import CoinStyles
 
@@ -52,12 +55,33 @@ class CurveTracker(WireTracker):
         self.is_valid = True
         self.drag_arc = None
         self.drag_style = None
-        self.drag_start_dist = 0.0
+        self.drag_last_mouse = None
+        self.drag_curve_middle = None
 
         if isinstance(self.curve, dict):
             self.curve = arc.Arc(self.curve)
 
         self.update_curve()
+
+        self.radius_tracker = None
+        self.center_tracker = None
+
+        self.build_radius_tracker(names)
+
+        self.insert_node(self.radius_tracker.switch, self.get_node())
+        self.insert_node(self.center_tracker.switch, self.get_node())
+
+    def mouse_event(self, arg):
+        """
+        Override base event
+        """
+
+        _is_visible = self.is_selected() or self.name in MouseState().component
+
+        self.radius_tracker.set_visibility(_is_visible)
+        self.center_tracker.set_visibility(_is_visible)
+
+        super().mouse_event(arg)
 
     def button_event(self, arg):
         """
@@ -72,20 +96,78 @@ class CurveTracker(WireTracker):
         Override base implementation
         """
 
+        if not self.is_selected():
+            return
+
         super().start_drag()
 
-        self.drag_start_dist = DragState().start.sub(self.curve.pi).Length
+        DragState().update_translate = False
+
+        self.drag_curve_middle = math.floor((len(self.curve.points) - 1) / 2)
+
+        DragState().start = self.curve.points[self.drag_curve_middle]
 
     def on_drag(self):
         """
         Override base implementation
         """
 
-        _curve = self._generate_arc(lock_attr='Tangent')
-        _points = arc.get_points(_curve, _dtype=tuple)
+        if not self.state.dragging \
+            or self != DragState().drag_node \
+                or not self.is_selected():
 
+            return
+
+        #regenerate the curve and points
+        _curve = self._generate_arc(lock_attr='Tangent')
+        arc.get_points(_curve, _dtype=tuple)
+
+        #update the drag geometry in the draqg group
         _node = self.drag_group.getChild(0).getChild(3).point
-        _node.setValues(0, len(_points), _points)
+        _node.setValues(0, len(_curve.points), _curve.points)
+
+        #update the drag state to reflect movement along curve's central axis
+        _drag_line_start = DragState().start
+        _drag_line_end = _curve.points[self.drag_curve_middle]
+
+        DragState().translate(MouseState().coordinates, MouseState().shiftDown)
+
+        #micro-dragging cursor control
+        if MouseState().shiftDown:
+            self.set_mouse_position(DragState().start.add(DragState().delta))
+
+        DragState().coordinates = MouseState().coordinates
+        DragState().update(_drag_line_start, _drag_line_end)
+
+    def build_radius_tracker(self, names):
+        """
+        Create the radius tracker for curve editing
+
+        """
+
+        #center point node
+        _ct = NodeTracker(
+            names[:2] + [self.name + '-Center'], self.curve.center
+        )
+        _ct.set_visibility(False)
+        _ct.update()
+
+        self.center_tracker = _ct
+
+        #radius wires
+        _wt = WireTracker(names[:2] + [self.name + '-Radius'])
+
+        _wt.set_points(
+            points=[self.curve.start, self.curve.center, self.curve.end],
+            nodes=_ct,
+            indices=[[1]]
+        )
+
+        _wt.set_selectability(False)
+        _wt.set_visibility(False)
+        _wt.update()
+
+        self.radius_tracker = _wt
 
     def update_curve(self, curve=None):
         """
@@ -103,17 +185,16 @@ class CurveTracker(WireTracker):
 
         _points = None
 
-        #print('\n\tcurve = \n', curve)
         if curve.type == 'Spiral':
             _points = self._generate_spiral()
 
         else:
-            _points = arc.get_points(self.curve)
+            arc.get_points(self.curve)
 
-        if not _points:
+        if not _points and not self.curve.points:
             return
 
-        super().update(_points)
+        super().update(self.curve.points)
 
     def _generate_spiral(self, is_dragging=False):
         """
@@ -178,26 +259,108 @@ class CurveTracker(WireTracker):
         Generate a simple arc curve
         """
 
-        _pos = MouseState().coordinates
-        _scale = MouseState().coordinates.sub(self.curve.pi).Length\
-            / self.drag_start_dist
-
         _vec = self.curve.center.sub(self.curve.pi).normalize()
+        _pos = DragState().coordinates
 
-        if MouseState().shiftDown:
-            _scale *= 0.10
+        if not _pos:
+            print('no drag point')
+            _pos = MouseState().coordinates
 
-        DragState().node_translate.translation.setValue(
-            tuple(_vec.multiply(_scale))
-        )
+        else:
+            _pos = Vector(_pos)
 
-        _ctr = self.curve.pi.add(_vec.multiply(self.curve.middle))
+        print('\n-------------\n')
+        print('\tpos', _pos)
+
+        _mouse_vec = _pos.sub(self.curve.pi)
+
+        proj = Vector().projectToLine(_mouse_vec, _vec)
+
+        print('\trel. proj', proj)
+        proj = _mouse_vec.add(proj)
+
+        _delta = _mouse_vec.Length - self.curve.external
+
+        print('\tprojection', proj)
+
+        _ext = _delta + self.curve.external
+        _vec.multiply(_ext)
+
+        print('_vec', _vec)
 
         _curve = arc.Arc()
         _curve.bearing_in = self.curve.bearing_in
         _curve.bearing_out = self.curve.bearing_out
         _curve.pi = self.curve.pi
-        _curve.center = _ctr
+        _curve.delta = self.curve.delta
+        _curve.external = _ext
+        _curve.direction = self.curve.direction
+
+        return arc.get_parameters(_curve, False)
+
+
+
+
+
+
+
+        _prev = DragState().start.add(_cur_xlate)
+        _vec = self.curve.center.sub(self.curve.pi).normalize()
+        _delta = MouseState().coordinates.sub(MouseState().last_coord)
+        _proj = App.Vector().projectToLine(_delta, _vec)
+
+        print('\tdelta', _delta)
+
+        if MouseState().shiftDown:
+            _delta *= 0.10
+
+        _vec.multiply(_delta)
+        print('\tvec', _vec)
+        _new_xlate = _cur_xlate.add(_vec)
+        print('\tnew translate', _new_xlate)
+        DragState().node_translate.translation.setValue(tuple(_new_xlate))
+
+        _curve = arc.Arc()
+        _curve.bearing_in = self.curve.bearing_in
+        _curve.bearing_out = self.curve.bearing_out
+        _curve.pi = self.curve.pi.sub(_new_xlate)
+        _curve.center = self.curve.center
+        return arc.get_parameters(_curve, False)
+
+    def _dep_gen_arc(self):
+
+        print('\n\tprevious translation = ', _prev_trans)
+        _prev = self.curve.pi.add(_prev_trans)
+        print('\n\tprevious PI = ', _prev)
+        print ('\n\tmouse coordinates = ', MouseState().coordinates)
+        print('\n\tdrag start = ', self.drag_start_dist)
+        _delta = MouseState().coordinates.sub(_prev).Length - self.drag_start_dist
+
+        print('\n\tmouse delta = ', _delta)
+
+        if MouseState().shiftDown:
+            _delta *= 0.10
+
+        #_scale = (_delta + _prev_trans.Length) / self.drag_start_dist
+
+        #print('\n\tscale factor = ', _scale)
+        #print('\n\tdrag start dist = ', self.drag_start_dist)
+
+        _vec = self.curve.center.sub(self.curve.pi).normalize()
+
+        print('\n\tvec = ', _vec)
+
+        _xlate = _vec.multiply(_delta)
+
+        DragState().node_translate.translation.setValue(
+            tuple()
+        )
+
+        _curve = arc.Arc()
+        _curve.bearing_in = self.curve.bearing_in
+        _curve.bearing_out = self.curve.bearing_out
+        _curve.pi = self.curve.pi
+        _curve.center = self.curve.center
 
         return arc.get_parameters(_curve, False)
 
