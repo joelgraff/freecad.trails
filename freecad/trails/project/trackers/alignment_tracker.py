@@ -120,17 +120,6 @@ class AlignmentTracker(BaseTracker):
 
         pass
 
-        if not MouseState().button1.dragging:
-            return
-
-        #get the list of tangents
-        _tans = [0.0] \
-            + [_v.drag_arc['Tangent'] for _v in self.drag_curves] + [0.0]
-
-        #validate the drag curves
-        #for _i, _v in enumerate(_tans[:-2]):
-        #    self.drag_curves[_i].validate(lt_tan=_v, rt_tan=_tans[_i + 2])
-
     def end_drag(self):
         """
         Override base fucntion

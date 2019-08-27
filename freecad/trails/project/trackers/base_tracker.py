@@ -29,8 +29,6 @@ from enum import IntEnum
 from pivy import coin
 
 from PySide.QtGui import QCursor
-from PySide import QtGui
-from PySide.QtCore import Qt
 
 import FreeCADGui as Gui
 from FreeCAD import Vector
@@ -148,9 +146,6 @@ class BaseTracker:
         """
         Return selection state
         """
-
-        _full = SelectState().is_selected(self)
-        _partial = SelectState().is_partial_selected(self)
 
         return SelectState().is_selected(self) \
             or SelectState().is_partial_selected(self)
