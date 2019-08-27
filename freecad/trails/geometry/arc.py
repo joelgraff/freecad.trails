@@ -44,7 +44,7 @@ class Arc():
         'BearingOut', 'Length', 'StartStation', 'InternalStation', 'Delta',
         'Direction', 'Tangent', 'Radius', 'Chord', 'Middle', 'MiddleOrdinate',
         'External', 'CurveType', 'Hash', 'Description', 'Status', 'ObjectID',
-        'Note', 'Bearings'
+        'Note', 'Bearings', 'Points'
     ]
 
     def __init__(self, source_arc=None):
@@ -78,6 +78,7 @@ class Arc():
         self.object_id = ''
         self.note = ''
         self.bearings = None
+        self.points = []
 
         if isinstance(source_arc, Arc):
             self.__dict__ = source_arc.__dict__.copy()
@@ -957,14 +958,19 @@ def get_points(
     Points are returned references to start_coord
     """
 
-    angle = arc.get('Delta')
-    direction = arc.get('Direction')
-    bearing_in = arc.get('BearingIn')
-    radius = arc.get('Radius')
-    start = arc.get('Start')
+    _arc = arc
+
+    if isinstance(arc, dict):
+        _arc = Arc(arc)
+
+    angle = _arc.delta
+    direction = _arc.direction
+    bearing_in = _arc.bearing_in
+    radius = _arc.radius
+    start = _arc.start
 
     if not radius:
-        return [arc.get('PI')]
+        return [_arc.pi]
 
     if not interval:
         interval = [0.0, 0.0]
@@ -1007,8 +1013,8 @@ def get_points(
         float(_i + 1) * _delta for _i in range(0, int(angle / _delta))
     ]
 
-    points = get_segments(
+    _arc.points = get_segments(
         _start_angle, segment_deltas, direction, start, radius, _dtype
     )
 
-    return points
+    return _arc.points
