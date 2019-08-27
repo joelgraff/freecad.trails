@@ -185,7 +185,8 @@ class MouseState(metaclass=Singleton):
 
             _coord = Vector(_info['x'], _info['y'], _info['z'])
 
-        elif self.component:
+        #preserve the selected component at the start of drag operation
+        elif self.component and not self.button1.dragging:
 
             self.object = ''
             self.component = ''
