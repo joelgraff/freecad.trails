@@ -528,55 +528,61 @@ def get_missing_parameters(arc, new_arc, points):
 
     #by this point, missing radius / delta is a problem
     #missing both?  stop now.
-    if new_arc.get('Radius') is None and new_arc.get('Delta') is None:
-        return None
-
     if not new_arc.get('Radius') and not new_arc.get('Delta'):
-        return None
+        return N
+
+    _half_delta = new_arc.delta / 2.0
+    _cos_half_delta = math.cos(_half_delta)
 
     #missing radius requires middle ordinate (or PI / Center coords)
     if not new_arc.get('Radius'):
 
-        _mo = new_arc.get('Middle')
+        #attempt to assign middle length of curve
+        if not new_arc.middle:
 
-        if not _mo:
+            if points[2] and points[3]:
+                new_arc.middle = points[3].sub(points[2]).Length
 
-            if not points[2] or not points[3]:
+            elif arc.tangent:
+                new_arc.middle = arc.tangent / math.sin(arc.delta / 2.0)
 
-                if arc.get('Tangent') is None:
-                    return
+        #build radius from external, middle ordinate or middle length
+        if new_arc.middle:
+            new_arc.radius =\
+                new_arc.middle / (_cos_half_delta + 1/_cos_half_delta)
 
-                if not arc.get('Tangent'):
-                    return
+        elif new_arc.middle_ordinate:
+            new_arc.radius = new_arc.middle_ordinate / (1 - _cos_half_delta)
 
-                _mo = arc.get('Tangent') / math.sin(arc.get('Delta') / 2.0)
+        elif new_arc.external:
+            new_arc.radius = new_arc.external / ((1/_cos_half_delta) - 1)
 
-            else:
-                _mo = points[3].sub(points[2]).Length
+        #abort if unable to determine radius
+        if not new_arc.radius:
+            return None
 
-            new_arc.middle = _mo
-
-        new_arc.radius = math.cos(new_arc.get('Delta') / 2.0) * _mo
+        if not new_arc.middle:
+            new_arc.middle = \
+                new_arc.radius * (_cos_half_delta + (1/_cos_half_delta))
 
     #pre-calculate values and fill in remaining parameters
-    radius = new_arc.get('Radius')
-    delta = new_arc.get('Delta')
-    half_delta = delta / 2.0
+    #radius = new_arc.get('Radius')
+    #delta = new_arc.get('Delta')
 
-    if not new_arc.get('Length'):
-        new_arc.length = radius * delta
+    if not new_arc.length:
+        new_arc.length = new_arc.radius * new_arc.delta
 
-    if not new_arc.get('External'):
-        new_arc.external = radius * ((1.0 / math.cos(half_delta)) - 1.0)
+    if not new_arc.external:
+        new_arc.external = new_arc.radius * (1.0 / (_cos_half_delta - 1.0))
 
-    if not new_arc.get('MiddleOrdinate'):
-        new_arc.middle_ordinate = radius * (1.0 - math.cos(half_delta))
+    if not new_arc.middle_ordinate:
+        new_arc.middle_ordinate = new_arc.radius * (1.0 - _cos_half_delta)
 
-    if not new_arc.get('Tangent'):
-        new_arc.tangent = radius * math.tan(half_delta)
+    if not new_arc.tangent:
+        new_arc.tangent = new_arc.radius * math.tan(_half_delta)
 
-    if not new_arc.get('Chord'):
-        new_arc.chord = 2.0 * radius * math.sin(half_delta)
+    if not new_arc.chord:
+        new_arc.chord = 2.0 * new_arc.radius * math.sin(_half_delta)
 
     #quality-check - ensure everything is defined and default to
     #existing where within tolerance
