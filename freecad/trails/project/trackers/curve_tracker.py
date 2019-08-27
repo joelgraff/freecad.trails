@@ -25,14 +25,13 @@ Tracker for curve editing
 """
 import math
 
-from pivy import coin
-
 from FreeCAD import Vector
 
-from ...geometry import support, arc, spiral
+from ...geometry import arc, spiral
 
 from ..support.mouse_state import MouseState
 from ..support.drag_state import DragState
+from ..support.select_state import SelectState
 
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
@@ -57,19 +56,24 @@ class CurveTracker(WireTracker):
         self.drag_style = None
         self.drag_last_mouse = None
         self.drag_curve_middle = None
+        self.drag_curve = None
 
         if isinstance(self.curve, dict):
             self.curve = arc.Arc(self.curve)
 
         self.update_curve()
 
-        self.radius_tracker = None
-        self.center_tracker = None
+        self.wire_tracker = None
+        self.node_trackers = []
 
-        self.build_radius_tracker(names)
+        self.build_trackers(names)
 
-        self.insert_node(self.radius_tracker.switch, self.get_node())
-        self.insert_node(self.center_tracker.switch, self.get_node())
+        self.insert_node(self.wire_tracker.switch, self.get_node())
+
+        for _v in self.node_trackers:
+            self.insert_node(_v.switch, self.get_node(), 0)
+
+        self.state.multi_select = False
 
     def mouse_event(self, arg):
         """
@@ -78,8 +82,10 @@ class CurveTracker(WireTracker):
 
         _is_visible = self.is_selected() or self.name in MouseState().component
 
-        self.radius_tracker.set_visibility(_is_visible)
-        self.center_tracker.set_visibility(_is_visible)
+        self.wire_tracker.set_visibility(_is_visible)
+
+        for _v in self.node_trackers:
+            _v.set_visibility(_is_visible)
 
         super().mouse_event(arg)
 
@@ -88,8 +94,28 @@ class CurveTracker(WireTracker):
         Override base button event
         """
 
-        #do nothing as curve selection is handled in alignment tracker
-        pass
+        #force partial curve selection if any nodes are picked
+        super().button_event(arg)
+
+        if not MouseState().button1.state == 'UP':
+            return
+
+        _selected = self.is_selected()\
+            or self.wire_tracker.is_selected()\
+            or any([_v.is_selected() for _v in self.node_trackers])
+
+        if not _selected:
+            return
+
+        SelectState().select(self, force=True)
+        self.refresh()
+
+        SelectState().select(self.wire_tracker, force=True)
+        self.wire_tracker.refresh()
+
+        for _v in self.node_trackers:
+            SelectState().select(_v, force=True)
+            _v.refresh()
 
     def start_drag(self):
         """
@@ -107,28 +133,47 @@ class CurveTracker(WireTracker):
 
         DragState().start = self.curve.points[self.drag_curve_middle]
 
+        print(self.curve)
     def on_drag(self):
         """
         Override base implementation
         """
 
         if not self.state.dragging \
-            or self != DragState().drag_node \
-                or not self.is_selected():
-
+            and self != DragState().drag_node \
+            and not self.is_selected():
             return
 
-        #regenerate the curve and points
-        _curve = self._generate_arc(lock_attr='Tangent')
-        arc.get_points(_curve, _dtype=tuple)
+        #all movements are constrained to  a line and update a single
+        #curve attribute
+        _attr = 'External'
+        _point = 'Center'
 
-        #update the drag geometry in the draqg group
+        for _k in ['Start', 'End']:
+
+            if _k in MouseState().component:
+                _point = _k
+                _attr = 'Tangent'
+
+        #regenerate the curve and points
+        self.drag_curve = self._generate_arc(attr=_attr, point=_point)
+        _pts = arc.get_points(self.drag_curve, _dtype=tuple)
+
+        #update the drag geometry in the drag group
         _node = self.drag_group.getChild(0).getChild(3).point
-        _node.setValues(0, len(_curve.points), _curve.points)
+        _node.setValues(0, len(_pts), _pts)
 
         #update the drag state to reflect movement along curve's central axis
         _drag_line_start = DragState().start
-        _drag_line_end = _curve.points[self.drag_curve_middle]
+
+        if _point == 'Center':
+            _drag_line_end = self.drag_curve.points[self.drag_curve_middle]
+
+        elif _point == 'Start':
+            _drag_line_end = self.drag_curve.points[0]
+
+        elif _point == 'End':
+            _drag_line_end = self.drag_curve.points[-1]
 
         DragState().translate(MouseState().coordinates, MouseState().shiftDown)
 
@@ -139,35 +184,55 @@ class CurveTracker(WireTracker):
         DragState().coordinates = MouseState().coordinates
         DragState().update(_drag_line_start, _drag_line_end)
 
-    def build_radius_tracker(self, names):
+    def end_drag(self):
+        """
+        Override base function
+        """
+
+        super().end_drag()
+
+        if not self.drag_curve:
+            return
+
+        self.curve = self.drag_curve
+
+        _points = [self.curve.start, self.curve.center, self.curve.end]
+
+        for _i, _v in enumerate(self.node_trackers):
+            _v.update(_points[_i])
+
+        self.wire_tracker.update()
+
+    def build_trackers(self, names):
         """
         Create the radius tracker for curve editing
 
         """
 
-        #center point node
-        _ct = NodeTracker(
-            names[:2] + [self.name + '-Center'], self.curve.center
-        )
-        _ct.set_visibility(False)
-        _ct.update()
+        #nodes
+        _labels = ['Start', 'Center', 'End']
+        _points = [self.curve.get(_k) for _k in _labels]
 
-        self.center_tracker = _ct
+        for _i, _v in enumerate(_points):
 
-        #radius wires
-        _wt = WireTracker(names[:2] + [self.name + '-Radius'])
+            _ct = NodeTracker(
+                names[:2] + [self.name + '-' + _labels[_i]], _v
+            )
+            _ct.set_visibility(False)
+            _ct.state.multi_select = False
+            _ct.show_drag_line = False
 
-        _wt.set_points(
-            points=[self.curve.start, self.curve.center, self.curve.end],
-            nodes=_ct,
-            indices=[[1]]
-        )
+            _ct.update()
 
-        _wt.set_selectability(False)
-        _wt.set_visibility(False)
-        _wt.update()
+            self.node_trackers.append(_ct)
 
-        self.radius_tracker = _wt
+        #radius wire
+        self.wire_tracker = WireTracker(names[:2] + [self.name + '-Radius'])
+
+        self.wire_tracker.set_points(nodes=self.node_trackers)
+        self.wire_tracker.set_selectability(False)
+        self.wire_tracker.set_visibility(False)
+        self.wire_tracker.update()
 
     def update_curve(self, curve=None):
         """
@@ -254,36 +319,45 @@ class CurveTracker(WireTracker):
 
         return spiral.get_points(self.curve)
 
-    def _generate_arc(self, lock_attr='Radius', on_drag=False):
+    @staticmethod
+    def project_to_line(line_start, line_end, coord):
+        """
+        Project a coordinate to the specified line
+        """
+
+        _line_vec = line_end.sub(line_start)
+        _coord_vec = coord.sub(line_start)
+
+        _proj = Vector().projectToLine(_coord_vec, _line_vec)
+        return _coord_vec.add(_proj)
+
+
+    def _generate_arc(self, attr, point, on_drag=False):
         """
         Generate a simple arc curve
         """
 
-        _vec = self.curve.center.sub(self.curve.pi).normalize()
         _pos = DragState().coordinates
 
         if not _pos:
             _pos = MouseState().coordinates
-
         else:
             _pos = Vector(_pos)
 
-        _mouse_vec = _pos.sub(self.curve.pi)
+        _mouse_vec = \
+            self.project_to_line(self.curve.pi, self.curve.get(point), _pos)
 
-        proj = Vector().projectToLine(_mouse_vec, _vec)
-        proj = _mouse_vec.add(proj)
-
-        _delta = _mouse_vec.Length - self.curve.external
-        _ext = _delta + self.curve.external
-        _vec.multiply(_ext)
+        _delta = _mouse_vec.Length - self.curve.get(attr)
+        _attr_val = _delta + self.curve.get(attr)
 
         _curve = arc.Arc()
+
         _curve.bearing_in = self.curve.bearing_in
         _curve.bearing_out = self.curve.bearing_out
         _curve.pi = self.curve.pi
         _curve.delta = self.curve.delta
-        _curve.external = _ext
         _curve.direction = self.curve.direction
+        _curve.set(attr, _attr_val)
 
         return arc.get_parameters(_curve, False)
 
