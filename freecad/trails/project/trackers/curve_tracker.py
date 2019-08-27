@@ -263,30 +263,19 @@ class CurveTracker(WireTracker):
         _pos = DragState().coordinates
 
         if not _pos:
-            print('no drag point')
             _pos = MouseState().coordinates
 
         else:
             _pos = Vector(_pos)
 
-        print('\n-------------\n')
-        print('\tpos', _pos)
-
         _mouse_vec = _pos.sub(self.curve.pi)
 
         proj = Vector().projectToLine(_mouse_vec, _vec)
-
-        print('\trel. proj', proj)
         proj = _mouse_vec.add(proj)
 
         _delta = _mouse_vec.Length - self.curve.external
-
-        print('\tprojection', proj)
-
         _ext = _delta + self.curve.external
         _vec.multiply(_ext)
-
-        print('_vec', _vec)
 
         _curve = arc.Arc()
         _curve.bearing_in = self.curve.bearing_in
@@ -295,72 +284,6 @@ class CurveTracker(WireTracker):
         _curve.delta = self.curve.delta
         _curve.external = _ext
         _curve.direction = self.curve.direction
-
-        return arc.get_parameters(_curve, False)
-
-
-
-
-
-
-
-        _prev = DragState().start.add(_cur_xlate)
-        _vec = self.curve.center.sub(self.curve.pi).normalize()
-        _delta = MouseState().coordinates.sub(MouseState().last_coord)
-        _proj = App.Vector().projectToLine(_delta, _vec)
-
-        print('\tdelta', _delta)
-
-        if MouseState().shiftDown:
-            _delta *= 0.10
-
-        _vec.multiply(_delta)
-        print('\tvec', _vec)
-        _new_xlate = _cur_xlate.add(_vec)
-        print('\tnew translate', _new_xlate)
-        DragState().node_translate.translation.setValue(tuple(_new_xlate))
-
-        _curve = arc.Arc()
-        _curve.bearing_in = self.curve.bearing_in
-        _curve.bearing_out = self.curve.bearing_out
-        _curve.pi = self.curve.pi.sub(_new_xlate)
-        _curve.center = self.curve.center
-        return arc.get_parameters(_curve, False)
-
-    def _dep_gen_arc(self):
-
-        print('\n\tprevious translation = ', _prev_trans)
-        _prev = self.curve.pi.add(_prev_trans)
-        print('\n\tprevious PI = ', _prev)
-        print ('\n\tmouse coordinates = ', MouseState().coordinates)
-        print('\n\tdrag start = ', self.drag_start_dist)
-        _delta = MouseState().coordinates.sub(_prev).Length - self.drag_start_dist
-
-        print('\n\tmouse delta = ', _delta)
-
-        if MouseState().shiftDown:
-            _delta *= 0.10
-
-        #_scale = (_delta + _prev_trans.Length) / self.drag_start_dist
-
-        #print('\n\tscale factor = ', _scale)
-        #print('\n\tdrag start dist = ', self.drag_start_dist)
-
-        _vec = self.curve.center.sub(self.curve.pi).normalize()
-
-        print('\n\tvec = ', _vec)
-
-        _xlate = _vec.multiply(_delta)
-
-        DragState().node_translate.translation.setValue(
-            tuple()
-        )
-
-        _curve = arc.Arc()
-        _curve.bearing_in = self.curve.bearing_in
-        _curve.bearing_out = self.curve.bearing_out
-        _curve.pi = self.curve.pi
-        _curve.center = self.curve.center
 
         return arc.get_parameters(_curve, False)
 
