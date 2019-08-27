@@ -530,7 +530,7 @@ def get_missing_parameters(arc, new_arc, points):
     #by this point, missing radius / delta is a problem
     #missing both?  stop now.
     if not new_arc.get('Radius') and not new_arc.get('Delta'):
-        return N
+        return None
 
     _half_delta = new_arc.delta / 2.0
     _cos_half_delta = math.cos(_half_delta)
@@ -549,8 +549,7 @@ def get_missing_parameters(arc, new_arc, points):
 
         #build radius from external, middle ordinate or middle length
         if new_arc.middle:
-            new_arc.radius =\
-                new_arc.middle / (_cos_half_delta + 1/_cos_half_delta)
+            new_arc.radius = new_arc.middle * _cos_half_delta
 
         elif new_arc.middle_ordinate:
             new_arc.radius = new_arc.middle_ordinate / (1 - _cos_half_delta)
@@ -623,13 +622,14 @@ def get_coordinates(arc, points):
     _pi = points[3]
 
     _vr = vectors.get('Radius')[0].multiply(arc.get('Radius'))
-    _vt = vectors.get('Tangent')[0].multiply(arc.get('Tangent'))
+    _vt0 = vectors.get('Tangent')[0].multiply(arc.get('Tangent'))
+    _vt1 = vectors.get('Tangent')[1].multiply(arc.get('Tangent'))
     _vc = vectors.get('Internal')[1].multiply(arc.get('Chord'))
 
     if not _start:
 
         if _pi:
-            _start = _pi.sub(_vt)
+            _start = _pi.sub(_vt0)
 
         elif _center:
             _start = _center.add(_vr)
@@ -641,13 +641,13 @@ def get_coordinates(arc, points):
         return None
 
     if not _pi:
-        _pi = _start.add(_vt)
+        _pi = _start.add(_vt0)
 
     if not _center:
         _center = _start.sub(_vr)
 
     if not _end:
-        _end = _start.add(_vc)
+        _end = _pi.add(_vt1)
 
     return {'Start': _start, 'Center': _center, 'End': _end, 'PI': _pi}
 
