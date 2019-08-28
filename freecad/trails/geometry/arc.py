@@ -429,21 +429,17 @@ def get_lengths(arc, mat):
             """\
                 .format(_attribs[0], _attribs[1], abs(_s[1] - _s[0]), _s[0]))
 
-        if _s[0] and support.within_tolerance(_s[0], params[_i]):
-            continue
-
-        params[_i] = _s[0]
+        if _s[0]:
+            if not support.within_tolerance(_s[0], params[_i]):
+                params[_i] = _s[0]
 
     #test middle and chord.
     #If no user-defined value or out-of-tolerance, use calculated
     for _i in range(4, 6):
 
-        if lengths[_i] \
-           and support.within_tolerance(lengths[_i], params[_i - 2]):
-
-            continue
-
-        params[_i - 2] = lengths[_i]
+        if lengths[_i]:
+            if not support.within_tolerance(lengths[_i], params[_i - 2]):
+                params[_i - 2] = lengths[_i]
 
     return {'Radius': params[0],
             'Tangent': params[1],
