@@ -152,12 +152,6 @@ class AlignmentTracker(BaseTracker):
             for _v in self.trackers['Nodes'][_idx:]:
                 SelectState().select(_v, force=True)
 
-        elif 'CURVE' in _pick:
-
-            #select the PI node for the selected curve and hide it
-            _idx = int(_pick.split('-')[1])
-            SelectState().select(self.trackers['Curves'][_idx])
-
     def build_trackers(self):
         """
         Build the node and wire trackers that represent the selectable
