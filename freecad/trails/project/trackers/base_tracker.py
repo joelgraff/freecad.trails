@@ -88,6 +88,10 @@ class BaseTracker:
         self.matrix = None
 
         self.drag_group = None
+        self.drag_copy = None
+
+        self.select_state = ''
+
         self.show_drag_line = True
 
         self.partial_idx = []   #list to store indices for partial selections
@@ -135,6 +139,13 @@ class BaseTracker:
 
         self.switch.whichChild = 0
 
+    def is_selected(self):
+        """
+        Convenience wrapper for SelectState().is_selceted
+        """
+
+        return SelectState().is_selected(self) != ''
+
     def get_node(self):
         """
         Return the root scenegraph node for the base tracker.
@@ -142,14 +153,6 @@ class BaseTracker:
         """
 
         return self.separator
-
-    def is_selected(self):
-        """
-        Return selection state
-        """
-
-        return SelectState().is_selected(self) \
-            or SelectState().is_partial_selected(self)
 
     def refresh(self, style=None, visible=None):
         """
@@ -203,7 +206,7 @@ class BaseTracker:
         Test for highlight conditions and changes
         """
 
-        if self.state.dragging or self.is_selected() or not self.is_visible():
+        if self.state.dragging or not self.is_visible() or self.is_selected():
             return
 
         #highlight logic - skip if ignore flag is set
@@ -259,14 +262,25 @@ class BaseTracker:
         #copy the tracker node structure to the drag state node for
         #transformations during drag operations
 
-        if SelectState().is_selected(self):
-            self.drag_group = DragState().add_node(self.copy())
+        self.select_state = SelectState().is_selected(self)
 
-        elif SelectState().is_partial_selected(self):
+        self.drag_copy = self.copy()
+
+        if self.select_state == 'FULL':
+            self.drag_group = DragState().add_node(self.drag_copy)
+
+        elif self.select_state == 'PARTIAL':
 
             if self.partial_idx:
                 self.drag_group = \
-                    DragState().add_partial_node(self.copy(), self.partial_idx)
+                    DragState().add_partial_node(
+                        self.drag_copy, self.partial_idx)
+
+        elif self.select_state == 'MANUAL':
+            self.drag_group = DragState().add_manual_node(self.drag_copy)
+
+        else:
+            self.drag_copy = None
 
         self.state.dragging = True
 
@@ -282,11 +296,11 @@ class BaseTracker:
         Ongoing drag ops
         """
 
+        #tracker must be picked for dragging and actively dragged.
+        #Prevents multiple updates in the same mose movement
+
         if not self.state.dragging or self != DragState().drag_node:
             return
-
-        #if DragState().override:
-        #    return
 
         _drag_line_start = DragState().start
         _drag_line_end = MouseState().coordinates
@@ -297,8 +311,8 @@ class BaseTracker:
 
             DragState().rotate(_mouse_coord, MouseState().shiftDown)
 
-            _ctr = Vector(DragState().node_rotate.center.getValue())
-            _offset = Vector(DragState().node_translate.translation.getValue())
+            _ctr = Vector(DragState().transform.center.getValue())
+            _offset = Vector(DragState().transform.translation.getValue())
 
             _drag_line_start = _ctr.add(_offset)
 
@@ -349,6 +363,7 @@ class BaseTracker:
 
         _new_pos = ViewState().getPointOnScreen(coord)
 
+        print(self.name, MouseState().pos)
         #set the mouse position at the updated screen coordinate
         _delta_pos = _new_pos.sub(Vector(MouseState().pos + (0.0,)))
 
@@ -359,7 +374,7 @@ class BaseTracker:
         QCursor.setPos(_pos[0], _pos[1])
 
         MouseState().coordinates = coord
-        MouseState().pos = _pos
+        MouseState().pos = _pos[0:2]
 
     def end_drag(self):
         """
@@ -369,10 +384,10 @@ class BaseTracker:
         if not self.state.dragging:
             return
 
-        DragState().finish()
+        self.drag_copy = None
+        self.select_state = ''
 
-        #if QtGui.QApplication.overrideCursor() == Qt.BlankCursor:
-        #    QtGui.QApplication.restoreOverrideCursor()
+        DragState().finish()
 
     def set_selectability(self, is_selectable):
         """

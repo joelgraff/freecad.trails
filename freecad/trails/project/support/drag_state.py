@@ -50,13 +50,13 @@ class DragState(metaclass=Singleton):
         self.root = coin.SoSeparator()
         self.node_group = coin.SoSeparator()
         self.partial_group = coin.SoSeparator()
+        self.manual_group = coin.SoSeparator()
 
         self.partial_nodes = []
         self.partial_coords = []
         self.partial_indices = []
 
-        self.node_translate = coin.SoTransform()
-        self.node_rotate = coin.SoTransform()
+        self.transform = coin.SoTransform()
         self.drag_node = None
         self.drag_point = None
 
@@ -67,9 +67,9 @@ class DragState(metaclass=Singleton):
 
         self._build_drag_line()
 
+        self.root.addChild(self.manual_group)
         self.root.addChild(self.partial_group)
-        self.root.addChild(self.node_translate)
-        self.root.addChild(self.node_rotate)
+        self.root.addChild(self.transform)
         self.root.addChild(self.node_group)
 
         self.abort = False
@@ -163,6 +163,21 @@ class DragState(metaclass=Singleton):
         _g.addChild(_l)
 
         self.root.addChild(_g)
+
+    def add_manual_node(self, node):
+        """
+        Add a node to the drag state that is updated manually
+        If parent is none, creates a new manual group with rotation and
+        translation transforms.  Otherwise, appends to existing.
+        """
+
+        _drag_group = coin.SoSeparator()
+        _drag_group.addChild(coin.SoTransform())
+        _drag_group.addChild(node)
+
+        self.manual_group.addChild(_drag_group)
+
+        return _drag_group
 
     def add_node(self, node):
         """
@@ -281,7 +296,7 @@ class DragState(metaclass=Singleton):
         _delta = coord.sub(self.coordinates)
 
         if self.update_translate:
-            self.delta = Vector(self.node_translate.translation.getValue())
+            self.delta = Vector(self.transform.translation.getValue())
 
         _scale = 1.0
 
@@ -291,8 +306,7 @@ class DragState(metaclass=Singleton):
         self.delta = self.delta.add(_delta.multiply(_scale))
 
         if self.update_translate:
-            self.node_translate.translation.setValue(tuple(self.delta))
-
+            self.transform.translation.setValue(tuple(self.delta))
 
     def rotate(self, coord, micro_drag=False):
         """
@@ -311,10 +325,10 @@ class DragState(metaclass=Singleton):
         else:
 
             _dx_vec = coord.sub(
-                Vector(self.node_translate.translation.getValue())
+                Vector(self.transform.translation.getValue())
             )
 
-            self.node_rotate.center.setValue(coin.SbVec3f(tuple(_dx_vec)))
+            self.transform.center.setValue(coin.SbVec3f(tuple(_dx_vec)))
 
             self.rotation_center = coord
             self.rotation = 0.0
@@ -337,5 +351,5 @@ class DragState(metaclass=Singleton):
         self.angle = _angle
 
         #update the +z axis rotation for the transformation
-        self.node_rotate.rotation =\
+        self.transform.rotation =\
             coin.SbRotation(coin.SbVec3f(0.0, 0.0, 1.0), self.rotation)

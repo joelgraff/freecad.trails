@@ -52,7 +52,7 @@ class NodeTracker(BaseTracker):
             nodes = [nodes]
 
         self.is_end_node = False
-        self.point =tuple(point)
+        self.point = tuple(point)
 
         #build node structure for the node tracker
         self.coord = coin.SoCoordinate3()
@@ -77,6 +77,9 @@ class NodeTracker(BaseTracker):
 
         self.drag_point = self.point
 
+        if self.drag_group:
+            _idx = 0
+
     def on_drag(self):
         """
         Override of base function
@@ -86,8 +89,7 @@ class NodeTracker(BaseTracker):
 
         super().on_drag()
 
-        self.drag_point = ViewState().transform_points(
-            [self.point], DragState().node_group)[0]
+        self.update_drag_point()
 
     def end_drag(self):
         """
@@ -95,9 +97,21 @@ class NodeTracker(BaseTracker):
         """
 
         if self.drag_point and DragState().drag_node:
-            self.update([self.drag_point])
+            self.update(self.update_drag_point())
 
         super().end_drag()
+
+    def update_drag_point(self):
+        """
+        Update the drag point based on the selection method
+        """
+
+        if self.select_state == 'MANUAL':
+            self.drag_point = self.drag_copy.getChild(3).point.getValues()[0]
+
+        else:
+            self.drag_point = ViewState().transform_points(
+                [self.point], DragState().node_group)[0]
 
     def update(self, coord=None):
         """

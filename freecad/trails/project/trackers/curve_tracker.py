@@ -57,6 +57,14 @@ class CurveTracker(WireTracker):
         self.drag_last_mouse = None
         self.drag_curve_middle = None
         self.drag_curve = None
+        self.pt_attr_pairs = [
+            ('Start', 'Tangent'),
+            ('End', 'Tangent'),
+            ('Center', 'Middle'),
+            ('Curve', 'External')
+        ]
+
+        self.pt_labels = ['Start', 'Center', 'End']
 
         if isinstance(self.curve, dict):
             self.curve = arc.Arc(self.curve)
@@ -80,7 +88,7 @@ class CurveTracker(WireTracker):
         Override base event
         """
 
-        _is_visible = self.is_selected() or self.name in MouseState().component
+        _is_visible = self.name in MouseState().component or self.is_selected()
 
         self.wire_tracker.set_visibility(_is_visible)
 
@@ -107,15 +115,16 @@ class CurveTracker(WireTracker):
         if not _selected:
             return
 
-        SelectState().select(self, force=True)
-        self.refresh()
+        #select the trackers
+        SelectState().clear_state()
 
-        SelectState().select(self.wire_tracker, force=True)
+        SelectState().manual_select(self)
+
+        SelectState().manual_select(self.wire_tracker)
         self.wire_tracker.refresh()
 
         for _v in self.node_trackers:
-            SelectState().select(_v, force=True)
-            _v.refresh()
+            SelectState().manual_select(_v)
 
     def start_drag(self):
         """
@@ -127,13 +136,13 @@ class CurveTracker(WireTracker):
 
         super().start_drag()
 
+        print(self.name, 'start_drag')
         DragState().update_translate = False
 
         self.drag_curve_middle = math.floor((len(self.curve.points) - 1) / 2)
 
         DragState().start = self.curve.points[self.drag_curve_middle]
 
-        print(self.curve)
     def on_drag(self):
         """
         Override base implementation
@@ -149,40 +158,65 @@ class CurveTracker(WireTracker):
         _attr = 'External'
         _point = 'Center'
 
-        for _k in ['Start', 'End']:
+        #determine which point is being dragged (center / curve is default)
+        for _k in self.pt_attr_pairs:
 
-            if _k in MouseState().component:
-                _point = _k
-                _attr = 'Tangent'
+            if _k[0] in MouseState().component:
+                _point = _k[0]
+                _attr = _k[1]
+
+        if not _point or not _attr:
+            return
 
         #regenerate the curve and points
         self.drag_curve = self._generate_arc(attr=_attr, point=_point)
         _pts = arc.get_points(self.drag_curve, _dtype=tuple)
 
-        #update the drag geometry in the drag group
-        _node = self.drag_group.getChild(0).getChild(3).point
+        #update the curve drag geometry in the manual drag group
+        _node = self.drag_copy.getChild(3).point
         _node.setValues(0, len(_pts), _pts)
 
         #update the drag state to reflect movement along curve's central axis
-        _drag_line_start = DragState().start
+        #default to start node selection
+        _drag_line_start = Vector(DragState().start)
+        _drag_line_end = Vector(self.drag_curve.points[0])
 
-        if _point == 'Center':
-            _drag_line_end = self.drag_curve.points[self.drag_curve_middle]
-
-        elif _point == 'Start':
-            _drag_line_end = self.drag_curve.points[0]
-
-        elif _point == 'End':
+        if _point == 'End':
             _drag_line_end = self.drag_curve.points[-1]
 
+        elif _point == 'Center':
+
+            _drag_line_end = self.curve.pi.add(
+                self.project_to_line(
+                    self.curve.pi, _drag_line_start, MouseState().coordinates)
+            )
+
+        elif _point == 'Curve':
+            _drag_line_end =\
+                Vector(self.drag_curve.points[self.drag_curve_middle])
+
+        #update DragState
         DragState().translate(MouseState().coordinates, MouseState().shiftDown)
-
-        #micro-dragging cursor control
-        if MouseState().shiftDown:
-            self.set_mouse_position(DragState().start.add(DragState().delta))
-
         DragState().coordinates = MouseState().coordinates
         DragState().update(_drag_line_start, _drag_line_end)
+
+        #update tracker drag geometry
+        _pts = [_pts[0], tuple(self.drag_curve.center), _pts[-1]]
+
+        for _v in self.node_trackers:
+
+            _point = _v.drag_copy.getChild(3).point
+
+            if 'Start' in _v.name:
+                _point.setValue(_pts[0])
+
+            elif 'Center' in _v.name:
+                _point.setValue(_pts[1])
+
+            else:
+                _point.setValue(_pts[-1])
+
+        self.wire_tracker.drag_copy.getChild(3).point.setValues(0, 3, _pts)
 
     def end_drag(self):
         """
@@ -210,13 +244,12 @@ class CurveTracker(WireTracker):
         """
 
         #nodes
-        _labels = ['Start', 'Center', 'End']
-        _points = [self.curve.get(_k) for _k in _labels]
+        _points = [self.curve.get(_k) for _k in self.pt_labels]
 
         for _i, _v in enumerate(_points):
 
             _ct = NodeTracker(
-                names[:2] + [self.name + '-' + _labels[_i]], _v
+                names[:2] + [self.name + '-' + self.pt_labels[_i]], _v
             )
             _ct.set_visibility(False)
             _ct.state.multi_select = False
@@ -327,8 +360,8 @@ class CurveTracker(WireTracker):
 
         _line_vec = line_end.sub(line_start)
         _coord_vec = coord.sub(line_start)
-
         _proj = Vector().projectToLine(_coord_vec, _line_vec)
+
         return _coord_vec.add(_proj)
 
 

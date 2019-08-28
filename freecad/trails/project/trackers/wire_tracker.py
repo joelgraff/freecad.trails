@@ -267,7 +267,7 @@ class WireTracker(BaseTracker):
         _node = None
 
         #pull the updated tuples from the drag node
-        for _n in self.drag_group.getChild(0).getChildren():
+        for _n in self.drag_copy.getChildren():
 
             if isinstance(_n, coin.SoCoordinate3):
                 _node = _n.point

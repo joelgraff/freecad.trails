@@ -39,6 +39,7 @@ class SelectState(metaclass=Singleton):
 
         self._selected = []
         self._partial_selected = {}
+        self._manual_selected = []
 
     def count(self):
         """
@@ -52,18 +53,17 @@ class SelectState(metaclass=Singleton):
         Return whether or not the element exists in the list
         """
 
-        return element in self._selected
+        if element in self._selected:
+            return 'FULL'
 
-    def is_partial_selected(self, element):
-        """
-        Return whether or not the element is partially-selected
-        """
+        if element in self._manual_selected:
+            return 'MANUAL'
 
         for _v in self._partial_selected.values():
             if element in _v:
-                return True
+                return 'PARTIAL'
 
-        return False
+        return ''
 
     def clear_state(self):
         """
@@ -72,6 +72,19 @@ class SelectState(metaclass=Singleton):
 
         self._selected.clear()
         self._partial_selected.clear()
+        self._manual_selected.clear()
+
+    def manual_select(self, element=None):
+        """
+        Manual selection for elements that are not fully or partially
+        managed
+        """
+
+        if not element:
+            self._manual_selected.clear()
+
+        else:
+            self._manual_selected.append(element)
 
     def partial_select(self, parent=None, element=None):
         """
@@ -82,18 +95,24 @@ class SelectState(metaclass=Singleton):
 
         #all partial selections must have a parent element
         if not parent:
+
+            if not element:
+                self._partial_selected.clear()
+
             return
 
         #parent element must exist in selection
         if not self.is_selected(parent):
             return
 
+        #new parent?  add an empty list to the dictionary
+        if not self._partial_selected.get(parent):
+            self._partial_selected[parent] = []
+
         #no element?  clear all partial selections
         if not element:
-            self._partial_selected.clear()
-
-        if not parent in self._partial_selected:
             self._partial_selected[parent] = []
+            return
 
         #append if not already added
         if not element in self._partial_selected[parent]:
@@ -105,6 +124,10 @@ class SelectState(metaclass=Singleton):
         A null element will clear the selection for single select and
         will have no effect for multi-select
         """
+
+        #manual selection overrides full / partial
+        if element in self._manual_selected:
+            return
 
         #force-select a node
         if force:
