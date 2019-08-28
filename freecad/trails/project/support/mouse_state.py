@@ -140,17 +140,35 @@ class MouseState(metaclass=Singleton):
 
         self.state = [self.buttons, self.pos]
 
-    def update(self, arg, _p):
+    def set_position(self, pos):
+        """
+        Set the position as a two-value tuple
+        """
+
+        _p = pos
+
+        if len(_p) < 2:
+            return
+
+        if not isinstance(_p, tuple):
+            _p = tuple(pos)
+
+        if len(_p) > 2:
+            _p = _p[0:2]
+
+        self.pos = _p
+
+    def update(self, arg, position):
         """
         Update the current mouse state
         """
 
-        _pos = _p + (0.0,)
+        _pos = position
         _coord = self.coordinates
 
         if _pos != self.pos:
             self.last_pos = self.pos
-            self.pos = _pos
+            self.set_position(_pos)
             _coord = None
 
         _info = ViewState().view.getObjectInfo(self.pos)

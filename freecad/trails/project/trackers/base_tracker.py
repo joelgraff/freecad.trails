@@ -320,7 +320,8 @@ class BaseTracker:
 
         #translation transformation
         else:
-            DragState().translate(_mouse_coord, MouseState().shiftDown)
+            if DragState().update_translate:
+                DragState().translate(_mouse_coord, MouseState().shiftDown)
 
         #micro-dragging cursor control
         if MouseState().shiftDown:
@@ -333,6 +334,7 @@ class BaseTracker:
             #self.do_unset = True
 
             #get the window position of the updated drag delta coordinate
+            print('dragstate start / mousecoord = ', DragState().start, _mouse_coord)
             self.set_mouse_position(DragState().start.add(DragState().delta))
             _drag_line_end = _mouse_coord
 
@@ -363,18 +365,21 @@ class BaseTracker:
 
         _new_pos = ViewState().getPointOnScreen(coord)
 
-        print(self.name, MouseState().pos)
+        print(self.name, _new_pos, MouseState().pos)
         #set the mouse position at the updated screen coordinate
         _delta_pos = _new_pos.sub(Vector(MouseState().pos + (0.0,)))
+
+
 
         #get screen position by adding offset to the new window position
         _pos = Vector(QCursor.pos().toTuple() + (0.0,)).add(
             Vector(_delta_pos.x, -_delta_pos.y))
 
+        print('\n\tupdated pos', _pos)
         QCursor.setPos(_pos[0], _pos[1])
 
         MouseState().coordinates = coord
-        MouseState().pos = _pos[0:2]
+        MouseState().set_position(_new_pos)
 
     def end_drag(self):
         """

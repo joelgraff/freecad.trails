@@ -136,7 +136,6 @@ class CurveTracker(WireTracker):
 
         super().start_drag()
 
-        print(self.name, 'start_drag')
         DragState().update_translate = False
 
         self.drag_curve_middle = math.floor((len(self.curve.points) - 1) / 2)
@@ -214,7 +213,7 @@ class CurveTracker(WireTracker):
                 _point.setValue(_pts[1])
 
             else:
-                _point.setValue(_pts[-1])
+                _point.setValue(_pts[2])
 
         self.wire_tracker.drag_copy.getChild(3).point.setValues(0, 3, _pts)
 
