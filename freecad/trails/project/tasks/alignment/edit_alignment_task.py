@@ -165,7 +165,7 @@ class EditAlignmentTask(Publisher, Subscriber):
         self.camera_state['height'] = _camera.height.getValue()
         self.camera_state['bound box'] = self.Object.Shape.BoundBox
 
-        #todo.delay(self._zoom_camera, self)
+        self._zoom_camera, self
 
         DraftTools.redraw3DView()
 
@@ -238,7 +238,7 @@ class EditAlignmentTask(Publisher, Subscriber):
                 _start_ht + (_d_ht * _v)
             )
 
-            #Gui.updateGui()
+            Gui.updateGui()
             ViewState().view.redraw()
 
     def setup(self):
