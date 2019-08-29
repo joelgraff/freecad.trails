@@ -162,9 +162,12 @@ class BaseTracker:
             style = self.coin_style
 
             if self.is_selected():
+
                 style = CoinStyles.SELECTED
 
-        #self._process_conditions()
+                if SelectState().is_selected(self) == 'PARTIAL':
+                    style = CoinStyles.PARTIAL_SELECTED
+
         self.set_style(style)
 
         if visible is not None:

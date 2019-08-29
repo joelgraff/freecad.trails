@@ -315,7 +315,7 @@ class DragState(metaclass=Singleton):
         _angle = 0.0
 
         if self.rotation_center:
-             _angle = support.get_bearing(coord.sub(self.rotation_center))
+            _angle = support.get_bearing(coord.sub(self.rotation_center))
 
         else:
 

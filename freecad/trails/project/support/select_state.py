@@ -38,7 +38,7 @@ class SelectState(metaclass=Singleton):
         """
 
         self._selected = []
-        self._partial_selected = {}
+        self._partial_selected = []
         self._manual_selected = []
 
     def count(self):
@@ -59,9 +59,8 @@ class SelectState(metaclass=Singleton):
         if element in self._manual_selected:
             return 'MANUAL'
 
-        for _v in self._partial_selected.values():
-            if element in _v:
-                return 'PARTIAL'
+        if element in self._partial_selected:
+            return 'PARTIAL'
 
         return ''
 
@@ -86,37 +85,17 @@ class SelectState(metaclass=Singleton):
         else:
             self._manual_selected.append(element)
 
-    def partial_select(self, parent=None, element=None):
+    def partial_select(self, element=None):
         """
-        Partial selection is useful for elements that need a selection
-        state because related elements have been selected
-        No testing is done to validate partial selections
+        Manual selection for elements that are not fully or partially
+        managed
         """
 
-        #all partial selections must have a parent element
-        if not parent:
-
-            if not element:
-                self._partial_selected.clear()
-
-            return
-
-        #parent element must exist in selection
-        if not self.is_selected(parent):
-            return
-
-        #new parent?  add an empty list to the dictionary
-        if not self._partial_selected.get(parent):
-            self._partial_selected[parent] = []
-
-        #no element?  clear all partial selections
         if not element:
-            self._partial_selected[parent] = []
-            return
+            self._partial_selected.clear()
 
-        #append if not already added
-        if not element in self._partial_selected[parent]:
-            self._partial_selected[parent].append(element)
+        else:
+            self._partial_selected.append(element)
 
     def select(self, element=None, force=False):
         """

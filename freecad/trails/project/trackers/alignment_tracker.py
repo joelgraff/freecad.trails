@@ -104,6 +104,10 @@ class AlignmentTracker(BaseTracker):
         #insert in the scenegraph root
         self.insert_node(self.get_node())
 
+        self.select_cb = \
+            ViewState().view.addEventCallback(
+                'SoMouseButtonEvent', self.post_select_event)
+
     def _update_status_bar(self):
         """
         Update the status bar with the latest mouseover data
@@ -126,6 +130,17 @@ class AlignmentTracker(BaseTracker):
         """
 
         self.drag_curves = []
+
+    def post_select_event(self, arg):
+        """
+        Event to force wires to re-test selection state on button down
+        """
+
+        if MouseState().button1.state == 'UP':
+            return
+
+        for _v in self.trackers['Tangents']:
+            _v.validate_selection()
 
     def button_event(self, arg):
         """
