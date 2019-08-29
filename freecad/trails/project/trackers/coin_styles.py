@@ -56,6 +56,7 @@ class CoinStyles(Const):
         GRAY_50 = (0.5, 0.5, 0.5)
 
         ORANGE = (1.0, 0.5, 0.0)
+        GOLD = (1.0, 0.85, 0.0)
 
         def scale(color, value):
             """
@@ -101,7 +102,7 @@ class CoinStyles(Const):
 
     PARTIAL_SELECTED =\
         Style('partial selected', line_pattern=0x0fff,
-              color=Color.scale(Color.YELLOW, 0.9))
+              color=Color.scale(Color.GOLD, 0.9))
 
-    SELECTED = Style('selected', color=Color.YELLOW)
+    SELECTED = Style('selected', color=Color.GOLD)
     ERROR = Style('error', color=Color.RED)
