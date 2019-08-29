@@ -57,6 +57,7 @@ class CurveTracker(WireTracker):
         self.drag_last_mouse = None
         self.drag_curve_middle = None
         self.drag_curve = None
+        self.external_select = False
         self.pt_attr_pairs = [
             ('Start', 'Tangent'),
             ('End', 'Tangent'),
@@ -102,7 +103,23 @@ class CurveTracker(WireTracker):
         Override base button event
         """
 
-        #force partial curve selection if any nodes are picked
+        #test for PI node selection first.  select curve accordingly and
+        #quit if any or all PI nodes are selected
+        _pi_select = [_v for _v in self.pi_nodes if _v.is_selected()]
+
+        if _pi_select:
+
+            self.external_select = True
+
+            if len(_pi_select) == 3:
+                SelectState().select(self)
+
+            else:
+                SelectState().partial_select(self)
+
+            return
+
+        #If no pi nodes selected, test for curve / arc point selections
         super().button_event(arg)
 
         if not MouseState().button1.state == 'UP':
@@ -136,6 +153,12 @@ class CurveTracker(WireTracker):
 
         super().start_drag()
 
+        #abort if PI nodes are being dragged
+        if self.external_select:
+            return
+
+        #disable drag state translations since curve editing requires
+        #manual updates
         DragState().update_translate = False
 
         self.drag_curve_middle = math.floor((len(self.curve.points) - 1) / 2)
@@ -235,6 +258,8 @@ class CurveTracker(WireTracker):
             _v.update(_points[_i])
 
         self.wire_tracker.update()
+
+        self.external_select = False
 
     def build_trackers(self, names):
         """
