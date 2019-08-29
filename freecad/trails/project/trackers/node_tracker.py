@@ -78,7 +78,8 @@ class NodeTracker(BaseTracker):
 
         self.drag_point = self.point
 
-        MouseState().set_mouse_position(self.point)
+        if self == DragState().drag_node:
+            MouseState().set_mouse_position(self.point)
 
         if self.drag_group:
             _idx = 0
