@@ -81,9 +81,6 @@ class NodeTracker(BaseTracker):
         if self == DragState().drag_node:
             MouseState().set_mouse_position(self.point)
 
-        if self.drag_group:
-            _idx = 0
-
     def on_drag(self):
         """
         Override of base function
