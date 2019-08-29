@@ -110,7 +110,8 @@ class NodeTracker(BaseTracker):
         """
 
         if self.select_state == 'MANUAL':
-            self.drag_point = self.drag_copy.getChild(3).point.getValues()[0]
+            self.drag_point = \
+                self.drag_copy.getChild(3).point.getValues()[0].getValue()
 
         else:
             self.drag_point = tuple(ViewState().transform_points(

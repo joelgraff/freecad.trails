@@ -131,10 +131,8 @@ class AlignmentBaseTestTracker(BaseTracker):
         if MouseState().button1.state == 'UP':
             return
 
-        print('tracker post-select')
         for _v in self.trackers['Tangents']:
             _v.validate_selection()
-
 
     def button_event(self, arg):
         """
