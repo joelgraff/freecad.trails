@@ -195,7 +195,7 @@ class CurveTracker(WireTracker):
                 Vector(self.drag_curve.points[self.drag_curve_middle])
 
         #update DragState
-        DragState().translate(MouseState().coordinates, MouseState().shiftDown)
+        DragState().translate(MouseState().coordinates)
         DragState().coordinates = MouseState().coordinates
         DragState().update(_drag_line_start, _drag_line_end)
 

@@ -287,7 +287,7 @@ class DragState(metaclass=Singleton):
 ## Transformation routines
 ##########################
 
-    def translate(self, coord, micro_drag=False):
+    def translate(self, coord):
         """
         Manage drag geometry translation
         """
@@ -299,9 +299,11 @@ class DragState(metaclass=Singleton):
         _delta = coord.sub(self.coordinates)
 
         self.delta = Vector(self.transform.translation.getValue())
+        self.delta += _delta
+
         self.transform.translation.setValue(tuple(self.delta))
 
-    def rotate(self, coord, micro_drag=False):
+    def rotate(self, coord):
         """
         Manage rotation during dragging
         coord - coordinates for the rotation update
@@ -313,7 +315,7 @@ class DragState(metaclass=Singleton):
         _angle = 0.0
 
         if self.rotation_center:
-            _angle = support.get_bearing(coord.sub(self.rotation_center))
+             _angle = support.get_bearing(coord.sub(self.rotation_center))
 
         else:
 
@@ -327,10 +329,6 @@ class DragState(metaclass=Singleton):
             self.rotation = 0.0
             self.angle = 0.0
 
-        _scale = 1.0
-
-        if micro_drag:
-            _scale = 0.10
 
         _delta = self.angle - _angle
 
@@ -340,7 +338,7 @@ class DragState(metaclass=Singleton):
         elif _delta > math.pi:
             _delta -= C.TWO_PI
 
-        self.rotation += _delta * _scale
+        self.rotation += _delta
         self.angle = _angle
 
         #update the +z axis rotation for the transformation

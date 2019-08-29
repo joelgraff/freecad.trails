@@ -84,6 +84,7 @@ class NodeTracker(BaseTracker):
         """
         Override of base function
         """
+
         if not (self.drag_point and DragState().drag_node):
             return
 
@@ -97,7 +98,8 @@ class NodeTracker(BaseTracker):
         """
 
         if self.drag_point and DragState().drag_node:
-            self.update(self.update_drag_point())
+            self.update_drag_point()
+            self.update(self.drag_point)
 
         super().end_drag()
 
@@ -110,8 +112,10 @@ class NodeTracker(BaseTracker):
             self.drag_point = self.drag_copy.getChild(3).point.getValues()[0]
 
         else:
-            self.drag_point = ViewState().transform_points(
-                [self.point], DragState().node_group)[0]
+            self.drag_point = tuple(ViewState().transform_points(
+                [self.point], DragState().node_group)[0])
+
+        self.drag_point = self.drag_point[0:3]
 
     def update(self, coord=None):
         """

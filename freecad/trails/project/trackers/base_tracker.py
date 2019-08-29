@@ -263,6 +263,7 @@ class BaseTracker:
         self.select_state = SelectState().is_selected(self)
 
         self.drag_copy = self.copy()
+        self.drag_group = None
 
         if self.select_state == 'FULL':
             self.drag_group = DragState().add_node(self.drag_copy)
@@ -307,7 +308,7 @@ class BaseTracker:
         #drag rotation
         if MouseState().altDown:
 
-            DragState().rotate(_mouse_coord, MouseState().shiftDown)
+            DragState().rotate(_mouse_coord)
 
             _ctr = Vector(DragState().transform.center.getValue())
             _offset = Vector(DragState().transform.translation.getValue())
@@ -318,7 +319,7 @@ class BaseTracker:
 
         #drag translation
         else:
-            DragState().translate(_mouse_coord, MouseState().shiftDown)
+            DragState().translate(_mouse_coord)
 
         #save the drag state coordinate as the current mouse coordinate
         DragState().coordinates = _mouse_coord

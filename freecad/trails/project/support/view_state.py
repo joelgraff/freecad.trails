@@ -134,13 +134,6 @@ class ViewState(metaclass=Singleton):
         _s = 0
         _result = []
 
-        #one point - do vector - matix multiply and return
-        if len(_pts) == 1:
-
-            return [
-                _matrix.multVecMatrix(coin.SbVec4f(_pts[0])).getValue()[:3]
-            ]
-
         #iterate the list, processing it in sets of four coordinates at a time
         while _s < len(_pts):
 
