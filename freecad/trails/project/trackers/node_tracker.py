@@ -30,6 +30,7 @@ from FreeCAD import Vector
 
 from ..support.drag_state import DragState
 from ..support.view_state import ViewState
+from ..support.mouse_state import MouseState
 
 from .base_tracker import BaseTracker
 
@@ -76,6 +77,8 @@ class NodeTracker(BaseTracker):
         super().start_drag()
 
         self.drag_point = self.point
+
+        MouseState().set_mouse_position(self.point)
 
         if self.drag_group:
             _idx = 0

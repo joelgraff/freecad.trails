@@ -158,4 +158,4 @@ class ViewState(metaclass=Singleton):
         Convenience function for view.getPointOnScreen()
         """
 
-        return Vector(self.view.getPointOnScreen(point) + (0.0,))
+        return Vector(self.view.getPointOnScreen(Vector(point)) + (0.0,))

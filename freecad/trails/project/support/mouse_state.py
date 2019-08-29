@@ -245,5 +245,5 @@ class MouseState(metaclass=Singleton):
 
         QCursor.setPos(_pos[0], _pos[1])
 
-        self.coordinates = coord
+        self.coordinates = Vector(coord)
         self.set_position(_new_pos)
