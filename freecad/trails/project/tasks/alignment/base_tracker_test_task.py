@@ -254,6 +254,19 @@ class BaseTrackerTestTask:
 
         self.mouse.update(arg, ViewState().view.getCursorPos())
 
+        if MouseState().shiftDown:
+
+            _dist = MouseState().vector.Length
+
+            if not _dist:
+                return
+
+            _vec = Vector(MouseState().vector).normalize()
+
+            MouseState().set_mouse_position(
+                MouseState().last_coord.add(_vec.multiply(_dist * 0.10))
+            )
+
         #clear the matrix to force a refresh at the start of every mouse event
         ViewState().matrix = None
 

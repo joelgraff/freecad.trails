@@ -292,21 +292,14 @@ class DragState(metaclass=Singleton):
         Manage drag geometry translation
         """
 
+        if not self.update_translate:
+            return
+
         #accumulate the movement from the previous mouse position
         _delta = coord.sub(self.coordinates)
 
-        if self.update_translate:
-            self.delta = Vector(self.transform.translation.getValue())
-
-        _scale = 1.0
-
-        if micro_drag:
-            _scale = 0.10
-
-        self.delta = self.delta.add(_delta.multiply(_scale))
-
-        if self.update_translate:
-            self.transform.translation.setValue(tuple(self.delta))
+        self.delta = Vector(self.transform.translation.getValue())
+        self.transform.translation.setValue(tuple(self.delta))
 
     def rotate(self, coord, micro_drag=False):
         """

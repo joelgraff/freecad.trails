@@ -28,8 +28,6 @@ from enum import IntEnum
 
 from pivy import coin
 
-from PySide.QtGui import QCursor
-
 import FreeCADGui as Gui
 from FreeCAD import Vector
 
@@ -318,68 +316,15 @@ class BaseTracker:
 
             _mouse_coord = DragState().coordinates
 
-        #translation transformation
+        #drag translation
         else:
-            if DragState().update_translate:
-                DragState().translate(_mouse_coord, MouseState().shiftDown)
-
-        #micro-dragging cursor control
-        if MouseState().shiftDown:
-
-            #QtGui.QApplication.setOverrideCursor(Qt.BlankCursor)
-            #Gui.getMainWindow().setCursor(Qt.BlankCursor)
-            #Gui.getMainWindow().update()
-            #Gui.getMainWindow().repaint()
-            #QtGui.QApplication.processEvents()
-            #self.do_unset = True
-
-            #get the window position of the updated drag delta coordinate
-            print('dragstate start / mousecoord = ', DragState().start, _mouse_coord)
-            self.set_mouse_position(DragState().start.add(DragState().delta))
-            _drag_line_end = _mouse_coord
-
-        #no micro-drag?  shut off cursor override
-        #elif QtGui.QApplication.overrideCursor():
-        #elif QtGui.QApplication.overrideCursor() == Qt.BlankCursor:
-
-        #    if self.do_unset:
-        #        print('UNSET')
-        #        QtGui.QApplication.restoreOverrideCursor()
-        #        QtGui.QApplication.processEvents()
-        #        self.do_unset = False
-            #Gui.getMainWindow().unsetCursor()
-
-        #print(QtGui.QApplication.overrideCursor())
-        #QtGui.QApplication.processEvents()
+            DragState().translate(_mouse_coord, MouseState().shiftDown)
 
         #save the drag state coordinate as the current mouse coordinate
         DragState().coordinates = _mouse_coord
 
         if self.show_drag_line:
             DragState().update(_drag_line_start, _drag_line_end)
-
-    def set_mouse_position(self, coord):
-        """
-        Update the mouse cursor position independently for micro-dragging
-        """
-
-        _new_pos = ViewState().getPointOnScreen(coord)
-
-        print(self.name, _new_pos, MouseState().pos)
-        #set the mouse position at the updated screen coordinate
-        _delta_pos = _new_pos.sub(Vector(MouseState().pos + (0.0,)))
-
-
-
-        #get screen position by adding offset to the new window position
-        _pos = Vector(QCursor.pos().toTuple() + (0.0,)).add(
-            Vector(_delta_pos.x, -_delta_pos.y))
-
-        print('\n\tupdated pos', _pos)
-        QCursor.setPos(_pos[0], _pos[1])
-
-        MouseState().coordinates = coord
-        MouseState().set_position(_new_pos)
 
     def end_drag(self):
         """

@@ -263,6 +263,19 @@ class EditAlignmentTask:
         if DragState().node_group:
             ViewState().get_matrix(DragState().node_group)
 
+        if MouseState().shiftDown:
+
+            _dist = MouseState().vector.Length
+
+            if not _dist:
+                return
+
+            _vec = Vector(MouseState().vector).normalize()
+
+            MouseState().set_mouse_position(
+                MouseState().last_coord.add(_vec.multiply(_dist * 0.10))
+            )
+
         self.mouse.update(arg, ViewState().view.getCursorPos())
 
     def button_event(self, arg):

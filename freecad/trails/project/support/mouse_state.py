@@ -26,6 +26,8 @@ Mouse state class
 
 from FreeCAD import Vector
 
+from PySide.QtGui import QCursor
+
 from .singleton import Singleton
 from .view_state import ViewState
 
@@ -135,8 +137,9 @@ class MouseState(metaclass=Singleton):
         self.object = ''
         self.component = ''
         self.coordinates = Vector()
-        self.last_coord = Vector
+        self.last_coord = Vector()
         self.last_pos = ()
+        self.vector = Vector()
 
         self.state = [self.buttons, self.pos]
 
@@ -182,6 +185,7 @@ class MouseState(metaclass=Singleton):
         self.altDown = arg['AltDown']
         self.ctrlDown = arg['CtrlDown']
         self.shiftDown = arg['ShiftDown']
+        self.vector = _coord.sub(self.last_coord)
 
         _b_list = self.buttons.values()
 
@@ -224,3 +228,22 @@ class MouseState(metaclass=Singleton):
             return _result
 
         return Vector(self.pos).sub(Vector(self.button1.drag_start))
+
+    def set_mouse_position(self, coord):
+        """
+        Update the mouse cursor position independently
+        """
+
+        _new_pos = ViewState().getPointOnScreen(coord)
+
+        #set the mouse position at the updated screen coordinate
+        _delta_pos = _new_pos.sub(Vector(self.pos + (0.0,)))
+
+        #get screen position by adding offset to the new window position
+        _pos = Vector(QCursor.pos().toTuple() + (0.0,)).add(
+            Vector(_delta_pos.x, -_delta_pos.y))
+
+        QCursor.setPos(_pos[0], _pos[1])
+
+        self.coordinates = coord
+        self.set_position(_new_pos)
