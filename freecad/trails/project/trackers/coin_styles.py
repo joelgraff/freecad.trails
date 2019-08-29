@@ -33,6 +33,46 @@ class CoinStyles(Const):
     Pre-defined styles for use with Coin3d scenegraph nodes
     """
 
+    class Color(Const):
+        """
+        Color constants
+        """
+        BLACK = (0.0, 0.0, 0.0)
+        WHITE = (1.0, 1.0, 1.0)
+        RED = (1.0, 0.0, 0.0)
+        GREEN = (0.0, 1.0, 0.0)
+        BLUE = (0.0, 0.0, 1.0)
+        YELLOW = (1.0, 1.0, 0.0)
+        CYAN = (0.0, 1.0, 1.0)
+        MAGENTA = (1.0, 0.0, 1.0)
+        GRAY_75 = (0.75, 0.75, 0.75)
+
+        MAROON = (0.5, 0.0, 0.0)
+        FOREST = (0.0, 0.5, 0.0)
+        NAVY = (0.0, 0.0, 0.5)
+        OLIVE = (0.5, 0.5, 0.0)
+        TEAL = (0.0, 0.5, 0.5)
+        PURPLE = (0.5, 0.0, 0.5)
+        GRAY_50 = (0.5, 0.5, 0.5)
+
+        ORANGE = (1.0, 0.5, 0.0)
+
+        def scale(color, value):
+            """
+            Scale the factors of a color by the provided value
+            If float, all colors scaled, otherwise, per-element
+            """
+
+            if isinstance(value, float):
+                return ([_v * value for _v in color])
+
+            _c = color
+
+            if len(value) < 3:
+                _c = list(color) + [1.0]*(3-len(value))
+
+            return (_c[0]*value[0], _c[1]*value[1], _c[2]*value[2])
+
     class Style():
         """
         Style internal class for CoinStyles class
@@ -56,7 +96,12 @@ class CoinStyles(Const):
             self.color = color
             self.select = select
 
-    DEFAULT = Style('default', color=(0.8, 0.8, 0.8))
+    DEFAULT = Style('default', color=Color.GRAY_75)
     DASHED = Style('dashed', line_pattern=0x0f0f, select=False)
-    SELECTED = Style('selected', color=(1.0, 0.9, 0.0))
-    ERROR = Style('error', color=(1.0, 0.0, 0.0))
+
+    PARTIAL_SELECTED =\
+        Style('partial selected', line_pattern=0x0fff,
+              color=Color.scale(Color.YELLOW, 0.9))
+
+    SELECTED = Style('selected', color=Color.YELLOW)
+    ERROR = Style('error', color=Color.RED)
