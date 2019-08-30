@@ -73,6 +73,20 @@ class SelectState(metaclass=Singleton):
         self._partial_selected.clear()
         self._manual_selected.clear()
 
+    def deselect(self, element):
+        """
+        Deselect the provided element from whatever state it's found
+        """
+
+        if element in self._selected:
+            self._selected.remove(element)
+
+        if element in self._partial_selected:
+            self._partial_selected.remove(element)
+
+        if element in self._manual_selected:
+            self._manual_selected.remove(element)
+
     def manual_select(self, element=None):
         """
         Manual selection for elements that are not fully or partially
@@ -155,14 +169,7 @@ class SelectState(metaclass=Singleton):
         if element is None or not _picking:
             return
 
-        #remove if it exists, append if not
-        if _exists:
-            self._selected.remove(element)
-
-            if element in self._partial_selected:
-                del self._partial_selected[element]
-
-        else:
+        if not _exists:
             self._selected.append(element)
 
     def is_multi(self):

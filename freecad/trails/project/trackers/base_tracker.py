@@ -160,6 +160,8 @@ class BaseTracker:
         if not style:
             style = self.coin_style
 
+            #print (self.name, style.id, self.is_selected())
+
             if self.is_selected():
                 style = CoinStyles.SELECTED
 
@@ -338,7 +340,6 @@ class BaseTracker:
             return
 
         self.drag_copy = None
-        self.select_state = ''
 
         DragState().finish()
 

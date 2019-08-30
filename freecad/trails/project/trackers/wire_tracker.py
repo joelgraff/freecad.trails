@@ -167,45 +167,40 @@ class WireTracker(BaseTracker):
 
     def validate_selection(self):
         """
-        Validate the wire's selection state
+        Validate the wire's selection state against the selected nodes
         """
 
-        if not self.selection_nodes:
+        #no validation for manual selection
+        if self.is_selected() == 'MANUAL':
             return
 
-        #if wire is clicked, select corresponding selection nodes
-        if SelectState().is_selected(self) == 'FULL':
+        _sel = []
+        _sel_state = self.is_selected()
+
+        #create truth list of node selection states
+        if self.selection_nodes:
+            _sel = [_v.is_selected() != '' for _v in self.selection_nodes]
+
+        #if not all nodes are selected, but the wire is, and the
+        #wire was clicked, select all nodes
+        if not all(_sel) and _sel_state == 'FULL'\
+            and self.name in MouseState().component:
 
             for _v in self.selection_nodes:
-
-                if not _v.is_selected():
+                if _v.is_selected() != 'FULL':
                     SelectState().select(_v, force=True)
-                    _v.refresh()
-                    print(_v.name, _v.is_selected())
 
-        #otherwise if any of the selection nodes are picked, select the wire
-        elif not self.is_selected():
+        #all nodes selected, but wire is not full
+        elif all(_sel) and _sel_state != 'FULL':
+            SelectState().select(self, force=True)
 
-            _sel = [_v.is_selected() for _v in self.selection_nodes]
+        #any (but not all) node selected, and wire is not partial
+        elif any(_sel) and _sel_state != 'PARTIAL':
+            SelectState().partial_select(self)
 
-            #all selection nodes must be picked and have the same number
-            #of points
-            if all(_sel) and len(self.points) == len(_sel):
-
-                if not _v.is_selected():
-                    SelectState().select(self, force=True)
-
-            #otherwise, do partial select
-            else:
-
-                for _i, _v in enumerate(_sel):
-
-                    if not _v:
-                        continue
-
-                    _node = self.selection_nodes[_i]
-
-                    SelectState().partial_select(self)
+        #no nodes selected, but wire is selected
+        elif _sel and not any(_sel) and _sel_state:
+            SelectState().deselect(self)
 
     def start_drag(self):
         """

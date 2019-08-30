@@ -91,8 +91,12 @@ class CurveTracker(WireTracker):
 
         _sel = self.is_selected()
 
+        #internal tracker visiblity criteria:
+        # 1. curve must be the mouse component
+        # 2. selection state must be manual
+
         _is_visible = self.name in MouseState().component\
-            or (_sel and _sel != 'MANUAL')
+                and self.is_selected() == 'MANUAL'
 
         self.wire_tracker.set_visibility(_is_visible)
 
@@ -106,27 +110,37 @@ class CurveTracker(WireTracker):
         Override base button event
         """
 
+        self.external_select = False
+
         #test for PI node selection first.  select curve accordingly and
         #quit if any or all PI nodes are selected
+        #this test must perform on both button down and button up to
+        #catch late node selections
         _pi_select = [_v for _v in self.pi_nodes if _v.is_selected()]
 
         if _pi_select:
 
             self.external_select = True
 
-            if len(_pi_select) == 3:
-                SelectState().select(self)
+            if len(_pi_select) == 3 and self.is_selected != 'FULL':
+                SelectState().select(self, force=True)
 
-            else:
+            elif self.is_selected() != 'MANUAL':
                 SelectState().manual_select(self)
 
         #If no pi nodes selected, test for curve / arc point selections
         super().button_event(arg)
 
-        self.update()
+        #self.update()
 
-        #abort if external selection, or internal selection/button down
-        if not MouseState().button1.state == 'UP' or self.external_select:
+        print(self.name, 'button event', MouseState().button1.state, self.external_select, self.is_selected())
+
+        #abort if button down (internal selection only on button up)
+        if not MouseState().button1.state == 'UP':
+            return
+
+        #abort when an externally-selected action
+        if self.external_select:
             return
 
         _selected = self.is_selected()\
@@ -144,6 +158,7 @@ class CurveTracker(WireTracker):
         self.wire_tracker.refresh()
 
         for _v in self.node_trackers:
+            print(self.name, 'selecting trackers')
             SelectState().manual_select(_v)
 
     def start_drag(self):
@@ -178,9 +193,10 @@ class CurveTracker(WireTracker):
         Override base implementation
         """
 
-        if not self.state.dragging \
-            and self != DragState().drag_node \
-            and not self.is_selected():
+        if self.select_state != 'MANUAL':
+            return
+
+        if not self.state.dragging and self != DragState().drag_node:
             return
 
         #external changes (PI nodes) only
@@ -265,6 +281,7 @@ class CurveTracker(WireTracker):
         Override base function
         """
 
+        print(self.name, 'end drag', self.is_selected())
         super().end_drag()
 
         if not self.drag_curve:
@@ -278,8 +295,6 @@ class CurveTracker(WireTracker):
             _v.update(_points[_i])
 
         self.wire_tracker.update()
-
-        self.external_select = False
 
     def build_trackers(self, names):
         """
