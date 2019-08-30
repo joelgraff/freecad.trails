@@ -142,7 +142,7 @@ class BaseTracker:
         Convenience wrapper for SelectState().is_selceted
         """
 
-        return SelectState().is_selected(self) != ''
+        return SelectState().is_selected(self)
 
     def get_node(self):
         """
@@ -158,15 +158,10 @@ class BaseTracker:
         """
 
         if not style:
-
             style = self.coin_style
 
             if self.is_selected():
-
                 style = CoinStyles.SELECTED
-
-                if SelectState().is_selected(self) == 'PARTIAL':
-                    style = CoinStyles.PARTIAL_SELECTED
 
         self.set_style(style)
 
@@ -199,6 +194,10 @@ class BaseTracker:
 
         if MouseState().button1.state == 'DOWN':
             SelectState().select(self)
+
+        else:
+            self.update_dragging()
+            self.update_highlighting()
 
         self.refresh()
 

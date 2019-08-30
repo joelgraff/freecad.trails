@@ -160,7 +160,9 @@ class WireTracker(BaseTracker):
 
         super().button_event(arg)
 
-        self.validate_selection()
+        if MouseState().button1.state == 'DOWN':
+            self.validate_selection()
+
         self.refresh()
 
     def validate_selection(self):

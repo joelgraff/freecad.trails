@@ -27,7 +27,7 @@ import math
 
 from FreeCAD import Vector
 
-from ...geometry import arc, spiral
+from ...geometry import arc, spiral, support
 
 from ..support.mouse_state import MouseState
 from ..support.drag_state import DragState
@@ -89,7 +89,10 @@ class CurveTracker(WireTracker):
         Override base event
         """
 
-        _is_visible = self.name in MouseState().component or self.is_selected()
+        _sel = self.is_selected()
+
+        _is_visible = self.name in MouseState().component\
+            or (_sel and _sel != 'MANUAL')
 
         self.wire_tracker.set_visibility(_is_visible)
 
@@ -115,14 +118,15 @@ class CurveTracker(WireTracker):
                 SelectState().select(self)
 
             else:
-                SelectState().partial_select(self)
-
-            return
+                SelectState().manual_select(self)
 
         #If no pi nodes selected, test for curve / arc point selections
         super().button_event(arg)
 
-        if not MouseState().button1.state == 'UP':
+        self.update()
+
+        #abort if external selection, or internal selection/button down
+        if not MouseState().button1.state == 'UP' or self.external_select:
             return
 
         _selected = self.is_selected()\
@@ -136,7 +140,6 @@ class CurveTracker(WireTracker):
         SelectState().clear_state()
 
         SelectState().manual_select(self)
-
         SelectState().manual_select(self.wire_tracker)
         self.wire_tracker.refresh()
 
@@ -155,6 +158,11 @@ class CurveTracker(WireTracker):
 
         #abort if PI nodes are being dragged
         if self.external_select:
+
+            self.set_style(style=CoinStyles.SELECTED,
+                           draw=self.drag_copy.getChild(1),
+                           color=self.drag_copy.getChild(2))
+
             return
 
         #disable drag state translations since curve editing requires
@@ -175,6 +183,17 @@ class CurveTracker(WireTracker):
             and not self.is_selected():
             return
 
+        #external changes (PI nodes) only
+        if self.external_select:
+
+            self.drag_curve = self._generate_external_arc()
+
+            _pts = arc.get_points(self.drag_curve, _dtype=tuple)
+
+            self.drag_copy.getChild(3).point.setValues(0, len(_pts), _pts)
+
+            return
+
         #all movements are constrained to  a line and update a single
         #curve attribute
         _attr = 'External'
@@ -191,7 +210,7 @@ class CurveTracker(WireTracker):
             return
 
         #regenerate the curve and points
-        self.drag_curve = self._generate_arc(attr=_attr, point=_point)
+        self.drag_curve = self._generate_internal_arc(attr=_attr, point=_point)
         _pts = arc.get_points(self.drag_curve, _dtype=tuple)
 
         #update the curve drag geometry in the manual drag group
@@ -203,6 +222,7 @@ class CurveTracker(WireTracker):
         _drag_line_start = Vector(DragState().start)
         _drag_line_end = Vector(self.drag_curve.points[0])
 
+        #project the drag line end to a tangent or the middle vector
         if _point == 'End':
             _drag_line_end = self.drag_curve.points[-1]
 
@@ -389,9 +409,34 @@ class CurveTracker(WireTracker):
         return _coord_vec.add(_proj)
 
 
-    def _generate_arc(self, attr, point, on_drag=False):
+    def _generate_external_arc(self):
         """
-        Generate a simple arc curve
+        Generate the arc based on changes to the PI nodes
+        """
+
+        _curve = arc.Arc()
+
+        _curve.bearing_in =\
+            support.get_bearing(
+                Vector(self.pi_nodes[1].drag_point).sub(
+                    Vector(self.pi_nodes[0].drag_point))
+            )
+
+        _curve.bearing_out =\
+            support.get_bearing(
+                Vector(self.pi_nodes[2].drag_point).sub(
+                    Vector(self.pi_nodes[1].drag_point))
+            )
+
+        _curve.pi = Vector(self.pi_nodes[1].drag_point)
+        _curve.radius = self.curve.radius
+        _curve.direction = self.curve.direction
+
+        return arc.get_parameters(_curve, False)
+
+    def _generate_internal_arc(self, attr, point, on_drag=False):
+        """
+        Generate the arc based on changes to the arc points / position
         """
 
         _pos = DragState().coordinates
