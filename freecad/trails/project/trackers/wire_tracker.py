@@ -135,19 +135,27 @@ class WireTracker(BaseTracker):
         SoCoordinate3 references
         """
 
-        if not points:
-            points = self.points
+        _p = None
 
-        if not points:
+        if points:
+            _p = points[:]
+
+        elif self.points:
+            _p = self.points[:]
+
+        if not _p:
             return
 
-        _p = points[:]
-
-        if not isinstance(points[0], tuple):
+        if not isinstance(_p[0], tuple):
             _p = [tuple(_v) for _v in _p]
 
-        self.coord.point.setValues(0, len(points), _p)
-        self.line.numVertices.setValue(len(points))
+        if self.selection_nodes:
+
+            for _i, _j in enumerate(self.selection_indices):
+                _p[_j] = tuple(self.selection_nodes[_i].get())
+
+        self.coord.point.setValues(0, len(_p), _p)
+        self.line.numVertices.setValue(len(_p))
 
         self.points = _p
 
