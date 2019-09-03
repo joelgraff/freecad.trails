@@ -276,8 +276,7 @@ class WireTracker(BaseTracker):
 
             #nodes and partially selected lines do not need
             #a final transformation
-            if SelectState().is_selected(self) == 'FULL'\
-                and DragState().drag_node:
+            if SelectState().is_selected(self) == 'FULL':
 
                 _coords = ViewState().transform_points(
                     _coords, DragState().node_group)
