@@ -1,5 +1,5 @@
 import math
-from pivy import coin
+
 from FreeCAD import Vector
 from FreeCAD import BoundBox
 import FreeCADGui as Gui

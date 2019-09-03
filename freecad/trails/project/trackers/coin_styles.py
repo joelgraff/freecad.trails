@@ -58,6 +58,7 @@ class CoinStyles(Const):
         ORANGE = (1.0, 0.5, 0.0)
         GOLD = (1.0, 0.85, 0.0)
 
+        @staticmethod
         def scale(color, value):
             """
             Scale the factors of a color by the provided value

@@ -243,27 +243,6 @@ class WireTracker(BaseTracker):
 
         super().start_drag()
 
-    def on_drag(self):
-        """
-        Override of base function
-        """
-
-        super().on_drag()
-
-        return
-
-        if self.drag_override:
-            return
-
-        #abort unselected / non-partial drag
-        if not self.state.dragging:
-            return
-
-        if not self.is_selected():
-            return
-
-        super().on_drag()
-
     def end_drag(self):
         """
         Override of base function

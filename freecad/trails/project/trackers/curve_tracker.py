@@ -89,8 +89,6 @@ class CurveTracker(WireTracker):
         Override base event
         """
 
-        _sel = self.is_selected()
-
         #internal tracker visiblity criteria:
         # 1. curve must be the mouse component
         # 2. selection state must be manual
