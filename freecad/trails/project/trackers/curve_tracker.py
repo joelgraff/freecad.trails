@@ -93,13 +93,10 @@ class CurveTracker(WireTracker):
         # 1. curve must be the mouse component
         # 2. selection state must be manual
 
+        #manual selection indicates curve is picked.
+        #this is for mouse-over only
         if self.is_selected() != 'MANUAL':
-
-            _is_visible = self.name in MouseState().component
-            self.wire_tracker.set_visibility(_is_visible)
-
-            for _v in self.node_trackers:
-                _v.set_visibility(_is_visible)
+            self._set_internal_visiblity(self.name in MouseState().component)
 
         super().mouse_event(arg)
 
@@ -115,7 +112,26 @@ class CurveTracker(WireTracker):
             self._handle_internal_select()
             super().button_event(arg)
 
+            self._set_internal_visiblity(self.is_selected() != '')
+
+        else:
+            self._set_internal_visiblity(False)
+
+        if MouseState().button1.state == 'UP':
+            self.update_dragging()
+            self.update_highlighting()
+
         self.refresh()
+
+    def _set_internal_visiblity(self, is_visible):
+        """
+        Set the visiblity of the internal curve geometry
+        """
+
+        self.wire_tracker.set_visibility(is_visible)
+
+        for _v in self.node_trackers:
+            _v.set_visibility(is_visible)
 
     def _handle_internal_select(self):
         """
