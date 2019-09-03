@@ -160,8 +160,6 @@ class BaseTracker:
         if not style:
             style = self.coin_style
 
-            #print (self.name, style.id, self.is_selected())
-
             if self.is_selected():
                 style = CoinStyles.SELECTED
 

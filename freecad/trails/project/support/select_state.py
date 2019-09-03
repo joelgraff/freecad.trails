@@ -171,11 +171,3 @@ class SelectState(metaclass=Singleton):
 
         if not _exists:
             self._selected.append(element)
-
-    def is_multi(self):
-        """
-        Indicates multi-selection state if ctrl is pressed or more than
-        one element is selected
-        """
-
-        return MouseState().ctrlDown or self.count() > 1
