@@ -191,7 +191,7 @@ class WireTracker(BaseTracker):
                     SelectState().select(_v, force=True)
 
         #all nodes selected, but wire is not full
-        elif all(_sel) and _sel_state != 'FULL':
+        elif _sel and all(_sel) and _sel_state != 'FULL':
             SelectState().select(self, force=True)
 
         #any (but not all) node selected, and wire is not partial

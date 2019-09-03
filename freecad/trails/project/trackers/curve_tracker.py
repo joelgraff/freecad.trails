@@ -89,25 +89,19 @@ class CurveTracker(WireTracker):
         Override base event
         """
 
-
-        #CURVE DRAGGING BUGS TO FIX:
-
-        #1.  MANUAL CURVE UPDATES ARE INCORRECT
-        #2.  CURVE INTERNAL WIRETRACKERS HAVE NOT BEEN UPDATED AFTER #MULTI-SELECT DRAG OPS
-
         _sel = self.is_selected()
 
         #internal tracker visiblity criteria:
         # 1. curve must be the mouse component
         # 2. selection state must be manual
 
-        _is_visible = self.name in MouseState().component\
-                and self.is_selected() == 'MANUAL'
+        if self.is_selected() != 'MANUAL':
 
-        self.wire_tracker.set_visibility(_is_visible)
+            _is_visible = self.name in MouseState().component
+            self.wire_tracker.set_visibility(_is_visible)
 
-        for _v in self.node_trackers:
-            _v.set_visibility(_is_visible)
+            for _v in self.node_trackers:
+                _v.set_visibility(_is_visible)
 
         super().mouse_event(arg)
 
@@ -116,63 +110,14 @@ class CurveTracker(WireTracker):
         Override base event
         """
 
-        if MouseState().button1.state == 'UP':
-            return
-
-        #fully-selects self if picked - don't want this.
-        #super.button_event(arg)
-
-        self.external_select = False
-
-        #this test must perform on both button down and button up to
-        #catch late node selections
-        _pi_select = [_v for _v in self.pi_nodes if _v.is_selected()]
-
-        #if a PI node is selected treat as an external selection
-        if _pi_select:
-
-            print(self.name, 'external select...')
-            self.external_select = True
-
-            #Full-select the curve if all three PI nodes are picked
-            #because the curve can be transformed with the drag state nodes
-            if len(_pi_select) == 3 and self.is_selected != 'FULL':
-                SelectState().select(self, force=True)
-
-            #manual selection if any PI nodes are not picked, because
-            #the curve will have to be updated separately during dragging
-            elif self.is_selected() != 'MANUAL':
-                SelectState().manual_select(self)
-
-        elif not MouseState().component:
-
-            SelectState().deselect(self.wire_tracker)
-
-            for _v in self.node_trackers:
-                SelectState().deselect(_v)
-
-            SelectState().deselect(self)
-
-        self.refresh()
-
-        print(self.name, self.is_selected())
-
-    def _dep_button_event(self, arg):
-        """
-        Override base button event
-        """
-
-        #manage external selection
         self._handle_external_select()
 
-        super().button_event(arg)
+        if not self.external_select:
 
-        #If this is a button down, abort - only applies to internal selctions
-        #which are handled separately by the radius wire and curve nodes
-        if not MouseState().button1.state == 'UP' or self.external_select:
-            return
+            self._handle_internal_select()
+            super().button_event(arg)
 
-        self._handle_internal_select()
+        self.refresh()
 
     def _handle_internal_select(self):
         """
@@ -201,6 +146,9 @@ class CurveTracker(WireTracker):
         """
         Manage selection if PI nodes are clicked
         """
+
+        if MouseState().button1.state == 'UP':
+            return
 
         self.external_select = False
 
