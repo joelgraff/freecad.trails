@@ -32,6 +32,7 @@ from ...geometry import arc, spiral, support
 from ..support.mouse_state import MouseState
 from ..support.drag_state import DragState
 from ..support.select_state import SelectState
+from ..support.view_state import ViewState
 
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
@@ -165,6 +166,10 @@ class CurveTracker(WireTracker):
             return
 
         self.external_select = False
+
+        #after setting value to false, return if the curve is selected
+        if self.name in MouseState().component:
+            return
 
         #this test must perform on both button down and button up to
         #catch late node selections
@@ -315,12 +320,13 @@ class CurveTracker(WireTracker):
         Override base function
         """
 
-        super().end_drag()
-
         if self.drag_curve:
             self.curve = self.drag_curve
 
+        super().end_drag()
+
         _points = [self.curve.start, self.curve.center, self.curve.end]
+        _points = ViewState().transform_points(_points)
 
         for _i, _v in enumerate(self.node_trackers):
             _v.update(_points[_i])

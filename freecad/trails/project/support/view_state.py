@@ -128,6 +128,9 @@ class ViewState(metaclass=Singleton):
         if isinstance(points[0], coin.SbVec3f):
             points = [_v.getValue() for _v in points]
 
+        elif isinstance(points[0], Vector):
+            points = [tuple(_v) for _v in points]
+
         #append fourth point to each coordinate
         _pts = [_v + (1.0,) for _v in points]
 
@@ -147,7 +150,9 @@ class ViewState(metaclass=Singleton):
 
             #convert and transform
             _mat = coin.SbMatrix(_mat_pts)
-            _result.extend(_mat.multRight(_matrix).getValue()[:_last_point])
+
+            for _v in _mat.multRight(_matrix).getValue()[:_last_point]:
+                _result.append(tuple(_v))
 
             _s += 4
 
