@@ -89,6 +89,12 @@ class CurveTracker(WireTracker):
         Override base event
         """
 
+
+        #CURVE DRAGGING BUGS TO FIX:
+
+        #1.  MANUAL CURVE UPDATES ARE INCORRECT
+        #2.  CURVE INTERNAL WIRETRACKERS HAVE NOT BEEN UPDATED AFTER #MULTI-SELECT DRAG OPS
+
         _sel = self.is_selected()
 
         #internal tracker visiblity criteria:
@@ -107,42 +113,73 @@ class CurveTracker(WireTracker):
 
     def button_event(self, arg):
         """
-        Override base button event
+        Override base event
         """
+
+        if MouseState().button1.state == 'UP':
+            return
+
+        #fully-selects self if picked - don't want this.
+        #super.button_event(arg)
 
         self.external_select = False
 
-        #test for PI node selection first.  select curve accordingly and
-        #quit if any or all PI nodes are selected
         #this test must perform on both button down and button up to
         #catch late node selections
         _pi_select = [_v for _v in self.pi_nodes if _v.is_selected()]
 
+        #if a PI node is selected treat as an external selection
         if _pi_select:
 
+            print(self.name, 'external select...')
             self.external_select = True
 
+            #Full-select the curve if all three PI nodes are picked
+            #because the curve can be transformed with the drag state nodes
             if len(_pi_select) == 3 and self.is_selected != 'FULL':
                 SelectState().select(self, force=True)
 
+            #manual selection if any PI nodes are not picked, because
+            #the curve will have to be updated separately during dragging
             elif self.is_selected() != 'MANUAL':
                 SelectState().manual_select(self)
 
-        #If no pi nodes selected, test for curve / arc point selections
+        elif not MouseState().component:
+
+            SelectState().deselect(self.wire_tracker)
+
+            for _v in self.node_trackers:
+                SelectState().deselect(_v)
+
+            SelectState().deselect(self)
+
+        self.refresh()
+
+        print(self.name, self.is_selected())
+
+    def _dep_button_event(self, arg):
+        """
+        Override base button event
+        """
+
+        #manage external selection
+        self._handle_external_select()
+
         super().button_event(arg)
 
-        #self.update()
-
-        print(self.name, 'button event', MouseState().button1.state, self.external_select, self.is_selected())
-
-        #abort if button down (internal selection only on button up)
-        if not MouseState().button1.state == 'UP':
+        #If this is a button down, abort - only applies to internal selctions
+        #which are handled separately by the radius wire and curve nodes
+        if not MouseState().button1.state == 'UP' or self.external_select:
             return
 
-        #abort when an externally-selected action
-        if self.external_select:
-            return
+        self._handle_internal_select()
 
+    def _handle_internal_select(self):
+        """
+        Manage selection for graphical curve editing.
+        """
+
+        #selection based on any node, the wire, or the object itself is picked
         _selected = self.is_selected()\
             or self.wire_tracker.is_selected()\
             or any([_v.is_selected() for _v in self.node_trackers])
@@ -150,7 +187,7 @@ class CurveTracker(WireTracker):
         if not _selected:
             return
 
-        #select the trackers
+        #manually select the trackers, this is an internal selection operation
         SelectState().clear_state()
 
         SelectState().manual_select(self)
@@ -158,8 +195,42 @@ class CurveTracker(WireTracker):
         self.wire_tracker.refresh()
 
         for _v in self.node_trackers:
-            print(self.name, 'selecting trackers')
             SelectState().manual_select(_v)
+
+    def _handle_external_select(self):
+        """
+        Manage selection if PI nodes are clicked
+        """
+
+        self.external_select = False
+
+        #this test must perform on both button down and button up to
+        #catch late node selections
+        _pi_select = [_v for _v in self.pi_nodes if _v.is_selected()]
+
+        #if a PI node is selected treat as an external selection
+        if _pi_select:
+
+            self.external_select = True
+
+            #Full-select the curve if all three PI nodes are picked
+            #because the curve can be transformed with the drag state nodes
+            if len(_pi_select) == 3 and self.is_selected != 'FULL':
+                SelectState().select(self, force=True)
+
+            #manual selection if any PI nodes are not picked, because
+            #the curve will have to be updated separately during dragging
+            elif self.is_selected() != 'MANUAL':
+                SelectState().manual_select(self)
+
+        elif not MouseState().component:
+
+            SelectState().deselect(self.wire_tracker)
+
+            for _v in self.node_trackers:
+                SelectState().deselect(_v)
+
+            SelectState().deselect(self)
 
     def start_drag(self):
         """
@@ -225,6 +296,10 @@ class CurveTracker(WireTracker):
         if not _point or not _attr:
             return
 
+        #update DragState
+        DragState().translate(MouseState().coordinates)
+        DragState().coordinates = MouseState().coordinates
+
         #regenerate the curve and points
         self.drag_curve = self._generate_internal_arc(attr=_attr, point=_point)
         _pts = arc.get_points(self.drag_curve, _dtype=tuple)
@@ -253,9 +328,6 @@ class CurveTracker(WireTracker):
             _drag_line_end =\
                 Vector(self.drag_curve.points[self.drag_curve_middle])
 
-        #update DragState
-        DragState().translate(MouseState().coordinates)
-        DragState().coordinates = MouseState().coordinates
         DragState().update(_drag_line_start, _drag_line_end)
 
         #update tracker drag geometry
@@ -281,13 +353,10 @@ class CurveTracker(WireTracker):
         Override base function
         """
 
-        print(self.name, 'end drag', self.is_selected())
         super().end_drag()
 
-        if not self.drag_curve:
-            return
-
-        self.curve = self.drag_curve
+        if self.drag_curve:
+            self.curve = self.drag_curve
 
         _points = [self.curve.start, self.curve.center, self.curve.end]
 
