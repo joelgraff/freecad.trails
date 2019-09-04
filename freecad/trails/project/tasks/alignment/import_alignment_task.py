@@ -190,3 +190,15 @@ class ImportAlignmentTask:
         form.file_path.textChanged.connect(self.examine_file)
 
         self.form = form
+
+    def macro_load(self, file_path):
+        """
+        Allow loading a file via macro / automation
+        """
+
+        filename = 'import_alignment_task_xml_subpanel.ui'
+        subpanel = Gui.PySideUic.loadUi(self.ui_path + filename, None)
+
+        self.subtask = import_xml_subtask.create(subpanel, file_path)
+
+        self.accept()
