@@ -142,10 +142,11 @@ class AlignmentTracker(BaseTracker):
                 _v.state.dragging = True
 
         _last_tan = 0.0
-        _next_tan = 0.0
         _max = len(self.drag_curves) - 1
 
         for _i, _v in enumerate(self.drag_curves):
+
+            _next_tan = 0.0
 
             if _i < _max:
                 _next_tan = self.drag_curves[_i + 1].drag_curve.tangent
