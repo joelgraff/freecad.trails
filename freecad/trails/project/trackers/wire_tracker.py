@@ -250,6 +250,9 @@ class WireTracker(BaseTracker):
 
         _node = None
 
+        if not self.drag_copy:
+            return
+
         #pull the updated tuples from the drag node
         for _n in self.drag_copy.getChildren():
 
@@ -257,7 +260,7 @@ class WireTracker(BaseTracker):
                 _node = _n.point
                 break
 
-        if _node:
+        if _node and not DragState().abort:
 
             _coords = [_v.getValue() for _v in _node.getValues()]
 

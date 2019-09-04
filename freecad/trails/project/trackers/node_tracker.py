@@ -98,7 +98,7 @@ class NodeTracker(BaseTracker):
         Override of base function
         """
 
-        if self.drag_point and DragState().drag_node:
+        if self.drag_point and DragState().drag_node and not DragState().abort:
             self.update_drag_point()
             self.update(self.drag_point)
 
