@@ -338,6 +338,9 @@ class BaseTracker:
             return
 
         self.drag_copy = None
+        self.drag_group = None
+        self.select_state = None
+        self.state.dragging = False
 
         DragState().finish()
 

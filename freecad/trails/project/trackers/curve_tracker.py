@@ -142,10 +142,14 @@ class CurveTracker(WireTracker):
         Manage selection for graphical curve editing.
         """
 
+        if not self.name in MouseState().component and self.is_selected():
+            SelectState().deselect(self)
+
         #selection based on any node, the wire, or the object itself is picked
         _selected = self.is_selected()\
             or self.wire_tracker.is_selected()\
-            or any([_v.is_selected() for _v in self.node_trackers])
+            or any([_v.is_selected() for _v in self.node_trackers])\
+            or self.name in MouseState().component
 
         if not _selected:
             return
@@ -238,11 +242,14 @@ class CurveTracker(WireTracker):
         Override base implementation
         """
 
+        print(self.name, 'on drag 1')
         if self.select_state != 'MANUAL':
             return
+        print(self.name, 'on drag 2')
 
         if not self.state.dragging and self != DragState().drag_node:
             return
+        print(self.name, 'on drag 3')
 
         #external changes (PI nodes) only
         if self.external_select:
@@ -252,6 +259,7 @@ class CurveTracker(WireTracker):
             self.drag_copy.getChild(3).point.setValues(0, len(_pts), _pts)
 
             return
+        print(self.name, 'on drag 4')
 
         #internal drag state update
         self._update_drag_state()
@@ -263,7 +271,7 @@ class CurveTracker(WireTracker):
 
         #all movements are constrained to  a line and update a single
         #curve attribute
-        _pair = ['External', 'Center']
+        _pair = ['Center', 'External']
 
         #determine which point is being dragged (center / curve is default)
         for _k in self.pt_attr_pairs:
@@ -276,16 +284,18 @@ class CurveTracker(WireTracker):
 
         #regenerate the curve and points
         self.drag_curve = \
-            self._generate_internal_arc(attr=_k[0], point=_k[1])
+            self._generate_internal_arc(attr=_pair[1], point=_pair[0])
 
         _pts = arc.get_points(self.drag_curve, _dtype=tuple)
 
         #update the curve drag geometry in the manual drag group
-        _node = self.drag_copy.getChild(3).point
-        _node.setValues(0, len(_pts), _pts)
+        if self.drag_copy:
+            _node = self.drag_copy.getChild(3).point
+            _node.setValues(0, len(_pts), _pts)
 
-        self._update_drag_line(_k[1])
-        self._update_drag_trackers(_pts)
+            self._update_drag_trackers(_pts)
+
+        self._update_drag_line(_pair[0])
 
     def _update_drag_trackers(self, points):
         """
@@ -359,10 +369,12 @@ class CurveTracker(WireTracker):
             self.wire_tracker.update(_points)
 
         self.drag_curve = self.curve
-        self.drag_style = self.node.getChild(1)
-        self.drag_color = self.node.getChild(2)
+        self.drag_style = None
+        self.drag_color = None
         self.state.dragging = False
         self.is_valid = True
+        self.drag_curve_middle = 0.0
+        self.external_select = False
 
     def build_trackers(self, names):
         """
@@ -529,10 +541,12 @@ class CurveTracker(WireTracker):
         else:
             _pos = Vector(_pos)
 
+        print(attr, point, self.curve.get(point))
         _mouse_vec = \
             self.project_to_line(self.curve.pi, self.curve.get(point), _pos)
 
         _delta = _mouse_vec.Length - self.curve.get(attr)
+
         _attr_val = _delta + self.curve.get(attr)
 
         _curve = arc.Arc()
@@ -553,6 +567,7 @@ class CurveTracker(WireTracker):
         lt_tan, rt_tan - the length of the tangents of adjoining curves
         """
 
+        print(self.name, lt_tan, rt_tan)
         if not self.drag_curve:
             self.drag_curve = self.curve
 
