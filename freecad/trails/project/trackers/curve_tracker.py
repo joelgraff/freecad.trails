@@ -50,14 +50,17 @@ class CurveTracker(WireTracker):
 
         super().__init__(names=names)
 
+        if curve['Type'] == 'Curve':
+            curve = arc.Arc(curve)
+
         self.curve = curve
         self.pi_nodes = pi_nodes
         self.is_valid = True
-        self.drag_arc = None
+        self.drag_curve = self.curve
         self.drag_style = None
+        self.drag_color = None
         self.drag_last_mouse = None
         self.drag_curve_middle = None
-        self.drag_curve = None
         self.external_select = False
         self.pt_attr_pairs = [
             ('Start', 'Tangent'),
@@ -209,6 +212,10 @@ class CurveTracker(WireTracker):
 
         super().start_drag()
 
+        #reference the SoDrawStyle and SoBaseColor nodes of copied drag nodes
+        self.drag_style = self.drag_copy.getChild(1)
+        self.drag_color = self.drag_copy.getChild(2)
+
         #abort if PI nodes are being dragged
         if self.external_select:
 
@@ -241,64 +248,52 @@ class CurveTracker(WireTracker):
         if self.external_select:
 
             self.drag_curve = self._generate_external_arc()
-
             _pts = arc.get_points(self.drag_curve, _dtype=tuple)
-
             self.drag_copy.getChild(3).point.setValues(0, len(_pts), _pts)
 
             return
 
+        #internal drag state update
+        self._update_drag_state()
+
+    def _update_drag_state(self):
+        """
+        Update the curve drag state during drag ops
+        """
+
         #all movements are constrained to  a line and update a single
         #curve attribute
-        _attr = 'External'
-        _point = 'Center'
+        _pair = ['External', 'Center']
 
         #determine which point is being dragged (center / curve is default)
         for _k in self.pt_attr_pairs:
-
             if _k[0] in MouseState().component:
-                _point = _k[0]
-                _attr = _k[1]
-
-        if not _point or not _attr:
-            return
+                _pair = _k
 
         #update DragState
         DragState().translate(MouseState().coordinates)
         DragState().coordinates = MouseState().coordinates
 
         #regenerate the curve and points
-        self.drag_curve = self._generate_internal_arc(attr=_attr, point=_point)
+        self.drag_curve = \
+            self._generate_internal_arc(attr=_k[0], point=_k[1])
+
         _pts = arc.get_points(self.drag_curve, _dtype=tuple)
 
         #update the curve drag geometry in the manual drag group
         _node = self.drag_copy.getChild(3).point
         _node.setValues(0, len(_pts), _pts)
 
-        #update the drag state to reflect movement along curve's central axis
-        #default to start node selection
-        _drag_line_start = Vector(DragState().start)
-        _drag_line_end = Vector(self.drag_curve.points[0])
+        self._update_drag_line(_k[1])
+        self._update_drag_trackers(_pts)
 
-        #project the drag line end to a tangent or the middle vector
-        if _point == 'End':
-            _drag_line_end = self.drag_curve.points[-1]
-
-        elif _point == 'Center':
-
-            _drag_line_end = self.curve.pi.add(
-                self.project_to_line(
-                    self.curve.pi, _drag_line_start, MouseState().coordinates)
-            )
-
-        elif _point == 'Curve':
-            _drag_line_end =\
-                Vector(self.drag_curve.points[self.drag_curve_middle])
-
-        DragState().update(_drag_line_start, _drag_line_end)
+    def _update_drag_trackers(self, points):
+        """
+        Update the tracker geometry copied to DragState()
+        """
 
         #update tracker drag geometry
-        _pts = [_pts[0], tuple(self.drag_curve.center), _pts[-1]]
+        _pts = [points[0], tuple(self.drag_curve.center), points[-1]]
 
         for _v in self.node_trackers:
 
@@ -315,23 +310,59 @@ class CurveTracker(WireTracker):
 
         self.wire_tracker.drag_copy.getChild(3).point.setValues(0, 3, _pts)
 
+    def _update_drag_line(self, drag_point):
+        """
+        Update the drag line during drag ops
+        """
+
+        #update the drag state to reflect movement along curve's central axis
+        #default to start node selection
+        _drag_line_start = Vector(DragState().start)
+        _drag_line_end = Vector(self.drag_curve.points[0])
+
+        #project the drag line end to a tangent or the middle vector
+        if drag_point == 'End':
+            _drag_line_end = self.drag_curve.points[-1]
+
+        elif drag_point == 'Center':
+
+            _drag_line_end = self.curve.pi.add(
+                self.project_to_line(
+                    self.curve.pi, _drag_line_start, MouseState().coordinates)
+            )
+
+        elif drag_point == 'Curve':
+            _drag_line_end =\
+                Vector(self.drag_curve.points[self.drag_curve_middle])
+
+        DragState().update(_drag_line_start, _drag_line_end)
+
     def end_drag(self):
         """
         Override base function
         """
 
-        if self.drag_curve:
-            self.curve = self.drag_curve
-
         super().end_drag()
 
-        _points = [self.curve.start, self.curve.center, self.curve.end]
-        _points = ViewState().transform_points(_points)
+        if not DragState().abort:
 
-        for _i, _v in enumerate(self.node_trackers):
-            _v.update(_points[_i])
+            if self.drag_curve:
+                self.curve = self.drag_curve
 
-        self.wire_tracker.update()
+            _points = [self.curve.start, self.curve.center, self.curve.end]
+            _points = ViewState().transform_points(_points)
+
+            for _i, _v in enumerate(self.node_trackers):
+                _v.update(_points[_i])
+                _v.refresh()
+
+            self.wire_tracker.update(_points)
+
+        self.drag_curve = self.curve
+        self.drag_style = self.node.getChild(1)
+        self.drag_color = self.node.getChild(2)
+        self.state.dragging = False
+        self.is_valid = True
 
     def build_trackers(self, names):
         """
@@ -522,16 +553,10 @@ class CurveTracker(WireTracker):
         lt_tan, rt_tan - the length of the tangents of adjoining curves
         """
 
-        if not self.drag_arc:
-            return
+        if not self.drag_curve:
+            self.drag_curve = self.curve
 
-        if not self.state.dragging:
-            return
-
-        if not self.drag_style:
-            return
-
-        _t = self.drag_arc.tangent
+        _t = self.drag_curve.tangent
         _style = CoinStyles.DEFAULT
 
         _nodes = []
@@ -547,14 +572,11 @@ class CurveTracker(WireTracker):
         #test of left-side tangent validity
         _lt = _nodes[0].sub(_nodes[1]).Length
 
-        print('\n\t', self.name)
-        print('left ->', _t, lt_tan, _t + lt_tan, _lt)
         self.is_valid = _t + lt_tan <= _lt
 
         #test for right-side tangent validity
         if self.is_valid:
             _rt = _nodes[1].sub(_nodes[2]).Length
-            print('right ->', _t, rt_tan, _t + rt_tan, _rt)
 
             self.is_valid = _t + rt_tan <= _rt
 

@@ -35,6 +35,7 @@ from .base_tracker import BaseTracker
 from ..support.mouse_state import MouseState
 from ..support.view_state import ViewState
 from ..support.select_state import SelectState
+from ..support.drag_state import DragState
 
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
@@ -122,12 +123,47 @@ class AlignmentTracker(BaseTracker):
         Override base function
         """
 
-        pass
+        _curves = self.trackers['Curves']
+
+        if not self.drag_curves:
+
+            _min = 0
+            _max = len(_curves)
+
+            for _i, _v in enumerate(_curves):
+
+                if _v.state.dragging:
+
+                    _idx = list(range(max(0, _i - 1), min(_max, _i + 2)))
+                    self.drag_curves = [_curves[_i] for _i in _idx]
+                    break
+
+            for _v in self.drag_curves:
+                _v.state.dragging = True
+
+        _last_tan = 0.0
+        _next_tan = 0.0
+        _max = len(self.drag_curves) - 1
+
+        for _i, _v in enumerate(self.drag_curves):
+
+            if _i < _max:
+                _next_tan = self.drag_curves[_i + 1].drag_curve.tangent
+
+            _v.validate(_last_tan, _next_tan)
+            _last_tan = _v.drag_curve.tangent
 
     def end_drag(self):
         """
         Override base fucntion
         """
+
+        super().end_drag()
+
+        for _v in self.drag_curves:
+
+            if not _v.is_valid:
+                DragState().abort = True
 
         self.drag_curves = []
 
@@ -149,6 +185,7 @@ class AlignmentTracker(BaseTracker):
 
         #abort if not multi-selecting or button up
         if MouseState().button1.state == 'UP':
+            super().button_event(arg)
             return
 
         _pick = MouseState().component
