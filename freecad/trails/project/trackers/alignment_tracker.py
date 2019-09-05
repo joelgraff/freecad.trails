@@ -37,11 +37,13 @@ from ..support.view_state import ViewState
 from ..support.select_state import SelectState
 from ..support.drag_state import DragState
 
+from ..support.subscriber import Subscriber
+
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
 from .curve_tracker import CurveTracker
 
-class AlignmentTracker(BaseTracker):
+class AlignmentTracker(BaseTracker, Subscriber):
     """
     Tracker class for alignment design
     """

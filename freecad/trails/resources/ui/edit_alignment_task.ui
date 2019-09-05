@@ -96,7 +96,23 @@
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QLineEdit" name="lineEdit_2"/>
+                  <widget class="QLineEdit" name="pi_position_x">
+                   <property name="contextMenuPolicy">
+                    <enum>Qt::ActionsContextMenu</enum>
+                   </property>
+                   <property name="layoutDirection">
+                    <enum>Qt::RightToLeft</enum>
+                   </property>
+                   <property name="inputMask">
+                    <string/>
+                   </property>
+                   <property name="text">
+                    <string>0.000</string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </item>
@@ -123,7 +139,14 @@
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QLineEdit" name="lineEdit"/>
+                  <widget class="QLineEdit" name="pi_position_y">
+                   <property name="text">
+                    <string>0.00</string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </item>
@@ -183,7 +206,14 @@
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QLineEdit" name="lineEdit_4"/>
+                  <widget class="QLineEdit" name="pi_bearing_in">
+                   <property name="text">
+                    <string>0.00</string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </item>
@@ -210,7 +240,14 @@
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QLineEdit" name="lineEdit_3"/>
+                  <widget class="QLineEdit" name="pi_bearing_out">
+                   <property name="text">
+                    <string>0.00</string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </item>
@@ -253,14 +290,14 @@
             </spacer>
            </item>
            <item>
-            <widget class="QLabel" name="label_15">
+            <widget class="QLabel" name="pi_station">
              <property name="text">
               <string>TextLabel</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="label_16">
+            <widget class="QLabel" name="pi_station_internal">
              <property name="text">
               <string>TextLabel</string>
              </property>
@@ -324,7 +361,17 @@
             </widget>
            </item>
            <item row="0" column="1">
-            <widget class="QLineEdit" name="lineEdit_7"/>
+            <widget class="QLineEdit" name="curve_delta">
+             <property name="inputMask">
+              <string/>
+             </property>
+             <property name="text">
+              <string>0.00</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
            </item>
            <item row="1" column="0">
             <widget class="QLabel" name="label_13">
@@ -339,7 +386,14 @@
             </widget>
            </item>
            <item row="1" column="1">
-            <widget class="QLineEdit" name="lineEdit_8"/>
+            <widget class="QLineEdit" name="curve_radius">
+             <property name="text">
+              <string>0.00</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
            </item>
            <item row="2" column="0">
             <widget class="QLabel" name="label_14">
@@ -354,7 +408,14 @@
             </widget>
            </item>
            <item row="2" column="1">
-            <widget class="QLineEdit" name="lineEdit_9"/>
+            <widget class="QLineEdit" name="curve_tangent">
+             <property name="text">
+              <string>0.00</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
            </item>
            <item row="3" column="0">
             <widget class="QLabel" name="label_17">
@@ -369,7 +430,14 @@
             </widget>
            </item>
            <item row="3" column="1">
-            <widget class="QLineEdit" name="lineEdit_10"/>
+            <widget class="QLineEdit" name="curve_chord">
+             <property name="text">
+              <string>0.00</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
            </item>
            <item row="4" column="0">
             <widget class="QLabel" name="label_18">
@@ -384,7 +452,14 @@
             </widget>
            </item>
            <item row="4" column="1">
-            <widget class="QLineEdit" name="lineEdit_11"/>
+            <widget class="QLineEdit" name="curve_external">
+             <property name="text">
+              <string>0.00</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
            </item>
            <item row="5" column="0">
             <widget class="QLabel" name="label_19">
@@ -399,7 +474,14 @@
             </widget>
            </item>
            <item row="5" column="1">
-            <widget class="QLineEdit" name="lineEdit_12"/>
+            <widget class="QLineEdit" name="curve_middle_ord">
+             <property name="text">
+              <string>0.00</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -434,7 +516,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QTableView" name="tableView"/>
+       <widget class="QTableView" name="coordinate_table"/>
       </item>
      </layout>
     </widget>

@@ -42,6 +42,8 @@ from ...support.mouse_state import MouseState
 from ...support.view_state import ViewState
 from ...support.drag_state import DragState
 
+from ...support.publisher import Publisher
+
 from ...trackers.alignment_tracker import AlignmentTracker
 
 def create(doc, alignment_data, object_name):
@@ -51,7 +53,7 @@ def create(doc, alignment_data, object_name):
 
     return EditAlignmentTask(doc, alignment_data, object_name)
 
-class EditAlignmentTask:
+class EditAlignmentTask(Publisher):
     """
     Task to manage alignment editing
     """
@@ -74,14 +76,20 @@ class EditAlignmentTask:
         self.doc = doc
         self.Object = obj
         self.alignment = alignment.create(alignment_data, 'TEMP', True, False)
-        self.pi_tracker = None
-        self.drag_tracker = None
         self.alignment_tracker = None
         self.callbacks = {}
         self.mouse = MouseState()
         self.form = None
         self.ui_path = resources.__path__[0] + '/ui/'
         self.ui = self.ui_path + 'edit_alignment_task.ui'
+
+        self.masks = {
+            'float': '90000.99',
+            'degree_float': '900.99\u00b0',
+            'station_imp_float': '00009+99.99',
+            'station_eng_float': '00009+999.99',
+        }
+
         self.camera_state = {
             'position': None,
             'height': None,
@@ -92,6 +100,8 @@ class EditAlignmentTask:
             'selectables': [],
             'line_colors': [],
         }
+
+        super().__init__()
 
         #disable selection entirely
         ViewState().sg_root.getField("selectionRole").setValue(0)
@@ -134,6 +144,8 @@ class EditAlignmentTask:
         self.alignment_tracker = AlignmentTracker(
             self.doc, self.Object.Name, self.alignment
         )
+
+        self.register(self.alignment_tracker)
 
         #save camera state
         _camera = ViewState().view.getCameraNode()
@@ -222,9 +234,58 @@ class EditAlignmentTask:
         Initiailze the task window and controls
         """
 
-        _mw = utils.getMainWindow()
+        form = utils.getMainWindow().findChild(QtGui.QWidget, 'TaskPanel')
 
-        form = _mw.findChild(QtGui.QWidget, 'TaskPanel')
+
+        form.pi = {
+
+            'position': [
+                form.findChild(QtGui.QLineEdit, 'pi_position_x'),
+                form.findChild(QtGui.QLineEdit, 'pi_position_y')
+            ],
+
+            'bearing': [
+                form.findChild(QtGui.QLineEdit, 'pi_bearing_in'),
+                form.findChild(QtGui.QLineEdit, 'pi_bearing_out')
+            ],
+
+            'station': [
+                form.findChild(QtGui.QLabel, 'pi_station'),
+                form.findChild(QtGui.QLabel, 'pi_station_internal')
+            ]
+        }
+
+        form.curve = {
+            'delta': form.findChild(QtGui.QLineEdit, 'curve_delta'),
+            'radius': form.findChild(QtGui.QLineEdit, 'curve_radius'),
+            'tangent': form.findChild(QtGui.QLineEdit, 'curve_tangent'),
+            'chord': form.findChild(QtGui.QLineEdit, 'curve_chord'),
+            'external': form.findChild(QtGui.QLineEdit, 'curve_external'),
+            'middle ord': form.findChild(QtGui.QLineEdit, 'curve_middle_ord')
+        }
+
+        form.coordinates = form.findChild(QtGui.QTableView, 'coordinate_table')
+
+        #set input masks and connect signals
+        for _k, _v in {**form.pi, **form.curve}.items():
+
+            _mask = 'float'
+
+            if _k in ['bearing', 'delta']:
+                _mask = 'degree_float'
+
+            elif _k == 'station':
+                continue
+
+            if isinstance(_v, list):
+                for _w in _v:
+                    _w.setInputMask(self.masks[_mask])
+                    _w.editingFinished.connect(
+                        lambda x=_w: self.panel_update(x))
+
+            else:
+                _v.setInputMask(self.masks[_mask])
+                _v.editingFinished.connect(lambda x=_v: self.panel_update(x))
 
         self.form = form
 
@@ -285,6 +346,13 @@ class EditAlignmentTask:
 
         self.mouse.update(arg, ViewState().view.getCursorPos())
 
+    def panel_update(self, widget):
+        """
+        Slot for QWidgets in panel to publish updates to trackers
+        """
+
+        self.dispatch((widget.objectName(), widget.text()))
+
     def set_vobj_style(self, vobj, style):
         """
         Set the view object style based on the passed style tuple
@@ -339,15 +407,6 @@ class EditAlignmentTask:
             self.alignment = None
 
         #shut down the tracker and re-select the object
-        if self.pi_tracker:
-            self.pi_tracker.finalize()
-            self.pi_tracker = None
-            Gui.Selection.addSelection(self.Object)
-
-        if self.drag_tracker:
-            self.drag_tracker.finalize()
-            self.drag_tracker = None
-
         if self.alignment_tracker:
             self.alignment_tracker.finalize()
             self.alignment_tracker = None
