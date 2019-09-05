@@ -40,11 +40,12 @@ from ..support.view_state import ViewState
 from ..support.drag_state import DragState
 from ..support.select_state import SelectState
 
-from  ..support.subscriber import Subscriber
+from ..support.subscriber import Subscriber
+from ..support.publisher import Publisher
 
 from .coin_styles import CoinStyles
 
-class BaseTracker(Subscriber):
+class BaseTracker(Publisher, Subscriber):
     """
     A custom base Draft Tracker
     """
@@ -70,10 +71,11 @@ class BaseTracker(Subscriber):
         Constructor
         """
 
-        super().__init__(names[2])
+        super().__init__()
 
         self.node_ok = False
         self.names = names
+        self.name = names[2]
         self.state = TrackerContainer()
 
         self.color = coin.SoBaseColor()

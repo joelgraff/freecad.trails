@@ -36,12 +36,13 @@ from ..support.mouse_state import MouseState
 from ..support.view_state import ViewState
 from ..support.select_state import SelectState
 from ..support.drag_state import DragState
+from ..support.publisher import Publisher
 
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
 from .curve_tracker import CurveTracker
 
-class AlignmentTracker(BaseTracker):
+class AlignmentTracker(BaseTracker, Publisher):
     """
     Tracker class for alignment design
     """
@@ -115,6 +116,7 @@ class AlignmentTracker(BaseTracker):
         """
 
         print(self.name, message)
+        self.dispatch(message)
 
     def _update_status_bar(self):
         """
@@ -235,6 +237,10 @@ class AlignmentTracker(BaseTracker):
         for _i, _pt in enumerate(_nodes):
 
             _tr = NodeTracker(names=_names + ['NODE-' + str(_i)], point=_pt)
+
+            self.register(_tr)
+            _tr.register(self)
+
             _result['Nodes'].append(_tr)
 
         _result['Nodes'][0].is_end_node = True
@@ -246,6 +252,10 @@ class AlignmentTracker(BaseTracker):
             _nodes = _result['Nodes'][_i:_i + 2]
 
             _wt = WireTracker(names=_names + ['WIRE-' + str(_i)])
+
+            #NECESSARY??
+            #self.register(_wt)
+            #_wt.register(self)
 
             _wt.set_selectability(False)
             _wt.set_points(nodes=_nodes)
@@ -265,6 +275,9 @@ class AlignmentTracker(BaseTracker):
             )
 
             _ct.set_selectability(True)
+
+            self.register(_ct)
+            _ct.register(self)
 
             _result['Curves'].append(_ct)
 

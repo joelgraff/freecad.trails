@@ -104,6 +104,27 @@ class NodeTracker(BaseTracker):
 
         super().end_drag()
 
+    def notify(self, message):
+        """
+        Override of Subscriber method
+        """
+
+        print(self.name, message)
+        if not self.is_selected():
+            return
+
+        if not 'pi_' in message[0]:
+            return
+
+        _x = float(message[1])
+        _y = self.point.y
+
+        if '_y' in message[0]:
+            _y = _x
+            _x = self.point.x
+
+        self.update((_x, _y))
+
     def update_drag_point(self):
         """
         Update the drag point based on the selection method

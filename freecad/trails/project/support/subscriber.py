@@ -29,16 +29,20 @@ class Subscriber:
     Base Subscriber class
     """
 
-    def __init__(self, name):
+    counter = 0
+
+    def __init__(self):
         """
         Constructor
         """
 
-        self.name = name
+        Subscriber.counter += 1
+
+        self.id = 'Subscriber ' + str(Subscriber.counter)
 
     def notify(self, message):
         """
         Default message update method
         """
 
-        print('{} got message "{}"'.format(self.name, message))
+        print('{} got message "{}"'.format(self.id, message))

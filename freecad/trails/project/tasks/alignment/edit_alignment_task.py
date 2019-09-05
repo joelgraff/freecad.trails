@@ -43,6 +43,7 @@ from ...support.view_state import ViewState
 from ...support.drag_state import DragState
 
 from ...support.publisher import Publisher
+from ...support.subscriber import Subscriber
 
 from ...trackers.alignment_tracker import AlignmentTracker
 
@@ -53,7 +54,7 @@ def create(doc, alignment_data, object_name):
 
     return EditAlignmentTask(doc, alignment_data, object_name)
 
-class EditAlignmentTask(Publisher):
+class EditAlignmentTask(Publisher, Subscriber):
     """
     Task to manage alignment editing
     """
@@ -71,7 +72,6 @@ class EditAlignmentTask(Publisher):
 
     def __init__(self, doc, alignment_data, obj):
 
-        self.name = 'EditAlignmentTask'
         self.panel = None
         self.doc = doc
         self.Object = obj
@@ -239,6 +239,8 @@ class EditAlignmentTask(Publisher):
 
         form.pi = {
 
+            'widget': form.findChild(QtGui.QWidget, 'pi_widget'),
+
             'position': [
                 form.findChild(QtGui.QLineEdit, 'pi_position_x'),
                 form.findChild(QtGui.QLineEdit, 'pi_position_y')
@@ -256,6 +258,8 @@ class EditAlignmentTask(Publisher):
         }
 
         form.curve = {
+            'widget': form.findChild(QtGui.QWidget, 'one_ctr_curve_widget'),
+
             'delta': form.findChild(QtGui.QLineEdit, 'curve_delta'),
             'radius': form.findChild(QtGui.QLineEdit, 'curve_radius'),
             'tangent': form.findChild(QtGui.QLineEdit, 'curve_tangent'),
@@ -274,7 +278,7 @@ class EditAlignmentTask(Publisher):
             if _k in ['bearing', 'delta']:
                 _mask = 'degree_float'
 
-            elif _k == 'station':
+            elif _k in ['station', 'widget']:
                 continue
 
             if isinstance(_v, list):
