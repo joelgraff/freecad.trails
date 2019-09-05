@@ -26,10 +26,6 @@ GUI Initialization module
 import os
 import FreeCADGui as Gui
 
-from .project.commands \
-    import new_project_cmd, import_alignment_cmd, edit_alignment_cmd, \
-    spiral_test, base_tracker_test, sprite_splitter_cmd, test_zoom_cmd
-
 from .corridor.template import ViewTemplateLibrary
 from . import resources
 
@@ -110,6 +106,10 @@ class TrailsWorkbench(Gui.Workbench):
         """
         Called when the workbench is first activated.
         """
+
+        from .project.commands \
+            import new_project_cmd, import_alignment_cmd, edit_alignment_cmd, \
+            spiral_test, base_tracker_test, sprite_splitter_cmd, test_zoom_cmd
 
         for _k, _v in self.command_ui.items():
 
