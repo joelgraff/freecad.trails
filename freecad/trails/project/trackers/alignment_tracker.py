@@ -37,13 +37,11 @@ from ..support.view_state import ViewState
 from ..support.select_state import SelectState
 from ..support.drag_state import DragState
 
-from ..support.subscriber import Subscriber
-
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
 from .curve_tracker import CurveTracker
 
-class AlignmentTracker(BaseTracker, Subscriber):
+class AlignmentTracker(BaseTracker):
     """
     Tracker class for alignment design
     """
@@ -110,6 +108,13 @@ class AlignmentTracker(BaseTracker, Subscriber):
         self.select_cb = \
             ViewState().view.addEventCallback(
                 'SoMouseButtonEvent', self.post_select_event)
+
+    def notify(self, message):
+        """
+        Override subscriber base implementation
+        """
+
+        print(self.name, message)
 
     def _update_status_bar(self):
         """

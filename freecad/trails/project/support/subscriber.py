@@ -29,12 +29,12 @@ class Subscriber:
     Base Subscriber class
     """
 
-    def __init__(self):
+    def __init__(self, name):
         """
         Constructor
         """
 
-        pass
+        self.name = name
 
     def notify(self, message):
         """
