@@ -351,7 +351,12 @@ class EditAlignmentTask(Publisher):
         Slot for QWidgets in panel to publish updates to trackers
         """
 
-        self.dispatch((widget.objectName(), widget.text()))
+        _t = widget.text()
+
+        if _t[-1] == '\u00b0':
+            _t = _t[:-1]
+
+        self.dispatch((widget.objectName(), _t))
 
     def set_vobj_style(self, vobj, style):
         """
