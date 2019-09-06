@@ -70,6 +70,17 @@ class NodeTracker(BaseTracker):
 
         self.update()
 
+    def button_event(self, arg):
+        """
+        Override base implementation
+        """
+
+        super().button_event(arg)
+
+        if MouseState().button1.state == 'UP' and self.is_selected():
+            self.dispatch(Events.NODE_EVENT, 
+            {'name': self.name, 'position': self.point})
+
     def start_drag(self):
         """
         Initialize drag ops
@@ -162,7 +173,16 @@ class NodeTracker(BaseTracker):
 
         self.coord.point.setValue(_c[:3])
         self.point = _c
-        self.dispatch(Events.NODE_EVENT, (self.name, 'position', self.point))
+        self.dispatch(
+            Events.NODE_EVENT,
+            {
+                'name': self.name,
+                'position': self.point,
+                'translation': DragState().transform.translation,
+                'rotation': DragState().transform.rotation,
+                'center': DragState().transform.center
+            }
+        )
 
     def get(self):
         """

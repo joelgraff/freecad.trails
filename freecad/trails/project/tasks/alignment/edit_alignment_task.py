@@ -48,6 +48,7 @@ from ...support.publisher import PublisherEvents as Events
 from ...support.subscriber import Subscriber
 
 from ...trackers.alignment_tracker import AlignmentTracker
+from ...trackers.terminator_tracker import TerminatorTracker
 
 def create(doc, alignment_data, object_name):
     """
@@ -79,6 +80,7 @@ class EditAlignmentTask(Publisher, Subscriber):
         self.Object = obj
         self.alignment = alignment.create(alignment_data, 'TEMP', True, False)
         self.alignment_tracker = None
+        self.terminator_tracker = None
         self.callbacks = {}
         self.mouse = MouseState()
         self.form = None
@@ -86,7 +88,7 @@ class EditAlignmentTask(Publisher, Subscriber):
         self.ui = self.ui_path + 'edit_alignment_task.ui'
 
         self.masks = {
-            'float': '90000.99',
+            'float': '#90000.99',
             'degree_float': '900.99\u00b0',
             'station_imp_float': '00009+99.99',
             'station_eng_float': '00009+999.99',
@@ -103,7 +105,7 @@ class EditAlignmentTask(Publisher, Subscriber):
             'line_colors': [],
         }
 
-        super().__init__()
+        super().__init__("Edit Alignment Task")
 
         #disable selection entirely
         ViewState().sg_root.getField("selectionRole").setValue(0)
@@ -147,10 +149,13 @@ class EditAlignmentTask(Publisher, Subscriber):
             self.doc, self.Object.Name, self.alignment
         )
 
+        self.terminator_tracker = TerminatorTracker()
+
         #subscribe the alignment tracker to all events from the task
-        #and subscribe the task to panel events from the tracker
+        #and subscribe the task to task events from the tracker
         self.register(self.alignment_tracker, Events.TASK_EVENT)
         self.alignment_tracker.register(self, Events.ALL_EVENTS)
+        self.terminator_tracker.register(self, Events.TASK_EVENT)
 
         #save camera state
         _camera = ViewState().view.getCameraNode()
@@ -246,6 +251,8 @@ class EditAlignmentTask(Publisher, Subscriber):
 
             'widget': form.findChild(QtGui.QWidget, 'pi_widget'),
 
+            'selection': form.findChild(QtGui.QLabel, 'pi_selection'),
+
             'position': [
                 form.findChild(QtGui.QLineEdit, 'pi_position_x'),
                 form.findChild(QtGui.QLineEdit, 'pi_position_y')
@@ -284,6 +291,9 @@ class EditAlignmentTask(Publisher, Subscriber):
                 _mask = 'degree_float'
 
             elif _k in ['station', 'widget']:
+                continue
+
+            elif isinstance(_v, QtGui.QLabel):
                 continue
 
             if isinstance(_v, list):
@@ -354,6 +364,30 @@ class EditAlignmentTask(Publisher, Subscriber):
         """
 
         self.mouse.update(arg, ViewState().view.getCursorPos())
+
+    def notify(self, message):
+        """
+        Notification event for alignment / panel updates
+        """
+
+        if message not in ['END DRAG', 'BUTTON UP']:
+            return
+
+        messages = self.alignment_tracker.message_queue
+
+        _geo = (0.0, 0.0)
+        _selection = 'No Selection'
+
+        for _k in messages:
+            _selection = _k
+            _geo = messages[_k]
+            break
+
+        self.form.pi['selection'].setText(_selection)
+        self.form.pi['position'][0].setText(str(_geo[0]))
+        self.form.pi['position'][1].setText(str(_geo[1]))
+
+        self.alignment_tracker.message_queue = {}
 
     def panel_update(self, widget):
         """

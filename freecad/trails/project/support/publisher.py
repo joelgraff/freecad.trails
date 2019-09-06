@@ -43,17 +43,19 @@ class Publisher:
     Base class for publisher classes
     """
 
-    def __init__(self):
+    def __init__(self, pubid):
         """
         Constructor
         """
 
-        super().__init__()
+        super().__init__(pubid)
+
+        self.id = "Publisher " + pubid
 
         event_count = len(PublisherEvents.__dict__.keys()) - 4
 
         self.event_max = (2**(event_count - 1)) - 1
-        self.event_indices = [(2**_x) for _x in range(1, event_count + 1)]
+        self.event_indices = [(2**_x) for _x in range(0, event_count + 1)]
         self.events = {event: {} for event in self.event_indices}
 
     def get_subscribers(self, events=0):
@@ -77,7 +79,6 @@ class Publisher:
         """
         Callback registration for subscribers
         """
-
         if not callback:
             callback = getattr(who, 'notify')
 
@@ -105,9 +106,9 @@ class Publisher:
         Message dispatch
         """
 
-        print('\tdispatching ', message, ' to ', events)
         _list = self.get_subscribers(events)
 
+        print(self.id, 'publishing', message, "on", events, "to", _list)
         for _e in _list:
             for _c in _e.values():
                 _c(message)

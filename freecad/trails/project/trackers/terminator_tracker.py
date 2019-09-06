@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-#***********************************************************************
+#**************************************************************************
 #*                                                                     *
-#* Copyright (c) 2018 Joel Graff <monograff76@gmail.com>               *
+#* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
 #*                                                                     *
 #* This program is free software; you can redistribute it and/or modify*
 #* it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -21,28 +21,40 @@
 #*                                                                     *
 #***********************************************************************
 """
-Subscriber base class
+Terminator tracker
 """
 
-class Subscriber:
+from .base_tracker import BaseTracker
+
+from ..support.mouse_state import MouseState
+from ..support.publisher import PublisherEvents as Events
+
+class TerminatorTracker(BaseTracker):
     """
-    Base Subscriber class
+    TerminatorTracker Class
+
+    Last tracker in the event chain to indicate when tracker-level events
+    (like drag operations) have compeleted
     """
 
-    counter = 0
-
-    def __init__(self, subid):
+    def __init__(self):
         """
         Constructor
         """
 
-        super().__init__()
+        super().__init__(['TERMINATOR']*3)
 
-        self.id = 'Subscriber ' + subid
-
-    def notify(self, message):
+    def button_event(self, arg):
         """
-        Default message update method
+        Base class override
         """
 
-        print('{} got message "{}"'.format(self.id, message))
+        if MouseState().button1.state == 'UP':
+            self.dispatch(Events.TASK_EVENT, ("BUTTON UP"))
+
+    #def end_drag(self):
+        #"""
+        #Base class override
+        #"""
+
+        #self.dispatch(Events.TASK_EVENT, ("END DRAG"))

@@ -71,7 +71,7 @@ class BaseTracker(Publisher, Subscriber):
         Constructor
         """
 
-        super().__init__()
+        super().__init__(names[2])
 
         self.node_ok = False
         self.names = names

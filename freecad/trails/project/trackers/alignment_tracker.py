@@ -62,7 +62,7 @@ class AlignmentTracker(BaseTracker, Publisher):
         self.datum = alignment.model.data.get('meta').get('Start')
         self.drag_curves = []
 
-        self.message_queue = []
+        self.message_queue = {}
 
         #base (placement) transformation for the alignment
         self.transform = coin.SoTransform()
@@ -124,14 +124,31 @@ class AlignmentTracker(BaseTracker, Publisher):
         #and pass on to panel
 
         super().notify(message)
-        if MouseState().button1.dragging:
 
-            _idx = int(message[0].split('-')[1])
-            self.message_queue[_idx] = [2]
+        self.message_queue[message['name']] = message['position']
 
-        elif message == "END DRAG":
-            print(self.message_queue)
-            self.dispatch(Events.ALIGNMENT_EVENT, (self.message_queue))
+    def get_updates(self):
+        """
+        Return latest geometry updates in message queue
+        """
+
+        _queue_len = len(self.message_queue)
+
+        if not _queue_len:
+            return {}
+
+        _result = []
+
+        for _v in self.message_queue.values():
+            _result.append(
+                {
+                    'position': _v['position'],
+                    'translation': _v['translation'].getValue(),
+                    'rotation': _v['rotation'].getValue()
+                }
+            )
+
+        return _result
 
     def _update_status_bar(self):
         """
@@ -191,8 +208,6 @@ class AlignmentTracker(BaseTracker, Publisher):
                 DragState().abort = True
 
         self.drag_curves = []
-
-        self.notify('END DRAG')
 
     def post_select_event(self, arg):
         """
@@ -255,8 +270,11 @@ class AlignmentTracker(BaseTracker, Publisher):
 
             _tr = NodeTracker(names=_names + ['NODE-' + str(_i)], point=_pt)
 
+            #register the node as a subscriber to aligntment NODE_EVENT
             self.register(_tr, Events.NODE_EVENT)
-            _tr.register(self, Events.ALIGNMENT_EVENT)
+
+            #register the alignment as a scbscriber to node NODE_EVENT
+            _tr.register(self, Events.NODE_EVENT)
 
             _result['Nodes'].append(_tr)
 
@@ -272,7 +290,7 @@ class AlignmentTracker(BaseTracker, Publisher):
 
             #NECESSARY??
             self.register(_wt, Events.WIRE_EVENT)
-            _wt.register(self, Events.ALIGNMENT_EVENT)
+            _wt.register(self, Events.WIRE_EVENT)
 
             _wt.set_selectability(False)
             _wt.set_points(nodes=_nodes)
@@ -294,7 +312,7 @@ class AlignmentTracker(BaseTracker, Publisher):
             _ct.set_selectability(True)
 
             self.register(_ct, Events.CURVE_EVENT)
-            _ct.register(self, Events.ALIGNMENT_EVENT)
+            _ct.register(self, Events.CURVE_EVENT)
 
             _result['Curves'].append(_ct)
 
