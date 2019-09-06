@@ -37,6 +37,7 @@ from ..support.view_state import ViewState
 from ..support.select_state import SelectState
 from ..support.drag_state import DragState
 from ..support.publisher import Publisher
+from ..support.publisher import PublisherEvents as Events
 
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
@@ -60,6 +61,8 @@ class AlignmentTracker(BaseTracker, Publisher):
         self.pi_list = []
         self.datum = alignment.model.data.get('meta').get('Start')
         self.drag_curves = []
+
+        self.message_queue = []
 
         #base (placement) transformation for the alignment
         self.transform = coin.SoTransform()
@@ -115,8 +118,20 @@ class AlignmentTracker(BaseTracker, Publisher):
         Override subscriber base implementation
         """
 
-        print(self.name, message)
-        self.dispatch(message)
+        #during dragging operations, sink all notifications here.
+        #at the end of drag ops, pass on update to panel
+        #if multiple nodes were selected, compute transformation
+        #and pass on to panel
+
+        super().notify(message)
+        if MouseState().button1.dragging:
+
+            _idx = int(message[0].split('-')[1])
+            self.message_queue[_idx] = [2]
+
+        elif message == "END DRAG":
+            print(self.message_queue)
+            self.dispatch(Events.ALIGNMENT_EVENT, (self.message_queue))
 
     def _update_status_bar(self):
         """
@@ -176,6 +191,8 @@ class AlignmentTracker(BaseTracker, Publisher):
                 DragState().abort = True
 
         self.drag_curves = []
+
+        self.notify('END DRAG')
 
     def post_select_event(self, arg):
         """
@@ -238,8 +255,8 @@ class AlignmentTracker(BaseTracker, Publisher):
 
             _tr = NodeTracker(names=_names + ['NODE-' + str(_i)], point=_pt)
 
-            self.register(_tr)
-            _tr.register(self)
+            self.register(_tr, Events.NODE_EVENT)
+            _tr.register(self, Events.ALIGNMENT_EVENT)
 
             _result['Nodes'].append(_tr)
 
@@ -254,8 +271,8 @@ class AlignmentTracker(BaseTracker, Publisher):
             _wt = WireTracker(names=_names + ['WIRE-' + str(_i)])
 
             #NECESSARY??
-            #self.register(_wt)
-            #_wt.register(self)
+            self.register(_wt, Events.WIRE_EVENT)
+            _wt.register(self, Events.ALIGNMENT_EVENT)
 
             _wt.set_selectability(False)
             _wt.set_points(nodes=_nodes)
@@ -276,8 +293,8 @@ class AlignmentTracker(BaseTracker, Publisher):
 
             _ct.set_selectability(True)
 
-            self.register(_ct)
-            _ct.register(self)
+            self.register(_ct, Events.CURVE_EVENT)
+            _ct.register(self, Events.ALIGNMENT_EVENT)
 
             _result['Curves'].append(_ct)
 
