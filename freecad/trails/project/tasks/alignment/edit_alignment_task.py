@@ -43,6 +43,8 @@ from ...support.view_state import ViewState
 from ...support.drag_state import DragState
 
 from ...support.publisher import Publisher
+from ...support.publisher import PublisherEvents as Events
+
 from ...support.subscriber import Subscriber
 
 from ...trackers.alignment_tracker import AlignmentTracker
@@ -145,7 +147,10 @@ class EditAlignmentTask(Publisher, Subscriber):
             self.doc, self.Object.Name, self.alignment
         )
 
-        self.register(self.alignment_tracker)
+        #subscribe the alignment tracker to all events from the task
+        #and subscribe the task to panel events from the tracker
+        self.register(self.alignment_tracker, Events.TASK_EVENT)
+        self.alignment_tracker.register(self, Events.ALL_EVENTS)
 
         #save camera state
         _camera = ViewState().view.getCameraNode()

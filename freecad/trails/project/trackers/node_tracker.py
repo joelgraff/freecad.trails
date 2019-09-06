@@ -32,6 +32,10 @@ from ..support.drag_state import DragState
 from ..support.view_state import ViewState
 from ..support.mouse_state import MouseState
 
+from ..support.publisher import PublisherEvents as Events
+
+from ...geometry import support
+
 from .base_tracker import BaseTracker
 
 class NodeTracker(BaseTracker):
@@ -109,7 +113,6 @@ class NodeTracker(BaseTracker):
         Override of Subscriber method
         """
 
-        print(self.name, message)
         if not self.is_selected():
             return
 
@@ -123,7 +126,7 @@ class NodeTracker(BaseTracker):
             _y = _x
             _x = self.point.x
 
-        self.update((_x, _y))
+        #self.update((_x, _y))
 
     def update_drag_point(self):
         """
@@ -158,8 +161,8 @@ class NodeTracker(BaseTracker):
             _c = tuple(_c)
 
         self.coord.point.setValue(_c[:3])
-
         self.point = _c
+        self.dispatch(Events.NODE_EVENT, (self.name, 'position', self.point))
 
     def get(self):
         """
