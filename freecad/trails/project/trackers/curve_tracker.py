@@ -242,14 +242,11 @@ class CurveTracker(WireTracker):
         Override base implementation
         """
 
-        print(self.name, 'on drag 1')
         if self.select_state != 'MANUAL':
             return
-        print(self.name, 'on drag 2')
 
         if not self.state.dragging and self != DragState().drag_node:
             return
-        print(self.name, 'on drag 3')
 
         #external changes (PI nodes) only
         if self.external_select:
@@ -259,7 +256,6 @@ class CurveTracker(WireTracker):
             self.drag_copy.getChild(3).point.setValues(0, len(_pts), _pts)
 
             return
-        print(self.name, 'on drag 4')
 
         #internal drag state update
         self._update_drag_state()
@@ -360,7 +356,9 @@ class CurveTracker(WireTracker):
                 self.curve = self.drag_curve
 
             _points = [self.curve.start, self.curve.center, self.curve.end]
-            _points = ViewState().transform_points(_points)
+
+            if not self.drag_curve:
+                _points = ViewState().transform_points(_points)
 
             for _i, _v in enumerate(self.node_trackers):
                 _v.update(_points[_i])
@@ -541,7 +539,6 @@ class CurveTracker(WireTracker):
         else:
             _pos = Vector(_pos)
 
-        print(attr, point, self.curve.get(point))
         _mouse_vec = \
             self.project_to_line(self.curve.pi, self.curve.get(point), _pos)
 
@@ -567,7 +564,6 @@ class CurveTracker(WireTracker):
         lt_tan, rt_tan - the length of the tangents of adjoining curves
         """
 
-        print(self.name, lt_tan, rt_tan)
         if not self.drag_curve:
             self.drag_curve = self.curve
 
