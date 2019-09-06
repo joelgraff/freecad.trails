@@ -123,8 +123,6 @@ class AlignmentTracker(BaseTracker, Publisher):
         #if multiple nodes were selected, compute transformation
         #and pass on to panel
 
-        super().notify(message)
-
         self.message_queue[message['name']] = message['position']
 
     def get_updates(self):
@@ -190,10 +188,15 @@ class AlignmentTracker(BaseTracker, Publisher):
             _next_tan = 0.0
 
             if _i < _max:
-                _next_tan = self.drag_curves[_i + 1].drag_curve.tangent
+
+                _dc = self.drag_curves[_i + 1]
+                _next_tan = _dc.curve.get('Tangent')
+
+                if _dc.drag_curve:
+                    _next_tan = _dc.drag_curve.get('Tangent')
 
             _v.validate(_last_tan, _next_tan)
-            _last_tan = _v.drag_curve.tangent
+            _last_tan = _v.drag_curve.get('Tangent')
 
     def end_drag(self):
         """

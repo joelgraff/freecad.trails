@@ -56,7 +56,7 @@ class CurveTracker(WireTracker):
         self.curve = curve
         self.pi_nodes = pi_nodes
         self.is_valid = True
-        self.drag_curve = self.curve
+        self.drag_curve = None
         self.drag_style = None
         self.drag_color = None
         self.drag_last_mouse = None
@@ -70,9 +70,6 @@ class CurveTracker(WireTracker):
         ]
 
         self.pt_labels = ['Start', 'Center', 'End']
-
-        if isinstance(self.curve, dict):
-            self.curve = arc.Arc(self.curve)
 
         self.update_curve()
 
@@ -355,10 +352,23 @@ class CurveTracker(WireTracker):
             if self.drag_curve:
                 self.curve = self.drag_curve
 
-            _points = [self.curve.start, self.curve.center, self.curve.end]
+            _points = [
+                self.curve.start, self.curve.center, self.curve.end,
+                self.curve.pi
+            ]
 
             if not self.drag_curve:
                 _points = ViewState().transform_points(_points)
+
+            _curve = arc.Arc(self.curve)
+            _curve.start = Vector(_points[0])
+            _curve.center = Vector(_points[1])
+            _curve.end = Vector(_points[2])
+            _curve.pi = Vector(_points[3])
+
+            _curve = arc.get_parameters(_curve, False)
+
+            self.curve = _curve
 
             for _i, _v in enumerate(self.node_trackers):
                 _v.update(_points[_i])
@@ -366,7 +376,7 @@ class CurveTracker(WireTracker):
 
             self.wire_tracker.update(_points)
 
-        self.drag_curve = self.curve
+        self.drag_curve = None
         self.drag_style = None
         self.drag_color = None
         self.state.dragging = False

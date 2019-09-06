@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>478</width>
-    <height>577</height>
+    <width>488</width>
+    <height>707</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -57,10 +57,19 @@
            </font>
           </property>
           <property name="frameShape">
-           <enum>QFrame::Panel</enum>
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Sunken</enum>
+          </property>
+          <property name="lineWidth">
+           <number>21</number>
+          </property>
+          <property name="midLineWidth">
+           <number>13</number>
           </property>
           <property name="text">
-           <string>TextLabel</string>
+           <string>No Selection</string>
           </property>
          </widget>
         </item>
