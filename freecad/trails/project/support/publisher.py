@@ -24,6 +24,20 @@
 Publisher base class
 """
 
+from ..support.const import Const
+
+class PublisherEvents(Const):
+    """
+    Events for Publisher class
+    """
+
+    ALL_EVENTS = 0
+    TASK_EVENT = 1
+    NODE_EVENT = 2
+    WIRE_EVENT = 4
+    CURVE_EVENT = 8
+    ALIGNMENT_EVENT = 16
+
 class Publisher:
     """
     Base class for publisher classes
@@ -34,9 +48,32 @@ class Publisher:
         Constructor
         """
 
-        self.subscribers = {}
+        super().__init__()
 
-    def register(self, who, callback=None):
+        event_count = len(PublisherEvents.__dict__.keys()) - 4
+
+        self.event_max = (2**(event_count - 1)) - 1
+        self.event_indices = [(2**_x) for _x in range(1, event_count + 1)]
+        self.events = {event: {} for event in self.event_indices}
+
+    def get_subscribers(self, events=0):
+        """
+        Return subscribers registered for selected event
+        """
+
+        _result = []
+
+        if not events:
+            events = self.event_max
+
+        for _i in self.event_indices:
+
+            if events & _i:
+                _result.append(self.events[_i])
+
+        return _result
+
+    def register(self, who, events, callback=None):
         """
         Callback registration for subscribers
         """
@@ -44,19 +81,33 @@ class Publisher:
         if not callback:
             callback = getattr(who, 'notify')
 
-        self.subscribers[who] = callback
+        _result = []
 
-    def unregister(self, who):
+        _list = self.get_subscribers(events)
+
+        for _e in _list:
+            if not who in _e:
+                _e[who] = callback
+
+    def unregister(self, who, events):
         """
         Callback unregistration for subscribers
         """
 
-        del self.subscribers[who]
+        _list = self.get_subscribers(events)
 
-    def dispatch(self, message):
+        for _e in _list:
+            if who in _e:
+                del _e[who]
+
+    def dispatch(self, events, message):
         """
         Message dispatch
         """
 
-        for _c in self.subscribers.values():
-            _c(message)
+        print('\tdispatching ', message, ' to ', events)
+        _list = self.get_subscribers(events)
+
+        for _e in _list:
+            for _c in _e.values():
+                _c(message)

@@ -36,8 +36,9 @@ class Subscriber:
         Constructor
         """
 
-        Subscriber.counter += 1
+        super().__init__()
 
+        Subscriber.counter += 1
         self.id = 'Subscriber ' + str(Subscriber.counter)
 
     def notify(self, message):
