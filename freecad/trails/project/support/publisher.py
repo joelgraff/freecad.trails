@@ -108,7 +108,6 @@ class Publisher:
 
         _list = self.get_subscribers(events)
 
-        print(self.id, 'publishing', message, "on", events, "to", _list)
         for _e in _list:
             for _c in _e.values():
                 _c(message)
