@@ -99,13 +99,22 @@ class Publisher:
             if who in _e:
                 del _e[who]
 
-    def dispatch(self, event, message):
+    def dispatch(self, event, message, verbose=False):
         """
         Message dispatch
         """
 
+        #don't send empty messages
+        if not message:
+            return
+
         _list = self.get_subscribers(event)
 
         for _e in _list:
-            for _c in _e.values():
-                _c(event, message)
+            for _k, _cb in _e.items():
+
+                if verbose:
+                    print('Notifying {} of message {} on event {}'\
+                        .format(_k, message, event))
+
+                _cb(event, message)

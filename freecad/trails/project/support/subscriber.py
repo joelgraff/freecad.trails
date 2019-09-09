@@ -40,10 +40,11 @@ class Subscriber:
 
         self.id = 'Subscriber ' + subid
 
-    def notify(self, event_type, message):
+    def notify(self, event_type, message, verbose=False):
         """
         Default message update method
         """
 
-        print('{} got event {} message "{}"'.format(
-            self.id, event_type, message))
+        if verbose:
+            print('{} got event {} message "{}"'\
+                .format(self.id, event_type, message))

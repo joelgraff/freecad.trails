@@ -124,7 +124,23 @@ class AlignmentTracker(BaseTracker, Publisher):
         #and pass on to panel
 
        # self.message_queue[message['name']] = message['position']
-        self.dispatch(Events.ALIGNMENT_EVENT, message)
+
+        super().notify(event_type, message, True)
+
+        if event_type != Events.TASK_EVENT:
+            self.dispatch(Events.ALIGNMENT_EVENT, message)
+            return
+
+        _id = message[0]
+        _data = message[1]
+        _coord = tuple()
+
+        if 'NODE' in _id:
+            if 'POSITION' in _id:
+                _coord = _data + (0.0, )
+
+        if _coord:
+            self.dispatch(Events.NODE_EVENT, _coord)
 
     def get_updates(self):
         """
@@ -285,8 +301,8 @@ class AlignmentTracker(BaseTracker, Publisher):
             _wt = WireTracker(names=_names + ['WIRE-' + str(_i)])
 
             #NECESSARY??
-            self.register(_wt, Events.WIRE_EVENT)
-            _wt.register(self, Events.WIRE_EVENT)
+            #self.register(_wt, Events.WIRE_EVENT)
+            #_wt.register(self, Events.WIRE_EVENT)
 
             _wt.set_selectability(False)
             _wt.set_points(nodes=_nodes)

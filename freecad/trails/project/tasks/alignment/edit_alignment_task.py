@@ -371,6 +371,9 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         Notification event for alignment / panel updates
         """
 
+        if not message:
+            return
+
         #don't update at the end of the operation
         if message[1] in ['END DRAG', 'BUTTON UP']:
             return
@@ -389,8 +392,8 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         if 'CURVE' in _selection:
             _v = message[1]
 
-            self.form.pi['position'][0].setText(str(_v.pi.x))
-            self.form.pi['position'][1].setText(str(_v.pi.y))
+            self.form.pi['position'][0].setText(str(_v.pi.x/self.unit_scale))
+            self.form.pi['position'][1].setText(str(_v.pi.y/self.unit_scale))
 
             self.form.pi['bearing'][0].setText(
                 str(math.degrees(_v.bearing_in)))
@@ -402,15 +405,15 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
             self.form.pi['station'][1].setText(str(_v.internal_station))
 
             self.form.curve['delta'].setText(str(math.degrees(_v.delta)))
-            self.form.curve['radius'].setText(str(_v.radius*self.unit_scale))
-            self.form.curve['tangent'].setText(str(_v.tangent*self.unit_scale))
-            self.form.curve['chord'].setText(str(_v.chord*self.unit_scale))
+            self.form.curve['radius'].setText(str(_v.radius/self.unit_scale))
+            self.form.curve['tangent'].setText(str(_v.tangent/self.unit_scale))
+            self.form.curve['chord'].setText(str(_v.chord/self.unit_scale))
 
             self.form.curve['external'].setText(
-                str(_v.external*self.unit_scale))
+                str(_v.external/self.unit_scale))
 
             self.form.curve['middle ord'].setText(
-                str(_v.middle_ordinate*self.unit_scale))
+                str(_v.middle_ordinate/self.unit_scale))
 
         elif _selection == 'No Selection':
 
@@ -430,12 +433,24 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         Slot for QWidgets in panel to publish updates to trackers
         """
 
+        print(widget.objectName, 'panel update')
         _t = widget.text()
 
         if _t[-1] == '\u00b0':
             _t = _t[:-1]
 
-        self.dispatch(Events.TASK_EVENT, (widget.objectName(), _t))
+        _message = ('NONE', (0,0))
+        _id = 'NODE_POSITION'
+
+        if 'pi_position' in widget.objectName():
+            _message = (_id,
+                (float(self.form.pi['position'][0].text())*self.unit_scale,
+                float(self.form.pi['position'][1].text())*self.unit_scale)
+            )
+
+        print(widget.objectName())
+        print(_message)
+        self.dispatch(Events.TASK_EVENT, _message, True)
 
     def set_vobj_style(self, vobj, style):
         """

@@ -32,7 +32,7 @@ from ..support.drag_state import DragState
 from ..support.view_state import ViewState
 from ..support.mouse_state import MouseState
 
-#from ..support.publisher import PublisherEvents as Events
+from ..support.publisher import PublisherEvents as Events
 
 from .base_tracker import BaseTracker
 
@@ -140,17 +140,10 @@ class NodeTracker(BaseTracker):
         if not self.is_selected():
             return
 
-        if not 'pi_' in message[0]:
+        if not event_type == Events.NODE_EVENT:
             return
 
-        _x = float(message[1])
-        _y = self.point.y
-
-        if '_y' in message[0]:
-            _y = _x
-            _x = self.point.x
-
-        #self.update((_x, _y))
+        self.update(message)
 
     def update_drag_point(self):
         """
@@ -186,7 +179,9 @@ class NodeTracker(BaseTracker):
 
         self.coord.point.setValue(_c[:3])
         self.point = _c
-        #self.dispatch(Events.NODE_EVENT, self.ui_message)
+
+        print('\n\t',self.name, 'node update...')
+        self.dispatch(Events.NODE_EVENT, ('NODE_POSITION', self.point), True)
 
     def get(self):
         """

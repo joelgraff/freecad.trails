@@ -31,6 +31,8 @@ from ..support.mouse_state import MouseState
 from ..support.view_state import ViewState
 from ..support.select_state import SelectState
 
+from ..support.publisher import PublisherEvents as Events
+
 from .base_tracker import BaseTracker
 
 class WireTracker(BaseTracker):
@@ -103,6 +105,11 @@ class WireTracker(BaseTracker):
         if _l == 2 and not indices:
             indices = [0, len(self.points) - 1]
 
+        #register the wire tracker as a subscriber to node updates
+        for _n in nodes:
+            print('registering', self.name, 'with', _n.name)
+            _n.register(self, Events.NODE_EVENT)
+
         self.selection_nodes = nodes
         self.selection_indices = indices
 
@@ -128,6 +135,16 @@ class WireTracker(BaseTracker):
                 _j += 1
 
         return _points
+
+    def notify(self, event, message):
+        """
+        Override baseimplementation
+        """
+
+        super().notify(event, message, True)
+
+        if event == Events.NODE_EVENT:
+            self.update()
 
     def update(self, points=None):
         """
