@@ -57,8 +57,6 @@ class VehicleController(Controller):
 
 def createVehicle(model='generic'):
 
-
-
 	layout = '''#MainWindow:
 VerticalLayoutTab:
 
@@ -149,8 +147,4 @@ VerticalLayoutTab:
 	mikigui = createMikiGui(layout, VehicleController)
 	return mikigui
 
-
-
 #--------------
-
-

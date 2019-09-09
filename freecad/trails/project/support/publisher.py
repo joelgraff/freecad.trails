@@ -82,8 +82,6 @@ class Publisher:
         if not callback:
             callback = getattr(who, 'notify')
 
-        _result = []
-
         _list = self.get_subscribers(events)
 
         for _e in _list:

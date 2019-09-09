@@ -32,9 +32,7 @@ from ..support.drag_state import DragState
 from ..support.view_state import ViewState
 from ..support.mouse_state import MouseState
 
-from ..support.publisher import PublisherEvents as Events
-
-from ...geometry import support
+#from ..support.publisher import PublisherEvents as Events
 
 from .base_tracker import BaseTracker
 

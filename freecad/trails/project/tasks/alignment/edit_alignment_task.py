@@ -57,7 +57,7 @@ def create(doc, alignment_data, object_name):
 
     return EditAlignmentTask(doc, alignment_data, object_name)
 
-class EditAlignmentTask(Publisher, Subscriber):
+class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
     """
     Task to manage alignment editing
     """

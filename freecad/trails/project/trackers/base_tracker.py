@@ -45,7 +45,7 @@ from ..support.publisher import Publisher
 
 from .coin_styles import CoinStyles
 
-class BaseTracker(Publisher, Subscriber):
+class BaseTracker(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
     """
     A custom base Draft Tracker
     """
