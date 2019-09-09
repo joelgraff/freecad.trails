@@ -33,6 +33,7 @@ from ..support.mouse_state import MouseState
 from ..support.drag_state import DragState
 from ..support.select_state import SelectState
 from ..support.view_state import ViewState
+from ..support.publisher import PublisherEvents as Events
 
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
@@ -68,6 +69,8 @@ class CurveTracker(WireTracker):
             ('Center', 'Middle'),
             ('Curve', 'External')
         ]
+
+        self.event_type = Events.CURVE_EVENT
 
         self.pt_labels = ['Start', 'Center', 'End']
 
@@ -122,6 +125,8 @@ class CurveTracker(WireTracker):
             self.update_dragging()
             self.update_highlighting()
 
+        if self.pi_nodes[1].is_selected():
+            self.dispatch(Events.CURVE_EVENT, (self.name, self.curve))
         self.refresh()
 
     def _set_internal_visiblity(self, is_visible):
@@ -220,11 +225,15 @@ class CurveTracker(WireTracker):
         #abort if PI nodes are being dragged
         if self.external_select:
 
+            self.event_type = Events.NODE_EVENT
+
             self.set_style(style=CoinStyles.SELECTED,
                            draw=self.drag_copy.getChild(1),
                            color=self.drag_copy.getChild(2))
 
             return
+
+        self.event_type = Events.CURVE_EVENT
 
         #disable drag state translations since curve editing requires
         #manual updates
@@ -233,6 +242,9 @@ class CurveTracker(WireTracker):
         self.drag_curve_middle = math.floor((len(self.curve.points) - 1) / 2)
 
         DragState().start = self.curve.points[self.drag_curve_middle]
+
+        if self.external_select and self.pi_nodes[1].is_selected():
+            self.dispatch(self.event_type, (self.name, self.curve))
 
     def on_drag(self):
         """
@@ -251,6 +263,9 @@ class CurveTracker(WireTracker):
             self.drag_curve = self._generate_external_arc()
             _pts = arc.get_points(self.drag_curve, _dtype=tuple)
             self.drag_copy.getChild(3).point.setValues(0, len(_pts), _pts)
+
+            if self.external_select and self.pi_nodes[1].is_selected():
+                self.dispatch(self.event_type, (self.name, self.drag_curve))
 
             return
 
@@ -375,6 +390,9 @@ class CurveTracker(WireTracker):
                 _v.refresh()
 
             self.wire_tracker.update(_points)
+
+        if self.external_select and self.pi_nodes[1].is_selected():
+            self.dispatch(self.event_type, (self.name, self.curve))
 
         self.drag_curve = None
         self.drag_style = None

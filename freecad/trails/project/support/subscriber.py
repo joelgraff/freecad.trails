@@ -40,9 +40,10 @@ class Subscriber:
 
         self.id = 'Subscriber ' + subid
 
-    def notify(self, message):
+    def notify(self, event_type, message):
         """
         Default message update method
         """
 
-        print('{} got message "{}"'.format(self.id, message))
+        print('{} got event {} message "{}"'.format(
+            self.id, event_type, message))

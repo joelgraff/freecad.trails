@@ -113,7 +113,7 @@ class AlignmentTracker(BaseTracker, Publisher):
             ViewState().view.addEventCallback(
                 'SoMouseButtonEvent', self.post_select_event)
 
-    def notify(self, message):
+    def notify(self, event_type, message):
         """
         Override subscriber base implementation
         """
@@ -123,7 +123,8 @@ class AlignmentTracker(BaseTracker, Publisher):
         #if multiple nodes were selected, compute transformation
         #and pass on to panel
 
-        self.message_queue[message['name']] = message['position']
+       # self.message_queue[message['name']] = message['position']
+        self.dispatch(Events.ALIGNMENT_EVENT, message)
 
     def get_updates(self):
         """
@@ -162,35 +163,20 @@ class AlignmentTracker(BaseTracker, Publisher):
         Override base function
         """
 
-        _curves = self.trackers['Curves']
-
-        if not self.drag_curves:
-
-            _min = 0
-            _max = len(_curves)
-
-            for _i, _v in enumerate(_curves):
-
-                if _v.state.dragging:
-
-                    _idx = list(range(max(0, _i - 1), min(_max, _i + 2)))
-                    self.drag_curves = [_curves[_i] for _i in _idx]
-                    break
-
-            for _v in self.drag_curves:
-                _v.state.dragging = True
+        #iterate curves to find curves being dragged
+        self.drag_curves = [
+            _v for _v in self.trackers['Curves'] if _v.state.dragging
+        ]
 
         _last_tan = 0.0
-        _max = len(self.drag_curves) - 1
 
         for _i, _v in enumerate(self.drag_curves):
 
             _next_tan = 0.0
 
-            if _i < _max:
+            if _i < len(self.drag_curves) - 1:
 
                 _dc = self.drag_curves[_i + 1]
-                _next_tan = _dc.curve.get('Tangent')
 
                 if _dc.drag_curve:
                     _next_tan = _dc.drag_curve.get('Tangent')
@@ -228,8 +214,15 @@ class AlignmentTracker(BaseTracker, Publisher):
         Override base button actions
         """
 
-        #abort if not multi-selecting or button up
+        # dispatch an empty message if nothing is selected
+        # abort if not multi-selecting or button up
         if MouseState().button1.state == 'UP':
+
+            _sel = [_v.is_selected() for _v in self.trackers['Curves']]
+
+            if not any(_sel):
+                self.notify(Events.ALIGNMENT_EVENT, [None, None])
+
             super().button_event(arg)
             return
 
@@ -316,6 +309,7 @@ class AlignmentTracker(BaseTracker, Publisher):
 
             self.register(_ct, Events.CURVE_EVENT)
             _ct.register(self, Events.CURVE_EVENT)
+            _ct.register(self, Events.NODE_EVENT)
 
             _result['Curves'].append(_ct)
 

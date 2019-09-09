@@ -37,7 +37,7 @@ from .... import resources
 
 from ....alignment import alignment
 
-from ...support import const, utils
+from ...support import const, utils, units
 from ...support.mouse_state import MouseState
 from ...support.view_state import ViewState
 from ...support.drag_state import DragState
@@ -86,6 +86,7 @@ class EditAlignmentTask(Publisher, Subscriber):
         self.form = None
         self.ui_path = resources.__path__[0] + '/ui/'
         self.ui = self.ui_path + 'edit_alignment_task.ui'
+        self.unit_scale = units.scale_factor()
 
         self.masks = {
             'float': '#90000.99',
@@ -154,7 +155,7 @@ class EditAlignmentTask(Publisher, Subscriber):
         #subscribe the alignment tracker to all events from the task
         #and subscribe the task to task events from the tracker
         self.register(self.alignment_tracker, Events.TASK_EVENT)
-        self.alignment_tracker.register(self, Events.ALL_EVENTS)
+        self.alignment_tracker.register(self, Events.ALIGNMENT_EVENT)
         self.terminator_tracker.register(self, Events.TASK_EVENT)
 
         #save camera state
@@ -365,27 +366,62 @@ class EditAlignmentTask(Publisher, Subscriber):
 
         self.mouse.update(arg, ViewState().view.getCursorPos())
 
-    def notify(self, message):
+    def notify(self, event_type, message):
         """
         Notification event for alignment / panel updates
         """
 
-        if message not in ['END DRAG', 'BUTTON UP']:
+        #don't update at the end of the operation
+        if message[1] in ['END DRAG', 'BUTTON UP']:
             return
 
-        messages = self.alignment_tracker.message_queue
+#        messages = self.alignment_tracker.message_queue
 
         _geo = (0.0, 0.0)
-        _selection = 'No Selection'
+        _selection = message[0]
 
-        for _k in messages:
-            _selection = _k
-            _geo = messages[_k]
-            break
+        if not _selection:
+            _selection = 'No Selection'
 
-        self.form.pi['selection'].setText(_selection)
-        self.form.pi['position'][0].setText(str(_geo[0]))
-        self.form.pi['position'][1].setText(str(_geo[1]))
+        if self.form.pi['selection'].text != _selection:
+            self.form.pi['selection'].setText(_selection)
+
+        if 'CURVE' in _selection:
+            _v = message[1]
+
+            self.form.pi['position'][0].setText(str(_v.pi.x))
+            self.form.pi['position'][1].setText(str(_v.pi.y))
+
+            self.form.pi['bearing'][0].setText(
+                str(math.degrees(_v.bearing_in)))
+
+            self.form.pi['bearing'][1].setText(
+                str(math.degrees(_v.bearing_out)))
+
+            self.form.pi['station'][0].setText(str(_v.start_station))
+            self.form.pi['station'][1].setText(str(_v.internal_station))
+
+            self.form.curve['delta'].setText(str(math.degrees(_v.delta)))
+            self.form.curve['radius'].setText(str(_v.radius*self.unit_scale))
+            self.form.curve['tangent'].setText(str(_v.tangent*self.unit_scale))
+            self.form.curve['chord'].setText(str(_v.chord*self.unit_scale))
+
+            self.form.curve['external'].setText(
+                str(_v.external*self.unit_scale))
+
+            self.form.curve['middle ord'].setText(
+                str(_v.middle_ordinate*self.unit_scale))
+
+        elif _selection == 'No Selection':
+
+            for _v in {**self.form.pi, **self.form.curve}.values():
+
+                if isinstance(_v, list):
+                    for _w in _v:
+                        _w.setText("000.00")
+
+                elif hasattr(_v, 'text'):
+                    _v.setText("000.00")
 
         self.alignment_tracker.message_queue = {}
 
@@ -399,7 +435,7 @@ class EditAlignmentTask(Publisher, Subscriber):
         if _t[-1] == '\u00b0':
             _t = _t[:-1]
 
-        self.dispatch((widget.objectName(), _t))
+        self.dispatch(Events.TASK_EVENT, (widget.objectName(), _t))
 
     def set_vobj_style(self, vobj, style):
         """

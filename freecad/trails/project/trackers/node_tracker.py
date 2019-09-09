@@ -58,6 +58,7 @@ class NodeTracker(BaseTracker):
 
         self.is_end_node = False
         self.point = tuple(point)
+        self.ui_message = {}
 
         #build node structure for the node tracker
         self.coord = coin.SoCoordinate3()
@@ -77,9 +78,9 @@ class NodeTracker(BaseTracker):
 
         super().button_event(arg)
 
-        if MouseState().button1.state == 'UP' and self.is_selected():
-            self.dispatch(Events.NODE_EVENT, 
-            {'name': self.name, 'position': self.point})
+        #if MouseState().button1.state == 'UP' and self.is_selected():
+        #    self.dispatch(Events.NODE_EVENT,
+        #    {'name': self.name, 'position': self.point})
 
     def start_drag(self):
         """
@@ -96,6 +97,14 @@ class NodeTracker(BaseTracker):
         if self == DragState().drag_node:
             MouseState().set_mouse_position(self.point)
 
+        #self.ui_message = {
+        #    'name': self.name,
+        #    'position': self.drag_point,
+        #    'translation': DragState().transform.translation,
+        #    'rotation': DragState().transform.rotation,
+        #    'center': DragState().transform.center
+        #}
+
     def on_drag(self):
         """
         Override of base function
@@ -108,6 +117,9 @@ class NodeTracker(BaseTracker):
 
         self.update_drag_point()
 
+        #self.ui_message['position'] = self.drag_point
+        #self.dispatch(Events.NODE_EVENT, self.ui_message)
+
     def end_drag(self):
         """
         Override of base function
@@ -117,9 +129,12 @@ class NodeTracker(BaseTracker):
             self.update_drag_point()
             self.update(self.drag_point)
 
+        #self.ui_message['position'] = self.point
+        #self.dispatch(Events.NODE_EVENT, self.ui_message)
+
         super().end_drag()
 
-    def notify(self, message):
+    def notify(self, event_type, message):
         """
         Override of Subscriber method
         """
@@ -173,16 +188,7 @@ class NodeTracker(BaseTracker):
 
         self.coord.point.setValue(_c[:3])
         self.point = _c
-        self.dispatch(
-            Events.NODE_EVENT,
-            {
-                'name': self.name,
-                'position': self.point,
-                'translation': DragState().transform.translation,
-                'rotation': DragState().transform.rotation,
-                'center': DragState().transform.center
-            }
-        )
+        #self.dispatch(Events.NODE_EVENT, self.ui_message)
 
     def get(self):
         """
