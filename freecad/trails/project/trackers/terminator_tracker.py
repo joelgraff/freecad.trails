@@ -50,7 +50,7 @@ class TerminatorTracker(BaseTracker):
         """
 
         if MouseState().button1.state == 'UP':
-            self.dispatch(Events.TASK_EVENT, ("BUTTON UP"))
+            self.dispatch(Events.TASK_EVENT, (self.name, 'BUTTON UP'))
 
     #def end_drag(self):
         #"""

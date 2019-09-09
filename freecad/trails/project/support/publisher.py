@@ -101,13 +101,13 @@ class Publisher:
             if who in _e:
                 del _e[who]
 
-    def dispatch(self, events, message):
+    def dispatch(self, event, message):
         """
         Message dispatch
         """
 
-        _list = self.get_subscribers(events)
+        _list = self.get_subscribers(event)
 
         for _e in _list:
             for _c in _e.values():
-                _c(message)
+                _c(event, message)
