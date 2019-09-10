@@ -32,6 +32,7 @@ from FreeCAD import Vector
 import FreeCADGui as Gui
 
 import DraftTools
+from DraftGui import todo
 
 from .... import resources
 
@@ -165,7 +166,7 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         self.camera_state['height'] = _camera.height.getValue()
         self.camera_state['bound box'] = self.Object.Shape.BoundBox
 
-        self._zoom_camera()
+        self._zoom_camera, self
 
         DraftTools.redraw3DView()
 
@@ -173,7 +174,7 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         """
         Fancy routine to smooth zoom the camera
         """
-
+        print('zoom')
         _camera = ViewState().view.getCameraNode()
 
         _start_pos = Vector(_camera.position.getValue().getValue())
@@ -239,6 +240,7 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
             )
 
             Gui.updateGui()
+            ViewState().view.redraw()
 
     def setup(self):
         """

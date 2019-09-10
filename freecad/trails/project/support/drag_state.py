@@ -153,7 +153,7 @@ class DragState(metaclass=Singleton):
         _d.lineWeight = 2
 
         _c = coin.SoBaseColor()
-        _c.rgb = (0.0, 0.0, 1.0)
+        _c.rgb = (0.8, 0.8, 1.0)
 
         _g = coin.SoGroup()
         _g.addChild(_d)
