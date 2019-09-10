@@ -82,8 +82,6 @@ class Publisher:
         if not callback:
             callback = getattr(who, 'notify')
 
-        _result = []
-
         _list = self.get_subscribers(events)
 
         for _e in _list:
@@ -101,13 +99,22 @@ class Publisher:
             if who in _e:
                 del _e[who]
 
-    def dispatch(self, events, message):
+    def dispatch(self, event, message, verbose=False):
         """
         Message dispatch
         """
 
-        _list = self.get_subscribers(events)
+        #don't send empty messages
+        if not message:
+            return
+
+        _list = self.get_subscribers(event)
 
         for _e in _list:
-            for _c in _e.values():
-                _c(message)
+            for _k, _cb in _e.items():
+
+                if verbose:
+                    print('Notifying {} of message {} on event {}'\
+                        .format(_k, message, event))
+
+                _cb(event, message)

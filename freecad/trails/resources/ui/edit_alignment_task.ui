@@ -125,15 +125,6 @@
                  </item>
                  <item>
                   <widget class="QLineEdit" name="pi_position_x">
-                   <property name="contextMenuPolicy">
-                    <enum>Qt::ActionsContextMenu</enum>
-                   </property>
-                   <property name="layoutDirection">
-                    <enum>Qt::RightToLeft</enum>
-                   </property>
-                   <property name="inputMask">
-                    <string/>
-                   </property>
                    <property name="text">
                     <string>0.00</string>
                    </property>
