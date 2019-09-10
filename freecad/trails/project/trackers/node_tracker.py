@@ -76,10 +76,6 @@ class NodeTracker(BaseTracker):
 
         super().button_event(arg)
 
-        #if MouseState().button1.state == 'UP' and self.is_selected():
-        #    self.dispatch(Events.NODE_EVENT,
-        #    {'name': self.name, 'position': self.point})
-
     def start_drag(self):
         """
         Initialize drag ops
@@ -95,14 +91,6 @@ class NodeTracker(BaseTracker):
         if self == DragState().drag_node:
             MouseState().set_mouse_position(self.point)
 
-        #self.ui_message = {
-        #    'name': self.name,
-        #    'position': self.drag_point,
-        #    'translation': DragState().transform.translation,
-        #    'rotation': DragState().transform.rotation,
-        #    'center': DragState().transform.center
-        #}
-
     def on_drag(self):
         """
         Override of base function
@@ -114,9 +102,6 @@ class NodeTracker(BaseTracker):
         super().on_drag()
 
         self.update_drag_point()
-
-        #self.ui_message['position'] = self.drag_point
-        #self.dispatch(Events.NODE_EVENT, self.ui_message)
 
     def end_drag(self):
         """
@@ -140,7 +125,7 @@ class NodeTracker(BaseTracker):
         if not self.is_selected():
             return
 
-        if not event_type == Events.NODE_EVENT:
+        if not event_type == Events.NODE.POSITION:
             return
 
         self.update(message)
@@ -160,7 +145,7 @@ class NodeTracker(BaseTracker):
 
         self.drag_point = self.drag_point[0:3]
 
-    def update(self, coord=None):
+    def update(self, coord=None, do_notify=False):
         """
         Update the coordinate position
         """
@@ -180,8 +165,8 @@ class NodeTracker(BaseTracker):
         self.coord.point.setValue(_c[:3])
         self.point = _c
 
-        print('\n\t',self.name, 'node update...')
-        self.dispatch(Events.NODE_EVENT, ('NODE_POSITION', self.point), True)
+        if do_notify:
+            self.dispatch(Events.NODE.POSITION, (self.name, self.point), True)
 
     def get(self):
         """

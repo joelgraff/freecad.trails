@@ -26,17 +26,62 @@ Publisher base class
 
 from ..support.const import Const
 
+class _EVT(Const):
+
+    MSB = 6
+    LSB = 2**MSB
+
+    @staticmethod
+    def get(base, num):
+        """Calc the base-2 flag value"""
+        return base + _EVT.LSB + num
+
 class PublisherEvents(Const):
     """
     Events for Publisher class
     """
 
-    ALL_EVENTS = 0
-    TASK_EVENT = 1
-    NODE_EVENT = 2
-    WIRE_EVENT = 4
-    CURVE_EVENT = 8
-    ALIGNMENT_EVENT = 16
+    class ALL(_EVT):
+        """ALL Source Events"""
+
+        EVENTS = 0
+        POSITION = _EVT.get(EVENTS, 1)
+        PANEL_UPDATE = _EVT.get(EVENTS, 2)
+        SELECTED = _EVT.get(EVENTS, 3)
+
+    class TASK(Const):
+        """TASK Source Events"""
+
+        EVENTS = 1
+        PANEL_UPDATE = _EVT.get(EVENTS, 1)
+
+    class TRACKER(Const):
+        """TRACKER Source Events"""
+
+        EVENTS = 2
+
+    class NODE(Const):
+        """NODE Source Events"""
+
+        EVENTS = 4
+        POSITION = _EVT.get(EVENTS, 1)
+        SELECTED = _EVT.get(EVENTS, 2)
+
+    class WIRE(Const):
+        """WIRE Source Events"""
+
+        EVENTS = 8
+
+    class CURVE(Const):
+        """CURVE Source Events"""
+
+        EVENTS = 16
+        SELECTED = _EVT.get(EVENTS, 1)
+
+    class ALIGNMENT(Const):
+        """ALIGNMENT Source Events"""
+
+        EVENTS = 32
 
 class Publisher:
     """
@@ -53,7 +98,7 @@ class Publisher:
         self.id = "Publisher " + pubid
 
         event_count = len(PublisherEvents.__dict__.keys()) - 4
-
+WHHOOOOOPPPPSSSSSS!!!!!!
         self.event_max = (2**(event_count - 1)) - 1
         self.event_indices = [(2**_x) for _x in range(0, event_count + 1)]
         self.events = {event: {} for event in self.event_indices}
@@ -68,10 +113,14 @@ class Publisher:
         if not events:
             events = self.event_max
 
-        for _i in self.event_indices:
+        if not isinstance(events, list):
+            events = [events]
 
-            if events & _i:
-                _result.append(self.events[_i])
+        for _i in self.event_indices:
+            _result += [self.events[_i] for _e in events if _e & _i]
+#            for _e in events:
+#                if _e & _i:
+#                    _result.append(self.events[_i])
 
         return _result
 
@@ -79,6 +128,7 @@ class Publisher:
         """
         Callback registration for subscribers
         """
+        print('\n{} registering {} on event {}'.format(self.id, who.name, events))
         if not callback:
             callback = getattr(who, 'notify')
 
@@ -110,11 +160,19 @@ class Publisher:
 
         _list = self.get_subscribers(event)
 
+        #for specific events, append subcribers to all events
+        if event > 0:
+            _list += self.get_subscribers(0)
+
+        for _k, _v in self.events.items():
+            print('\n\t', _k)
+            print('\t', [_w.name for _w in _v])
+
         for _e in _list:
             for _k, _cb in _e.items():
 
                 if verbose:
-                    print('Notifying {} of message {} on event {}'\
-                        .format(_k, message, event))
+                    print('\n{}: notifying {} of message {} on event {}'\
+                        .format(self.id, _k.name, message, event))
 
                 _cb(event, message)

@@ -76,6 +76,7 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
 
     def __init__(self, doc, alignment_data, obj):
 
+        self.name = 'Edit Alignment Task'
         self.panel = None
         self.doc = doc
         self.Object = obj
@@ -155,9 +156,9 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
 
         #subscribe the alignment tracker to all events from the task
         #and subscribe the task to task events from the tracker
-        self.register(self.alignment_tracker, Events.TASK_EVENT)
-        self.alignment_tracker.register(self, Events.ALIGNMENT_EVENT)
-        self.terminator_tracker.register(self, Events.TASK_EVENT)
+        self.register(self.alignment_tracker, Events.TASK.PANEL_UPDATE)
+        #self.alignment_tracker.register(self, Events.ALIGNMENT.EVENTS)
+        self.terminator_tracker.register(self, Events.TASK.EVENTS)
 
         #save camera state
         _camera = ViewState().view.getCameraNode()
@@ -435,13 +436,13 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         Slot for QWidgets in panel to publish updates to trackers
         """
 
-        print(widget.objectName, 'panel update')
+        print('\n\ttPANEL UPDATE\n', widget.objectName())
         _t = widget.text()
 
         if _t[-1] == '\u00b0':
             _t = _t[:-1]
 
-        _message = ('NONE', (0,0))
+        _message = ('NONE', (0, 0))
         _id = 'NODE_POSITION'
 
         if 'pi_position' in widget.objectName():
@@ -450,9 +451,9 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
                 float(self.form.pi['position'][1].text())*self.unit_scale)
             )
 
-        print(widget.objectName())
-        print(_message)
-        self.dispatch(Events.TASK_EVENT, _message, True)
+        print('widget = ', widget.objectName())
+        print('message = ', _message)
+        self.dispatch(Events.TASK.PANEL_UPDATE, _message, True)
 
     def set_vobj_style(self, vobj, style):
         """

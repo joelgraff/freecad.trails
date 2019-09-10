@@ -127,8 +127,8 @@ class AlignmentTracker(BaseTracker, Publisher):
 
         super().notify(event_type, message, True)
 
-        if event_type != Events.TASK_EVENT:
-            self.dispatch(Events.ALIGNMENT_EVENT, message)
+        if event_type != Events.TASK.EVENTS:
+            self.dispatch(Events.ALIGNMENT.EVENTS, message, True)
             return
 
         _id = message[0]
@@ -140,7 +140,7 @@ class AlignmentTracker(BaseTracker, Publisher):
                 _coord = _data + (0.0, )
 
         if _coord:
-            self.dispatch(Events.NODE_EVENT, _coord)
+            self.dispatch(Events.NODE.POSITION, (_id, _coord), True)
 
     def get_updates(self):
         """
@@ -237,7 +237,7 @@ class AlignmentTracker(BaseTracker, Publisher):
             _sel = [_v.is_selected() for _v in self.trackers['Curves']]
 
             if not any(_sel):
-                self.notify(Events.ALIGNMENT_EVENT, [None, None])
+                self.notify(Events.ALIGNMENT.EVENTS, [None, None])
 
             super().button_event(arg)
             return
@@ -283,10 +283,10 @@ class AlignmentTracker(BaseTracker, Publisher):
             _tr = NodeTracker(names=_names + ['NODE-' + str(_i)], point=_pt)
 
             #register the node as a subscriber to aligntment NODE_EVENT
-            self.register(_tr, Events.NODE_EVENT)
+            #self.register(_tr, Events.ALIGNMENT.EVENTS)
 
-            #register the alignment as a scbscriber to node NODE_EVENT
-            _tr.register(self, Events.NODE_EVENT)
+            #register the alignment as a sUbscriber to node NODE_EVENT
+            _tr.register(self, [Events.NODE.POSITION, Events.NODE.SELECTED])
 
             _result['Nodes'].append(_tr)
 
@@ -323,9 +323,9 @@ class AlignmentTracker(BaseTracker, Publisher):
 
             _ct.set_selectability(True)
 
-            self.register(_ct, Events.CURVE_EVENT)
-            _ct.register(self, Events.CURVE_EVENT)
-            _ct.register(self, Events.NODE_EVENT)
+            #self.register(_ct, Events.CURVE_EVENTS)
+            #_ct.register(self, Events.CURVE.EVENTS)
+            _ct.register(self, Events.CURVE.SELECTED)
 
             _result['Curves'].append(_ct)
 

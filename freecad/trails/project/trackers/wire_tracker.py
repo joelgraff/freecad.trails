@@ -106,9 +106,9 @@ class WireTracker(BaseTracker):
             indices = [0, len(self.points) - 1]
 
         #register the wire tracker as a subscriber to node updates
-        for _n in nodes:
-            print('registering', self.name, 'with', _n.name)
-            _n.register(self, Events.NODE_EVENT)
+        if nodes:
+            for _n in nodes:
+                _n.register(self, Events.NODE.POSITION)
 
         self.selection_nodes = nodes
         self.selection_indices = indices
@@ -138,12 +138,12 @@ class WireTracker(BaseTracker):
 
     def notify(self, event, message):
         """
-        Override baseimplementation
+        Override base implementation
         """
 
         super().notify(event, message, True)
 
-        if event == Events.NODE_EVENT:
+        if event == Events.NODE.POSITION:
             self.update()
 
     def update(self, points=None):
@@ -185,8 +185,8 @@ class WireTracker(BaseTracker):
 
         super().button_event(arg)
 
-        if MouseState().button1.state == 'DOWN':
-            self.validate_selection()
+        #if MouseState().button1.state == 'DOWN':
+            #self.validate_selection()
 
         self.refresh()
 

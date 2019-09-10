@@ -70,7 +70,7 @@ class CurveTracker(WireTracker):
             ('Curve', 'External')
         ]
 
-        self.event_type = Events.CURVE_EVENT
+        self.event_type = Events.CURVE.EVENTS
 
         self.pt_labels = ['Start', 'Center', 'End']
 
@@ -126,7 +126,8 @@ class CurveTracker(WireTracker):
             self.update_highlighting()
 
         if self.pi_nodes[1].is_selected():
-            self.dispatch(Events.CURVE_EVENT, (self.name, self.curve))
+            print(self.name, 'Dispatch #1')
+            self.dispatch(Events.CURVE.SELECTED, (self.name, self.curve), True)
         self.refresh()
 
     def _set_internal_visiblity(self, is_visible):
@@ -233,7 +234,7 @@ class CurveTracker(WireTracker):
 
             return
 
-        self.event_type = Events.CURVE_EVENT
+        self.event_type = Events.CURVE.EVENTS
 
         #disable drag state translations since curve editing requires
         #manual updates
@@ -244,7 +245,8 @@ class CurveTracker(WireTracker):
         DragState().start = self.curve.points[self.drag_curve_middle]
 
         if self.external_select and self.pi_nodes[1].is_selected():
-            self.dispatch(self.event_type, (self.name, self.curve))
+            print(self.name, 'Dispatch #2')
+            self.dispatch(self.event_type, (self.name, self.curve), True)
 
     def on_drag(self):
         """
@@ -265,7 +267,8 @@ class CurveTracker(WireTracker):
             self.drag_copy.getChild(3).point.setValues(0, len(_pts), _pts)
 
             if self.external_select and self.pi_nodes[1].is_selected():
-                self.dispatch(self.event_type, (self.name, self.drag_curve))
+                print(self.name, 'Dispatch #3')
+                self.dispatch(self.event_type, (self.name, self.drag_curve), True)
 
             return
 
@@ -392,7 +395,8 @@ class CurveTracker(WireTracker):
             self.wire_tracker.update(_points)
 
         if self.external_select and self.pi_nodes[1].is_selected():
-            self.dispatch(self.event_type, (self.name, self.curve))
+            print(self.name, 'Dispatch #4')
+            self.dispatch(self.event_type, (self.name, self.curve), True)
 
         self.drag_curve = None
         self.drag_style = None

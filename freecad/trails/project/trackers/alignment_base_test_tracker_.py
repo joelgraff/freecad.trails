@@ -34,6 +34,7 @@ from .base_tracker import BaseTracker
 
 from ..support.mouse_state import MouseState
 from ..support.view_state import ViewState
+from ..support.publisher import PublisherEvents as Events
 
 from ..support.drag_state import DragState
 
@@ -131,8 +132,8 @@ class AlignmentBaseTestTracker(BaseTracker):
         if MouseState().button1.state == 'UP':
             return
 
-        for _v in self.trackers['Tangents']:
-            _v.validate_selection()
+        #for _v in self.trackers['Tangents']:
+        #    _v.validate_selection()
 
     def button_event(self, arg):
         """
@@ -204,6 +205,10 @@ class AlignmentBaseTestTracker(BaseTracker):
         _wt.set_selectability(select)
         _wt.set_points(points, nodes)
         _wt.update()
+
+        if nodes:
+            for _n in nodes:
+                _n.register(_wt, Events.NODE.EVENTS)
 
         return _wt
 
