@@ -561,34 +561,43 @@ PointList = [[508418.1541,4274310.4065,96.3869
 ],[508268.3374,4274490.2378,67.4936
 ]]
 
-grp2 = []
-#base = [0, 0, 0]
-#base = [1000, 0, 0]
-#base = [100000, 0, 0]
-_base =  Vector(1000000, 0, 0)
-#base = [10000000, 0, 0]
+def my_test():
 
-for i in range(0, 1000):
-    _v = Vector(i * 0.1, i * 10, 0.0)
-    grp1.append(_v)
-    grp2.append(_v.add(_base)
+    grp2 = []
+    #base = [0, 0, 0]
+    #base = [1000, 0, 0]
+    #base = [100000, 0, 0]
+    _base =  Vector(1000000, 0, 0)
+    #base = [10000000, 0, 0]
 
-_line1 = Draft.makeWire(grp1, closed=False, face=False)
-_line2 = Draft.makeWire(grp2, closed=False, face=False)
-Draft.autogroup(_line)
+    for i in range(0, 1000):
+        _v = Vector(i * 0.1, i * 10, 0.0)
+        grp1.append(_v)
+        grp2.append(_v.add(_base))
 
-App.ActiveDocument.recompute()
-Gui.SendMsgToActiveView("ViewFit")
+    _line1 = Draft.makeWire(grp1, closed=False, face=False)
+    _line2 = Draft.makeWire(grp2, closed=False, face=False)
+    Draft.autogroup(_line)
 
-#PointGroup = App.ActiveDocument.addObject('Points::Feature', "Point_Group")
+    App.ActiveDocument.recompute()
+    Gui.SendMsgToActiveView("ViewFit")
 
-#List = []
-#Base = PointList[0]
-#for Point in PointList:
-#    Point = (Point[0]-Base[0], Point[1]-Base[1], Point[2]-Base[2])
-#    List.append(Point)
+def hakans_test():
+    PointGroup = App.ActiveDocument.addObject('Points::Feature', "Point_Group")
 
-#PointObject = PointGroup.Points.copy()
-#PointObject.addPoints(List)
-#PointGroup.Points = PointObject
-#PointGroup.Placement.Base = Base
+    List = []
+    Base = PointList[0]
+    for Point in PointList:
+        Point = (Point[0]-Base[0], Point[1]-Base[1], Point[2]-Base[2])
+        List.append(Point)
+
+    PointObject = PointGroup.Points.copy()
+    PointObject.addPoints(List)
+    PointGroup.Points = PointObject
+
+    Gui.runCommand('Create Surface',0)
+
+    PointGroup.Placement.Base = Base
+    App.ActiveDocument.Surface.
+
+hakans_test()

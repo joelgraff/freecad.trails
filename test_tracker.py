@@ -4,11 +4,10 @@ import FreeCADGui as Gui
 
 from DraftGui import todo
 
-class NodeTracker():
 
-    counter = 0
+class TestTracker():
 
-    def __init__(self, coord):
+    def __init__(self):
 
         self.node = coin.SoSeparator()
         self.coordinate = coin.SoCoordinate3()
@@ -20,30 +19,14 @@ class NodeTracker():
 
         _selection_node.documentName.setValue('Document')
         _selection_node.objectName.setValue('Test Tracker')
-        _selection_node.subElementName.setValue(
-            'NODE-' + str(NodeTracker.counter)
-        )
+        _selection_node.subElementName.setValue('NODE-0')
 
         self.node.addChild(_selection_node)
         self.node.addChild(self.transform)
         self.node.addChild(self.coordinate)
         self.node.addChild(coin.SoMarkerSet())
 
-        self.coordinate.point.setValue(tuple(coord))
-
-        NodeTracker.counter += 1
-
-
-class TestTracker():
-
-    def __init__(self):
-
-        self.node.addChild(coin.SoLineSet())
-
-        self.coordinate.point.setValues(
-            [(200.0, 200.0, 0.0), (100.0, -200.0, 0.0), (0.0, 0.0, 0.0),
-            (-300.0, 200.0, 0.0)]
-            )
+        self.coordinate.point.setValue((0.0, 0.0, 0.0))
 
         self.view = Gui.ActiveDocument.ActiveView
         self.view.addEventCallback(
@@ -85,12 +68,6 @@ class TestTracker():
         coord_2 = self.view.getPoint((100, 0))
 
         delta = abs(coord_2[0] - coord_1[0])
-
-        _scale = App.ParamGet("User parameter:BaseApp/Preferences/View").GetFloat("PickRadius")
-
-        _scale = abs(_scale - 5.0) / _scale
-
-        delta *= _scale
 
         self.crosshair_coord.point.setValues(0, 5, [
             (float(delta), 0.0, 0.0), (0.0, float(delta), 0.0),
