@@ -78,7 +78,7 @@ class EditAlignmentCmd(Modifier):
         Icon resources.
         """
 
-        icon_path = resources.__path__[0] + '/icons/drawing.svg'
+        icon_path = resources.__path__[0] + '/icons/alignment_editor.svg'
 
         return {'Pixmap'  : icon_path,
                 'Accel'   : 'Ctrl+Shift+D',

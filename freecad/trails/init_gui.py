@@ -52,10 +52,10 @@ class TrailsWorkbench(Gui.Workbench):
 
         self.command_ui = {
 
-            'Transportation': {
-                'gui': self.menu + self.toolbar,
-                'cmd': ['NewProjectCmd']
-            },
+            #'Transportation': {
+            #    'gui': self.menu + self.toolbar,
+            #    'cmd': ['NewProjectCmd']
+            #},
 
             'Alignment': {
                 'gui': self.menu + self.toolbar + self.context,

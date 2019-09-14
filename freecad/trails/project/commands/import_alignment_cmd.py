@@ -47,7 +47,7 @@ class ImportAlignmentCmd():
 
         icon_path = os.path.dirname(os.path.abspath(__file__))
 
-        icon_path += "/../../resources/icons/new_alignment.svg"
+        icon_path += "/../../resources/icons/import.svg"
 
         return {'Pixmap'  : icon_path,
                 'Accel'   : 'Ctrl+Shift+A',
