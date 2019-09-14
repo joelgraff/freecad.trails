@@ -53,7 +53,7 @@ class ImportAlignmentCmd():
                 'Accel'   : 'Ctrl+Shift+A',
                 'MenuText': 'Import Alignment',
                 'ToolTip' :
-                    'Import a horizontal or vertical alignment from CSV',
+                    'Import a horizontal or vertical alignment from LandXML',
                 'CmdType' : 'ForEdit'}
 
     def Activated(self):
