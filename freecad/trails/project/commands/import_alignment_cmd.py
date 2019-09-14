@@ -53,7 +53,7 @@ class ImportAlignmentCmd():
                 'Accel'   : 'Ctrl+Shift+A',
                 'MenuText': 'Import Alignment',
                 'ToolTip' :
-                    'Import a horizontal or vertical alignment from LandXML',
+                    'Import a horizontal or vertical alignment from LandXMLBeth smiles and looks at you',
                 'CmdType' : 'ForEdit'}
 
     def Activated(self):
