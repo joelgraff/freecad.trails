@@ -28,6 +28,7 @@ import FreeCADGui as Gui
 
 from ..tasks.alignment.import_alignment_task import ImportAlignmentTask
 
+from freecad.trails import ICONPATH
 
 class ImportAlignmentCmd():
     """
@@ -45,16 +46,14 @@ class ImportAlignmentCmd():
         Icon resources.
         """
 
-        icon_path = os.path.dirname(os.path.abspath(__file__))
-
-        icon_path += "/../../resources/icons/import.svg"
-
-        return {'Pixmap'  : icon_path,
-                'Accel'   : 'Ctrl+Shift+A',
-                'MenuText': 'Import Alignment',
-                'ToolTip' :
-                    'Import a horizontal or vertical alignment from LandXMLBeth smiles and looks at you',
-                'CmdType' : 'ForEdit'}
+        return {
+            'Pixmap'  : ICONPATH + '/icons/xml.svg',
+            'Accel'   : 'Ctrl+Shift+A',
+            'MenuText': 'Import Alignment',
+            'ToolTip' :
+            'Import a horizontal or vertical alignment from LandXML',
+            'CmdType' : 'ForEdit'
+            }
 
     def Activated(self):
         """

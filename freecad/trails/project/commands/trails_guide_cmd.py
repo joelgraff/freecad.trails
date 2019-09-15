@@ -21,6 +21,8 @@
 # *                                                                        *
 # **************************************************************************
 
+import os
+
 import FreeCAD as App
 import FreeCADGui as Gui
 
@@ -28,9 +30,24 @@ from DraftTools import Modifier
 
 from freecad.trails import ICONPATH
 
-class Command(Modifier):
+#
+# ICON ATTRIBUTIONS
+#
+# Icons made by [author link] from www.flaticon.com
+#
+# Help:
+# https://www.flaticon.com/authors/roundicons
+#
+# Template Library:
+# https://www.flaticon.com/authors/freepik
+#
+# XML Import:
+# https://www.flaticon.com/authors/smashicons
+
+
+class TrailsGuide(Modifier):
     """
-    Command Description
+    TrailsGuide Command Description
     """
     def __init__(self):
 
@@ -38,10 +55,10 @@ class Command(Modifier):
 
     def GetResources(self):
 
-        return {'Pixmap'  : ICONPATH + '/icons/workbench.svg',
+        return {'Pixmap'  : ICONPATH + '/icons/question.svg',
                 'Accel'   : '',
-                'MenuText': '',
-                'ToolTip' : '',
+                'MenuText': 'Help',
+                'ToolTip' : 'Trails Guide and Help',
                 'CmdType' : 'ForEdit'}
 
     def Activated(self):
@@ -49,6 +66,6 @@ class Command(Modifier):
         Command activation method
         """
 
-        Modifier.Activated(self, 'Command')
+        Modifier.Activated(self, 'TrailsGuide')
 
-Gui.addCommand('Command', Command())
+Gui.addCommand('TrailsGuide', TrailsGuide())
