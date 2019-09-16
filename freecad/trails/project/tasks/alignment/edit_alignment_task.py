@@ -382,8 +382,6 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
             return
 
 #        messages = self.alignment_tracker.message_queue
-
-        _geo = (0.0, 0.0)
         _selection = message[0]
 
         if not _selection:

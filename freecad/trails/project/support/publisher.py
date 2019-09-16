@@ -98,7 +98,7 @@ class Publisher:
         self.id = "Publisher " + pubid
 
         event_count = len(PublisherEvents.__dict__.keys()) - 4
-WHHOOOOOPPPPSSSSSS!!!!!!
+#WHHOOOOOPPPPSSSSSS!!!!!!
         self.event_max = (2**(event_count - 1)) - 1
         self.event_indices = [(2**_x) for _x in range(0, event_count + 1)]
         self.events = {event: {} for event in self.event_indices}
