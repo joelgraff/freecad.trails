@@ -157,7 +157,7 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         #subscribe the alignment tracker to all events from the task
         #and subscribe the task to task events from the tracker
         self.alignment_tracker.register(self, Events.ALIGNMENT.UPDATED)
-        self.register(self.alignment_tracker, Events.TASK.EVENTS)
+        self.register(self.alignment_tracker, Events.TASK.PANEL_UPDATED)
         self.terminator_tracker.register(self, Events.TASK.EVENTS)
 
         #save camera state
@@ -445,12 +445,12 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         _id = 'NODE_POSITION'
 
         if 'pi_position' in widget.objectName():
-            _message = (_id,
-                (float(self.form.pi['position'][0].text())*self.unit_scale,
-                float(self.form.pi['position'][1].text())*self.unit_scale)
-            )
+            _message = (_id, (
+                float(self.form.pi['position'][0].text())*self.unit_scale,
+                float(self.form.pi['position'][1].text())*self.unit_scale
+                ))
 
-        self.dispatch(Events.TASK.PANEL_UPDATE, _message, False)
+        self.dispatch(Events.TASK.PANEL_UPDATED, _message, False)
 
     def set_vobj_style(self, vobj, style):
         """

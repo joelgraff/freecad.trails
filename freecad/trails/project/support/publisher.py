@@ -83,8 +83,9 @@ class PublisherEvents(Const):
 
         EVENTS = 0
         POSITION = _EVT.get(EVENTS, 1)
-        PANEL_UPDATE = _EVT.get(EVENTS, 2)
+        PANEL_UPDATED = _EVT.get(EVENTS, 2)
         SELECTED = _EVT.get(EVENTS, 3)
+        UPDATED = _EVT.get(EVENTS, 4)
         enum = _EVT.get_enum()
 
 
@@ -92,7 +93,7 @@ class PublisherEvents(Const):
         """TASK Source Events"""
 
         EVENTS = 1
-        PANEL_UPDATE = _EVT.get(EVENTS, 1)
+        PANEL_UPDATED = _EVT.get(EVENTS, 1)
         enum = _EVT.get_enum()
 
     class TRACKER(Const):
@@ -120,7 +121,7 @@ class PublisherEvents(Const):
 
         EVENTS = 5
         SELECTED = _EVT.get(EVENTS, 1)
-        UPDATE = _EVT.get(EVENTS, 2)
+        UPDATED = _EVT.get(EVENTS, 2)
         enum = _EVT.get_enum()
 
     class ALIGNMENT(Const):

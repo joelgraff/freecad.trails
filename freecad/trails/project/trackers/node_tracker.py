@@ -112,9 +112,6 @@ class NodeTracker(BaseTracker):
             self.update_drag_point()
             self.update(self.drag_point)
 
-        #self.ui_message['position'] = self.point
-        #self.dispatch(Events.NODE_EVENT, self.ui_message)
-
         super().end_drag()
 
     def notify(self, event_type, message):
@@ -125,7 +122,7 @@ class NodeTracker(BaseTracker):
         if not self.is_selected():
             return
 
-        if not event_type == Events.NODE.POSITION:
+        if event_type != Events.NODE.POSITION:
             return
 
         self.update(message)

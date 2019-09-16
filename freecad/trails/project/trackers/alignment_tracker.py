@@ -129,7 +129,11 @@ class AlignmentTracker(BaseTracker, Publisher):
         #    self.dispatch(Events.ALIGNMENT.EVENTS, message, True)
         #    return
 
-        self.dispatch(Events.ALIGNMENT.UPDATED, message, False)
+        if event_type == Events.CURVE.UPDATED:
+            self.dispatch(Events.ALIGNMENT.UPDATED, message, False)
+
+        elif event_type == Events.TASK.PANEL_UPDATED:
+            self.dispath(Events.NODE.UPDATED, message, True)
 
     def get_updates(self):
         """
