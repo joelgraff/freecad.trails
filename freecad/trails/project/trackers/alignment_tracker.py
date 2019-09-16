@@ -123,24 +123,13 @@ class AlignmentTracker(BaseTracker, Publisher):
         #if multiple nodes were selected, compute transformation
         #and pass on to panel
 
-       # self.message_queue[message['name']] = message['position']
+        #super().notify(event_type, message, True)
 
-        super().notify(event_type, message, True)
+        #if event_type != Events.TASK.EVENTS:
+        #    self.dispatch(Events.ALIGNMENT.EVENTS, message, True)
+        #    return
 
-        if event_type != Events.TASK.EVENTS:
-            self.dispatch(Events.ALIGNMENT.EVENTS, message, True)
-            return
-
-        _id = message[0]
-        _data = message[1]
-        _coord = tuple()
-
-        if 'NODE' in _id:
-            if 'POSITION' in _id:
-                _coord = _data + (0.0, )
-
-        if _coord:
-            self.dispatch(Events.NODE.POSITION, (_id, _coord), True)
+        self.dispatch(Events.ALIGNMENT.UPDATED, message, False)
 
     def get_updates(self):
         """
@@ -325,7 +314,7 @@ class AlignmentTracker(BaseTracker, Publisher):
 
             #self.register(_ct, Events.CURVE_EVENTS)
             #_ct.register(self, Events.CURVE.EVENTS)
-            _ct.register(self, Events.CURVE.SELECTED)
+            _ct.register(self, Events.CURVE.EVENTS)
 
             _result['Curves'].append(_ct)
 

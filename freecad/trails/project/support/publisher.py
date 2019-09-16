@@ -23,65 +23,121 @@
 """
 Publisher base class
 """
+import types
+
+from inspect import getmro
 
 from ..support.const import Const
+from ..support.singleton import Singleton
 
 class _EVT(Const):
 
-    MSB = 6
+    #8 possible event groups
+    MSB = 3
     LSB = 2**MSB
 
     @staticmethod
     def get(base, num):
         """Calc the base-2 flag value"""
-        return base + _EVT.LSB + num
+        return base + num * _EVT.LSB
+
+    @staticmethod
+    def get_enum():
+        return types.SimpleNamespace()
+
+class EvtBase(Const):
+    """
+    Provide the same data strcutres for every class.  These are non-const
+    """
+
+    @staticmethod
+    def vals(ns, obj):
+        """
+        Return the data structures for enumeration
+        """
+
+        setattr(ns, '_EVENTS', {
+            _k:_e for _k, _e in obj.__dict__.items()\
+                if _k[0] != '_' and _k != 'enum'
+        })
+
+        setattr(ns, '_NAMES', [_k for _k in ns._EVENTS])
+
+        if PublisherEvents in getmro(obj):
+            setattr(ns, '_VALUES', [_v.EVENTS for _v in ns._EVENTS.values()])
+
+        else:
+            setattr(ns, '_VALUES', [_v for _v in ns._EVENTS.values()])
+
+        return ns
 
 class PublisherEvents(Const):
     """
     Events for Publisher class
     """
 
-    class ALL(_EVT):
+    enum = _EVT.get_enum()
+
+    class ALL(Const):
         """ALL Source Events"""
 
         EVENTS = 0
         POSITION = _EVT.get(EVENTS, 1)
         PANEL_UPDATE = _EVT.get(EVENTS, 2)
         SELECTED = _EVT.get(EVENTS, 3)
+        enum = _EVT.get_enum()
+
 
     class TASK(Const):
         """TASK Source Events"""
 
         EVENTS = 1
         PANEL_UPDATE = _EVT.get(EVENTS, 1)
+        enum = _EVT.get_enum()
 
     class TRACKER(Const):
         """TRACKER Source Events"""
 
         EVENTS = 2
+        enum = _EVT.get_enum()
 
     class NODE(Const):
         """NODE Source Events"""
 
-        EVENTS = 4
+        EVENTS = 3
         POSITION = _EVT.get(EVENTS, 1)
         SELECTED = _EVT.get(EVENTS, 2)
+        enum = _EVT.get_enum()
 
     class WIRE(Const):
         """WIRE Source Events"""
 
-        EVENTS = 8
+        EVENTS = 4
+        enum = _EVT.get_enum()
 
     class CURVE(Const):
         """CURVE Source Events"""
 
-        EVENTS = 16
+        EVENTS = 5
         SELECTED = _EVT.get(EVENTS, 1)
+        UPDATE = _EVT.get(EVENTS, 2)
+        enum = _EVT.get_enum()
 
     class ALIGNMENT(Const):
         """ALIGNMENT Source Events"""
 
-        EVENTS = 32
+        EVENTS = 6
+        UPDATED = _EVT.get(EVENTS, 1)
+        enum = _EVT.get_enum()
+
+EvtBase.vals(PublisherEvents.enum, PublisherEvents)
+EvtBase.vals(PublisherEvents.ALL.enum, PublisherEvents.ALL)
+EvtBase.vals(PublisherEvents.TASK.enum, PublisherEvents.TASK)
+EvtBase.vals(PublisherEvents.TRACKER.enum, PublisherEvents.TRACKER)
+EvtBase.vals(PublisherEvents.NODE.enum, PublisherEvents.NODE)
+EvtBase.vals(PublisherEvents.WIRE.enum, PublisherEvents.WIRE)
+EvtBase.vals(PublisherEvents.CURVE.enum, PublisherEvents.CURVE)
+EvtBase.vals(PublisherEvents.ALIGNMENT.enum, PublisherEvents.ALIGNMENT)
 
 class Publisher:
     """
@@ -97,10 +153,7 @@ class Publisher:
 
         self.id = "Publisher " + pubid
 
-        event_count = len(PublisherEvents.__dict__.keys()) - 4
-        self.event_max = (2**(event_count - 1)) - 1
-        self.event_indices = [(2**_x) for _x in range(0, event_count + 1)]
-        self.events = {event: {} for event in self.event_indices}
+        self.events = {}
 
     def get_subscribers(self, events=0):
         """
@@ -109,17 +162,23 @@ class Publisher:
 
         _result = []
 
-        if not events:
-            events = self.event_max
-
         if not isinstance(events, list):
             events = [events]
 
-        for _i in self.event_indices:
-            _result += [self.events[_i] for _e in events if _e & _i]
-#            for _e in events:
-#                if _e & _i:
-#                    _result.append(self.events[_i])
+        #add subscribers to all events
+        if 0 in self.events:
+            _result = self.events[0].values()
+
+        for _e in events:
+
+            #add subscribers to all events for this event's group
+            for _evt in PublisherEvents.enum._VALUES:
+                if _e & _evt and self.events.get(_evt):
+                    _result += self.events[_evt].values()
+
+            #append subscribes to the specific event
+            if self.events.get(_e):
+                _result += self.events[_e].values()
 
         return _result
 
@@ -127,26 +186,48 @@ class Publisher:
         """
         Callback registration for subscribers
         """
-        print('\n{} registering {} on event {}'.format(self.id, who.name, events))
+
+        #A subscriber is registered for an event by storing a reference to the
+        #subscriber under the index value of the event. No checks are performed
+        #to ensure the event is a valid publisher event.
+
+        if not isinstance(events, list):
+            events = [events]
+
         if not callback:
             callback = getattr(who, 'notify')
 
-        _list = self.get_subscribers(events)
+        for _e in events:
 
-        for _e in _list:
-            if not who in _e:
-                _e[who] = callback
+            #new event in the dictionary
+            if not _e in self.events:
+                self.events[_e] = {who: callback}
+                continue
+
+            #new subscriber for and existing event
+            if who not in self.events[_e]:
+                self.events[_e][who] = callback
 
     def unregister(self, who, events):
         """
         Callback unregistration for subscribers
         """
 
-        _list = self.get_subscribers(events)
+        for _e in events:
 
-        for _e in _list:
-            if who in _e:
-                del _e[who]
+            #no event, no subscriber
+            if not _e in self.events:
+                continue
+
+            #subscribver not found for event
+            if who not in self.events[_e]:
+                continue
+
+            #delete and remove empty event, if necessary
+            del self.events[_e][who]
+
+            if not self.events[_e]:
+                del self.events[_e]
 
     def dispatch(self, event, message, verbose=False):
         """
@@ -157,21 +238,12 @@ class Publisher:
         if not message:
             return
 
-        _list = self.get_subscribers(event)
+        _cb_list = self.get_subscribers(event)
 
-        #for specific events, append subcribers to all events
-        if event > 0:
-            _list += self.get_subscribers(0)
+        for _cb in _cb_list:
 
-        for _k, _v in self.events.items():
-            print('\n\t', _k)
-            print('\t', [_w.name for _w in _v])
+            if verbose:
+                print('\n{}: dispatching message {} on event {}'\
+                    .format(self.id, message, event))
 
-        for _e in _list:
-            for _k, _cb in _e.items():
-
-                if verbose:
-                    print('\n{}: notifying {} of message {} on event {}'\
-                        .format(self.id, _k.name, message, event))
-
-                _cb(event, message)
+            _cb(event, message)

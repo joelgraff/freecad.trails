@@ -156,8 +156,8 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
 
         #subscribe the alignment tracker to all events from the task
         #and subscribe the task to task events from the tracker
-        self.register(self.alignment_tracker, Events.TASK.PANEL_UPDATE)
-        #self.alignment_tracker.register(self, Events.ALIGNMENT.EVENTS)
+        self.alignment_tracker.register(self, Events.ALIGNMENT.UPDATED)
+        self.register(self.alignment_tracker, Events.TASK.EVENTS)
         self.terminator_tracker.register(self, Events.TASK.EVENTS)
 
         #save camera state
@@ -374,6 +374,8 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         Notification event for alignment / panel updates
         """
 
+        #super().notify(event_type, message, True)
+
         if not message:
             return
 
@@ -434,7 +436,6 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         Slot for QWidgets in panel to publish updates to trackers
         """
 
-        print('\n\ttPANEL UPDATE\n', widget.objectName())
         _t = widget.text()
 
         if _t[-1] == '\u00b0':
@@ -449,9 +450,7 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
                 float(self.form.pi['position'][1].text())*self.unit_scale)
             )
 
-        print('widget = ', widget.objectName())
-        print('message = ', _message)
-        self.dispatch(Events.TASK.PANEL_UPDATE, _message, True)
+        self.dispatch(Events.TASK.PANEL_UPDATE, _message, False)
 
     def set_vobj_style(self, vobj, style):
         """

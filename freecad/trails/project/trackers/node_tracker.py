@@ -166,7 +166,7 @@ class NodeTracker(BaseTracker):
         self.point = _c
 
         if do_notify:
-            self.dispatch(Events.NODE.POSITION, (self.name, self.point), True)
+            self.dispatch(Events.NODE.POSITION, (self.name, self.point), False)
 
     def get(self):
         """
