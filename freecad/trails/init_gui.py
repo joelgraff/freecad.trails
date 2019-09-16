@@ -45,40 +45,35 @@ class TrailsWorkbench(Gui.Workbench):
 
     def __init__(self):
 
+        #switch to True to enable development commands
         self.dev = False
+
         self.menu = 1
         self.toolbar = 2
         self.context = 4
 
         self.command_ui = {
 
-            'Transportation': {
-                'gui': self.menu + self.toolbar,
-                'cmd': ['NewProjectCmd']
-            },
-
             'Alignment': {
                 'gui': self.menu + self.toolbar + self.context,
                 'cmd': ['ImportAlignmentCmd',
                         'EditAlignmentCmd',
-                        #'GenerateVerticalAlignment',
-                        #'Generate3dAlignment'
                        ]
             },
 
             'Element Template': {
                 'gui': self.menu + self.toolbar + self.context,
-                'cmd': ['ViewTemplateLibrary',
-                        #'GenerateElementLoft',
-                       ]
+                'cmd': ['ViewTemplateLibrary',]
             },
-            #'Element Loft': {
-            #'gui': self.menu + self.toolbar + self.context,
-            #'cmd': ['EditIntervals']
-            #},
+
             'Test': {
                 'gui': self.menu + self.toolbar,
-                'cmd': ['BaseTrackerTest', 'BaseTrackerLinkedTest', 'TestZoom']
+                'cmd': ['BaseTrackerTest', 'BaseTrackerLinkedTest']
+            },
+
+            'Help': {
+                'gui': self.toolbar,
+                'cmd': ['TrailsGuide']
             }
         }
 
@@ -108,8 +103,8 @@ class TrailsWorkbench(Gui.Workbench):
         """
 
         from .project.commands \
-            import new_project_cmd, import_alignment_cmd, edit_alignment_cmd, \
-            spiral_test, base_tracker_test, sprite_splitter_cmd, test_zoom_cmd
+            import import_alignment_cmd, edit_alignment_cmd, base_tracker_test,\
+                trails_guide_cmd
 
         for _k, _v in self.command_ui.items():
 
@@ -118,8 +113,6 @@ class TrailsWorkbench(Gui.Workbench):
 
             if _v['gui'] & self.menu:
                 self.appendMenu(_k, _v['cmd'])
-
-        #self.init_dev_commands()
 
     def Activated(self):
         """
