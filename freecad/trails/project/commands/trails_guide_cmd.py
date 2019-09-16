@@ -26,6 +26,8 @@ import os
 import FreeCAD as App
 import FreeCADGui as Gui
 
+import Part
+
 from DraftTools import Modifier
 
 from freecad.trails import ICONPATH
@@ -66,6 +68,25 @@ class TrailsGuide(Modifier):
         Command activation method
         """
 
+        panel = Panel()
+        Gui.Control.showDialog(panel)
+
         Modifier.Activated(self, 'TrailsGuide')
+
+
+class Panel:
+    """
+    Class to display help panel
+    """
+
+    def __init__(self):
+
+        # this will create a Qt widget from our ui file
+        path_to_ui = ICONPATH + '/ui/help.ui'
+        print(path_to_ui)
+        self.form = Gui.PySideUic.loadUi(path_to_ui)
+
+    def accept(self):
+        Gui.Control.closeDialog()
 
 Gui.addCommand('TrailsGuide', TrailsGuide())
