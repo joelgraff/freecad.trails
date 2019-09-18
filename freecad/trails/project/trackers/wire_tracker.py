@@ -108,7 +108,7 @@ class WireTracker(BaseTracker):
         #register the wire tracker as a subscriber to node updates
         if nodes:
             for _n in nodes:
-                _n.register(self, Events.NODE.POSITION)
+                _n.register(self, Events.NODE.UPDATED)
 
         self.selection_nodes = nodes
         self.selection_indices = indices
@@ -143,7 +143,7 @@ class WireTracker(BaseTracker):
 
         super().notify(event, message, True)
 
-        if event == Events.NODE.POSITION:
+        if event == Events.NODE.UPDATED:
             self.update()
 
     def update(self, points=None):

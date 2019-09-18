@@ -76,6 +76,9 @@ class NodeTracker(BaseTracker):
 
         super().button_event(arg)
 
+        if self.is_selected() and MouseState().button1.state != 'UP':
+            self.dispatch(Events.NODE.SELECTED, (self.name, self.point))
+
     def start_drag(self):
         """
         Initialize drag ops
@@ -119,13 +122,23 @@ class NodeTracker(BaseTracker):
         Override of Subscriber method
         """
 
+        super().notify(event_type, message, True)
+
         if not self.is_selected():
             return
 
-        if event_type != Events.NODE.POSITION:
+        if event_type != Events.NODE.UPDATE:
             return
 
-        self.update(message)
+        _coord = message[1]
+
+        if not isinstance(_coord, tuple):
+            _coord = tuple(_coord)
+
+        if len(_coord) == 2:
+            _coord = _coord + (0.0,)
+
+        self.update(_coord, True)
 
     def update_drag_point(self):
         """
@@ -141,6 +154,9 @@ class NodeTracker(BaseTracker):
                 [self.point], DragState().node_group)[0])
 
         self.drag_point = self.drag_point[0:3]
+
+        #notify node updatefor sake of curve changes
+        self.dispatch(Events.NODE.UPDATED, (self.name, self.drag_point), True)
 
     def update(self, coord=None, do_notify=False):
         """
@@ -161,9 +177,10 @@ class NodeTracker(BaseTracker):
 
         self.coord.point.setValue(_c[:3])
         self.point = _c
+        self.drag_point = self.point
 
         if do_notify:
-            self.dispatch(Events.NODE.POSITION, (self.name, self.point), False)
+            self.dispatch(Events.NODE.UPDATED, (self.name, self.point), False)
 
     def get(self):
         """
