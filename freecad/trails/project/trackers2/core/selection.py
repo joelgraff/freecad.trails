@@ -21,43 +21,92 @@
 #*                                                                     *
 #***********************************************************************
 """
-Mouse services for Tracker objects
+Provides SoFCSelection support for Tracker classes
 """
 
-class Mouse():
+from pivy import coin
+
+from ...support.mouse_state import MouseState
+
+from ..coin_styles import CoinStyles
+
+from .mouse import Mouse
+from .selection_state import SelectionState
+from .selection_state import SelectionStateEnum as Enum
+
+class Selection():
     """
-    Mouse services for Tracker objects
+    Provides SoFCSelection support for Tracker classes
     """
 
-    #view_state is provided in Base
-    view_state = None
+    #members provided by Base and Style
+    name = []
+    base_node = None
+    coin_style = None
+    def refresh(self, style): pass
+
+    #class static for global selection
+    sel_state = SelectionState()
 
     def __init__(self):
         """
         Constructor
         """
 
-        if not self.view_state:
+        if not self.name:
             return
 
-        self.mouse_cb = self.view_state.addEventCallback(
-            'SoLocation2Event', self.mouse_event)
+        self.sel_highlight = True
 
-        self.button_cb = self.view_state.addEventCallback(
-            'SoMouseButtonEvent', self.button_event)
+        self.sel_node = coin.SoType.fromName("SoFCSelection").createInstance()
+
+        self.sel_node.documentName.setValue(self.name[2])
+        self.sel_node.objectName.setValue(self.name[1])
+        self.sel_node.subElementName.setValue(self.name[0])
+
+        self.base_node.addChild(self.sel_node)
 
         super().__init__()
 
-    def mouse_event(self, arg):
+    def is_selected(self):
         """
-        Base mouse event implementation
+        Return whether or not the node is selected at all
         """
 
-        pass
+        return self.sel_state.is_selected(self) > Enum.NONE
+
+    def mouse_event(self, arg):
+        """
+        Mouse override
+        """
+
+        if self.sel_highlight:
+            self.highlight()
+
+        Mouse.mouse_event(self, arg)
 
     def button_event(self, arg):
         """
-        Base button event implementation
+        Mouse override
         """
 
-        pass
+        if MouseState().button1.state == 'DOWN':
+            self.sel_state.select(self)
+
+        elif self.sel_highlight and not self.is_selected():
+            self.highlight()
+
+        Mouse.mouse_event(self, arg)
+
+    def highlight(self):
+        """
+        Test for highlight conditions and changes
+        """
+
+        _style = self.coin_style
+
+        #test to see if this node is under the cursor
+        if self.name == MouseState().component:
+            _style = CoinStyles.SELECTED
+
+        self.refresh(_style)

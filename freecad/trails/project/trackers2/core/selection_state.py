@@ -24,11 +24,10 @@
 Select state class
 """
 
-from .singleton import Singleton
-from .mouse_state import MouseState
-from .const import Const
+from ...support.singleton import Singleton
+from ...support.const import Const
 
-class SelectStateEnum(Const):
+class SelectionStateEnum(Const):
     """
     Enumerants for selection state management
     """
@@ -38,9 +37,9 @@ class SelectStateEnum(Const):
     FULL = 2
     MANUAL = 3
 
-class SelectState(metaclass=Singleton):
+class SelectionState(metaclass=Singleton):
     """
-    Singlton state class for managing element selections
+    Singlton state class for managing tracker selections
     """
 
     def __init__(self):
@@ -48,127 +47,127 @@ class SelectState(metaclass=Singleton):
         Constructor
         """
 
-        self._selected = []
-        self._partial_selected = []
-        self._manual_selected = []
+        self._full = []
+        self._partial = []
+        self._manual = []
 
     def count(self):
         """
-        Return the number of selected elements
+        Return the number of selected trackers
         """
 
-        return len(self._selected)
+        return len(self._full)
 
-    def is_selected(self, element):
+    def is_selected(self, tracker):
         """
-        Return whether or not the element exists in the list
+        Return whether or not the tracker exists in the list
         """
 
-        if element in self._selected:
-            return SelectStateEnum.FULL
+        if tracker in self._full:
+            return SelectionStateEnum.FULL
 
-        if element in self._manual_selected:
-            return SelectStateEnum.MANUAL
+        if tracker in self._manual:
+            return SelectionStateEnum.MANUAL
 
-        if element in self._partial_selected:
-            return SelectStateEnum.PARTIAL
+        if tracker in self._partial:
+            return SelectionStateEnum.PARTIAL
 
-        return SelectStateEnum.NONE
+        return SelectionStateEnum.NONE
 
     def clear_state(self):
         """
         Clear the select state completely
         """
 
-        self._selected.clear()
-        self._partial_selected.clear()
-        self._manual_selected.clear()
+        self._full.clear()
+        self._partial.clear()
+        self._manual.clear()
 
-    def deselect(self, element):
+    def deselect(self, tracker):
         """
-        Deselect the provided element from whatever state it's found
+        Deselect the provided tracker from whatever state it's found
         """
 
-        if element in self._selected:
-            self._selected.remove(element)
+        if tracker in self._full:
+            self._full.remove(tracker)
 
-        if element in self._partial_selected:
-            self._partial_selected.remove(element)
+        if tracker in self._partial:
+            self._partial.remove(tracker)
 
-        if element in self._manual_selected:
-            self._manual_selected.remove(element)
+        if tracker in self._manual:
+            self._manual.remove(tracker)
 
-    def manual_select(self, element=None):
+    def manual_select(self, tracker=None):
         """
-        Manual selection for elements that are not fully or partially
+        Manual selection for trackers that are not fully or partially
         managed
         """
 
-        if not element:
-            self._manual_selected.clear()
+        if not tracker:
+            self._manual.clear()
 
         else:
-            self._manual_selected.append(element)
+            self._manual.append(tracker)
 
-    def partial_select(self, element=None):
+    def partial_select(self, tracker=None):
         """
-        Manual selection for elements that are not fully or partially
+        Manual selection for trackers that are not fully or partially
         managed
         """
 
-        if not element:
-            self._partial_selected.clear()
+        if not tracker:
+            self._partial.clear()
 
         else:
-            self._partial_selected.append(element)
+            self._partial.append(tracker)
 
-    def select(self, element=None, force=False):
+    def select(self, tracker=None, component=None, multi=False, force=False):
         """
-        Select or unselect the passed element
-        A null element will clear the selection for single select and
+        Select or unselect the passed tracker
+        A null tracker will clear the selection for single select and
         will have no effect for multi-select
         """
 
         #manual selection overrides full / partial
-        if element in self._manual_selected:
+        if tracker in self._manual:
             return
 
         #force-select a node
-        if force:
-            if not element in self._selected:
-                self._selected.append(element)
+        if force and tracker:
+            if tracker not in self._full:
+                self._full.append(tracker)
             return
 
         #is it already selected?  are we picking it?
-        _exists = element in self._selected
-        _picking = element.name == MouseState().component
+        _exists = tracker in self._full
+        _picking = tracker.name == component
 
         ####################
         # Single-select case
         ####################
 
-        if not MouseState().ctrlDown:
+        if not multi:
 
             #1. Force clear conditions (choose nothing)
-            # -> clear if no element is passed or no component is picked
-            if element is None or not MouseState().component:
+            # -> clear if no tracker is passed or no component is picked
+            if tracker is None or not component:
                 self.clear_state()
 
             #2. Support single-select click to begin drag operations
             # -> abort if multiple selections exist
-            # -> this ignores partially selected elements
-            if len(self._selected) > 1 and element in self._selected:
+            # -> this ignores partially selected trackers
+            if len(self._full) > 1 and tracker in self._full:
                 return
 
-            #3. Don't de-select a picked and selected element
-            # -> clear ONLY IF either the element is selected
+            #3. Don't de-select a picked and selected tracker
+            # -> clear ONLY IF either the tracker is selected
             # -> or it is picked, but not both.
             if _exists != _picking:
                 self.clear_state()
 
-            #if the element does not exist and we are picking it, append
-            if element and not _exists and _picking:
-                self._selected.append(element)
+            #if the tracker does not exist and we are picking it, append
+            if tracker and not _exists and _picking:
+                self._full.append(tracker)
 
             return
 
@@ -176,9 +175,9 @@ class SelectState(metaclass=Singleton):
         # Multi-select case
         ###################
 
-        #no element passed or not picking the curreng element:
-        if element is None or not _picking:
+        #no tracker passed or not picking the curreng tracker:
+        if tracker is None or not _picking:
             return
 
         if not _exists:
-            self._selected.append(element)
+            self._full.append(tracker)

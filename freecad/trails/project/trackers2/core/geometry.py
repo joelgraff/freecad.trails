@@ -21,43 +21,67 @@
 #*                                                                     *
 #***********************************************************************
 """
-Mouse services for Tracker objects
+Geometry nodes for Tracker objects
 """
 
-class Mouse():
+from pivy import coin
+
+from ..coin_styles import CoinStyles
+
+class Geometry():
     """
-    Mouse services for Tracker objects
+    Geometry nodes for Tracker objects
     """
 
-    #view_state is provided in Base
-    view_state = None
+    #members provided by Base, Style
+    base_node = None
+    active_style = None
+    def set_visibility(self, visible=True): pass
+    def set_style(self, style=None, draw=None, color=None): pass
 
     def __init__(self):
         """
         Constructor
         """
 
-        if not self.view_state:
+        if not (self.active_style and self.base_node):
             return
 
-        self.mouse_cb = self.view_state.addEventCallback(
-            'SoLocation2Event', self.mouse_event)
+        self.geo_node = coin.SoSeparator()
+        self.coordinate = coin.SoCoordinate3()
 
-        self.button_cb = self.view_state.addEventCallback(
-            'SoMouseButtonEvent', self.button_event)
+        self.geo_node.addChild(self.coordinate)
+        self.base_node.addChild(self.geo_node)
+
+        self.set_style(self, CoinStyles.DEFAULT)
+        self.set_visibility()
 
         super().__init__()
 
-    def mouse_event(self, arg):
+    def update(self, coordinates):
         """
-        Base mouse event implementation
-        """
-
-        pass
-
-    def button_event(self, arg):
-        """
-        Base button event implementation
+        Update the SoCoordinate3 with the passed coordinates
+        Assumes coordinates is a list of 3-float tuples
         """
 
-        pass
+        self.coordinate.point.setValues(coordinates)
+
+    def get(self, _dtype=tuple):
+        """
+        Return the coordinates as the specified iterable type
+        """
+
+        return [
+            _dtype(_v.getValue()) for _v in self.coordinate.point.getValues()
+        ]
+
+    #def set_style(self, style=None, draw=None, color=None):
+    #    """
+    #    Update the tracker style, overriding Style.set_style
+    #    """
+
+    #    Style.set_style(style, draw, color)
+
+        #set the shape style for geometry
+    #    self.marker.markerIndex = \
+    #        Gui.getMarkerIndex(self.active_style.shape, self.active_style.size)
