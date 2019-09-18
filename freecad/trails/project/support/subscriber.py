@@ -38,7 +38,7 @@ class Subscriber:
 
         super().__init__()
 
-        self.id = 'Subscriber ' + subid
+        self.sub_id = 'Subscriber ' + subid
 
     def notify(self, event_type, message, verbose=False):
         """
@@ -47,4 +47,4 @@ class Subscriber:
 
         if verbose:
             print('{} got event {} message "{}"'\
-                .format(self.id, event_type, message))
+                .format(self.sub_id, event_type, message))

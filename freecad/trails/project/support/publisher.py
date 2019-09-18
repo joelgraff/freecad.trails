@@ -25,6 +25,8 @@ Publisher base class
 """
 import types
 
+from collections.abc import Iterable
+
 from inspect import getmro
 
 from ..support.const import Const
@@ -76,16 +78,44 @@ class PublisherEvents(Const):
     Events for Publisher class
     """
 
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # PUBLISHER EVENTS
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #
+    # Events are categorized by object type
+    # Event names and tenses indicate nature and direction of the event.
+    # Message should contain context-specific data w.r.t event type.
+    #
+    # For example, the NodeTracker accepts NODE.SELECT / NODE.UPDATE
+    # events and dispatches NODE.SELECTED / NODE.UPDATED events.
+    # Corresponding data would be a single coordinate tuple.
+    #
+    # Categories:
+    # -----------
+    #   ALL - Represents all events that may be transmitted / received
+    #   TASK
+    #   TRACKER
+    #   NODE
+    #   CURVE
+    #   ALIGNMENT
+    #
+    # Events:
+    # -------
+    #   EVENTS - All events for that category
+    #   SELECT / SELECTED - Object to be / has been selected
+    #   UPDATE / UPDATED - Object to be / has been updated
+    #
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+
     enum = _EVT.get_enum()
 
     class ALL(Const):
         """ALL Source Events"""
 
         EVENTS = 0
-        POSITION = _EVT.get(EVENTS, 1)
-        PANEL_UPDATED = _EVT.get(EVENTS, 2)
-        SELECTED = _EVT.get(EVENTS, 3)
-        UPDATED = _EVT.get(EVENTS, 4)
+        SELECTED = _EVT.get(EVENTS, 1)
+        UPDATED = _EVT.get(EVENTS, 2)
+        UPDATE = _EVT.get(EVENTS, 3)
         enum = _EVT.get_enum()
 
 
@@ -93,7 +123,7 @@ class PublisherEvents(Const):
         """TASK Source Events"""
 
         EVENTS = 1
-        PANEL_UPDATED = _EVT.get(EVENTS, 1)
+        UPDATED = _EVT.get(EVENTS, 1)
         enum = _EVT.get_enum()
 
     class TRACKER(Const):
@@ -106,8 +136,9 @@ class PublisherEvents(Const):
         """NODE Source Events"""
 
         EVENTS = 3
-        POSITION = _EVT.get(EVENTS, 1)
+        UPDATED = _EVT.get(EVENTS, 1)
         SELECTED = _EVT.get(EVENTS, 2)
+        UPDATE = _EVT.get(EVENTS, 3)
         enum = _EVT.get_enum()
 
     class WIRE(Const):
@@ -122,6 +153,7 @@ class PublisherEvents(Const):
         EVENTS = 5
         SELECTED = _EVT.get(EVENTS, 1)
         UPDATED = _EVT.get(EVENTS, 2)
+        UPDATE = _EVT.get(EVENTS, 3)
         enum = _EVT.get_enum()
 
     class ALIGNMENT(Const):
@@ -129,6 +161,7 @@ class PublisherEvents(Const):
 
         EVENTS = 6
         UPDATED = _EVT.get(EVENTS, 1)
+        UPDATE = _EVT.get(EVENTS, 2)
         enum = _EVT.get_enum()
 
 EvtBase.vals(PublisherEvents.enum, PublisherEvents)
@@ -152,7 +185,7 @@ class Publisher:
 
         super().__init__(pubid)
 
-        self.id = "Publisher " + pubid
+        self.pub_id = "Publisher " + pubid
 
         self.events = {}
 
@@ -235,6 +268,16 @@ class Publisher:
         Message dispatch
         """
 
+        if not isinstance(message, tuple):
+
+            if isinstance(message, Iterable):
+                message = tuple(message)
+            else:
+                message = (message,)
+
+        if len(message) == 1:
+            message = (self.pub_id,) + message
+
         #don't send empty messages
         if not message:
             return
@@ -245,6 +288,6 @@ class Publisher:
 
             if verbose:
                 print('\n{}: dispatching message {} on event {}'\
-                    .format(self.id, message, event))
+                    .format(self.pub_id, message, event))
 
             _cb(event, message)
