@@ -143,8 +143,36 @@ class WireTracker(BaseTracker):
 
         super().notify(event, message, True)
 
-        if event == Events.NODE.UPDATED:
-            self.update()
+        if event != Events.NODE.UPDATED:
+            return
+
+        _sel = []
+
+        #must be selected unless it's controlled by selection nodes
+        if not self.selection_nodes:
+
+            if not self.is_selected():
+                return
+
+        else:
+
+            #get a list of the indices of points that correlate to
+            #actively-selected selection nodes
+            for _i, _v in enumerate(self.selection_nodes):
+
+                if _v.is_selected():
+                    _sel.append(self.selection_indices[_i])
+
+            if not _sel:
+                return
+
+        #if fewer nodes are selected than there are wire points, the
+        #wire is not enitrely selected
+        if len(_sel) != len(self.points):
+            SelectState().partial_select(self)
+            self.partial_idx = _sel
+
+        self.update()
 
     def update(self, points=None):
         """
@@ -232,31 +260,11 @@ class WireTracker(BaseTracker):
         Override of base function
         """
 
-        _sel = []
-
-        #must be selected unless it's controlled by selection nodes
-        if not self.selection_nodes:
-
-            if not self.is_selected():
-                return
-
-        else:
-
-            #get a list of the indices of points that correlate to
-            #actively-selected selection nodes
-            for _i, _v in enumerate(self.selection_nodes):
-
-                if _v.is_selected():
-                    _sel.append(self.selection_indices[_i])
-
-            if not _sel:
-                return
-
-        #if fewer nodes are selected than there are wire points, the
-        #wire is not enitrely selected
-        if len(_sel) != len(self.points):
-            SelectState().partial_select(self)
-            self.partial_idx = _sel
+        #if the wire is not specifically selected, abort.
+        #Indirect selection / dragging via selection nodes is handled
+        #vis pub/sub signaling
+        if self.selected != 'FULL':
+            return
 
         super().start_drag()
 
