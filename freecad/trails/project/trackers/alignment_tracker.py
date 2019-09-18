@@ -96,7 +96,7 @@ class AlignmentTracker(BaseTracker, Publisher):
 
         #generate initial node trackers and wire trackers for mouse interaction
         #and add them to the scenegraph
-        self.trackers = None
+        self.trackers = {}
         self.build_trackers()
 
         _trackers = []
@@ -123,17 +123,25 @@ class AlignmentTracker(BaseTracker, Publisher):
         #if multiple nodes were selected, compute transformation
         #and pass on to panel
 
-        #super().notify(event_type, message, True)
+        super().notify(event_type, message, False)
 
-        #if event_type != Events.TASK.EVENTS:
-        #    self.dispatch(Events.ALIGNMENT.EVENTS, message, True)
-        #    return
+        if event_type & Events.CURVE.UPDATED == event_type:
 
-        if event_type == Events.CURVE.UPDATED:
+            if not self.drag_curves:
+
+                _idx = int(message[0].split('-')[1])
+                _first = max(0, _idx - 1)
+                _last = min(len(self.trackers['Curves']), _idx + 2)
+
+                for _v in self.trackers['Curves'][_first:_last]:
+                    self.drag_curves.append(_v)
+
+            self.validate_curves(self.drag_curves)
+
             self.dispatch(Events.ALIGNMENT.UPDATED, message, False)
 
-        elif event_type == Events.TASK.PANEL_UPDATED:
-            self.dispath(Events.NODE.UPDATED, message, True)
+        if event_type == Events.ALIGNMENT.UPDATE:
+            self.dispatch(Events.NODE.UPDATE, message, False)
 
     def get_updates(self):
         """
@@ -173,19 +181,27 @@ class AlignmentTracker(BaseTracker, Publisher):
         """
 
         #iterate curves to find curves being dragged
-        self.drag_curves = [
-            _v for _v in self.trackers['Curves'] if _v.state.dragging
-        ]
+        if not self.drag_curves:
+
+            self.drag_curves = [
+                _v for _v in self.trackers['Curves'] if _v.state.dragging
+            ]
+
+    def validate_curves(self, curves):
+        """
+        Valuidate the list of curves against each other and their PI's
+        """
 
         _last_tan = 0.0
+        _max = len(curves) - 1
 
-        for _i, _v in enumerate(self.drag_curves):
+        for _i, _v in enumerate(curves):
 
             _next_tan = 0.0
 
-            if _i < len(self.drag_curves) - 1:
+            if _i < _max:
 
-                _dc = self.drag_curves[_i + 1]
+                _dc = curves[_i + 1]
 
                 if _dc.drag_curve:
                     _next_tan = _dc.drag_curve.get('Tangent')
@@ -257,6 +273,7 @@ class AlignmentTracker(BaseTracker, Publisher):
         portions of the alignment geometry
         """
 
+        _names = self.names[:2]
         _model = self.alignment.model.data
 
         #build a list of coordinates from curves in the geometry
@@ -267,62 +284,87 @@ class AlignmentTracker(BaseTracker, Publisher):
         _nodes += [_model.get('meta').get('End')]
 
         #build the trackers
-        _names = self.names[:2]
-        _result = {'Nodes': [], 'Tangents': [], 'Curves': []}
+        self.trackers['Nodes'] = self._build_node_trackers(_nodes, _names)
+        self.trackers['Tangents'] = self._build_wire_trackers(_names)
+        self.trackers['Curves'] = self._build_curve_trackers(_names)
+
+        self._signalize_trackers()
+
+    def _signalize_trackers(self):
+        """
+        Regsiter trackers appropriately as subscribers to one another
+        """
+
+        #subscribe node trackers to alignment and vice-versa
+        for _v in self.trackers['Nodes']:
+            self.register(_v, Events.NODE.UPDATE)
+
+        #subscribe curves
+        for _v in self.trackers['Curves']:
+
+            _v.register(self, [Events.CURVE.UPDATED, Events.CURVE.SELECTED])
+            self.register(_v, Events.CURVE.UPDATE)
+
+    def _build_node_trackers(self, nodes, names):
+        """
+        Generate the node trackers for the alignment
+        """
+
+        _result = []
 
         #node trackers
-        for _i, _pt in enumerate(_nodes):
+        for _i, _pt in enumerate(nodes):
 
-            _tr = NodeTracker(names=_names + ['NODE-' + str(_i)], point=_pt)
+            _tr = NodeTracker(names=names + ['NODE-' + str(_i)], point=_pt)
+            _result.append(_tr)
 
-            #register the node as a subscriber to aligntment NODE_EVENT
-            #self.register(_tr, Events.ALIGNMENT.EVENTS)
+        _result[0].is_end_node = True
+        _result[-1].is_end_node = True
 
-            #register the alignment as a sUbscriber to node NODE_EVENT
-            _tr.register(self, [Events.NODE.POSITION, Events.NODE.SELECTED])
+        return _result
 
-            _result['Nodes'].append(_tr)
+    def _build_wire_trackers(self, names):
+        """
+        Generate the tangent trackers for the alignment
+        """
 
-        _result['Nodes'][0].is_end_node = True
-        _result['Nodes'][-1].is_end_node = True
+        _result = []
 
         #wire trackers - Tangents
-        for _i in range(0, len(_result['Nodes']) - 1):
+        for _i in range(0, len(self.trackers['Nodes']) - 1):
 
-            _nodes = _result['Nodes'][_i:_i + 2]
+            _nodes = self.trackers['Nodes'][_i:_i + 2]
 
-            _wt = WireTracker(names=_names + ['WIRE-' + str(_i)])
-
-            #NECESSARY??
-            #self.register(_wt, Events.WIRE_EVENT)
-            #_wt.register(self, Events.WIRE_EVENT)
+            _wt = WireTracker(names=names + ['WIRE-' + str(_i)])
 
             _wt.set_selectability(False)
             _wt.set_points(nodes=_nodes)
             _wt.update()
 
-            _result['Tangents'].append(_wt)
+            _result.append(_wt)
 
-        #curve trackers
+        return _result
+
+    def _build_curve_trackers(self, names):
+        """
+        Generate the curve trackers for the alignment
+        """
+
         _curves = self.alignment.get_curves()
+        _result = []
 
-        for _i in range(0, len(_result['Tangents']) - 1):
+        for _i in range(0, len(self.trackers['Tangents']) - 1):
 
             _ct = CurveTracker(
-                names=_names[:2] + ['CURVE-' + str(_i)],
+                names=names + ['CURVE-' + str(_i)],
                 curve=_curves[_i],
-                pi_nodes=_result['Nodes'][_i:_i+3]
+                pi_nodes=self.trackers['Nodes'][_i:_i+3]
             )
 
             _ct.set_selectability(True)
+            _result.append(_ct)
 
-            #self.register(_ct, Events.CURVE_EVENTS)
-            #_ct.register(self, Events.CURVE.EVENTS)
-            _ct.register(self, Events.CURVE.EVENTS)
-
-            _result['Curves'].append(_ct)
-
-        self.trackers = _result
+        return _result
 
     def finalize(self):
         """
