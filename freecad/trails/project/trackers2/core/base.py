@@ -28,6 +28,8 @@ from pivy import coin
 
 from DraftGui import todo
 
+from .view_state import ViewState
+
 #from ...containers import TrackerContainer
 
 class Base():
@@ -35,7 +37,9 @@ class Base():
     Base class for Tracker objects
     """
 
-    def __init__(self, name, sg_root, view_state=None):
+    view_state = ViewState()
+
+    def __init__(self, name):
         """
         Constructor
         """
@@ -51,7 +55,6 @@ class Base():
         #self.state = TrackerContainer()
 
         self.sg_root = sg_root
-        self.view_state = view_state
 
         self.switch = coin.SoSwitch()
 

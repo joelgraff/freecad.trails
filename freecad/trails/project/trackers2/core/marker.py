@@ -26,15 +26,17 @@ Marker tracker class for tracker objects
 
 from collections.abc import Iterable
 
+import pivy
+
 from pivy import coin
 
 from FreeCAD import Vector
 
-from ..support.drag_state import DragState
-from ..support.view_state import ViewState
-from ..support.mouse_state import MouseState
+from ...support.drag_state import DragState
+from ...support.view_state import ViewState
+from ...support.mouse_state import MouseState
 
-from ..support.publisher import PublisherEvents as Events
+from ...support.publisher import PublisherEvents as Events
 
 from .base import Base
 from .mouse import Mouse
@@ -52,23 +54,14 @@ class Marker(Base, Mouse, Style, Selection, Geometry):
         Constructor
         """
 
-        if not nodes:
-            nodes = []
-
-        elif not isinstance(nodes, Iterable):
-            nodes = [nodes]
+        super().__init__(names=names)
 
         self.is_end_node = False
         self.point = tuple(point)
-        self.ui_message = {}
 
         #build node structure for the node tracker
         self.marker = coin.SoMarkerSet()
         self.drag_point = self.point
-
-        super().__init__(
-            names=names, children=[self.coord, self.marker] + nodes
-        )
 
         self.update()
 
@@ -184,13 +177,6 @@ class Marker(Base, Mouse, Style, Selection, Geometry):
 
         if do_notify:
             self.dispatch(Events.NODE.UPDATED, (self.name, self.point), False)
-
-    def get(self):
-        """
-        Get method
-        """
-
-        return Vector(self.coord.point.getValues()[0].getValue())
 
     def finalize(self, node=None, parent=None):
         """
