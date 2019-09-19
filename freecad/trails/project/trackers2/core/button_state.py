@@ -21,64 +21,81 @@
 #*                                                                     *
 #***********************************************************************
 """
-Geometry nodes for Tracker objects
+Mouse button state tracking
 """
 
-from pivy import coin
-
-from .coin_styles import CoinStyles
-from .signal import Signal
-from .publisher_events import PublisherEvents as Events
-
-class Geometry(Signal):
+class ButtonState():
     """
-    Geometry nodes for Tracker objects
+    Internal class to track button state
     """
-
-    #members provided by Base, Style
-    base_node = None
-    active_style = None
-    def set_visibility(self, visible=True): pass
-    def set_style(self, style=None, draw=None, color=None): pass
-
     def __init__(self):
         """
-        Constructor
+        ButtonState constructor
+        """
+        self.state = ''
+        self.pressed = False
+        self.pos = ()
+        self.dragging = False
+        self.drag_start = ()
+
+    def reset(self):
+        """
+        Reset button parameters
         """
 
-        if not (self.active_style and self.base_node):
-            return
+        self.__init__()
 
-        self.geo_node = coin.SoSeparator()
-        self.coordinate_node = coin.SoCoordinate3()
-
-        self.geo_node.addChild(self.coordinate_node)
-        self.base_node.addChild(self.geo_node)
-
-        super().__init__()
-
-    def set_coordinates(self, coordinates, do_notify):
+    def __str__(self):
         """
-        Update the SoCoordinate3 with the passed coordinates
-        Assumes coordinates is a list of 3-float tuples
+        Button string representation
         """
 
-        if not coordinates:
-            return
+        return self.__repr__()
 
-        if not isinstance(coordinates, list):
-            coordinates = [coordinates]
-
-        self.coordinate_node.point.setValues(coordinates)
-
-        if do_notify and self.do_publish:
-            self.dispatch(Events.NODE.UPDATED, (self.name, coordinates), False)
-
-    def get(self, _dtype=tuple):
+    def __repr__(self):
         """
-        Return the coordinates as the specified iterable type
+        Button string representation
         """
 
-        _values = self.coordinate_node.point.getValues()
+        return str({
+            'state': self.state,
+            'pressed': self.pressed,
+            'pos': self.pos,
+            'dragging': self.dragging,
+            'drag start': self.drag_start
+            })
 
-        return [_dtype(_v.getValue()) for _v in _values]
+    def update(self, state, pos):
+        """
+        Update the button state
+        """
+
+        #update state on a state change only
+        if state and (self.state != state):
+
+            self.state = state
+            self.pressed = state != 'UP'
+
+            #assign position at down click
+            if self.pressed and not self.pos:
+                self.pos = pos
+
+        #if we're already dragging, continue only if the button
+        #hasn't been released
+        if self.dragging:
+            self.dragging = self.pressed
+
+        #otherwise, start only if the button is pressed and the
+        #mouse has moved
+        elif self.pressed and (self.pos != pos):
+
+            self.dragging = True
+            self.drag_start = pos
+
+        if self.dragging:
+            self.state = 'DRAG'
+
+        else:
+            self.drag_start = ()
+
+        self.pos = pos

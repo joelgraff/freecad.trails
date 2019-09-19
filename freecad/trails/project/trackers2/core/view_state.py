@@ -31,9 +31,7 @@ from FreeCAD import Vector
 
 import FreeCADGui as Gui
 
-from . import utils
-
-from .singleton import Singleton
+from ...support.singleton import Singleton
 
 class ViewState(metaclass=Singleton):
     """
@@ -95,7 +93,7 @@ class ViewState(metaclass=Singleton):
         if self.active_task_panel and not refresh:
             return self.active_task_panel
 
-        _form = utils.getMainWindow().findChild(QtGui.QWidget, 'TaskPanel')
+        _form = self.getMainWindow().findChild(QtGui.QWidget, 'TaskPanel')
 
         self.active_task_panel = _form
 
@@ -160,9 +158,59 @@ class ViewState(metaclass=Singleton):
 
         return _result
 
-    def getPointOnScreen(self, point):
+    def add_mouse_event(self, callback):
         """
-        Convenience function for view.getPointOnScreen()
+        Wrapper for Coin3D addEventCallback()
         """
 
-        return Vector(self.view.getPointOnScreen(Vector(point)) + (0.0,))
+        self.view.addEventCallback('SoLocation2Event', callback)
+
+    def add_button_event(self, callback):
+        """
+        Wrapper for Coin3D addEventCallback()
+        """
+        self.view.addEventCallback('SoMouseButtonEvent', callback)
+
+    def getPointOnScreen(self, point):
+        """
+        Warpper for Coin3D getPointOnScreen()
+        """
+
+        assert(isinstance(point, tuple)),\
+            'Invalid coordinate data type.  Expected tuple.'
+
+        _pt = point
+
+        if len(point) == 2:
+            _pt = point + (0.0,)
+
+        assert(len(_pt) == 3),\
+            'Invalid coordinate. Expected tuple of three floats.'
+
+        return self.view.getPointOnScreen(point[0], point[1], point[2])
+
+    def getObjectInfo(self, pos):
+        """
+        Wrapper for Coin3D getObjectInfo()
+        """
+
+        assert(isinstance(pos, tuple)),\
+            'Invalid coordinate data type.  Expected tuple.'
+
+        assert(len(pos) == 2),\
+            'Invalid coordinate. Expected tuple of two floats.'
+
+        return self.view.getObjectInfo(pos)
+
+    @staticmethod
+    def getMainWindow():
+        """
+        Return reference to main window
+        """
+        top = QtGui.QApplication.topLevelWidgets()
+
+        for item in top:
+            if item.metaObject().className() == 'Gui::MainWindow':
+                return item
+
+        raise RuntimeError('No main window found')

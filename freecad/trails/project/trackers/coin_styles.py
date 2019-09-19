@@ -98,6 +98,8 @@ class CoinStyles(Const):
             self.color = color
             self.select = select
 
+    BASIC = Style('basic', color=Color.GRAY_75)
+
     DEFAULT = Style('default', color=Color.GRAY_75)
     DASHED = Style('dashed', line_pattern=0x0f0f, select=False)
 

@@ -37,7 +37,8 @@ from ...support import const
 from ...support.mouse_state import MouseState
 from ...support.view_state import ViewState
 
-from ...trackers.alignment_base_test_tracker_ import AlignmentBaseTestTracker
+from ...trackers2.tracker_tester import TrackerTester
+from ...trackers2.core.mouse import Mouse
 
 def create(doc, alignment_data, object_name, is_linked):
     """
@@ -46,7 +47,7 @@ def create(doc, alignment_data, object_name, is_linked):
 
     return BaseTrackerTestTask(doc, alignment_data, object_name, is_linked)
 
-class BaseTrackerTestTask:
+class BaseTrackerTestTask(Mouse):
     """
     Task to manage alignment editing
     """
@@ -72,7 +73,6 @@ class BaseTrackerTestTask:
         self.drag_tracker = None
         self.alignment_tracker = None
         self.callbacks = {}
-        self.mouse = MouseState()
 
         self.camera_state = {
             'position': None,
@@ -123,7 +123,7 @@ class BaseTrackerTestTask:
                 'SoMouseButtonEvent', self.button_event)
         }
 
-        self.alignment_tracker = AlignmentBaseTestTracker(
+        self.alignment_tracker = TrackerTester(
             self.doc, self.Object.Name, self.alignment, is_linked
         )
 
@@ -252,19 +252,20 @@ class BaseTrackerTestTask:
         SoLocation2Event callback
         """
 
-        self.mouse.update(arg, ViewState().view.getCursorPos())
+        print('udpating mouse state...')
+        self.mouse_state.update(arg, ViewState().view.getCursorPos())
 
-        if MouseState().shiftDown:
+        if self.mouse_state.shiftDown:
 
-            _dist = MouseState().vector.Length
+            _dist = self.mouse_state.vector.Length
 
             if not _dist:
                 return
 
-            _vec = Vector(MouseState().vector).normalize()
+            _vec = Vector(self.mouse_state.vector).normalize()
 
-            MouseState().set_mouse_position(
-                MouseState().last_coord.add(_vec.multiply(_dist * 0.10))
+            self.mouse_state.set_mouse_position(
+                self.mouse_state.last_coord.add(_vec.multiply(_dist * 0.10))
             )
 
         #clear the matrix to force a refresh at the start of every mouse event
@@ -275,7 +276,7 @@ class BaseTrackerTestTask:
         SoMouseButtonEvent callback
         """
 
-        self.mouse.update(arg, ViewState().view.getCursorPos())
+        self._mouse_state.update(arg, ViewState().view.getCursorPos())
 
     def set_vobj_style(self, vobj, style):
         """

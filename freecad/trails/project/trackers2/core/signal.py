@@ -21,64 +21,67 @@
 #*                                                                     *
 #***********************************************************************
 """
-Geometry nodes for Tracker objects
+Publisher / Subscriber services for Tracker objects
 """
 
-from pivy import coin
+from .publisher import Publisher
+from .subscriber import Subscriber
 
-from .coin_styles import CoinStyles
-from .signal import Signal
-from .publisher_events import PublisherEvents as Events
-
-class Geometry(Signal):
+class Signal(Publisher, Subscriber):
     """
-    Geometry nodes for Tracker objects
+    Publisher / Subscriber services for Tracker objects
     """
 
-    #members provided by Base, Style
-    base_node = None
-    active_style = None
-    def set_visibility(self, visible=True): pass
-    def set_style(self, style=None, draw=None, color=None): pass
+    #Global constant defaults for enabling / disabling signaling
+    #To be overridden in inheriting classes to selectively disable
+    SIGNAL_PUBLISH = True
+    SIGNAL_SUBSCRIBE = True
 
     def __init__(self):
         """
         Constructor
         """
 
-        if not (self.active_style and self.base_node):
-            return
-
-        self.geo_node = coin.SoSeparator()
-        self.coordinate_node = coin.SoCoordinate3()
-
-        self.geo_node.addChild(self.coordinate_node)
-        self.base_node.addChild(self.geo_node)
-
         super().__init__()
 
-    def set_coordinates(self, coordinates, do_notify):
-        """
-        Update the SoCoordinate3 with the passed coordinates
-        Assumes coordinates is a list of 3-float tuples
-        """
+        self.do_publish = self.SIGNAL_PUBLISH
+        self.do_subscribe = self.SIGNAL_SUBSCRIBE
 
-        if not coordinates:
-            return
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # PUBLISHER INTERFACE
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        if not isinstance(coordinates, list):
-            coordinates = [coordinates]
+    def get_subscribers(self, events=0):
+        """Override base implementation"""
 
-        self.coordinate_node.point.setValues(coordinates)
+        if self.do_publish:
+            Publisher.get_subscribers(self, events)
 
-        if do_notify and self.do_publish:
-            self.dispatch(Events.NODE.UPDATED, (self.name, coordinates), False)
+    def register(self, who, events, callback=None):
+        """Override base implementation"""
 
-    def get(self, _dtype=tuple):
-        """
-        Return the coordinates as the specified iterable type
-        """
+        if self.do_publish:
+            Publisher.register(self, who, events, callback)
 
-        _values = self.coordinate_node.point.getValues()
+    def unregister(self, who, events):
+        """Override base implementation"""
 
-        return [_dtype(_v.getValue()) for _v in _values]
+        if self.do_publish:
+            Publisher.unregister(self, who, events)
+
+
+    def dispatch(self, event, message, verbose=False):
+        """Override base implementation"""
+
+        if self.do_publish:
+            Publisher.dispatch(self, event, message, verbose)
+
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # SUBSCRIBER INTERFACE
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    def notify(self, event_type, message, verbose=False):
+        """Override base implementation"""
+
+        if self.do_subscribe:
+            Subscriber.notify(self, event_type, message, verbose)

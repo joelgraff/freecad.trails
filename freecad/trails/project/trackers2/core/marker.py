@@ -26,133 +26,45 @@ Marker tracker class for tracker objects
 
 from collections.abc import Iterable
 
-import pivy
-
 from pivy import coin
 
-from FreeCAD import Vector
+import FreeCADGui as Gui
 
-from ...support.drag_state import DragState
-from ...support.view_state import ViewState
-from ...support.mouse_state import MouseState
-
-from ...support.publisher import PublisherEvents as Events
+#from .publisher_events import PublisherEvents as Events
 
 from .base import Base
-from .mouse import Mouse
 from .style import Style
 from .selection import Selection
 from .geometry import Geometry
+from .coin_styles import CoinStyles
 
-class Marker(Base, Mouse, Style, Selection, Geometry):
+class Marker(Base, Style, Selection, Geometry):
     """
     Tracker object for nodes
     """
 
-    def __init__(self, names, point):
+    def __init__(self, name, point):
         """
         Constructor
         """
 
-        super().__init__(names=names)
+        super().__init__(name=name)
 
         self.is_end_node = False
         self.point = tuple(point)
 
         #build node structure for the node tracker
-        self.marker = coin.SoMarkerSet()
+
+        self.marker_node = coin.SoMarkerSet()
+
         self.drag_point = self.point
+
+        self.geo_node.addChild(self.marker_node)
+
+        self.set_style(CoinStyles.DEFAULT)
 
         self.update()
 
-    def button_event(self, arg):
-        """
-        Override base implementation
-        """
-
-        super().button_event(arg)
-
-        if self.is_selected() and MouseState().button1.state != 'UP':
-            self.dispatch(Events.NODE.SELECTED, (self.name, self.point))
-
-    def start_drag(self):
-        """
-        Initialize drag ops
-        """
-
-        if not self.is_selected():
-            return
-
-        super().start_drag()
-
-        self.drag_point = self.point
-
-        if self == DragState().drag_node:
-            MouseState().set_mouse_position(self.point)
-
-    def on_drag(self):
-        """
-        Override of base function
-        """
-
-        if not (self.drag_point and DragState().drag_node):
-            return
-
-        super().on_drag()
-
-        self.update_drag_point()
-
-    def end_drag(self):
-        """
-        Override of base function
-        """
-
-        if self.drag_point and DragState().drag_node and not DragState().abort:
-            self.update_drag_point()
-            self.update(self.drag_point)
-
-        super().end_drag()
-
-    def notify(self, event_type, message):
-        """
-        Override of Subscriber method
-        """
-
-        super().notify(event_type, message, True)
-
-        if not self.is_selected():
-            return
-
-        if event_type != Events.NODE.UPDATE:
-            return
-
-        _coord = message[1]
-
-        if not isinstance(_coord, tuple):
-            _coord = tuple(_coord)
-
-        if len(_coord) == 2:
-            _coord = _coord + (0.0,)
-
-        self.update(_coord, True)
-
-    def update_drag_point(self):
-        """
-        Update the drag point based on the selection method
-        """
-
-        if self.select_state == 'MANUAL':
-            self.drag_point = \
-                self.drag_copy.getChild(3).point.getValues()[0].getValue()
-
-        else:
-            self.drag_point = tuple(ViewState().transform_points(
-                [self.point], DragState().node_group)[0])
-
-        self.drag_point = self.drag_point[0:3]
-
-        #notify node updatefor sake of curve changes
-        self.dispatch(Events.NODE.UPDATED, (self.name, self.drag_point), True)
 
     def update(self, coord=None, do_notify=False):
         """
@@ -168,19 +80,27 @@ class Marker(Base, Mouse, Style, Selection, Geometry):
 
         _c = coord
 
-        if not isinstance(coord, tuple):
-            _c = tuple(_c)
+        if not isinstance(coord, tuple) and isinstance(coord, Iterable):
+            _c = tuple(_c,)
 
-        self.coord.point.setValue(_c[:3])
         self.point = _c
         self.drag_point = self.point
 
-        if do_notify:
-            self.dispatch(Events.NODE.UPDATED, (self.name, self.point), False)
+        Geometry.set_coordinates(self, _c, do_notify)
+
+    def set_style(self, style=None, draw=None, color=None):
+        """
+        Override style implementation
+        """
+
+        Style.set_style(self, style, draw, color)
+
+        self.marker_node.markerIndex = Gui.getMarkerIndex(
+            self.active_style.shape, self.active_style.size)
 
     def finalize(self, node=None, parent=None):
         """
         Cleanup
         """
 
-        super().finalize(self.get_node(), parent)
+        super().finalize(self.geo_node, parent)

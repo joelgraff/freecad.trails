@@ -50,6 +50,8 @@ class BaseTracker(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
     A custom base Draft Tracker
     """
 
+    mouse_state = None
+
     class State(IntEnum):
         """
         State enum class for base tracker state values

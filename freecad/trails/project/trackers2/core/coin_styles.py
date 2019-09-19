@@ -26,7 +26,7 @@ Support class for managing Coin3D node styles
 
 from pivy import coin
 
-from ..support.const import Const
+from ...support.const import Const
 
 class CoinStyles(Const):
     """
@@ -81,7 +81,7 @@ class CoinStyles(Const):
         """
 
         def __init__(self, style_id, style=coin.SoDrawStyle.FILLED,
-                     shape='default', line_wdith=0.0, point_size=0.0,
+                     shape='CIRCLE_FILLED', line_wdith=0.0, point_size=0.0,
                      line_pattern=0xffff, size=9, color=(1.0, 1.0, 1.0),
                      select=True):
 
@@ -98,6 +98,7 @@ class CoinStyles(Const):
             self.color = color
             self.select = select
 
+    BASE = Style('base')
     DEFAULT = Style('default', color=Color.GRAY_75)
     DASHED = Style('dashed', line_pattern=0x0f0f, select=False)
 

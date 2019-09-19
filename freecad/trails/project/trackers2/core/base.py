@@ -29,6 +29,7 @@ from pivy import coin
 from DraftGui import todo
 
 from .view_state import ViewState
+from .mouse_state import MouseState
 
 #from ...containers import TrackerContainer
 
@@ -54,13 +55,16 @@ class Base():
 
         #self.state = TrackerContainer()
 
-        self.sg_root = sg_root
+        self.sg_root = self.view_state.sg_root
 
         self.switch = coin.SoSwitch()
 
         self.base_node = coin.SoSeparator()
+        self.base_transform = coin.SoTransform()
+
         self.picker = coin.SoPickStyle()
 
+        self.base_node.addChild(self.base_transform)
         self.base_node.addChild(self.picker)
 
         self.switch.addChild(self.base_node)

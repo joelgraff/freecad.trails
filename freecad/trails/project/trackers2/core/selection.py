@@ -26,15 +26,17 @@ Provides SoFCSelection support for Tracker classes
 
 from pivy import coin
 
-from ...support.mouse_state import MouseState
-
-from ..coin_styles import CoinStyles
+from .coin_styles import CoinStyles
 
 from .mouse import Mouse
+from .signal import Signal
+
 from .selection_state import SelectionState
 from .selection_state import SelectionStateEnum as Enum
 
-class Selection():
+from .publisher_events import PublisherEvents as Events
+
+class Selection(Mouse, Signal):
     """
     Provides SoFCSelection support for Tracker classes
     """
@@ -56,7 +58,7 @@ class Selection():
         if not self.name:
             return
 
-        self.sel_highlight = True
+        self.do_select_highlight = True
 
         self.sel_node = coin.SoType.fromName("SoFCSelection").createInstance()
 
@@ -80,7 +82,7 @@ class Selection():
         Mouse override
         """
 
-        if self.sel_highlight:
+        if self.do_select_highlight:
             self.highlight()
 
         Mouse.mouse_event(self, arg)
@@ -90,23 +92,27 @@ class Selection():
         Mouse override
         """
 
-        if MouseState().button1.state == 'DOWN':
+        if self.mouse_state.button1.state == 'DOWN':
             self.sel_state.select(self)
 
-        elif self.sel_highlight and not self.is_selected():
+            if self.is_selected():
+                self.notify(Events.NODE.SELECTED)
+
+        elif self.do_select_highlight and not self.is_selected():
             self.highlight()
 
-        Mouse.mouse_event(self, arg)
+        Mouse.button_event(self, arg)
 
     def highlight(self):
         """
         Test for highlight conditions and changes
         """
 
+        print(self.name[0], self.mouse_state.component)
         _style = self.coin_style
 
         #test to see if this node is under the cursor
-        if self.name == MouseState().component:
+        if self.name[0] == self.mouse_state.component:
             _style = CoinStyles.SELECTED
 
         self.refresh(_style)

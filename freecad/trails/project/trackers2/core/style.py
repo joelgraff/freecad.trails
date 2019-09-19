@@ -26,7 +26,7 @@ Style support for Tracker objects
 
 from pivy import coin
 
-from ...coin_style import CoinStyles
+from .coin_styles import CoinStyles
 
 class Style():
     """
@@ -51,7 +51,7 @@ class Style():
         self.base_node.addChild(self.color)
 
         self.coin_style = CoinStyles.DEFAULT
-        self.active_style = None
+        self.active_style = CoinStyles.BASE
 
         super().__init__()
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-#**************************************************************************
+#***********************************************************************
 #*                                                                     *
-#* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
+#* Copyright (c) 2018 Joel Graff <monograff76@gmail.com>               *
 #*                                                                     *
 #* This program is free software; you can redistribute it and/or modify*
 #* it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -21,43 +21,32 @@
 #*                                                                     *
 #***********************************************************************
 """
-Mouse services for Tracker objects
+Subscriber base class
 """
 
-from .mouse_state import MouseState
-
-class Mouse():
+class Subscriber:
     """
-    Mouse services for Tracker objects
+    Base Subscriber class
     """
 
-    #view_state is provided in Base
-    view_state = None
-    mouse_state = MouseState()
+    counter = 0
+    name = 'Subscriber'
 
     def __init__(self):
         """
         Constructor
         """
 
-        if not self.view_state:
-            return
-
-        self.mouse_cb = self.view_state.add_mouse_event(self.mouse_event)
-        self.button_cb = self.view_state.add_button_event(self.button_event)
-
         super().__init__()
 
-    def mouse_event(self, arg):
+        self.sub_id = Subscriber.counter
+        Subscriber.counter += 1
+
+    def notify(self, event_type, message, verbose=False):
         """
-        Base mouse event implementation
+        Default message update method
         """
 
-        pass
-
-    def button_event(self, arg):
-        """
-        Base button event implementation
-        """
-
-        pass
+        if verbose:
+            print('{} (#{}) got event {} message "{}"'\
+                .format(self.name, self.sub_id, event_type, message))

@@ -1,5 +1,5 @@
 {
     "python.linting.pylintEnabled": true,
-    "python.pythonPath": "/home/joel/.local/share/virtualenvs/freecad.trails-eOy9gxr8/bin/python",
+    "python.pythonPath": "C:\\Users\\GRAFFJC\\AppData\\Local\\Programs\\Python\\Python36\\python.exe",
     "python.linting.enabled": true
 }
