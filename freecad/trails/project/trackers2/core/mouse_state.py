@@ -66,8 +66,8 @@ class MouseState(metaclass=Singleton):
 
         self.object = ''
         self.component = ''
-        self.coordinates = ()
-        self.last_coord = ()
+        self.coordinates = (0.0, 0.0, 0.0)
+        self.last_coord = (0.0, 0.0, 0.0)
         self.last_pos = ()
         self.vector = ()
 
@@ -91,12 +91,12 @@ class MouseState(metaclass=Singleton):
 
         self.pos = _p
 
-    def update(self, arg, position, view_state):
+    def update(self, arg, view_state):
         """
         Update the current mouse state
         """
 
-        _pos = position
+        _pos = view_state.getCursorPos()
         _coord = self.coordinates
 
         if _pos != self.pos:
@@ -106,7 +106,6 @@ class MouseState(metaclass=Singleton):
 
         _info = view_state.getObjectInfo(self.pos)
 
-        print('\n', _info)
         if not _coord:
             _coord = view_state.getPoint(self.pos)
 
@@ -116,6 +115,7 @@ class MouseState(metaclass=Singleton):
         self.altDown = arg['AltDown']
         self.ctrlDown = arg['CtrlDown']
         self.shiftDown = arg['ShiftDown']
+
         self.vector = SmartTuple(_coord).sub(self.last_coord)
 
         _b_list = self.buttons.values()
@@ -160,10 +160,6 @@ class MouseState(metaclass=Singleton):
         #get screen position by adding offset to the new window position
         _pos = SmartTuple.from_values(_delta_pos[0], -_delta_pos[1])\
             .add(QCursor.pos().toTuple())
-
-#        _screen_pos = QCursor.pos().toTuple()
-#        _pos = Vector(QCursor.pos().toTuple() + (0.0,)).add(
-#            Vector(_delta_pos.x, -_delta_pos.y))
 
         QCursor.setPos(_pos[0], _pos[1])
 

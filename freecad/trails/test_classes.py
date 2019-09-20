@@ -1,60 +1,65 @@
-class A():
+class A(): #Base
 
+    print('A create' )
     def __init__(self):
 
         print('init A')
         super().__init__()
 
-class B():
+class B(): #Style
 
+    print('B create' )
     def __init__(self):
 
         print('init B')
         super().__init__()
 
+    def refresh(self): print ('style refresh')
+
 class C():
 
+    print('C create' )
     def __init__(self):
 
         print('init C')
         super().__init__()
 
-class D(B, C):
+class D():
 
+    print('D create' )
     def __init__(self):
 
         print('init D')
         super().__init__()
 
-class E():
+class E(D, C): #Selection
+
+    print('E create' )
+    def refresh(self): print('sel refresh')
 
     def __init__(self):
 
         print('init E')
         super().__init__()
 
-class F():
+        self.refresh()
 
+class F(): #Geometry
+
+    def refresh(self): print('geo refresh')
+    print('F create' )
     def __init__(self):
 
         print('init F')
         super().__init__()
 
-class G(F, E, D, A):
+        self.refresh()
 
+class G(A, B, E, F):
+
+    print('G create')
     def __init__(self):
-
-        self.x = 15
-        self.y = 25
-        self.z = 87
 
         print('init G')
         super().__init__()
-
-    def __str__(self):
-        print('_s_')
-        return '({}, {}, {})'.format(self.x, self.y, self.z)
-
-    def __repr__(self):
-        print('_r_')
-        return self.__str__()
+        self.refresh()

@@ -39,7 +39,6 @@ class Geometry(Signal):
     base_node = None
     active_style = None
     def set_visibility(self, visible=True): pass
-    def set_style(self, style=None, draw=None, color=None): pass
 
     def __init__(self):
         """

@@ -32,6 +32,7 @@ from FreeCAD import Vector
 import FreeCADGui as Gui
 
 from ...support.singleton import Singleton
+from .smart_tuple import SmartTuple
 
 class ViewState(metaclass=Singleton):
     """
@@ -160,7 +161,7 @@ class ViewState(metaclass=Singleton):
 
     def add_mouse_event(self, callback):
         """
-        Wrapper for Coin3D addEventCallback()
+        Wrapper for InventorView addEventCallback()
         """
 
         self.view.addEventCallback('SoLocation2Event', callback)
@@ -171,15 +172,21 @@ class ViewState(metaclass=Singleton):
         """
         self.view.addEventCallback('SoMouseButtonEvent', callback)
 
+    def getPoint(self, pos):
+        """
+        Wrapper for InventorView getPoint()
+        """
+
+        _pos = SmartTuple(pos)._tuple
+
+        return self.view.getPoint(_pos[:2])
+
     def getPointOnScreen(self, point):
         """
-        Warpper for Coin3D getPointOnScreen()
+        Wrapper for InventorView getPointOnScreen()
         """
 
-        assert(isinstance(point, tuple)),\
-            'Invalid coordinate data type.  Expected tuple.'
-
-        _pt = point
+        _pt = SmartTuple(point)._tuple
 
         if len(point) == 2:
             _pt = point + (0.0,)
@@ -191,7 +198,7 @@ class ViewState(metaclass=Singleton):
 
     def getObjectInfo(self, pos):
         """
-        Wrapper for Coin3D getObjectInfo()
+        Wrapper for InventorView getObjectInfo()
         """
 
         assert(isinstance(pos, tuple)),\
@@ -201,6 +208,13 @@ class ViewState(metaclass=Singleton):
             'Invalid coordinate. Expected tuple of two floats.'
 
         return self.view.getObjectInfo(pos)
+
+    def getCursorPos(self):
+        """
+        Wrapper for InventorView getCursorPos()
+        """
+
+        return self.view.getCursorPos()
 
     @staticmethod
     def getMainWindow():

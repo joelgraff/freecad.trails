@@ -38,6 +38,7 @@ from ...support.mouse_state import MouseState
 from ...support.view_state import ViewState
 
 from ...trackers2.tracker_tester import TrackerTester
+from ...trackers2.core.base import Base
 from ...trackers2.core.mouse import Mouse
 
 def create(doc, alignment_data, object_name, is_linked):
@@ -47,7 +48,7 @@ def create(doc, alignment_data, object_name, is_linked):
 
     return BaseTrackerTestTask(doc, alignment_data, object_name, is_linked)
 
-class BaseTrackerTestTask(Mouse):
+class BaseTrackerTestTask(Base, Mouse):
     """
     Task to manage alignment editing
     """
@@ -64,6 +65,10 @@ class BaseTrackerTestTask(Mouse):
         SELECTED = [(1.0, 0.8, 0.0), 'Solid']
 
     def __init__(self, doc, alignment_data, obj, is_linked):
+
+
+        super().__init__(
+            '.'.join([doc.Name, 'BASE_TRACKER_TEST_TASK', 'TASK']))
 
         self.panel = None
         self.doc = doc
@@ -112,16 +117,6 @@ class BaseTrackerTestTask(Mouse):
 
         #deselect existing selections
         Gui.Selection.clearSelection()
-
-        self.callbacks = {
-            'SoLocation2Event':
-            ViewState().view.addEventCallback(
-                'SoLocation2Event', self.mouse_event),
-
-            'SoMouseButtonEvent':
-            ViewState().view.addEventCallback(
-                'SoMouseButtonEvent', self.button_event)
-        }
 
         self.alignment_tracker = TrackerTester(
             self.doc, self.Object.Name, self.alignment, is_linked
@@ -252,8 +247,7 @@ class BaseTrackerTestTask(Mouse):
         SoLocation2Event callback
         """
 
-        print('udpating mouse state...')
-        self.mouse_state.update(arg, ViewState().view.getCursorPos())
+        self.mouse_state.update(arg, self.view_state)
 
         if self.mouse_state.shiftDown:
 
@@ -264,7 +258,7 @@ class BaseTrackerTestTask(Mouse):
 
             _vec = Vector(self.mouse_state.vector).normalize()
 
-            self.mouse_state.set_mouse_position(
+            self.mouse_state.set_mouse_position(self.view_state, 
                 self.mouse_state.last_coord.add(_vec.multiply(_dist * 0.10))
             )
 

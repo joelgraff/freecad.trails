@@ -24,16 +24,12 @@
 Tracker for alignment editing
 """
 
-from pivy import coin
-
 from FreeCAD import Vector
 
 import FreeCADGui as Gui
 
 from .core.base import Base
 
-#from ..support.mouse_state import MouseState
-#from ..support.view_state import ViewState
 #from ..support.publisher import PublisherEvents as Events
 
 #from ..support.drag_state import DragState
@@ -69,14 +65,6 @@ class TrackerTester(Base):
         )
 
 
-        #scenegraph node structure for editing and dragging operations
-#        self.groups = {
-#            'EDIT': coin.SoGroup(),
-#            'DRAG': coin.SoGroup(),
-#            'SELECTED': coin.SoSeparator(),
-#            'PARTIAL': coin.SoSeparator(),
-#        }
-
         #self.drag_transform = coin.SoTransform()
 
         #add two nodes to the drag group - the transform and a dummy node
@@ -105,11 +93,6 @@ class TrackerTester(Base):
 
         #insert in the scenegraph root
         self.insert_node(self.base_node)
-
-        #self.select_cb = \
-        #    ViewState().view.addEventCallback(
-        #        'SoMouseButtonEvent', self.post_select_event)
-        print('tracker_tester init complete')
 
     def _update_status_bar(self):
         """

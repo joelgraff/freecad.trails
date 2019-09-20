@@ -21,26 +21,38 @@
 #*                                                                     *
 #***********************************************************************
 """
-A smart tuple object with built in type conversion and math functions
+A smart tuple object with type conversion and math functions
 """
 
 from collections.abc import Iterable
 from operator import sub as op_sub
 from operator import add as op_add
 
+from FreeCAD import Vector
+
 class SmartTuple():
+    """
+    A smart tuple object with type conversion and math functions
+    """
 
     _sub = lambda lhs, rhs: tuple(map(op_sub, lhs, rhs))
     _add = lambda lhs, rhs: tuple(map(op_add, lhs, rhs))
+    Iterables = (Iterable, Vector)
 
     def __init__(self, data: Iterable):
+        """
+        Constructor
+        """
 
-        assert(isinstance(data, Iterable)),\
+        assert(isinstance(data, SmartTuple.Iterables)),\
             'Non-iterable data type passed.  Expected Iterable.'
 
         self._tuple = tuple(data)
 
     def from_values(self, *args):
+        """
+        Build tuple from individual values
+        """
 
         _type = None
         _vals = []
@@ -63,10 +75,13 @@ class SmartTuple():
         self._tuple = tuple(_vals)
 
     def _validate(self, args):
+        """
+        Accepts a single iterable or multiple floats / ints
+        """
 
         _tpl = ()
 
-        if len(args) == 1:
+        if isinstance(args, SmartTuple.Iterables):
 
             if isinstance(args[0], SmartTuple):
                 _tpl = args[0]._tuple
@@ -83,22 +98,32 @@ class SmartTuple():
         return _tpl
 
     def sub(self, *args):
+        """
+        Tuple-based subtraction
+        """
 
-        _tpl = self._validate(args)
+        _tpl = [self._validate(_v) for _v in args]
 
-        if _tpl:
-            return self._sub(self._tuple, _tpl)
+        #ingle tuple subtraction
+        if _tpl[0] and len(_tpl) == 1:
+            return SmartTuple._sub(self._tuple, _tpl[0])
 
-        return ()
+        #multiple tuple subtraction
+        return ((self._sub(self._tuple, _v),) for _v in _tpl if _v)
 
     def add(self, *args):
+        """
+        Tuple-based addtion
+        """
 
-        _tpl = self._validate(args)
+        _tpl = [self._validate(_v) for _v in args]
 
-        if _tpl:
-            return self._add(self._tuple, _tpl)
+        #ingle tuple subtraction
+        if _tpl[0] and len(_tpl) == 1:
+            return SmartTuple._add(self._tuple, _tpl[0])
 
-        return ()
+        #multiple tuple subtraction
+        return ((SmartTuple._add(self._tuple, _v),) for _v in _tpl if _v)
 
     def __add__(self, other):
 

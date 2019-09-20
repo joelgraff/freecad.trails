@@ -29,7 +29,6 @@ from pivy import coin
 from DraftGui import todo
 
 from .view_state import ViewState
-from .mouse_state import MouseState
 
 #from ...containers import TrackerContainer
 
@@ -38,7 +37,15 @@ class Base():
     Base class for Tracker objects
     """
 
+    #global view statge singleton
     view_state = ViewState()
+
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #'virtual' function declarations overriden by class inheritance
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    #Style
+    def set_style(self, style=None, draw=None, color=None): pass
 
     def __init__(self, name):
         """

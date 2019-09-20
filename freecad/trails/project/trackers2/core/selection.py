@@ -45,7 +45,8 @@ class Selection(Mouse, Signal):
     name = []
     base_node = None
     coin_style = None
-    def refresh(self, style): pass
+
+    def set_style(self, style=None, draw=None, color=None): pass
 
     #class static for global selection
     sel_state = SelectionState()
@@ -108,11 +109,10 @@ class Selection(Mouse, Signal):
         Test for highlight conditions and changes
         """
 
-        print(self.name[0], self.mouse_state.component)
         _style = self.coin_style
 
         #test to see if this node is under the cursor
         if self.name[0] == self.mouse_state.component:
             _style = CoinStyles.SELECTED
 
-        self.refresh(_style)
+        self.set_style(_style)

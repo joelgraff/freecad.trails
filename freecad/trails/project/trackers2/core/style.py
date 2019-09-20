@@ -60,6 +60,8 @@ class Style():
         Update the tracker style
         """
 
+        print('style refresh ', self.active_style.id, style.id)
+
         if self.active_style == style:
             return
 
