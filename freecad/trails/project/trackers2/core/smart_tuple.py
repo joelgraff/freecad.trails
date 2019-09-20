@@ -39,7 +39,7 @@ class SmartTuple():
     _add = lambda lhs, rhs: tuple(map(op_add, lhs, rhs))
     Iterables = (Iterable, Vector)
 
-    def __init__(self, data: Iterable):
+    def __init__(self, data: Iterables):
         """
         Constructor
         """

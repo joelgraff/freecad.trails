@@ -26,9 +26,8 @@ Geometry nodes for Tracker objects
 
 from pivy import coin
 
-from .coin_styles import CoinStyles
 from .signal import Signal
-from .publisher_events import PublisherEvents as Events
+from .smart_tuple import SmartTuple
 
 class Geometry(Signal):
     """
@@ -49,14 +48,25 @@ class Geometry(Signal):
             return
 
         self.geo_node = coin.SoSeparator()
-        self.coordinate_node = coin.SoCoordinate3()
+        self.geo_transform_node = coin.SoTransform()
+        self.geo_coordinate_node = coin.SoCoordinate3()
 
-        self.geo_node.addChild(self.coordinate_node)
+        self.geo_node.addChild(self.geo_transform_node)
+        self.geo_node.addChild(self.geo_coordinate_node)
         self.base_node.addChild(self.geo_node)
+
+        self.last_coordinates = []
 
         super().__init__()
 
-    def set_coordinates(self, coordinates, do_notify):
+    def update(self, coordinates):
+        """
+        Update implementation
+        """
+
+        self.last_coordinates = self.set_coordinates(coordinates)
+
+    def set_coordinates(self, coordinates):
         """
         Update the SoCoordinate3 with the passed coordinates
         Assumes coordinates is a list of 3-float tuples
@@ -65,19 +75,22 @@ class Geometry(Signal):
         if not coordinates:
             return
 
+        #encapsulate a single coordinate as a list
         if not isinstance(coordinates, list):
             coordinates = [coordinates]
 
-        self.coordinate_node.point.setValues(coordinates)
+        #ensure coordinate points are tuples
+        coordinates = [SmartTuple(_v)._tuple for _v in coordinates]
 
-        if do_notify and self.do_publish:
-            self.dispatch(Events.NODE.UPDATED, (self.name, coordinates), False)
+        self.geo_coordinate_node.point.setValues(coordinates)
+
+        return coordinates
 
     def get(self, _dtype=tuple):
         """
         Return the coordinates as the specified iterable type
         """
 
-        _values = self.coordinate_node.point.getValues()
+        _values = self.geo_coordinate_node.point.getValues()
 
         return [_dtype(_v.getValue()) for _v in _values]

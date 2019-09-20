@@ -37,6 +37,7 @@ from .style import Style
 from .selection import Selection
 from .geometry import Geometry
 from .coin_styles import CoinStyles
+from .smart_tuple import SmartTuple
 
 class Marker(Base, Style, Selection, Geometry):
     """
@@ -52,41 +53,33 @@ class Marker(Base, Style, Selection, Geometry):
 
         self.is_end_node = False
         self.point = tuple(point)
-
-        #build node structure for the node tracker
-
-        self.marker_node = coin.SoMarkerSet()
-
         self.drag_point = self.point
 
+        #build node structure for the node tracker
+        self.marker_node = coin.SoMarkerSet()
         self.geo_node.addChild(self.marker_node)
-
         self.set_style(CoinStyles.DEFAULT)
 
         self.update()
 
-
-    def update(self, coord=None, do_notify=False):
+    def update(self, coord=None):
         """
         Update the coordinate position
         """
 
-        #if we have a list of points, pick the first
-        if isinstance(coord, list):
-            coord = coord[0]
-
-        if not coord:
-            coord = self.point
-
         _c = coord
 
-        if not isinstance(coord, tuple) and isinstance(coord, Iterable):
-            _c = tuple(_c,)
+        if not _c:
+            _c = self.point
+        else:
+            self.point = SmartTuple(_c)._tuple
 
-        self.point = _c
         self.drag_point = self.point
 
-        Geometry.set_coordinates(self, _c, do_notify)
+        Geometry.update(self, _c)
+
+        #if self.do_publish:
+        #    self.dispatch(Events.NODE.UPDATED, (self.name, coordinates), False)
 
     def set_style(self, style=None, draw=None, color=None):
         """
@@ -95,8 +88,8 @@ class Marker(Base, Style, Selection, Geometry):
 
         Style.set_style(self, style, draw, color)
 
-        self.marker_node.markerIndex = Gui.getMarkerIndex(
-            self.active_style.shape, self.active_style.size)
+        self.marker_node.markerIndex = \
+            Gui.getMarkerIndex(self.active_style.shape, self.active_style.size)
 
     def finalize(self, node=None, parent=None):
         """

@@ -35,6 +35,7 @@ from .core.base import Base
 #from ..support.drag_state import DragState
 
 from .core.marker import Marker
+from .core.line import Line
 
 #from .wire_tracker import WireTracker
 
@@ -155,28 +156,28 @@ class TrackerTester(Base):
         for _i, _pt in enumerate(_nodes):
 
             _v = Marker(
-                name='.'.join(self.name[0:2] + ['NODE-' + str(_i)]), point=_pt)
+                name='.'.join(self.name[0:2] + ['MARKER-'+str(_i)]), point=_pt)
 
             _result['Nodes'].append(_v)
 
         _result['Nodes'][0].is_end_node = True
         _result['Nodes'][-1].is_end_node = True
 
-        self.trackers = _result
-        return
-
         #wire trackers - Tangents
-        #for _i in range(0, len(_result['Nodes']) - 1):
+        for _i in range(0, len(_result['Nodes']) - 1):
 
-        #    _nodes = _result['Nodes'][_i:_i + 2]
-        #    _points = [_v.point for _v in _nodes]
+            _nodes = _result['Nodes'][_i:_i + 2]
+            _points = [_v.point for _v in _nodes]
 
-        #    if is_linked:
-        #        _points = None
-        #    else:
-        #        _nodes = None
+            if is_linked:
+                _points = None
+            else:
+                _nodes = None
 
-        #    _result['Tangents'].append(
+            _result['Tangents'].append(
+                Line('.'.join(self.name[0:2] + ['LINE'+str(_i)]), _points)
+            )
+
         #        self._build_wire_tracker(
         #            wire_name=_names + ['WIRE-' + str(_i)],
         #            nodes=_nodes,
@@ -185,7 +186,7 @@ class TrackerTester(Base):
         #        )
         #    )
 
-        #self.trackers = _result
+        self.trackers = _result
 
     def _build_wire_tracker(self, wire_name, nodes, points, select=False):
         """

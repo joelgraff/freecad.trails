@@ -21,61 +21,54 @@
 #*                                                                     *
 #***********************************************************************
 """
-Style support for Tracker objects
+Line tracker class for tracker objects
 """
 
 from pivy import coin
 
+from .base import Base
+from .style import Style
+from .selection import Selection
+from .geometry import Geometry
 from .coin_styles import CoinStyles
+from .smart_tuple import SmartTuple
 
-class Style():
+class Line(Base, Style, Selection, Geometry):
     """
-    Style support for Tracker objects
+    Tracker object for SoLineSet
     """
 
-    #members added by Base
-    base_node = None
-
-    def __init__(self):
+    def __init__(self, name, points):
         """
         Constructor
         """
 
-        if not self.base_node:
-            return
+        super().__init__(name=name)
 
-        self.color = coin.SoBaseColor()
-        self.draw_style = coin.SoDrawStyle()
+        #build node structure for the node tracker
+        self.line_node = coin.SoLineSet()
+        self.geo_node.addChild(self.line_node)
+        self.set_style(CoinStyles.DEFAULT)
 
-        self.base_node.addChild(self.draw_style)
-        self.base_node.addChild(self.color)
+        self.update(points)
 
-        self.coin_style = CoinStyles.DEFAULT
-        self.active_style = CoinStyles.BASE
+    def update(self, coord=None):
+        """
+        Update the coordinate position
+        """
 
-        super().__init__()
+        Geometry.set_coordinates(self, coord)
 
     def set_style(self, style=None, draw=None, color=None):
         """
-        Update the tracker style
+        Override style implementation
         """
 
-        if self.active_style == style:
-            return
+        Style.set_style(self, style, draw, color)
 
-        if not draw:
-            draw = self.draw_style
+    def finalize(self, node=None, parent=None):
+        """
+        Cleanup
+        """
 
-        if not color:
-            color = self.color
-
-        if not style:
-            style = self.coin_style
-
-        draw.lineWidth = style.line_width
-        draw.style = style.style
-        draw.linePattern = style.line_pattern
-
-        color.rgb = style.color
-
-        self.active_style = style
+        super().finalize(self.geo_node, parent)
