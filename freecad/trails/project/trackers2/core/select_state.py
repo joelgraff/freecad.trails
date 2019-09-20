@@ -181,3 +181,5 @@ class SelectState(metaclass=Singleton):
 
         if not _exists:
             self._full.append(tracker)
+        else:
+            self.deselect(tracker)

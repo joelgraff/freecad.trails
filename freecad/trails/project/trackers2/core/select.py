@@ -110,7 +110,8 @@ class Select(Mouse, Signal):
         #on button down, do selection
         if self.mouse_state.button1.state == 'DOWN':
 
-            self.sel_state.select(self, self.mouse_state.component)
+            self.sel_state.select(
+                self, self.mouse_state.component, self.mouse_state.ctrlDown)
 
             if self.is_selected():
                 _style = CoinStyles.SELECTED
