@@ -156,7 +156,8 @@ class TrackerTester(Base):
         for _i, _pt in enumerate(_nodes):
 
             _v = Marker(
-                name='.'.join(self.name[0:2] + ['MARKER-'+str(_i)]), point=_pt)
+                name='.'.join(self.names[0:2] + ['MARKER-'+str(_i)]),
+                point=_pt)
 
             _result['Nodes'].append(_v)
 
@@ -175,7 +176,7 @@ class TrackerTester(Base):
                 _nodes = None
 
             _result['Tangents'].append(
-                Line('.'.join(self.name[0:2] + ['LINE'+str(_i)]), _points)
+                Line('.'.join(self.names[0:2] + ['LINE'+str(_i)]), _points)
             )
 
         #        self._build_wire_tracker(

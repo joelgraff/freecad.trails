@@ -54,11 +54,12 @@ class Base():
 
         #name is three parts, delimited by periods ('doc.task.obj')
         #object name is always first
-        self.name = name.split('.')[::-1]
+        self.names = name.split('.')[::-1]
+        self.name = self.names[0]
 
         #pad array to ensure three elements
-        if len(self.name) < 3:
-            self.name += ['']*(3-len(self.name))
+        if len(self.names) < 3:
+            self.names += ['']*(3-len(self.names))
 
         #self.state = TrackerContainer()
 

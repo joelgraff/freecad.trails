@@ -109,7 +109,7 @@ class PublisherEvents(Const):
     enum = _EVT.get_enum()
 
     class ALL(Const):
-        """ALL Source Events"""
+        """ALL Events"""
 
         EVENTS = 0
         SELECTED = _EVT.get(EVENTS, 1)
@@ -119,20 +119,28 @@ class PublisherEvents(Const):
 
 
     class TASK(Const):
-        """TASK Source Events"""
+        """TASK Events"""
 
         EVENTS = 1
         UPDATED = _EVT.get(EVENTS, 1)
         enum = _EVT.get_enum()
 
     class TRACKER(Const):
-        """TRACKER Source Events"""
+        """TRACKER Events"""
 
         EVENTS = 2
         enum = _EVT.get_enum()
 
+    class GEOMETRY(Const):
+        """GEOMETRY Events"""
+
+        EVENTS = 3
+        SELECTED = _EVT.get(EVENTS, 1)
+        UPDATED = _EVT.get(EVENTS, 2)
+        enum = _EVT.get_enum()
+
     class NODE(Const):
-        """NODE Source Events"""
+        """NODE Events"""
 
         EVENTS = 3
         UPDATED = _EVT.get(EVENTS, 1)
@@ -141,13 +149,13 @@ class PublisherEvents(Const):
         enum = _EVT.get_enum()
 
     class WIRE(Const):
-        """WIRE Source Events"""
+        """WIRE Events"""
 
         EVENTS = 4
         enum = _EVT.get_enum()
 
     class CURVE(Const):
-        """CURVE Source Events"""
+        """CURVE Events"""
 
         EVENTS = 5
         SELECTED = _EVT.get(EVENTS, 1)
@@ -156,7 +164,7 @@ class PublisherEvents(Const):
         enum = _EVT.get_enum()
 
     class ALIGNMENT(Const):
-        """ALIGNMENT Source Events"""
+        """ALIGNMENT Events"""
 
         EVENTS = 6
         UPDATED = _EVT.get(EVENTS, 1)
@@ -167,6 +175,7 @@ EvtBase.vals(PublisherEvents.enum, PublisherEvents)
 EvtBase.vals(PublisherEvents.ALL.enum, PublisherEvents.ALL)
 EvtBase.vals(PublisherEvents.TASK.enum, PublisherEvents.TASK)
 EvtBase.vals(PublisherEvents.TRACKER.enum, PublisherEvents.TRACKER)
+EvtBase.vals(PublisherEvents.GEOMETRY.enum, PublisherEvents.GEOMETRY)
 EvtBase.vals(PublisherEvents.NODE.enum, PublisherEvents.NODE)
 EvtBase.vals(PublisherEvents.WIRE.enum, PublisherEvents.WIRE)
 EvtBase.vals(PublisherEvents.CURVE.enum, PublisherEvents.CURVE)

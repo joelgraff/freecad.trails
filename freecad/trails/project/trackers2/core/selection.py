@@ -41,10 +41,13 @@ class Selection(Mouse, Signal):
     Provides SoFCSelection support for Tracker classes
     """
 
-    #members provided by Base and Style
-    name = []
+    #members provided by Base, Style, and 
+    name = None
+    names = []
     base_node = None
     coin_style = None
+    active_style = None
+    event_class = None
 
     def set_style(self, style=None, draw=None, color=None): pass
 
@@ -56,16 +59,16 @@ class Selection(Mouse, Signal):
         Constructor
         """
 
-        if not self.name:
+        if not self.names:
             return
 
         self.do_select_highlight = True
 
         self.sel_node = coin.SoType.fromName("SoFCSelection").createInstance()
 
-        self.sel_node.documentName.setValue(self.name[2])
-        self.sel_node.objectName.setValue(self.name[1])
-        self.sel_node.subElementName.setValue(self.name[0])
+        self.sel_node.documentName.setValue(self.names[2])
+        self.sel_node.objectName.setValue(self.names[1])
+        self.sel_node.subElementName.setValue(self.names[0])
 
         self.base_node.addChild(self.sel_node)
 
@@ -83,36 +86,47 @@ class Selection(Mouse, Signal):
         Mouse override
         """
 
-        if self.do_select_highlight:
-            self.highlight()
+        _style = self.coin_style
+
+        if self.is_selected():
+            _style = CoinStyles.SELECTED
+
+        elif self.do_select_highlight \
+            and self.name == self.mouse_state.component:
+
+            _style = CoinStyles.SELECTED
 
         Mouse.mouse_event(self, arg)
+
+        self.set_style(_style)
 
     def button_event(self, arg):
         """
         Mouse override
         """
 
-        if self.mouse_state.button1.state == 'DOWN':
-            self.sel_state.select(self)
-
-            if self.is_selected():
-                self.notify(Events.NODE.SELECTED)
-
-        elif self.do_select_highlight and not self.is_selected():
-            self.highlight()
-
-        Mouse.button_event(self, arg)
-
-    def highlight(self):
-        """
-        Test for highlight conditions and changes
-        """
-
         _style = self.coin_style
 
-        #test to see if this node is under the cursor
-        if self.name[0] == self.mouse_state.component:
+        #on button down, do selection
+        if self.mouse_state.button1.state == 'DOWN':
+
+            self.sel_state.select(self, self.mouse_state.component)
+
+            if self.is_selected():
+                _style = CoinStyles.SELECTED
+
+                if self.do_publish:
+                    self.notify(Events.GEOMETRY.SELECTED, (self.name, None))
+
+        #on button up, highlight, if hovering over
+        elif self.is_selected():
             _style = CoinStyles.SELECTED
 
+        elif self.do_select_highlight:
+
+            if self.name == self.mouse_state.component:
+                _style = CoinStyles.SELECTED
+
         self.set_style(_style)
+
+        Mouse.button_event(self, arg)

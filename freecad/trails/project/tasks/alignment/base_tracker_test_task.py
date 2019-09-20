@@ -270,7 +270,7 @@ class BaseTrackerTestTask(Base, Mouse):
         SoMouseButtonEvent callback
         """
 
-        self._mouse_state.update(arg, ViewState().view.getCursorPos())
+        self.mouse_state.update(arg, self.view_state)
 
     def set_vobj_style(self, vobj, style):
         """
