@@ -34,12 +34,12 @@ import FreeCADGui as Gui
 
 from .base import Base
 from .style import Style
-from .selection import Selection
+from .select import Select
 from .geometry import Geometry
 from .coin_styles import CoinStyles
 from .smart_tuple import SmartTuple
 
-class Marker(Base, Style, Selection, Geometry):
+class Marker(Base, Style, Select, Geometry):
     """
     Tracker object for nodes
     """

@@ -28,12 +28,11 @@ from pivy import coin
 
 from .base import Base
 from .style import Style
-from .selection import Selection
+from .select import Select
 from .geometry import Geometry
 from .coin_styles import CoinStyles
-from .smart_tuple import SmartTuple
 
-class Line(Base, Style, Selection, Geometry):
+class Line(Base, Style, Select, Geometry):
     """
     Tracker object for SoLineSet
     """

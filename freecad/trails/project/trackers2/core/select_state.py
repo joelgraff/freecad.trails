@@ -27,7 +27,7 @@ Select state class
 from ...support.singleton import Singleton
 from ...support.const import Const
 
-class SelectionStateEnum(Const):
+class SelectStateEnum(Const):
     """
     Enumerants for selection state management
     """
@@ -37,7 +37,7 @@ class SelectionStateEnum(Const):
     FULL = 2
     MANUAL = 3
 
-class SelectionState(metaclass=Singleton):
+class SelectState(metaclass=Singleton):
     """
     Singlton state class for managing tracker selections
     """
@@ -64,15 +64,15 @@ class SelectionState(metaclass=Singleton):
         """
 
         if tracker in self._full:
-            return SelectionStateEnum.FULL
+            return SelectStateEnum.FULL
 
         if tracker in self._manual:
-            return SelectionStateEnum.MANUAL
+            return SelectStateEnum.MANUAL
 
         if tracker in self._partial:
-            return SelectionStateEnum.PARTIAL
+            return SelectStateEnum.PARTIAL
 
-        return SelectionStateEnum.NONE
+        return SelectStateEnum.NONE
 
     def clear_state(self):
         """

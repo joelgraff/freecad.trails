@@ -31,12 +31,12 @@ from .coin_styles import CoinStyles
 from .mouse import Mouse
 from .signal import Signal
 
-from .selection_state import SelectionState
-from .selection_state import SelectionStateEnum as Enum
+from .select_state import SelectState
+from .select_state import SelectStateEnum as Enum
 
 from .publisher_events import PublisherEvents as Events
 
-class Selection(Mouse, Signal):
+class Select(Mouse, Signal):
     """
     Provides SoFCSelection support for Tracker classes
     """
@@ -52,7 +52,7 @@ class Selection(Mouse, Signal):
     def set_style(self, style=None, draw=None, color=None): pass
 
     #class static for global selection
-    sel_state = SelectionState()
+    sel_state = SelectState()
 
     def __init__(self):
         """
