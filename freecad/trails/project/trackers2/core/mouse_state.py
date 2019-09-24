@@ -24,14 +24,11 @@
 Mouse state class
 """
 
-from operator import sub, add
-
+from pivy import coin
 from PySide.QtGui import QCursor
 
 from ...support.singleton import Singleton
-
 from .button_state import ButtonState
-
 from .smart_tuple import SmartTuple
 
 class MouseState(metaclass=Singleton):
@@ -40,112 +37,112 @@ class MouseState(metaclass=Singleton):
     passed Coin3D SoEvent parameters
     """
 
-    tuple_sub = lambda lhs, rhs: tuple(map(sub, lhs, rhs))
-    tuple_add = lambda lhs, rhs: tuple(map(add, lhs, rhs))
-
     def __init__(self):
         """
         MouseState construction
         """
 
-        self.pos = ()
+        self.screen_position = ()
+        self.world_position = ()
 
-        self.buttons = {
-            'BUTTON1': ButtonState(),
-            'BUTTON2': ButtonState(),
-            'BUTTON3': ButtonState(),
-        }
+        self.button1 = ButtonState()
+        self.button2 = ButtonState()
+        self.button3 = ButtonState()
+        self.buttons = [self.button1, self.button2, self.button3]
 
-        self.button1 = self.buttons['BUTTON1']
-        self.button2 = self.buttons['BUTTON2']
-        self.button3 = self.buttons['BUTTON3']
+        self.alt_down = False
+        self.ctrl_down = False
+        self.shift_down = False
 
-        self.altDown = False
-        self.ctrlDown = False
-        self.shiftDown = False
-
-        self.object = ''
-        self.component = ''
-        self.coordinates = (0.0, 0.0, 0.0)
-        self.last_coord = (0.0, 0.0, 0.0)
-        self.last_pos = ()
         self.vector = ()
 
-        self.state = [self.buttons, self.pos]
+        self.object = None
+        self.component = ''
 
-    def set_position(self, pos):
+        self.state = [
+            self.button1, self.button2, self.button3,
+            self.world_position, self.screen_position
+        ]
+
+    def _update_button_state(self, evt, view_state):
         """
-        Set the position as a two-value tuple
+        Process mouse clicks
         """
 
-        _p = pos
+        _btn = self.buttons[evt.getButton() - 1]
+        _btn.pressed = evt.getState() == 1
 
-        if len(_p) < 2:
+        #continue drag unless button is released
+        if _btn.dragging:
+            _btn.dragging = _btn.pressed
+
+        #if button is still pressed and the position has changed,
+        #begin drag operation
+        elif _btn.pressed and (self.screen_position != _btn.screen_position):
+
+            _btn.dragging = True
+            _btn.drag_start = self.world_position
+
+        else:
+            _btn.drag_start = ()
+
+        _btn.screen_position = self.screen_position
+        _btn.world_position = self.world_position
+
+    def _update_state(self, evt, view_state):
+        """
+        Update the positions and key states
+        """
+
+        self.screen_position = tuple(evt.getPosition().getValue())
+        self.world_position = view_state.getPoint(self.screen_position)
+        self.vector = self.world_position
+
+        self.alt_down = evt.wasAltDown()
+        self.ctrl_down = evt.wasCtrlDown()
+        self.shift_down = evt.wasShiftDown()
+
+        if self.vector != self.world_position:
+            self.vector = SmartTuple._sub(self.vector, self.world_position)
+
+    def _update_component_state(self, info):
+        """
+        Update the component / object data
+        """
+
+        #clear state, no info exists
+        if not info:
+
+            self.object = None
+            self.component = ''
             return
 
-        if not isinstance(_p, tuple):
-            _p = tuple(pos)
+        self.object = info.get('Object')
+        self.component = info.get('Component')
 
-        if len(_p) > 2:
-            _p = _p[0:2]
-
-        self.pos = _p
-
-    def update(self, arg, view_state):
+    def update(self, so_event_cb, view_state):
         """
         Update the current mouse state
         """
 
-        _pos = view_state.getCursorPos()
-        _coord = self.coordinates
+        _evt = so_event_cb.getEvent()
 
-        if _pos != self.pos:
-            self.last_pos = self.pos
-            self.set_position(_pos)
-            _coord = None
+        if not _evt:
+            return
 
-        _info = view_state.getObjectInfo(self.pos)
+        #update position/state information
+        self._update_state(_evt, view_state)
 
-        if not _coord:
-            _coord = view_state.getPoint(self.pos)
+        #process button events
+        if isinstance(_evt, coin.SoMouseButtonEvent):
+            self._update_button_state(_evt, view_state)
 
-        _btn = arg.get('Button')
-        _state = arg.get('State')
+        #return if dragging to preserve component / object data
+        if self.button1.dragging:
+            return
 
-        self.altDown = arg['AltDown']
-        self.ctrlDown = arg['CtrlDown']
-        self.shiftDown = arg['ShiftDown']
-
-        self.vector = SmartTuple(_coord).sub(self.last_coord)
-
-        _b_list = self.buttons.values()
-
-        if _btn:
-            _b_list = [self.buttons[_btn]]
-
-        for _v in _b_list:
-            _v.update(_state, self.pos)
-
-        if _info:
-
-            if not self.button1.dragging:
-
-                self.object = _info['Object']
-                self.component = _info.get('Component')
-
-            if self.component is None:
-                self.component = ''
-
-            _coord = (_info['x'], _info['y'], _info['z'])
-
-        #preserve the selected component at the start of drag operation
-        elif self.component and not self.button1.dragging:
-
-            self.object = ''
-            self.component = ''
-
-        self.last_coord = self.coordinates
-        self.coordinates = _coord
+        self._update_component_state(
+            view_state.getObjectInfo(self.screen_position))
 
     def set_mouse_position(self, view_state, coord):
         """
@@ -155,7 +152,7 @@ class MouseState(metaclass=Singleton):
         _new_pos = view_state.getPointOnScreen(coord)
 
         #set the mouse position at the updated screen coordinate
-        _delta_pos = SmartTuple(_new_pos).sub(self.pos)
+        _delta_pos = SmartTuple(_new_pos).sub(self.screen_position)
 
         #get screen position by adding offset to the new window position
         _pos = SmartTuple.from_values(_delta_pos[0], -_delta_pos[1])\
@@ -163,5 +160,5 @@ class MouseState(metaclass=Singleton):
 
         QCursor.setPos(_pos[0], _pos[1])
 
-        self.coordinates = SmartTuple(coord)._tuple
-        self.set_position(_new_pos)
+        self.screen_position = _pos
+        self.world_position = coord

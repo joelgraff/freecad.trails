@@ -41,7 +41,7 @@ class Select(Mouse, Signal):
     Provides SoFCSelection support for Tracker classes
     """
 
-    #members provided by Base, Style, and 
+    #members provided by Base abd Style
     name = None
     names = []
     base_node = None
@@ -86,6 +86,8 @@ class Select(Mouse, Signal):
         Mouse override
         """
 
+        super().mouse_event(arg)
+
         _style = self.coin_style
 
         if self.is_selected():
@@ -95,8 +97,6 @@ class Select(Mouse, Signal):
             and self.name == self.mouse_state.component:
 
             _style = CoinStyles.SELECTED
-
-        Mouse.mouse_event(self, arg)
 
         self.set_style(_style)
 
@@ -108,10 +108,10 @@ class Select(Mouse, Signal):
         _style = self.coin_style
 
         #on button down, do selection
-        if self.mouse_state.button1.state == 'DOWN':
+        if self.mouse_state.button1.pressed:
 
             self.sel_state.select(
-                self, self.mouse_state.component, self.mouse_state.ctrlDown)
+                self, self.mouse_state.component, self.mouse_state.ctrl_down)
 
             if self.is_selected():
                 _style = CoinStyles.SELECTED

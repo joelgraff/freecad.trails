@@ -53,6 +53,15 @@ class BaseTrackerTestTask(Base, Mouse):
     Task to manage alignment editing
     """
 
+    @staticmethod
+    def set_vobj_style(vobj, style):
+        """
+        Set the view object style based on the passed style tuple
+        """
+
+        vobj.LineColor = style[0]
+        vobj.DrawStyle = style[1]
+
     class STYLES(const.Const):
         """
         Internal constants used to define ViewObject styles
@@ -246,24 +255,26 @@ class BaseTrackerTestTask(Base, Mouse):
         """
         SoLocation2Event callback
         """
+        #clear the matrix to force a refresh at the start of every mouse event
+        ViewState().matrix = None
+
+        _last_pos = self.mouse_state.world_position
 
         self.mouse_state.update(arg, self.view_state)
 
-        if self.mouse_state.shiftDown:
+        if not self.mouse_state.shift_down:
+            return
 
-            _dist = self.mouse_state.vector.Length
+        if not _last_pos:
+            return
 
-            if not _dist:
-                return
+        if not self.mouse_state.vector.Length:
+            return
 
-            _vec = Vector(self.mouse_state.vector).normalize()
+        _vec = Vector(self.mouse_state.vector).normalize()
+        _new_pos = tuple(_last_pos.add(_vec.multiply(0.10)))
 
-            self.mouse_state.set_mouse_position(self.view_state, 
-                self.mouse_state.last_coord.add(_vec.multiply(_dist * 0.10))
-            )
-
-        #clear the matrix to force a refresh at the start of every mouse event
-        ViewState().matrix = None
+        self.mouse_state.set_mouse_position(self.view_state, _new_pos)
 
     def button_event(self, arg):
         """
@@ -271,14 +282,6 @@ class BaseTrackerTestTask(Base, Mouse):
         """
 
         self.mouse_state.update(arg, self.view_state)
-
-    def set_vobj_style(self, vobj, style):
-        """
-        Set the view object style based on the passed style tuple
-        """
-
-        vobj.LineColor = style[0]
-        vobj.DrawStyle = style[1]
 
     def clean_up(self):
         """

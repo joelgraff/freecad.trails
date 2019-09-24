@@ -29,6 +29,8 @@ from PySide import QtGui
 
 from FreeCAD import Vector
 
+import Draft
+
 import FreeCADGui as Gui
 
 from ...support.singleton import Singleton
@@ -55,6 +57,8 @@ class ViewState(metaclass=Singleton):
 
         self.active_task_panel = None
         self._matrix = None
+
+        self.callbacks = {}
 
     def get_matrix(self, node, parent=None, refresh=True):
         """
@@ -159,18 +163,68 @@ class ViewState(metaclass=Singleton):
 
         return _result
 
+    def remove_event_cb(self, callback, event_class):
+        """
+        Remove an event callback
+        """
+
+        if not event_class in self.callbacks:
+            return
+
+        _cbs = self.callbacks[event_class]
+
+        if not callback in _cbs:
+            return
+
+        _cb = _cbs[callback]
+
+        self.view.removeEventCallbackPivy(event_class.getClassTypeId(), _cb)
+
+        del _cb
+
+    def add_event_cb(self, callback, event_class):
+        """
+        Add an event callback
+        """
+
+        if not event_class in self.callbacks:
+            self.callbacks[event_class] = {}
+
+        _cbs = self.callbacks[event_class]
+
+        if callback in _cbs:
+            return
+
+        _cbs[callback] = self.view.addEventCallbackPivy(
+            event_class.getClassTypeId(), callback)
+
+    def remove_mouse_event(self, callback):
+        """
+        Wrapper for InventorView removeEventCallback()
+        """
+
+        self.remove_event_cb(callback, coin.SoLocation2Event)
+
+    def remove_button_event(self, callback):
+        """
+        Wrapper for InventorView removeEventCallback()
+        """
+
+        self.remove_event_cb(callback, coin.SoMouseButtonEvent)
+
     def add_mouse_event(self, callback):
         """
         Wrapper for InventorView addEventCallback()
         """
 
-        self.view.addEventCallback('SoLocation2Event', callback)
+        self.add_event_cb(callback, coin.SoLocation2Event)
 
     def add_button_event(self, callback):
         """
         Wrapper for Coin3D addEventCallback()
         """
-        self.view.addEventCallback('SoMouseButtonEvent', callback)
+
+        self.add_event_cb(callback, coin.SoMouseButtonEvent)
 
     def getPoint(self, pos):
         """
@@ -178,8 +232,7 @@ class ViewState(metaclass=Singleton):
         """
 
         _pos = SmartTuple(pos)._tuple
-
-        return self.view.getPoint(_pos[:2])
+        return tuple(self.view.getPoint(_pos[:2]))
 
     def getPointOnScreen(self, point):
         """
@@ -188,8 +241,8 @@ class ViewState(metaclass=Singleton):
 
         _pt = SmartTuple(point)._tuple
 
-        if len(point) == 2:
-            _pt = point + (0.0,)
+        if len(_pt) == 2:
+            _pt += (0.0,)
 
         assert(len(_pt) == 3),\
             'Invalid coordinate. Expected tuple of three floats.'
@@ -201,13 +254,7 @@ class ViewState(metaclass=Singleton):
         Wrapper for InventorView getObjectInfo()
         """
 
-        assert(isinstance(pos, tuple)),\
-            'Invalid coordinate data type.  Expected tuple.'
-
-        assert(len(pos) == 2),\
-            'Invalid coordinate. Expected tuple of two floats.'
-
-        return self.view.getObjectInfo(pos)
+        return self.view.getObjectInfo(SmartTuple(pos)._tuple)
 
     def getCursorPos(self):
         """

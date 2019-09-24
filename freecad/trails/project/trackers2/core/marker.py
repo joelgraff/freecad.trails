@@ -24,8 +24,6 @@
 Marker tracker class for tracker objects
 """
 
-from collections.abc import Iterable
-
 from pivy import coin
 
 import FreeCADGui as Gui
@@ -36,10 +34,11 @@ from .base import Base
 from .style import Style
 from .select import Select
 from .geometry import Geometry
+from .drag import Drag
 from .coin_styles import CoinStyles
 from .smart_tuple import SmartTuple
 
-class Marker(Base, Style, Select, Geometry):
+class Marker(Base, Style, Select, Drag, Geometry):
     """
     Tracker object for nodes
     """

@@ -28,15 +28,14 @@ import math
 
 from pivy import coin
 
-from FreeCAD import Vector
-
 from DraftGui import todo
 
 from ...support.singleton import Singleton
-from .view_state import ViewState
-
 from ...support.utils import Constants as C
 from ....geometry import support
+
+from .view_state import ViewState
+from .smart_tuple import SmartTuple
 
 class DragState(metaclass=Singleton):
     """
@@ -45,19 +44,15 @@ class DragState(metaclass=Singleton):
 
     def __init__(self):
 
-        self.start = Vector()
+        self.start = ()
 
-        self.root = coin.SoSeparator()
-        self.node_group = coin.SoSeparator()
-        self.partial_group = coin.SoSeparator()
+        self.drag_switch = coin.SoSwitch()
+        self.drag_node = coin.SoSeparator()
+        self.full_group = coin.SoSeparator()
         self.manual_group = coin.SoSeparator()
 
-        self.partial_nodes = []
-        self.partial_coords = []
-        self.partial_indices = []
-
-        self.transform = coin.SoTransform()
-        self.drag_node = None
+        self.drag_transform = coin.SoTransform()
+        self.drag_tracker_node = None
         self.drag_point = None
 
         self.update_translate = True
@@ -65,18 +60,19 @@ class DragState(metaclass=Singleton):
 
         self.drag_line_coord = coin.SoCoordinate3()
 
-        self._build_drag_line()
+        self.drag_node.addChild(self.manual_group)
+        self.drag_node.addChild(self.drag_transform)
+        self.drag_node.addChild(self.full_group)
 
-        self.root.addChild(self.manual_group)
-        self.root.addChild(self.partial_group)
-        self.root.addChild(self.transform)
-        self.root.addChild(self.node_group)
+        self.drag_switch.addChild(self._build_drag_line())
+        self.drag_switch.addChild(self.drag_node)
+        self.drag_switch.whichChild = -3
 
         self.abort = False
 
         #coordinate tracking properties
-        self.delta = Vector()
-        self.coordinates = Vector()
+        self.delta = ()
+        self.coordinates = ()
 
         #cumulate angle, center of rotation and current drag rotation
         self.angle = 0.0
@@ -98,27 +94,6 @@ class DragState(metaclass=Singleton):
         """
 
         self._update_drag_line(line_start, line_end)
-
-        if self.partial_coords:
-            self._update_partial_nodes()
-
-    def _update_partial_nodes(self):
-        """
-        Update partially selected drag nodes
-        """
-
-        #transform coordinates
-        _coords = ViewState().transform_points(
-            self.partial_coords, self.node_group)
-        _k = 0
-
-        #write transformed coordinates back to scenegraph nodes
-        for _i, _v in enumerate(self.partial_nodes):
-
-            for _j in self.partial_indices[_i]:
-
-                _v.point.set1Value(_j, _coords[_k][:3])
-                _k += 1
 
     def _update_drag_line(self, line_start, line_end):
         """
@@ -143,8 +118,6 @@ class DragState(metaclass=Singleton):
         Build the drag line for drag operations
         """
 
-        _m = coin.SoMarkerSet()
-
         _l = coin.SoLineSet()
         _l.numVertices.setValue(2)
 
@@ -159,10 +132,10 @@ class DragState(metaclass=Singleton):
         _g.addChild(_d)
         _g.addChild(_c)
         _g.addChild(self.drag_line_coord)
-        _g.addChild(_m)
+        _g.addChild(coin.SoMarkerSet())
         _g.addChild(_l)
 
-        self.root.addChild(_g)
+        return _g
 
     def add_manual_node(self, node):
         """
@@ -187,46 +160,9 @@ class DragState(metaclass=Singleton):
         drag_group = coin.SoSeparator()
         drag_group.addChild(node)
 
-        self.node_group.addChild(drag_group)
+        self.drag_node.addChild(drag_group)
 
         return drag_group
-
-    def add_partial_node(self, node, indices):
-        """
-        Add a partially-dragged node to the tree, updating only the
-        coordiantes in the passed index.
-
-        node - a group containing the geometry to be rendered.
-               must include an SoCoordinate3 node.
-
-        indices - index value(s) of coordinates in node to
-                  be updated by the drag transform
-        """
-
-        _rng = range(0, node.getNumChildren())
-
-        for _i in _rng:
-
-            _n = node.getChild(_i)
-
-            if isinstance(_n, coin.SoCoordinate3):
-
-                self.partial_nodes.append(_n)
-
-                _coords = _n.point.getValues()
-
-                for _j in indices:
-                    self.partial_coords.append(_coords[_j])
-
-                break
-
-        _drag_group = coin.SoSeparator()
-        _drag_group.addChild(node)
-
-        self.partial_indices.append(indices)
-        self.partial_group.addChild(_drag_group)
-
-        return _drag_group
 
     def finish(self):
         """
@@ -234,7 +170,7 @@ class DragState(metaclass=Singleton):
         """
 
         #node was never added, but drag state members may have changed
-        if not self.root or not self._sg_root:
+        if not self._sg_root:
             self.reset()
             return
 
@@ -279,7 +215,7 @@ class DragState(metaclass=Singleton):
         State reset function
         """
 
-        self.root.removeAllChildren()
+        self.drag_switch.removeAllChildren()
 
         self.__init__()
 
@@ -296,12 +232,12 @@ class DragState(metaclass=Singleton):
             return
 
         #accumulate the movement from the previous mouse position
-        _delta = coord.sub(self.coordinates)
+        _delta = SmartTuple._sub(coord, self.coordinates)
 
-        self.delta = Vector(self.transform.translation.getValue())
-        self.delta += _delta
+        self.delta = SmartTuple._add(
+            self.drag_transform.translation.getValue(), _delta)
 
-        self.transform.translation.setValue(tuple(self.delta))
+        self.drag_transform.translation.setValue(self.delta)
 
     def rotate(self, coord):
         """
@@ -315,15 +251,15 @@ class DragState(metaclass=Singleton):
         _angle = 0.0
 
         if self.rotation_center:
-            _angle = support.get_bearing(coord.sub(self.rotation_center))
+            _angle = support.get_bearing(
+                SmartTuple._sub(coord, self.rotation_center))
 
         else:
 
-            _dx_vec = coord.sub(
-                Vector(self.transform.translation.getValue())
-            )
+            _dx_vec = SmartTuple._sub(
+                coord, self.drag_transform.translation.getValue())
 
-            self.transform.center.setValue(coin.SbVec3f(tuple(_dx_vec)))
+            self.drag_transform.center.setValue(coin.SbVec3f(_dx_vec))
 
             self.rotation_center = coord
             self.rotation = 0.0
@@ -342,5 +278,38 @@ class DragState(metaclass=Singleton):
         self.angle = _angle
 
         #update the +z axis rotation for the transformation
-        self.transform.rotation =\
+        self.drag_transform.rotation =\
             coin.SbRotation(coin.SbVec3f(0.0, 0.0, 1.0), self.rotation)
+
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Callbacks
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    def add_callbacks(self):
+        ViewState().add_button_event(self._end_drag_callback)
+        ViewState().add_mouse_event(self._on_drag_callback)
+
+    def _on_drag_callback(self, so_event_cb):
+        """
+        Class-level callback to update the drag state transform as a 
+        mouse event
+        """
+        print('drag_state on drag')
+        return
+
+        if not self.start:
+            self.start = Drag.mouse_state.button1.world_position
+
+        if Drag.mouse_state.alt_down:
+            Drag.drag_state.rotate(Drag.mouse_state.world_position)
+
+        else:
+            Drag.drag_state.translate(Drag.mouse_state.world_position)
+
+    def _end_drag_callback(self, so_event_cb):
+        """
+        Class-level callback to reset drag state at end of drag operation
+        """
+        return
+
+        Drag.drag_state.reset()

@@ -28,13 +28,14 @@ class ButtonState():
     """
     Internal class to track button state
     """
+
     def __init__(self):
         """
         ButtonState constructor
         """
-        self.state = ''
         self.pressed = False
-        self.pos = ()
+        self.screen_position = ()
+        self.world_position = ()
         self.dragging = False
         self.drag_start = ()
 
@@ -58,44 +59,9 @@ class ButtonState():
         """
 
         return str({
-            'state': self.state,
             'pressed': self.pressed,
-            'pos': self.pos,
+            'screen position': self.screen_position,
+            'world position': self.world_position,
             'dragging': self.dragging,
             'drag start': self.drag_start
             })
-
-    def update(self, state, pos):
-        """
-        Update the button state
-        """
-
-        #update state on a state change only
-        if state and (self.state != state):
-
-            self.state = state
-            self.pressed = state != 'UP'
-
-            #assign position at down click
-            if self.pressed and not self.pos:
-                self.pos = pos
-
-        #if we're already dragging, continue only if the button
-        #hasn't been released
-        if self.dragging:
-            self.dragging = self.pressed
-
-        #otherwise, start only if the button is pressed and the
-        #mouse has moved
-        elif self.pressed and (self.pos != pos):
-
-            self.dragging = True
-            self.drag_start = pos
-
-        if self.dragging:
-            self.state = 'DRAG'
-
-        else:
-            self.drag_start = ()
-
-        self.pos = pos
