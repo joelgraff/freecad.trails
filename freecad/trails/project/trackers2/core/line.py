@@ -49,6 +49,8 @@ class Line(Base, Style, Select, Geometry):
         self.geo_node.addChild(self.line_node)
         self.set_style(CoinStyles.DEFAULT)
 
+        #self.base_path_node = self.line_node
+
         self.update(points)
 
     def update(self, coord=None):

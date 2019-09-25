@@ -23,29 +23,36 @@
 """
 Base class for Tracker objects
 """
+import weakref
 
 from pivy import coin
 
 from DraftGui import todo
 
 from .view_state import ViewState
+from .publisher import Publisher
+from .publisher_events import PublisherEvents as Events
+from .subscriber import Subscriber
 
 #from ...containers import TrackerContainer
 
-class Base():
+class Base(Publisher, Subscriber):
     """
     Base class for Tracker objects
     """
 
     #global view statge singleton
-    view_state = ViewState()
+    view_state = None
+
+    pathed_trackers = []
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #'virtual' function declarations overriden by class inheritance
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     #Style
-    def set_style(self, style=None, draw=None, color=None): pass
+    def set_style(self, style=None, draw=None, color=None): 
+        """prototype"""; pass
 
     def __init__(self, name):
         """
@@ -61,24 +68,64 @@ class Base():
         if len(self.names) < 3:
             self.names += ['']*(3-len(self.names))
 
-        #self.state = TrackerContainer()
+        if not Base.view_state:
+            Base.view_state = ViewState()
 
         self.sg_root = self.view_state.sg_root
 
-        self.switch = coin.SoSwitch()
+        self.callbacks = {}
+
+        self.base_path_node = None
+        self.base_switch = coin.SoSwitch()
 
         self.base_node = coin.SoSeparator()
         self.base_transform = coin.SoTransform()
 
-        self.picker = coin.SoPickStyle()
+        self.base_event_switch = coin.SoSwitch()
+        self.base_event_cb = coin.SoEventCallback()
+        self.base_event_switch.addChild(self.base_event_cb)
+        self.base_event_switch.whichChild = 0
 
+        self.base_picker = coin.SoPickStyle()
+
+        self.base_node.addChild(self.base_event_switch)
         self.base_node.addChild(self.base_transform)
-        self.base_node.addChild(self.picker)
+        self.base_node.addChild(self.base_picker)
 
-        self.switch.addChild(self.base_node)
+        self.base_switch.addChild(self.base_node)
         self.set_visibility()
 
+        #add to the global statick list of all subscribers for the
+        #Publsiher class.  Weak-referenced to facilitate cleanup
+        Publisher.all_subscribers.append(weakref.WeakMethod(self.notify_all))
+
         super().__init__()
+
+    def insert_into_scenegraph(self):
+        """
+        Insert the base node into the scene graph and trigger notifications
+        """
+
+        self.insert_node(self.base_node)
+        todo.delay(self.dispatch_all, Events.GEOMETRY.APPLY_PATHING)
+
+    def notify_all(self, event_type, message, verbose=False):
+        """
+        Override base notify_all()
+        """
+
+        super().notify_all(event_type, message, verbose)
+
+        if event_type == Events.GEOMETRY.APPLY_PATHING:
+            print(self.name, 'notifying...')
+            self.set_event_path()
+
+    def notify(self, event_type, message, verbose=False):
+        """
+        Override base notfy()
+        """
+
+        super().notify(event_type, message, verbose)
 
     def copy(self, node=None):
         """
@@ -132,17 +179,17 @@ class Base():
         """
 
         if visible:
-            self.switch.whichChild = 0
+            self.base_switch.whichChild = 0
 
         else:
-            self.switch.whichChild = -1
+            self.base_switch.whichChild = -1
 
     def is_visible(self):
         """
         Return the visibility of the tracker
         """
-
-        return self.switch.whichChild == 0
+        #pylint: disable=no-member
+        return self.base_switch.whichChild.getValue() == 0
 
     def set_pick_style(self, is_pickable):
         """
@@ -154,14 +201,87 @@ class Base():
         if is_pickable:
             _state = coin.SoPickStyle.SHAPE
 
-        self.picker.style.setValue(_state)
+        self.base_picker.style.setValue(_state)
 
     def is_pickable(self):
         """
         Return a bool indicating whether or not the node may be selected
         """
 
-        return self.picker.style.getValue() != coin.SoPickStyle.UNPICKABLE
+        return self.base_picker.style.getValue() != coin.SoPickStyle.UNPICKABLE
+
+    def add_event_callback(self, event_type, callback):
+        """
+        Add an event callback
+        """
+
+        _et = event_type.getName().getString()
+
+        if not _et in self.callbacks:
+            self.callbacks[_et] = {}
+
+        _cbs = self.callbacks[_et]
+
+        if callback in _cbs:
+            return
+
+        _cbs[callback] = \
+            self.base_event_cb.addEventCallback(event_type, callback)
+
+    def remove_event_callback(self, event_type, callback):
+        """
+        Remove an event callback
+        """
+
+        _et = event_type.getName().getString()
+
+        if _et not in self.callbacks:
+            return
+
+        _cbs = self.callbacks[_et]
+
+        if callback not in _cbs:
+            return
+
+        self.base_event_cb.removeEventCallback(event_type, _cbs[callback])
+
+        del _cbs[callback]
+
+    def events_enabled(self):
+        """
+        Returns whether or not event switch is on
+        """
+
+        return self.base_event_switch.whichChild == 0
+
+    def toggle_event_callbacks(self):
+        """
+        Switch event callbacks on / off
+        """
+        #pylint: disable=no-member
+        if self.base_event_switch.whichChild.getValue() == 0:
+            self.base_event_switch.whichChild = -1
+
+        else:
+            self.base_event_switch.whichChild = 0
+
+    def set_event_path(self, node=None):
+        """
+        Add / remove path for event callbacks
+        """
+
+        if node is None:
+            node = self.base_path_node
+
+        if node is None:
+            self.base_event_cb.setPath(self.base_path_node)
+            return
+
+        _sa = coin.SoSearchAction()
+        _sa.setNode(node)
+        _sa.apply(self.view_state.sg_root)
+
+        self.base_event_cb.setPath(_sa.getPath())
 
     def finalize(self, node=None, parent=None):
         """

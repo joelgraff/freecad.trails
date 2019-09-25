@@ -35,6 +35,21 @@ class Publisher:
     counter = 0
     name = 'Publisher'
 
+    #subscribers must weak-reference their methods
+    all_subscribers = []
+
+    @staticmethod
+    def dispatch_all(event, message=None, verbose=False):
+        """
+        Dispatch a message to all subscribers registered to the
+        static publisher registry.  Requires subscriber has
+        notify_all() method.
+        """
+
+        for _weak_method in Publisher.all_subscribers:
+            _weak_method()(event, message)
+
+
     def __init__(self):
         """
         Constructor
@@ -121,7 +136,7 @@ class Publisher:
             if not self.events[_e]:
                 del self.events[_e]
 
-    def dispatch(self, event, message, verbose=False):
+    def dispatch(self, event, message=None, verbose=False):
         """
         Message dispatch
         """

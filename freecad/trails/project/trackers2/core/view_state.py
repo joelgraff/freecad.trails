@@ -29,12 +29,27 @@ from PySide import QtGui
 
 from FreeCAD import Vector
 
-import Draft
-
 import FreeCADGui as Gui
 
 from ...support.singleton import Singleton
 from .smart_tuple import SmartTuple
+
+class ViewStateGlobalCallbacks():
+
+    def __init__(self):
+        """
+        Constructor
+        """
+
+        pass
+
+    def global_view_mouse_event(self, arg):
+        """
+        Global mouse event to update view state
+        """
+
+        #clear the matrix to force a refresh at the start of every mouse event
+        ViewState()._matrix = None
 
 class ViewState(metaclass=Singleton):
     """
@@ -59,6 +74,9 @@ class ViewState(metaclass=Singleton):
         self._matrix = None
 
         self.callbacks = {}
+
+        self.add_mouse_event(
+            ViewStateGlobalCallbacks().global_view_mouse_event)
 
     def get_matrix(self, node, parent=None, refresh=True):
         """
@@ -168,12 +186,12 @@ class ViewState(metaclass=Singleton):
         Remove an event callback
         """
 
-        if not event_class in self.callbacks:
+        if event_class not in self.callbacks:
             return
 
         _cbs = self.callbacks[event_class]
 
-        if not callback in _cbs:
+        if callback not in _cbs:
             return
 
         _cb = _cbs[callback]
@@ -187,7 +205,7 @@ class ViewState(metaclass=Singleton):
         Add an event callback
         """
 
-        if not event_class in self.callbacks:
+        if event_class not in self.callbacks:
             self.callbacks[event_class] = {}
 
         _cbs = self.callbacks[event_class]
@@ -275,3 +293,12 @@ class ViewState(metaclass=Singleton):
                 return item
 
         raise RuntimeError('No main window found')
+
+    def finish(self):
+        """
+        Cleanup
+        """
+
+        for _evt_cls in self.callbacks:
+            for _cb in self.callbacks[_evt_cls]:
+                self.remove_event_cb(_cb, _evt_cls)

@@ -24,9 +24,13 @@
 A smart tuple object with type conversion and math functions
 """
 
+import math
+
 from collections.abc import Iterable
+
 from operator import sub as op_sub
 from operator import add as op_add
+from operator import mul as op_mul
 
 from FreeCAD import Vector
 
@@ -37,6 +41,13 @@ class SmartTuple():
 
     _sub = lambda lhs, rhs: tuple(map(op_sub, lhs, rhs))
     _add = lambda lhs, rhs: tuple(map(op_add, lhs, rhs))
+    _mul = lambda lhs, rhs: tuple(map(op_mul, lhs, rhs))
+
+    _length = \
+        lambda tpl: math.sqrt(tpl[0]*tpl[0] + tpl[1]*tpl[1] + tpl[2]*tpl[2])
+    _multiply = \
+        lambda scalar: tuple(map)
+
     Iterables = (Iterable, Vector)
 
     def __init__(self, data: Iterables):
@@ -97,6 +108,34 @@ class SmartTuple():
 
         return _tpl
 
+    def multiply(self, factor):
+        """
+        Multiply each element by factor (single value only)
+        """
+
+        return SmartTuple._mul(self, (factor,)*len(self._tuple))
+
+    def normalize(self, factor=1.0):
+        """
+        Tuple normalization
+        """
+
+        _mag = 0
+
+        for _v in self._tuple:
+            _mag += _v * _v
+
+        _mag = factor / math.sqrt(_mag)
+
+        return SmartTuple._mul(self, (_mag)*len(self._tuple))
+
+    def length(self):
+        """
+        Tuple-base length / magnitude
+        """
+
+        return SmartTuple._length(self._tuple)
+
     def sub(self, *args):
         """
         Tuple-based subtraction
@@ -109,7 +148,7 @@ class SmartTuple():
             return SmartTuple._sub(self._tuple, _tpl[0])
 
         #multiple tuple subtraction
-        return ((self._sub(self._tuple, _v),) for _v in _tpl if _v)
+        return ((SmartTuple._sub(self._tuple, _v),) for _v in _tpl if _v)
 
     def add(self, *args):
         """

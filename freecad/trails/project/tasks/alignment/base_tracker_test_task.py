@@ -34,8 +34,6 @@ import DraftTools
 from ....alignment import alignment
 
 from ...support import const
-from ...support.mouse_state import MouseState
-from ...support.view_state import ViewState
 
 from ...trackers2.tracker_tester import TrackerTester
 from ...trackers2.core.base import Base
@@ -94,34 +92,34 @@ class BaseTrackerTestTask(Base, Mouse):
             'bound box': None
         }
 
-        ViewState().view_objects = {
+        self.view_state.view_objects = {
             'selectables': [],
             'line_colors': [],
         }
 
         #disable selection entirely
-        ViewState().sg_root.getField("selectionRole").setValue(0)
+        self.view_state.sg_root.getField("selectionRole").setValue(0)
 
         #get all objects with LineColor and set them all to gray
-        ViewState().view_objects['line_colors'] = [
+        self.view_state.view_objects['line_colors'] = [
             (_v.ViewObject, _v.ViewObject.LineColor)
             for _v in self.doc.findObjects()
             if hasattr(_v, 'ViewObject')
             if hasattr(_v.ViewObject, 'LineColor')
         ]
 
-        for _v in ViewState().view_objects['line_colors']:
+        for _v in  self.view_state.view_objects['line_colors']:
             self.set_vobj_style(_v[0], self.STYLES.DISABLED)
 
         #get all objects in the scene that are selectable.
-        ViewState().view_objects['selectable'] = [
+        self.view_state.view_objects['selectable'] = [
             (_v.ViewObject, _v.ViewObject.Selectable)
             for _v in self.doc.findObjects()
             if hasattr(_v, 'ViewObject')
             if hasattr(_v.ViewObject, 'Selectable')
         ]
 
-        for _v in ViewState().view_objects['selectable']:
+        for _v in  self.view_state.view_objects['selectable']:
             _v[0].Selectable = False
 
         #deselect existing selections
@@ -132,7 +130,7 @@ class BaseTrackerTestTask(Base, Mouse):
         )
 
         #save camera state
-        _camera = ViewState().view.getCameraNode()
+        _camera = self.view_state.view.getCameraNode()
 
         self.camera_state['position'] = _camera.position.getValue().getValue()
         self.camera_state['height'] = _camera.height.getValue()
@@ -147,7 +145,7 @@ class BaseTrackerTestTask(Base, Mouse):
         Fancy routine to smooth zoom the camera
         """
 
-        _camera = ViewState().view.getCameraNode()
+        _camera = self.view_state.view.getCameraNode()
 
         _start_pos = Vector(_camera.position.getValue().getValue())
         _start_ht = _camera.height.getValue()
@@ -203,11 +201,11 @@ class BaseTrackerTestTask(Base, Mouse):
         for _v in _steps:
 
             #set the camera
-            ViewState().view.getCameraNode().position.setValue(
+            self.view_state.view.getCameraNode().position.setValue(
                 tuple(_start_pos + (_d_pos * _v))
             )
 
-            ViewState().view.getCameraNode().height.setValue(
+            self.view_state.view.getCameraNode().height.setValue(
                 _start_ht + (_d_ht * _v)
             )
 
@@ -251,38 +249,6 @@ class BaseTrackerTestTask(Base, Mouse):
         if arg['Key'] == 'ESCAPE':
             self.finish()
 
-    def mouse_event(self, arg):
-        """
-        SoLocation2Event callback
-        """
-        #clear the matrix to force a refresh at the start of every mouse event
-        ViewState().matrix = None
-
-        _last_pos = self.mouse_state.world_position
-
-        self.mouse_state.update(arg, self.view_state)
-
-        if not self.mouse_state.shift_down:
-            return
-
-        if not _last_pos:
-            return
-
-        if not self.mouse_state.vector.Length:
-            return
-
-        _vec = Vector(self.mouse_state.vector).normalize()
-        _new_pos = tuple(_last_pos.add(_vec.multiply(0.10)))
-
-        self.mouse_state.set_mouse_position(self.view_state, _new_pos)
-
-    def button_event(self, arg):
-        """
-        SoMouseButtonEvent callback
-        """
-
-        self.mouse_state.update(arg, self.view_state)
-
     def clean_up(self):
         """
         Callback to finish the command
@@ -297,31 +263,25 @@ class BaseTrackerTestTask(Base, Mouse):
         Task cleanup
         """
 
-        if ViewState().view_objects:
+        if self.view_state.view_objects:
 
             #reset line colors
-            for _v in ViewState().view_objects['line_colors']:
+            for _v in self.view_state.view_objects['line_colors']:
                 _v[0].LineColor = _v[1]
 
             #re-enable object selectables
-            for _v in ViewState().view_objects['selectable']:
+            for _v in self.view_state.view_objects['selectable']:
                 _v[0].Selectable = _v[1]
 
-            ViewState().view_objects.clear()
+            self.view_state.view_objects.clear()
 
         #re-enable selection
-        ViewState().sg_root.getField("selectionRole").setValue(1)
+        self.view_state.sg_root.getField("selectionRole").setValue(1)
 
         #close dialog
         Gui.Control.closeDialog()
 
-        #remove the callback for action
-        if self.callbacks:
-
-            for _k, _v in self.callbacks.items():
-                ViewState().view.removeEventCallback(_k, _v)
-
-            self.callbacks.clear()
+        self.view_state.finish()
 
         #delete the alignment object
         if self.alignment:

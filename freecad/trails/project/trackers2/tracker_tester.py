@@ -93,24 +93,25 @@ class TrackerTester(Base):
             self.insert_node(_v.base_node, self.base_node)
 
         #insert in the scenegraph root
-        self.insert_node(self.base_node)
+        self.insert_into_scenegraph()
 
     def _update_status_bar(self):
         """
         Update the status bar with the latest mouseover data
         """
 
-        pass
         #self.status_bar.showMessage(
-        #    MouseState().component + ' ' + str(tuple(MouseState().coordinates))
+        #   MouseState().component + ' ' + str(tuple(MouseState().coordinates))
         #)
 
-    def mouse_event(self, arg):
-        """
-        Manage mouse actions affecting multiple nodes / wires
-        """
-
         pass
+
+    #def mouse_event(self, arg):
+    #    """
+    #    Manage mouse actions affecting multiple nodes / wires
+    #    """
+
+    #    pass
 
     def post_select_event(self, arg):
         """
@@ -207,7 +208,7 @@ class TrackerTester(Base):
 
         #return _wt
 
-    def finalize(self):
+    def finalize(self, node=None, parent=None):
         """
         Cleanup the tracker
         """
@@ -219,4 +220,4 @@ class TrackerTester(Base):
 
         self.remove_node(self.base_node)
 
-        super().finalize()
+        super().finalize(node, parent)

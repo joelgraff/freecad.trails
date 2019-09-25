@@ -81,12 +81,12 @@ class Select(Mouse, Signal):
 
         return self.sel_state.is_selected(self) > Enum.NONE
 
-    def mouse_event(self, arg):
+    def mouse_event(self, user_data, event_cb):
         """
         Mouse override
         """
 
-        super().mouse_event(arg)
+        super().mouse_event(user_data, event_cb)
 
         _style = self.coin_style
 
@@ -100,10 +100,12 @@ class Select(Mouse, Signal):
 
         self.set_style(_style)
 
-    def button_event(self, arg):
+    def button_event(self, user_data, event_cb):
         """
         Mouse override
         """
+
+        Mouse.button_event(self, user_data, event_cb)
 
         _style = self.coin_style
 
@@ -129,5 +131,3 @@ class Select(Mouse, Signal):
                 _style = CoinStyles.SELECTED
 
         self.set_style(_style)
-
-        Mouse.button_event(self, arg)

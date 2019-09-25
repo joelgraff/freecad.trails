@@ -48,6 +48,7 @@ class DragState(metaclass=Singleton):
 
         self.drag_switch = coin.SoSwitch()
         self.drag_node = coin.SoSeparator()
+        self.drag_callback = coin.SoEventCallback()
         self.full_group = coin.SoSeparator()
         self.manual_group = coin.SoSeparator()
 
@@ -60,6 +61,9 @@ class DragState(metaclass=Singleton):
 
         self.drag_line_coord = coin.SoCoordinate3()
 
+        self.drag_callback.setPath(None)
+
+        self.drag_node.addChild(self.drag_callback)
         self.drag_node.addChild(self.manual_group)
         self.drag_node.addChild(self.drag_transform)
         self.drag_node.addChild(self.full_group)
@@ -117,7 +121,7 @@ class DragState(metaclass=Singleton):
         """
         Build the drag line for drag operations
         """
-
+        #pylint: disable=no-member
         _l = coin.SoLineSet()
         _l.numVertices.setValue(2)
 
@@ -280,36 +284,3 @@ class DragState(metaclass=Singleton):
         #update the +z axis rotation for the transformation
         self.drag_transform.rotation =\
             coin.SbRotation(coin.SbVec3f(0.0, 0.0, 1.0), self.rotation)
-
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Callbacks
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    def add_callbacks(self):
-        ViewState().add_button_event(self._end_drag_callback)
-        ViewState().add_mouse_event(self._on_drag_callback)
-
-    def _on_drag_callback(self, so_event_cb):
-        """
-        Class-level callback to update the drag state transform as a 
-        mouse event
-        """
-        print('drag_state on drag')
-        return
-
-        if not self.start:
-            self.start = Drag.mouse_state.button1.world_position
-
-        if Drag.mouse_state.alt_down:
-            Drag.drag_state.rotate(Drag.mouse_state.world_position)
-
-        else:
-            Drag.drag_state.translate(Drag.mouse_state.world_position)
-
-    def _end_drag_callback(self, so_event_cb):
-        """
-        Class-level callback to reset drag state at end of drag operation
-        """
-        return
-
-        Drag.drag_state.reset()

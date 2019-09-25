@@ -21,41 +21,69 @@
 #*                                                                     *
 #***********************************************************************
 """
-Subscriber base class
+Drag state class updater
 """
 
-class Subscriber:
-    """
-    Base Subscriber class
-    """
+from ...support.singleton import Singleton
 
-    counter = 0
-    name = 'Subscriber'
+from .base import Base
+from .view_state import ViewState
+from .mouse_state import MouseState
+from .drag_state import DragState
+
+class DragUpdate(Base, metaclass=Singleton):
+    """
+    Class to track the current state of the active or specified view
+    """
 
     def __init__(self):
         """
         Constructor
         """
 
-        super().__init__()
+        self.insert_node(DragState().drag_switch)
 
-        self.sub_id = Subscriber.counter
-        Subscriber.counter += 1
+    def add_callbacks(self):
 
-    def notify_all(self, event_type, message, verbose=False):
+        ViewState().add_button_event(self._end_drag_callback)
+        ViewState().add_mouse_event(self._on_drag_callback)
+
+    def _on_drag_callback(self, so_event_cb):
         """
-        Global method for unregistered notifications
+        Class-level callback to update the drag state transform as a 
+        mouse event
+        """
+        print('drag_state on drag')
+
+        if not DragState().start:
+            DragState().start = MouseState().button1.world_position
+
+        if MouseState().alt_down:
+            DragState().rotate(MouseState().world_position)
+
+        else:
+            DragState().translate(MouseState().world_position)
+
+    def _end_drag_callback(self, so_event_cb):
+        """
+        Class-level callback to reset drag state at end of drag operation
         """
 
-        if verbose:
-            print('{} (#{}) got event {} message "{}"'\
-                .format(self.name, self.sub_id, event_type, message))
+        _evt = so_event_cb.getEvent()
 
-    def notify(self, event_type, message, verbose=False):
+        print(_evt.getButton(), _evt.isButtonPressEvent(_evt, 1), _evt.getPosition().getValue())
+        if MouseState().button1.dragging:
+            return
+
+        print('drag state end drag')
+        self.terminate_callbacks()
+
+        DragState().reset()
+
+    def terminate_callbacks(self):
         """
-        Default message update method
+        Cleanup event callbacks
         """
 
-        if verbose:
-            print('{} (#{}) got event {} message "{}"'\
-                .format(self.name, self.sub_id, event_type, message))
+        ViewState().remove_button_event(self._end_drag_callback)
+        ViewState().remove_mouse_event(self._on_drag_callback)

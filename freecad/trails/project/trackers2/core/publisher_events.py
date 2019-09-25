@@ -137,6 +137,7 @@ class PublisherEvents(Const):
         EVENTS = 3
         SELECTED = _EVT.get(EVENTS, 1)
         UPDATED = _EVT.get(EVENTS, 2)
+        APPLY_PATHING = _EVT.get(EVENTS, 3)
         enum = _EVT.get_enum()
 
     class NODE(Const):

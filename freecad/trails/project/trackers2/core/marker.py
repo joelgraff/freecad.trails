@@ -59,14 +59,16 @@ class Marker(Base, Style, Select, Drag, Geometry):
         self.geo_node.addChild(self.marker_node)
         self.set_style(CoinStyles.DEFAULT)
 
+        #self.base_path_node = self.marker_node
+
         self.update()
 
-    def update(self, coord=None):
+    def update(self, coordinates=None):
         """
         Update the coordinate position
         """
 
-        _c = coord
+        _c = coordinates
 
         if not _c:
             _c = self.point
@@ -78,7 +80,8 @@ class Marker(Base, Style, Select, Drag, Geometry):
         Geometry.update(self, _c)
 
         #if self.do_publish:
-        #    self.dispatch(Events.NODE.UPDATED, (self.name, coordinates), False)
+        #    self.dispatch(Events.NODE.UPDATED, (self.name, coordinates),
+        #False)
 
     def set_style(self, style=None, draw=None, color=None):
         """

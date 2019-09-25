@@ -28,6 +28,8 @@ from pivy import coin
 from PySide.QtGui import QCursor
 
 from ...support.singleton import Singleton
+from ...support.const import Const
+
 from .button_state import ButtonState
 from .smart_tuple import SmartTuple
 
@@ -36,6 +38,10 @@ class MouseState(metaclass=Singleton):
     Class to track the current state of the mouse based on
     passed Coin3D SoEvent parameters
     """
+
+    class Events(Const):
+        LOCATION2 = coin.SoLocation2Event.getClassTypeId()
+        MOUSE_BUTTON = coin.SoMouseButtonEvent.getClassTypeId()
 
     def __init__(self):
         """
@@ -64,13 +70,13 @@ class MouseState(metaclass=Singleton):
             self.world_position, self.screen_position
         ]
 
-    def _update_button_state(self, evt, view_state):
+    def _update_button_state(self, arg, view_state):
         """
         Process mouse clicks
         """
 
-        _btn = self.buttons[evt.getButton() - 1]
-        _btn.pressed = evt.getState() == 1
+        _btn = self.buttons[int(arg['Button'][-1]) - 1]
+        _btn.pressed = arg['State'] == 'DOWN'
 
         #continue drag unless button is released
         if _btn.dragging:
@@ -89,18 +95,18 @@ class MouseState(metaclass=Singleton):
         _btn.screen_position = self.screen_position
         _btn.world_position = self.world_position
 
-    def _update_state(self, evt, view_state):
+    def _update_state(self, arg, view_state):
         """
         Update the positions and key states
         """
 
-        self.screen_position = tuple(evt.getPosition().getValue())
+        self.screen_position = arg['Position']
         self.world_position = view_state.getPoint(self.screen_position)
         self.vector = self.world_position
 
-        self.alt_down = evt.wasAltDown()
-        self.ctrl_down = evt.wasCtrlDown()
-        self.shift_down = evt.wasShiftDown()
+        self.alt_down = arg['AltDown']
+        self.ctrl_down = arg['CtrlDown']
+        self.shift_down = arg['ShiftDown']
 
         if self.vector != self.world_position:
             self.vector = SmartTuple._sub(self.vector, self.world_position)
@@ -120,22 +126,38 @@ class MouseState(metaclass=Singleton):
         self.object = info.get('Object')
         self.component = info.get('Component')
 
-    def update(self, so_event_cb, view_state):
+    def update(self, arg, view_state):
         """
         Update the current mouse state
         """
 
-        _evt = so_event_cb.getEvent()
+        _arg = arg
 
-        if not _evt:
-            return
+        if isinstance(arg, coin.SoEventCallback):
+            _evt = arg.getEvent()
+            _arg = {
+                'Type': _evt.getTypeId().getName().getString(),
+                'Time': float(_evt.getTime().getValue()),
+                'Position': _evt.getPosition().getValue(),
+                'ShiftDown': _evt.wasShiftDown(),
+                'AltDown': _evt.wasAltDown(),
+                'CtrlDown': _evt.wasCtrlDown()
+            }
+
+            if isinstance(_evt, coin.SoMouseButtonEvent):
+
+                _arg['Button'] = 'BUTTON' + str(_evt.getButton())
+                _arg['State'] = 'DOWN'
+
+                if not _evt.isButtonPressEvent(_evt, _evt.getButton()):
+                    _arg['State'] = 'UP'
 
         #update position/state information
-        self._update_state(_evt, view_state)
+        self._update_state(_arg, view_state)
 
         #process button events
-        if isinstance(_evt, coin.SoMouseButtonEvent):
-            self._update_button_state(_evt, view_state)
+        if _arg['Type'] == 'SoMouseButtonEvent':
+            self._update_button_state(_arg, view_state)
 
         #return if dragging to preserve component / object data
         if self.button1.dragging:

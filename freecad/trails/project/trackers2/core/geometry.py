@@ -37,7 +37,7 @@ class Geometry(Signal):
     #members provided by Base, Style
     base_node = None
     active_style = None
-    def set_visibility(self, visible=True): pass
+    def set_visibility(self, visible=True): """"""; pass
 
     def __init__(self):
         """
@@ -66,7 +66,7 @@ class Geometry(Signal):
 
         self.last_coordinates = self.set_coordinates(coordinates)
 
-    def set_coordinates(self, coordinates):
+    def set_coordinates(self, coordinates=None):
         """
         Update the SoCoordinate3 with the passed coordinates
         Assumes coordinates is a list of 3-float tuples

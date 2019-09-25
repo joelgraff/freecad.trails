@@ -25,21 +25,23 @@ Drag class for Tracker objects
 """
 
 from .drag_state import DragState
+from .drag_update import DragUpdate
 from .mouse import Mouse
 
 class Drag(Mouse):
     """
     Drag support for tracker objects
     """
-
     drag_state = DragState()
+    drag_update = DragUpdate()
 
     #support for Geometry and Base without inheriting to permit non-drawable
     #trackers to have drag support
     geo_node = None
     name = ''
     view_state = None
-    def copy(self, node=None): pass
+
+    def copy(self, node=None): """"""; pass
 
     def __init__(self):
         """
@@ -50,7 +52,14 @@ class Drag(Mouse):
 
         self.is_dragging = False
 
-        self.view_state.add_button_event(self.start_drag)
+        #self.view_state.add_button_event(self.start_drag)
+
+    def test_drag_cb(self, so_event_cb):
+        """
+        test
+        """
+
+        print('test drag cb', so_event_cb.getEvent().getClassTypeId())
 
     def start_drag(self, so_event_cb):
         """
@@ -70,7 +79,7 @@ class Drag(Mouse):
         self.view_state.add_mouse_event(self.on_drag)
         self.view_state.add_button_event(self.end_drag)
 
-        self.drag_state.add_callbacks()
+        self.drag_update.add_callbacks()
         #self.view_state.add_button_event(self.drag_state._end_drag_callback)
         #self.view_state.add_mouse_event(self.drag_state._on_drag_callback)
 
@@ -109,7 +118,8 @@ class Drag(Mouse):
         self.view_state.remove_button_event(self.end_drag)
 
         #global drag state events
-        #self.view_state.remove_button_event(self.drag_state._end_drag_callback)
+        #self.view_state.remove_button_event
+        #(self.drag_state._end_drag_callback)
         #self.view_state.remove_button_event(self.drag_state._on_drag_callback)
 
         self.is_dragging = False
