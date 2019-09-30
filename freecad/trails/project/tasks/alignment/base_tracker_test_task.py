@@ -36,8 +36,10 @@ from ....alignment import alignment
 from ...support import const
 
 from ...trackers2.tracker_tester import TrackerTester
-from ...trackers2.core.base import Base
-from ...trackers2.core.mouse import Mouse
+
+from ...trackers2.core.view_state import ViewState
+from ...trackers2.core.mouse_state import MouseState
+from ...trackers2.core.smart_tuple import SmartTuple
 
 def create(doc, alignment_data, object_name, is_linked):
     """
@@ -46,10 +48,12 @@ def create(doc, alignment_data, object_name, is_linked):
 
     return BaseTrackerTestTask(doc, alignment_data, object_name, is_linked)
 
-class BaseTrackerTestTask(Base, Mouse):
+class BaseTrackerTestTask():
     """
     Task to manage alignment editing
     """
+
+    view_state = ViewState()
 
     @staticmethod
     def set_vobj_style(vobj, style):
@@ -74,8 +78,8 @@ class BaseTrackerTestTask(Base, Mouse):
     def __init__(self, doc, alignment_data, obj, is_linked):
 
 
-        super().__init__(
-            '.'.join([doc.Name, 'BASE_TRACKER_TEST_TASK', 'TASK']))
+        super().__init__()
+        #    '.'.join([doc.Name, 'BASE_TRACKER_TEST_TASK', 'TASK']))
 
         self.panel = None
         self.doc = doc
@@ -135,6 +139,10 @@ class BaseTrackerTestTask(Base, Mouse):
         self.camera_state['position'] = _camera.position.getValue().getValue()
         self.camera_state['height'] = _camera.height.getValue()
         self.camera_state['bound box'] = self.Object.Shape.BoundBox
+
+        #add mouse callbacks for updating mouse state
+        ViewState().add_mouse_event(self.mouse_event)
+        ViewState().add_button_event(self.button_event)
 
         self._zoom_camera()
 
@@ -248,6 +256,32 @@ class BaseTrackerTestTask(Base, Mouse):
 
         if arg['Key'] == 'ESCAPE':
             self.finish()
+
+    def mouse_event(self, arg):
+        """
+        ViewState mouse event
+        """
+
+        _last_pos = SmartTuple(MouseState().world_position)
+
+        MouseState().update(arg, self.view_state)
+
+        if not (MouseState().shift_down and _last_pos._tuple\
+            and MouseState().vector.Length):
+
+            return
+
+        _vec = SmartTuple(MouseState().vector).normalize(0.10)
+        _new_pos = _last_pos.add(_vec)._tuple
+
+        MouseState().set_mouse_position(self.view_state, _new_pos)
+
+    def button_event(self, arg):
+        """
+        ViewState button event
+        """
+
+        MouseState().update(arg, self.view_state)
 
     def clean_up(self):
         """

@@ -24,36 +24,37 @@
 Geometry nodes for Tracker objects
 """
 
-from pivy import coin
-
-from .signal import Signal
 from .smart_tuple import SmartTuple
 
-class Geometry(Signal):
+from .coin_group import CoinGroup
+from .coin_nodes import CoinNodes as Nodes
+
+class Geometry():
     """
     Geometry nodes for Tracker objects
     """
 
     #members provided by Base, Style
-    base_node = None
+    base = None
     active_style = None
-    def set_visibility(self, visible=True): """"""; pass
+    name = ''
+
+    def set_visibility(self, visible=True): """prototype"""; pass
 
     def __init__(self):
         """
         Constructor
         """
 
-        if not (self.active_style and self.base_node):
+        if not (self.active_style and self.base):
             return
 
-        self.geo_node = coin.SoSeparator()
-        self.geo_transform_node = coin.SoTransform()
-        self.geo_coordinate_node = coin.SoCoordinate3()
+        self.geometry = CoinGroup(
+            is_separator=False, is_switched=False,
+            parent=self.base, name=self.name + '__GEOMETRY')
 
-        self.geo_node.addChild(self.geo_transform_node)
-        self.geo_node.addChild(self.geo_coordinate_node)
-        self.base_node.addChild(self.geo_node)
+        self.geometry.transform = self.geometry.add_node(Nodes.TRANSFORM)
+        self.geometry.coordinate = self.geometry.add_node(Nodes.COORDINATE)
 
         self.last_coordinates = []
 
@@ -82,7 +83,7 @@ class Geometry(Signal):
         #ensure coordinate points are tuples
         coordinates = [SmartTuple(_v)._tuple for _v in coordinates]
 
-        self.geo_coordinate_node.point.setValues(coordinates)
+        self.geometry.coordinate.point.setValues(coordinates)
 
         return coordinates
 
@@ -91,6 +92,7 @@ class Geometry(Signal):
         Return the coordinates as the specified iterable type
         """
 
-        _values = self.geo_coordinate_node.point.getValues()
-
-        return [_dtype(_v.getValue()) for _v in _values]
+        return [
+            _dtype(_v.getValue()) \
+                for _v in self.geometry.coordinate.point.getValues()
+        ]

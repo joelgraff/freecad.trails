@@ -34,8 +34,8 @@ from .core.base import Base
 
 #from ..support.drag_state import DragState
 
-from .core.marker import Marker
-from .core.line import Line
+from .core.marker_tracker import MarkerTracker
+from .core.line_tracker import LineTracker
 
 #from .wire_tracker import WireTracker
 
@@ -58,26 +58,10 @@ class TrackerTester(Base):
         self.pi_list = []
         self.datum = alignment.model.data['meta']['Start']
 
-        #self.drag = DragState()
-
         #base (placement) transformation for the alignment
-        self.base_transform.translation.setValue(
+        self.base.group.transform.translation.setValue(
             tuple(alignment.model.data['meta']['Start'])
         )
-
-
-        #self.drag_transform = coin.SoTransform()
-
-        #add two nodes to the drag group - the transform and a dummy node
-        #which provides a way to access the transform matrix
-        #self.groups['SELECTED'].addChild(self.drag_transform)
-        #self.groups['SELECTED'].addChild(coin.SoSeparator())
-
-        #self.groups['DRAG'].addChild(self.groups['SELECTED'])
-        #self.groups['DRAG'].addChild(self.groups['PARTIAL'])
-
-        #self.node.addChild(self.groups['EDIT'])
-        #self.node.addChild(self.groups['DRAG'])
 
         #generate initial node trackers and wire trackers for mouse interaction
         #and add them to the scenegraph
@@ -90,7 +74,9 @@ class TrackerTester(Base):
             _trackers.extend(_v)
 
         for _v in _trackers:
-            self.insert_node(_v.base_node, self.base_node)
+            self.base.insert_group(_v.base)
+
+        self.base.set_visibility(True)
 
         #insert in the scenegraph root
         self.insert_into_scenegraph()
@@ -125,13 +111,6 @@ class TrackerTester(Base):
         #for _v in self.trackers['Tangents']:
         #    _v.validate_selection()
 
-    def button_event(self, arg):
-        """
-        Override base button actions
-        """
-
-        pass
-
     def build_trackers(self, is_linked):
         """
         Build the node and wire trackers that represent the selectable
@@ -156,15 +135,16 @@ class TrackerTester(Base):
         #node trackers
         for _i, _pt in enumerate(_nodes):
 
-            _v = Marker(
+            _v = MarkerTracker(
                 name='.'.join(self.names[0:2] + ['MARKER-'+str(_i)]),
-                point=_pt)
+                point=_pt, parent=self.base)
 
             _result['Nodes'].append(_v)
 
         _result['Nodes'][0].is_end_node = True
         _result['Nodes'][-1].is_end_node = True
 
+        """
         #wire trackers - Tangents
         for _i in range(0, len(_result['Nodes']) - 1):
 
@@ -177,7 +157,9 @@ class TrackerTester(Base):
                 _nodes = None
 
             _result['Tangents'].append(
-                Line('.'.join(self.names[0:2] + ['LINE'+str(_i)]), _points)
+                LineTracker(
+                    '.'.join(self.names[0:2] + ['LINE'+str(_i)]), _points
+                )
             )
 
         #        self._build_wire_tracker(
@@ -187,7 +169,7 @@ class TrackerTester(Base):
         #            select=True
         #        )
         #    )
-
+        """
         self.trackers = _result
 
     def _build_wire_tracker(self, wire_name, nodes, points, select=False):
@@ -217,7 +199,5 @@ class TrackerTester(Base):
 
             for _u in _t:
                 _u.finalize()
-
-        self.remove_node(self.base_node)
 
         super().finalize(node, parent)

@@ -23,38 +23,93 @@
 """
 Base class for Tracker objects
 """
-import weakref
-
 from pivy import coin
 
 from DraftGui import todo
 
-from .view_state import ViewState
+from .coin_group import CoinGroup
 from .publisher import Publisher
-from .publisher_events import PublisherEvents as Events
 from .subscriber import Subscriber
+from .event import Event
+from .view_state import ViewState
+from .mouse_state import MouseState
+from .coin_nodes import CoinNodes as Nodes
 
 #from ...containers import TrackerContainer
 
-class Base(Publisher, Subscriber):
+class Base(Publisher, Subscriber, Event):
     """
     Base class for Tracker objects
     """
-
-    #global view statge singleton
-    view_state = None
-
-    pathed_trackers = []
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #'virtual' function declarations overriden by class inheritance
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     #Style
-    def set_style(self, style=None, draw=None, color=None): 
+    def set_style(self, style=None, draw=None, color=None):
         """prototype"""; pass
 
-    def __init__(self, name):
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Class statics
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    #global view state singleton
+    view_state = None
+    mouse_state = None
+
+    pathed_trackers = []
+        _idx = index
+
+        _fn = None
+
+        if not parent:
+            if _idx is None:
+                _idx = 0
+
+            _fn = lambda _x: Base.view_state.sg_root.insertChild(_x, _idx)
+
+        elif _idx is not None:
+            _fn = lambda _x: parent.insertChild(_x, _idx)
+
+        else:
+            _fn = parent.addChild
+
+        todo.delay(_fn, node)
+ """
+    @staticmethod
+    def search_node(node, parent=None):
+       # "#""
+       # Searches for a node, returning it's path.
+       # Scenegraph root assumed if parent is None
+        #"#""
+
+        if not parent:
+            parent = Base.view_state.sg_root
+
+        _sa = coin.SoSearchAction()
+        _sa.setNode(node)
+        _sa.apply(parent)
+
+        return _sa.getPath()
+
+    @staticmethod
+    def find_node(node, parent=None):
+        #"#""
+       # Find a node.
+        #"#""
+
+        _path = Base.search_node(node, parent)
+
+        if _path:
+            return _path.getTail()
+
+        return None
+    """
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Class Defiintion
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def __init__(self, name, parent=None):
         """
         Constructor
         """
@@ -71,33 +126,31 @@ class Base(Publisher, Subscriber):
         if not Base.view_state:
             Base.view_state = ViewState()
 
+        if not Base.mouse_state:
+            Base.mouse_state = MouseState()
+
+        #provide reference to scenegraph root for CoinGroup for default
+        #node creation / destruction
+        CoinGroup.scenegraph_root = Base.view_state.sg_root
+
         self.sg_root = self.view_state.sg_root
 
         self.callbacks = {}
 
-        self.base_path_node = None
-        self.base_switch = coin.SoSwitch()
+        self.base = CoinGroup(
+            is_separator=True, is_switched=True,
+            name=self.name, parent=parent)
 
-        self.base_node = coin.SoSeparator()
-        self.base_transform = coin.SoTransform()
+        self.base.group = CoinGroup(
+            is_separator=False, is_switched=False,
+            parent=self.base, name=self.name + '__GROUP')
 
-        self.base_event_switch = coin.SoSwitch()
-        self.base_event_cb = coin.SoEventCallback()
-        self.base_event_switch.addChild(self.base_event_cb)
-        self.base_event_switch.whichChild = 0
+        self.base.path_node = None
 
-        self.base_picker = coin.SoPickStyle()
+        _grp = self.base.group
 
-        self.base_node.addChild(self.base_event_switch)
-        self.base_node.addChild(self.base_transform)
-        self.base_node.addChild(self.base_picker)
-
-        self.base_switch.addChild(self.base_node)
-        self.set_visibility()
-
-        #add to the global statick list of all subscribers for the
-        #Publsiher class.  Weak-referenced to facilitate cleanup
-        Publisher.all_subscribers.append(weakref.WeakMethod(self.notify_all))
+        _grp.transform = _grp.add_node(Nodes.TRANSFORM, 'Transform')
+        _grp.picker = _grp.add_node(Nodes.PICK_STYLE, 'Pick_Style')
 
         super().__init__()
 
@@ -106,90 +159,9 @@ class Base(Publisher, Subscriber):
         Insert the base node into the scene graph and trigger notifications
         """
 
-        self.insert_node(self.base_node)
-        todo.delay(self.dispatch_all, Events.GEOMETRY.APPLY_PATHING)
+        _fn = lambda _x: Base.view_state.sg_root.insertChild(_x, 0)
 
-    def notify_all(self, event_type, message, verbose=False):
-        """
-        Override base notify_all()
-        """
-
-        super().notify_all(event_type, message, verbose)
-
-        if event_type == Events.GEOMETRY.APPLY_PATHING:
-            print(self.name, 'notifying...')
-            self.set_event_path()
-
-    def notify(self, event_type, message, verbose=False):
-        """
-        Override base notfy()
-        """
-
-        super().notify(event_type, message, verbose)
-
-    def copy(self, node=None):
-        """
-        Return a copy of the tracker node
-        """
-
-        #copy operation assumes the geometry should not be controlled
-        #by the node switch.  To copy with switch, call copy(self.get_node())
-        if not node:
-            node = self.base_node
-
-        return node.copy()
-
-    def insert_node(self, node, parent=None, index=None):
-        """
-        Insert a node as a child of the passed node
-        """
-
-        _idx = index
-
-        _fn = None
-
-        if not parent:
-            if _idx is None:
-                _idx = 0
-
-            _fn = lambda _x: self.sg_root.insertChild(_x, _idx)
-
-        elif _idx is not None:
-            _fn = lambda _x: parent.insertChild(_x, _idx)
-
-        else:
-            _fn = parent.addChild
-
-        todo.delay(_fn, node)
-
-    def remove_node(self, node, parent=None):
-        """
-        Convenience wrapper for _remove_node
-        """
-
-        if not parent:
-            parent = self.sg_root
-
-        if parent.findChild(node) >= 0:
-            todo.delay(parent.removeChild, node)
-
-    def set_visibility(self, visible=True):
-        """
-        Update the tracker visibility
-        """
-
-        if visible:
-            self.base_switch.whichChild = 0
-
-        else:
-            self.base_switch.whichChild = -1
-
-    def is_visible(self):
-        """
-        Return the visibility of the tracker
-        """
-        #pylint: disable=no-member
-        return self.base_switch.whichChild.getValue() == 0
+        todo.delay(_fn, self.base.root)
 
     def set_pick_style(self, is_pickable):
         """
@@ -201,94 +173,20 @@ class Base(Publisher, Subscriber):
         if is_pickable:
             _state = coin.SoPickStyle.SHAPE
 
-        self.base_picker.style.setValue(_state)
+        self.base.group.picker.style.setValue(_state)
 
     def is_pickable(self):
         """
         Return a bool indicating whether or not the node may be selected
         """
 
-        return self.base_picker.style.getValue() != coin.SoPickStyle.UNPICKABLE
-
-    def add_event_callback(self, event_type, callback):
-        """
-        Add an event callback
-        """
-
-        _et = event_type.getName().getString()
-
-        if not _et in self.callbacks:
-            self.callbacks[_et] = {}
-
-        _cbs = self.callbacks[_et]
-
-        if callback in _cbs:
-            return
-
-        _cbs[callback] = \
-            self.base_event_cb.addEventCallback(event_type, callback)
-
-    def remove_event_callback(self, event_type, callback):
-        """
-        Remove an event callback
-        """
-
-        _et = event_type.getName().getString()
-
-        if _et not in self.callbacks:
-            return
-
-        _cbs = self.callbacks[_et]
-
-        if callback not in _cbs:
-            return
-
-        self.base_event_cb.removeEventCallback(event_type, _cbs[callback])
-
-        del _cbs[callback]
-
-    def events_enabled(self):
-        """
-        Returns whether or not event switch is on
-        """
-
-        return self.base_event_switch.whichChild == 0
-
-    def toggle_event_callbacks(self):
-        """
-        Switch event callbacks on / off
-        """
-        #pylint: disable=no-member
-        if self.base_event_switch.whichChild.getValue() == 0:
-            self.base_event_switch.whichChild = -1
-
-        else:
-            self.base_event_switch.whichChild = 0
-
-    def set_event_path(self, node=None):
-        """
-        Add / remove path for event callbacks
-        """
-
-        if node is None:
-            node = self.base_path_node
-
-        if node is None:
-            self.base_event_cb.setPath(self.base_path_node)
-            return
-
-        _sa = coin.SoSearchAction()
-        _sa.setNode(node)
-        _sa.apply(self.view_state.sg_root)
-
-        self.base_event_cb.setPath(_sa.getPath())
+        return (
+            self.base.group.picker.style.getValue() \
+                != coin.SoPickStyle.UNPICKABLE)
 
     def finalize(self, node=None, parent=None):
         """
         Node destruction / cleanup
         """
 
-        if node is None:
-            node = self.base_node
-
-        self.remove_node(node, parent)
+        self.base.finalize()

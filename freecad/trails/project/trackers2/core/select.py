@@ -28,23 +28,21 @@ from pivy import coin
 
 from .coin_styles import CoinStyles
 
-from .mouse import Mouse
-from .signal import Signal
-
 from .select_state import SelectState
 from .select_state import SelectStateEnum as Enum
 
 from .publisher_events import PublisherEvents as Events
 
-class Select(Mouse, Signal):
+class Select():
     """
     Provides SoFCSelection support for Tracker classes
     """
 
-    #members provided by Base abd Style
+    #Base abd Style prototypes
     name = None
     names = []
-    base_node = None
+    base = None
+    mouse_state = None
     coin_style = None
     active_style = None
     event_class = None
@@ -58,19 +56,25 @@ class Select(Mouse, Signal):
         """
         Constructor
         """
+        #Pylint doesn't see self.base members...
+        #pylint: disable=no-member
 
         if not self.names:
             return
 
         self.do_select_highlight = True
 
-        self.sel_node = coin.SoType.fromName("SoFCSelection").createInstance()
+        self.fc_select = coin.SoType.fromName("SoFCSelection").createInstance()
 
-        self.sel_node.documentName.setValue(self.names[2])
-        self.sel_node.objectName.setValue(self.names[1])
-        self.sel_node.subElementName.setValue(self.names[0])
+        self.fc_select.documentName.setValue(self.names[2])
+        self.fc_select.objectName.setValue(self.names[1])
+        self.fc_select.subElementName.setValue(self.names[0])
 
-        self.base_node.addChild(self.sel_node)
+        self.fc_select.setName(self.name + '__FC_SELECT')
+        self.base.insert_child(self.fc_select, self.base.top)
+
+        self.add_mouse_event(self.mouse_event)
+        self.add_button_event(self.button_event)
 
         super().__init__()
 
@@ -85,8 +89,6 @@ class Select(Mouse, Signal):
         """
         Mouse override
         """
-
-        super().mouse_event(user_data, event_cb)
 
         _style = self.coin_style
 
@@ -105,8 +107,6 @@ class Select(Mouse, Signal):
         Mouse override
         """
 
-        Mouse.button_event(self, user_data, event_cb)
-
         _style = self.coin_style
 
         #on button down, do selection
@@ -118,8 +118,8 @@ class Select(Mouse, Signal):
             if self.is_selected():
                 _style = CoinStyles.SELECTED
 
-                if self.do_publish:
-                    self.notify(Events.GEOMETRY.SELECTED, (self.name, None))
+                #if self.base.do_publish:
+                #    self.base.notify(Events.GEOMETRY.SELECTED, (self.name, #None))
 
         #on button up, highlight, if hovering over
         elif self.is_selected():

@@ -40,6 +40,9 @@ class MouseState(metaclass=Singleton):
     """
 
     class Events(Const):
+        """
+        Mouse state event constant enumerants
+        """
         LOCATION2 = coin.SoLocation2Event.getClassTypeId()
         MOUSE_BUTTON = coin.SoMouseButtonEvent.getClassTypeId()
 
