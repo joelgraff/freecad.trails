@@ -24,16 +24,81 @@
 Drag class for Tracker objects
 """
 
+from ...support.singleton import Singleton
+
 from .drag_state import DragState
-from .drag_update import DragUpdate
 from .mouse import Mouse
+from .base import Base
+
+class DragGlobalCallbacks(metaclass=Singleton):
+    """
+    Class to track the current state of the active or specified view
+    """
+
+    #Base prototypes
+    base = None
+
+    def __init__(self, view_state):
+        """
+        Constructor
+        """
+
+        self.callbacks = {}
+
+        #self.callbacks[coin.SoMouseButtonEvent] =\
+        #    DragState().drag_event_callback.add
+
+        #DragState().add_mouse_event(self.on_drag_callback)
+        #DragState().add_button_event(self.end_drag_callback)
+
+        self.base.insert_node(DragState().drag_switch)
+
+    def on_drag_callback(self, so_event_cb):
+        """
+        Class-level callback to update the drag state transform as a 
+        mouse event
+        """
+        print('drag_state on drag')
+
+        if not DragState().start:
+            DragState().start = Mouse.mouse_state.button1.world_position
+
+        if Mouse.mouse_state.alt_down:
+            DragState().rotate(Mouse.mouse_state.world_position)
+
+        else:
+            DragState().translate(Mouse.mouse_state.world_position)
+
+    def end_drag_callback(self, so_event_cb):
+        """
+        Class-level callback to reset drag state at end of drag operation
+        """
+
+        _evt = so_event_cb.getEvent()
+
+        print(_evt.getButton(), _evt.isButtonPressEvent(_evt, 1), 
+        _evt.getPosition().getValue())
+        if Mouse.mouse_state.button1.dragging:
+            return
+
+        print('drag state end drag')
+        self.terminate_callbacks()
+
+        DragState().reset()
+
+    def terminate_callbacks(self):
+        """
+        Cleanup event callbacks
+        """
+
+        Base.view_state.remove_button_event(self.end_drag_callback)
+        Base.view_state.remove_mouse_event(self.on_drag_callback)
 
 class Drag(Mouse):
     """
     Drag support for tracker objects
     """
     drag_state = DragState()
-    drag_update = DragUpdate()
 
     #support for Geometry and Base without inheriting to permit non-drawable
     #trackers to have drag support
@@ -51,15 +116,7 @@ class Drag(Mouse):
         super().__init__()
 
         self.is_dragging = False
-
-        #self.view_state.add_button_event(self.start_drag)
-
-    def test_drag_cb(self, so_event_cb):
-        """
-        test
-        """
-
-        print('test drag cb', so_event_cb.getEvent().getClassTypeId())
+        #DragGlobalCallbacks()
 
     def start_drag(self, so_event_cb):
         """
@@ -78,10 +135,6 @@ class Drag(Mouse):
         #add drag events, set state
         self.view_state.add_mouse_event(self.on_drag)
         self.view_state.add_button_event(self.end_drag)
-
-        self.drag_update.add_callbacks()
-        #self.view_state.add_button_event(self.drag_state._end_drag_callback)
-        #self.view_state.add_mouse_event(self.drag_state._on_drag_callback)
 
         self.is_dragging = True
 

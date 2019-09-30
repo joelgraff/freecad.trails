@@ -21,7 +21,7 @@
 #*                                                                     *
 #***********************************************************************
 """
-Drag state class
+Drag tracker class
 """
 
 import math
@@ -37,12 +37,16 @@ from ....geometry import support
 from .view_state import ViewState
 from .smart_tuple import SmartTuple
 
-class DragState(metaclass=Singleton):
+from .base import Base
+
+class DragState(Base, metaclass=Singleton):
     """
     Class to track the current state of the active or specified view
     """
 
     def __init__(self):
+
+        super().init(name='Drag Tracker')
 
         self.start = ()
 
@@ -181,38 +185,6 @@ class DragState(metaclass=Singleton):
         self.sg_ok = False
 
         todo.delay(DragState()._remove, DragState())
-
-    @staticmethod
-    def _remove(drag_state):
-        """
-        Delayed callback for sg_ok
-        """
-
-        if drag_state._sg_root:
-            drag_state._sg_root.removeChild(drag_state.root)
-
-        drag_state.sg_ok = True
-        drag_state.reset()
-
-    @staticmethod
-    def _insert(drag_state):
-        """
-        Delayed callback for sg_ok
-        """
-
-        drag_state._sg_root.insertChild(drag_state.root, 0)
-        drag_state.sg_ok = True
-
-    def insert(self):
-        """
-        Custom function to manage drag state insertion and provide
-        flag when scenegraph has been updated
-        """
-
-        self.sg_ok = False
-
-        self._sg_root = ViewState().sg_root
-        todo.delay(DragState()._insert, DragState())
 
     def reset(self):
         """
