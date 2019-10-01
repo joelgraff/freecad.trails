@@ -64,13 +64,13 @@ class Select():
 
         self.do_select_highlight = True
 
-        self.fc_select = coin.SoType.fromName("SoFCSelection").createInstance()
+        self.select = coin.SoType.fromName("SoFCSelection").createInstance()
 
-        self.fc_select.documentName.setValue(self.names[2])
-        self.fc_select.objectName.setValue(self.names[1])
-        self.fc_select.subElementName.setValue(self.names[0])
+        self.select.documentName.setValue(self.names[2])
+        self.select.objectName.setValue(self.names[1])
+        self.select.subElementName.setValue(self.names[0])
 
-        self.fc_select.setName(self.name + '__FC_SELECT')
+        self.select.setName(self.name + '__SELECT')
         self.base.insert_child(self.fc_select, self.base.top)
 
         self.add_mouse_event(self.mouse_event)
