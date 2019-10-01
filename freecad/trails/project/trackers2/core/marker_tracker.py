@@ -26,8 +26,6 @@ Marker tracker class for tracker objects
 
 import FreeCADGui as Gui
 
-#from .publisher_events import PublisherEvents as Events
-
 from .base import Base
 from .style import Style
 from .select import Select
@@ -47,8 +45,6 @@ class MarkerTracker(Base, Style, Select, Geometry):
         Constructor
         """
 
-        print('\n\tMARKER init...\n')
-
         super().__init__(name=name, parent=parent)
 
         self.is_end_node = False
@@ -56,7 +52,6 @@ class MarkerTracker(Base, Style, Select, Geometry):
         self.drag_point = self.point
 
         #build node structure for the node tracker
-        print('\n\tMARKER GEOMETRY init...\n')
 
         self.marker_set = \
             self.geometry.add_node(Nodes.MARKER_SET, self.name + '__MARKER')

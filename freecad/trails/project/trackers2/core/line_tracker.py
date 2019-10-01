@@ -24,8 +24,6 @@
 Line tracker class for tracker objects
 """
 
-from pivy import coin
-
 from .base import Base
 from .style import Style
 from .select import Select
@@ -46,17 +44,21 @@ class LineTracker(Base, Style, Select, Geometry):
         super().__init__(name=name)
 
         #build node structure for the node tracker
-        self.geometry.line = self.geometry.add_node(Nodes.LINE_SET)
+        self.line_set =\
+            self.geometry.add_node(Nodes.LINE_SET, self.name + 'LINE')
+
         self.set_style(CoinStyles.DEFAULT)
 
         #self.base_path_node = self.line_node
 
+        self.base.set_visibility(True)
         self.update(points)
 
     def update(self, coord=None):
         """
         Update the coordinate position
         """
+        #PyLint ignore as coordinate argument is optional here
         #pylint: disable=arguments-differ
 
         Geometry.set_coordinates(self, coord)

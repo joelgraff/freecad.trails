@@ -140,8 +140,7 @@ class TrackerTester(Base):
         _result['Nodes'][0].is_end_node = True
         _result['Nodes'][-1].is_end_node = True
 
-        """
-        #wire trackers - Tangents
+        #line trackers - Tangents
         for _i in range(0, len(_result['Nodes']) - 1):
 
             _nodes = _result['Nodes'][_i:_i + 2]
@@ -165,7 +164,7 @@ class TrackerTester(Base):
         #            select=True
         #        )
         #    )
-        """
+
         self.trackers = _result
 
     def _build_wire_tracker(self, wire_name, nodes, points, select=False):
