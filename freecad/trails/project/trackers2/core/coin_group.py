@@ -74,7 +74,6 @@ class CoinGroup(object):
         if index >= 0:
             _fn = lambda _x: parent.insertChild(_x, index)
 
-        print('inserting', node.getName(), 'into parent', parent.getName())
         todo.delay(_fn, node)
 
     def __init__(
@@ -124,8 +123,6 @@ class CoinGroup(object):
 
         if not parent:
             return
-
-        print('\t\n',self.name, 'Adding root to parent...')
 
         self.parent = parent
 

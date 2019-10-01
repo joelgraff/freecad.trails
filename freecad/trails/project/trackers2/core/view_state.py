@@ -35,7 +35,9 @@ from ...support.singleton import Singleton
 from .smart_tuple import SmartTuple
 
 class ViewStateGlobalCallbacks():
-
+    """
+    View-level callbacks to manage view state based on input handling
+    """
     def __init__(self):
         """
         Constructor

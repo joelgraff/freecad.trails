@@ -28,16 +28,12 @@ from FreeCAD import Vector
 
 import FreeCADGui as Gui
 
-from .core.base import Base
-
 #from ..support.publisher import PublisherEvents as Events
-
-#from ..support.drag_state import DragState
 
 from .core.marker_tracker import MarkerTracker
 from .core.line_tracker import LineTracker
+from .core.base import Base
 
-#from .wire_tracker import WireTracker
 
 class TrackerTester(Base):
     """

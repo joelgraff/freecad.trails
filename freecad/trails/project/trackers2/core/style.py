@@ -46,7 +46,7 @@ class Style():
             return
 
         self.style = CoinGroup(
-            is_separator=False, is_switched=False, 
+            is_separator=False, is_switched=False,
             parent=self.base, name=self.name +'__STYLE')
 
         self.style.draw_style = self.style.add_node(Nodes.DRAW_STYLE)

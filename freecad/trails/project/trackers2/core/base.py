@@ -59,24 +59,8 @@ class Base(Publisher, Subscriber, Event):
     mouse_state = None
 
     pathed_trackers = []
-        _idx = index
 
-        _fn = None
-
-        if not parent:
-            if _idx is None:
-                _idx = 0
-
-            _fn = lambda _x: Base.view_state.sg_root.insertChild(_x, _idx)
-
-        elif _idx is not None:
-            _fn = lambda _x: parent.insertChild(_x, _idx)
-
-        else:
-            _fn = parent.addChild
-
-        todo.delay(_fn, node)
- """
+    """
     @staticmethod
     def search_node(node, parent=None):
        # "#""
