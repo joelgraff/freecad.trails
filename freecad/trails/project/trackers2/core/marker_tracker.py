@@ -33,7 +33,7 @@ from .geometry import Geometry
 #from .drag import Drag
 from .coin_styles import CoinStyles
 from .smart_tuple import SmartTuple
-from .coin_nodes import CoinNodes as Nodes
+from .coin_enums import CoinNodes as Nodes
 
 class MarkerTracker(Base, Style, Select, Geometry):
     """

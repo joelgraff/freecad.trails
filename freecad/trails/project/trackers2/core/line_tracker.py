@@ -29,7 +29,7 @@ from .style import Style
 from .select import Select
 from .geometry import Geometry
 from .coin_styles import CoinStyles
-from .coin_nodes import CoinNodes as Nodes
+from .coin_enums import CoinNodes as Nodes
 
 class LineTracker(Base, Style, Select, Geometry):
     """

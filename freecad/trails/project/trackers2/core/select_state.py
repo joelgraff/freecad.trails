@@ -27,20 +27,20 @@ Select state class
 from ...support.singleton import Singleton
 from ...support.const import Const
 
-class SelectStateEnum(Const):
-    """
-    Enumerants for selection state management
-    """
-
-    NONE = 0
-    PARTIAL = 1
-    FULL = 2
-    MANUAL = 3
-
 class SelectState(metaclass=Singleton):
     """
     Singlton state class for managing tracker selections
     """
+
+    class States(Const):
+        """
+        Enumerants for selection state management
+        """
+
+        NONE = 0
+        PARTIAL = 1
+        FULL = 2
+        MANUAL = 3
 
     def __init__(self):
         """
@@ -64,15 +64,15 @@ class SelectState(metaclass=Singleton):
         """
 
         if tracker in self._full:
-            return SelectStateEnum.FULL
+            return self.States.FULL
 
         if tracker in self._manual:
-            return SelectStateEnum.MANUAL
+            return self.States.MANUAL
 
         if tracker in self._partial:
-            return SelectStateEnum.PARTIAL
+            return self.States.PARTIAL
 
-        return SelectStateEnum.NONE
+        return self.States.NONE
 
     def clear_state(self):
         """

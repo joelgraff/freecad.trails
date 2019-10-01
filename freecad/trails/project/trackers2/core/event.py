@@ -25,10 +25,10 @@ Event class for Tracker objects
 """
 
 from .coin_group import CoinGroup
-from .coin_nodes import CoinNodes as Nodes
+from .coin_enums import CoinNodes as Nodes
+from .coin_enums import MouseEvents as MouseEvents
 
 from .publisher_events import PublisherEvents as SignalEvents
-from .mouse_state import MouseState
 
 class Event():
     """
@@ -109,28 +109,28 @@ class Event():
         Convenience function
         """
 
-        self.add_event_callback(MouseState.Events.LOCATION2, callback)
+        self.add_event_callback(MouseEvents.LOCATION2, callback)
 
     def add_button_event(self, callback):
         """
         Convenience function
         """
 
-        self.add_event_callback(MouseState.Events.MOUSE_BUTTON, callback)
+        self.add_event_callback(MouseEvents.MOUSE_BUTTON, callback)
 
     def remove_mouse_event(self, callback):
         """
         Convenience function
         """
 
-        self.remove_event_callback(MouseState.Events.LOCATION2, callback)
+        self.remove_event_callback(MouseEvents.LOCATION2, callback)
 
     def remove_button_event(self, callback):
         """
         Convenience function
         """
 
-        self.remove_event_callback(MouseState.Events.MOUSE_BUTTON, callback)
+        self.remove_event_callback(MouseEvents.MOUSE_BUTTON, callback)
 
     def events_enabled(self):
         """

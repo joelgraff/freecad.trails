@@ -27,7 +27,7 @@ Geometry nodes for Tracker objects
 from .smart_tuple import SmartTuple
 
 from .coin_group import CoinGroup
-from .coin_nodes import CoinNodes as Nodes
+from .coin_enums import CoinNodes as Nodes
 
 class Geometry():
     """

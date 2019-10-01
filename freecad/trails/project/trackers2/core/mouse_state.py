@@ -28,7 +28,6 @@ from pivy import coin
 from PySide.QtGui import QCursor
 
 from ...support.singleton import Singleton
-from ...support.const import Const
 
 from .button_state import ButtonState
 from .smart_tuple import SmartTuple
@@ -38,13 +37,6 @@ class MouseState(metaclass=Singleton):
     Class to track the current state of the mouse based on
     passed Coin3D SoEvent parameters
     """
-
-    class Events(Const):
-        """
-        Mouse state event constant enumerants
-        """
-        LOCATION2 = coin.SoLocation2Event.getClassTypeId()
-        MOUSE_BUTTON = coin.SoMouseButtonEvent.getClassTypeId()
 
     def __init__(self):
         """

@@ -25,7 +25,7 @@ Style support for Tracker objects
 """
 
 from .coin_group import CoinGroup
-from .coin_nodes import CoinNodes as Nodes
+from .coin_enums import CoinNodes as Nodes
 from .coin_styles import CoinStyles
 
 class Style():

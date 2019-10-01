@@ -1,4 +1,4 @@
-    # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #**************************************************************************
 #*                                                                     *
 #* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
@@ -21,12 +21,30 @@
 #*                                                                     *
 #***********************************************************************
 """
-Support class for creating Coin3D node structures
+Coin-based enumerations
 """
 
 from pivy import coin
-
 from ...support.const import Const
+
+class MouseEvents(Const):
+    """
+    Mouse state event constant enumerants
+    """
+    LOCATION2 = coin.SoLocation2Event.getClassTypeId()
+    MOUSE_BUTTON = coin.SoMouseButtonEvent.getClassTypeId()
+
+class PickStyles(Const):
+    """
+    SoPickStyle enumerants
+    """
+
+    UNPICKABLE = coin.SoPickStyle.UNPICKABLE
+    SHAPE = coin.SoPickStyle.SHAPE
+    BOX = coin.SoPickStyle.BOUNDING_BOX
+    SHAPE_ON_TOP = coin.SoPickStyle.SHAPE_ON_TOP
+    BOX_ON_TOP = coin.SoPickStyle.BOUNDING_BOX_ON_TOP
+    FACES = coin.SoPickStyle.SHAPE_FRONTFACES
 
 class CoinNodes(Const):
     """
