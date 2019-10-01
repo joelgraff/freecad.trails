@@ -37,7 +37,7 @@ from ..support.publisher import PublisherEvents as Events
 
 from .node_tracker import NodeTracker
 from .wire_tracker import WireTracker
-from .coin_styles import CoinStyles
+from .trait.coin.coin_styles import CoinStyles
 
 class CurveTracker(WireTracker):
     """

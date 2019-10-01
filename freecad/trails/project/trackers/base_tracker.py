@@ -374,7 +374,7 @@ class BaseTracker(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         """
         Update the tracker visibility
         """
-
+        #pylint: disable=no-member
         if visible:
             self.switch.whichChild.setValue(0)
 
@@ -385,7 +385,7 @@ class BaseTracker(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         """
         Return the visibility of the tracker
         """
-
+        #pylint: disable=no-member
         return self.switch.whichChild.getValue() == 0
 
     def set_base_style(self, style=None):
@@ -402,7 +402,7 @@ class BaseTracker(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         """
         Update the tracker style
         """
-
+        #pylint: disable=no-member
         if self.active_style == style:
             return
 

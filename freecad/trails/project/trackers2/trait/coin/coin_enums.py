@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-#***********************************************************************
+#**************************************************************************
 #*                                                                     *
-#* Copyright (c) 2018 Joel Graff <monograff76@gmail.com>               *
+#* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
 #*                                                                     *
 #* This program is free software; you can redistribute it and/or modify*
 #* it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -20,48 +20,45 @@
 #* USA                                                                 *
 #*                                                                     *
 #***********************************************************************
-
 """
-Constant class definition
+Coin-based enumerations
 """
 
-__title__ = "Const.py"
-__author__ = "Joel Graff"
-__url__ = "https://www.freecadweb.org"
+from pivy import coin
+from ....support.const import Const
 
-class MetaConst(type):
+class MouseEvents(Const):
     """
-    Metaclass to enforce constant-like behaviors
+    Mouse state event constant enumerants
     """
+    LOCATION2 = coin.SoLocation2Event.getClassTypeId()
+    MOUSE_BUTTON = coin.SoMouseButtonEvent.getClassTypeId()
 
-    def __getattr__(cls, key):
-        """
-        Default getter
-        """
-        #pylint: disable=unsubscriptable-object
-        return cls[key]
-
-    def __setattr__(cls, key, value):
-        """
-        Default setter
-        """
-        raise TypeError
-
-class Const(object, metaclass=MetaConst):
+class PickStyles(Const):
     """
-    Const class for subclassing
+    SoPickStyle enumerants
     """
 
-    def __getattr__(self, name):
-        """
-        Default getter
-        """
+    UNPICKABLE = coin.SoPickStyle.UNPICKABLE
+    SHAPE = coin.SoPickStyle.SHAPE
+    BOX = coin.SoPickStyle.BOUNDING_BOX
+    SHAPE_ON_TOP = coin.SoPickStyle.SHAPE_ON_TOP
+    BOX_ON_TOP = coin.SoPickStyle.BOUNDING_BOX_ON_TOP
+    FACES = coin.SoPickStyle.SHAPE_FRONTFACES
 
-        return self[name]
+class CoinNodes(Const):
+    """
+    Const class of enumerants correlating to coin node types
+    """
 
-    def __setattr__(self, name, value):
-        """
-        Default setter
-        """
-
-        raise TypeError
+    COLOR = coin.SoBaseColor
+    COORDINATE = coin.SoCoordinate3
+    DRAW_STYLE = coin.SoDrawStyle
+    EVENT_CB = coin.SoEventCallback
+    GROUP = coin.SoGroup
+    LINE_SET = coin.SoLineSet
+    MARKER_SET = coin.SoMarkerSet
+    PICK_STYLE = coin.SoPickStyle
+    SWITCH = coin.SoSwitch
+    SEPARATOR = coin.SoSeparator
+    TRANSFORM = coin.SoTransform

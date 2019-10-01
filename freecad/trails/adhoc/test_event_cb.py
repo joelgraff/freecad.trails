@@ -1,6 +1,6 @@
 from pivy import coin
 
-from ..project.trackers2.core.view_state import ViewState
+from ..project.trackers2.support.view_state import ViewState
 
 class EventCB():
 

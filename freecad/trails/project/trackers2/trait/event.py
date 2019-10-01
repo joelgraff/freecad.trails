@@ -24,15 +24,15 @@
 Event class for Tracker objects
 """
 
-from .coin_group import CoinGroup
-from .coin_enums import CoinNodes as Nodes
-from .coin_enums import MouseEvents as MouseEvents
+from .coin.coin_group import CoinGroup
+from .coin.coin_enums import CoinNodes as Nodes
+from .coin.coin_enums import MouseEvents as MouseEvents
 
-from .publisher_events import PublisherEvents as SignalEvents
+from ..support.publisher_events import PublisherEvents as SignalEvents
 
 class Event():
     """
-    Event Callback services.
+    Event Callback traits.
     """
 
     #Base prototypes

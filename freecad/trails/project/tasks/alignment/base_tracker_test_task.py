@@ -37,9 +37,9 @@ from ...support import const
 
 from ...trackers2.tracker_tester import TrackerTester
 
-from ...trackers2.core.view_state import ViewState
-from ...trackers2.core.mouse_state import MouseState
-from ...trackers2.core.smart_tuple import SmartTuple
+from ...trackers2.support.view_state import ViewState
+from ...trackers2.support.mouse_state import MouseState
+from ...trackers2.support.smart_tuple import SmartTuple
 
 def create(doc, alignment_data, object_name, is_linked):
     """

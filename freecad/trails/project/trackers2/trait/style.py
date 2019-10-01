@@ -21,78 +21,63 @@
 #*                                                                     *
 #***********************************************************************
 """
-Geometry nodes for Tracker objects
+Style support for Tracker objects
 """
 
-from .smart_tuple import SmartTuple
+from .coin.coin_group import CoinGroup
+from .coin.coin_enums import CoinNodes as Nodes
+from .coin.coin_styles import CoinStyles
 
-from .coin_group import CoinGroup
-from .coin_enums import CoinNodes as Nodes
-
-class Geometry():
+class Style():
     """
-    Geometry nodes for Tracker objects
+    Style support for Tracker objects
     """
 
-    #members provided by Base, Style
+    #members added by Base
     base = None
-    active_style = None
     name = ''
-
-    def set_visibility(self, visible=True): """prototype"""; pass
 
     def __init__(self):
         """
         Constructor
         """
 
-        if not (self.active_style and self.base):
+        if not self.base:
             return
 
-        self.geometry = CoinGroup(
+        self.style = CoinGroup(
             is_separator=False, is_switched=False,
-            parent=self.base, name=self.name + '__GEOMETRY')
+            parent=self.base, name=self.name +'__STYLE')
 
-        self.geometry.transform = self.geometry.add_node(Nodes.TRANSFORM)
-        self.geometry.coordinate = self.geometry.add_node(Nodes.COORDINATE)
+        self.style.draw_style = self.style.add_node(Nodes.DRAW_STYLE)
+        self.style.color = self.style.add_node(Nodes.COLOR)
 
-        self.last_coordinates = []
+        self.coin_style = CoinStyles.DEFAULT
+        self.active_style = CoinStyles.BASE
 
         super().__init__()
 
-    def update(self, coordinates):
+    def set_style(self, style=None, draw=None, color=None):
         """
-        Update implementation
-        """
-
-        self.last_coordinates = self.set_coordinates(coordinates)
-
-    def set_coordinates(self, coordinates=None):
-        """
-        Update the SoCoordinate3 with the passed coordinates
-        Assumes coordinates is a list of 3-float tuples
+        Update the tracker style
         """
 
-        if not coordinates:
+        if self.active_style == style:
             return
 
-        #encapsulate a single coordinate as a list
-        if not isinstance(coordinates, list):
-            coordinates = [coordinates]
+        if not draw:
+            draw = self.style.draw_style
 
-        #ensure coordinate points are tuples
-        coordinates = [SmartTuple(_v)._tuple for _v in coordinates]
+        if not color:
+            color = self.style.color
 
-        self.geometry.coordinate.point.setValues(coordinates)
+        if not style:
+            style = self.coin_style
 
-        return coordinates
+        draw.lineWidth = style.line_width
+        draw.style = style.style
+        draw.linePattern = style.line_pattern
 
-    def get(self, _dtype=tuple):
-        """
-        Return the coordinates as the specified iterable type
-        """
+        color.rgb = style.color
 
-        return [
-            _dtype(_v.getValue()) \
-                for _v in self.geometry.coordinate.point.getValues()
-        ]
+        self.active_style = style

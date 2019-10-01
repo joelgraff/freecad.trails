@@ -21,81 +21,37 @@
 #*                                                                     *
 #***********************************************************************
 """
-Marker tracker class for tracker objects
+Drag traits for Tracker objects
 """
-
-import FreeCADGui as Gui
 
 from .base import Base
 from .style import Style
-from .select import Select
 from .geometry import Geometry
-#from .drag import Drag
-from .coin_styles import CoinStyles
-from .smart_tuple import SmartTuple
-from .coin_enums import CoinNodes as Nodes
+from .coin.coin_enums import CoinNodes as Nodes
+from .coin.coin_styles import CoinStyles
+from .coin.coin_group import CoinGroup
 
-class MarkerTracker(Base, Style, Select, Geometry):
+class Drag(Base, Style):
     """
-    Tracker object for nodes
+    Drag traits for tracker classes
     """
 
-    def __init__(self, name, point, parent):
+    def __init__(self):
         """
         Constructor
         """
 
-        super().__init__(name=name, parent=parent)
+        super().__init__()
 
-        self.is_end_node = False
-        self.point = tuple(point)
-        self.drag_point = self.point
+        #build node structure for the drag nodes
+        self.drag = CoinGroup(
+            is_separator=True, is_switched=True,
+            parent=self.base, name=self.name + '__DRAG'
+        )
 
-        #build node structure for the node tracker
-
-        self.marker_set = \
-            self.geometry.add_node(Nodes.MARKER_SET, self.name + '__MARKER')
-
+        self.drag.transform = self.
         self.set_style(CoinStyles.DEFAULT)
 
         #self.base_path_node = self.marker_node
 
         self.base.set_visibility(True)
-        self.update()
-
-    def update(self, coordinates=None):
-        """
-        Update the coordinate position
-        """
-
-        _c = coordinates
-
-        if not _c:
-            _c = self.point
-        else:
-            self.point = SmartTuple(_c)._tuple
-
-        self.drag_point = self.point
-
-        Geometry.update(self, _c)
-
-        #if self.do_publish:
-        #    self.dispatch(Events.NODE.UPDATED, (self.name, coordinates),
-        #False)
-
-    def set_style(self, style=None, draw=None, color=None):
-        """
-        Override style implementation
-        """
-
-        Style.set_style(self, style, draw, color)
-
-        self.marker_set.markerIndex = \
-            Gui.getMarkerIndex(self.active_style.shape, self.active_style.size)
-
-    def finalize(self, node=None, parent=None):
-        """
-        Cleanup
-        """
-
-        super().finalize()

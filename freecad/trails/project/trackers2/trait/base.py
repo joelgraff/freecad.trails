@@ -26,13 +26,13 @@ Base class for Tracker objects
 
 from DraftGui import todo
 
-from .coin_group import CoinGroup
+from .coin.coin_group import CoinGroup
 from .publisher import Publisher
 from .subscriber import Subscriber
 from .event import Event
-from .view_state import ViewState
-from .mouse_state import MouseState
-from .coin_enums import CoinNodes as Nodes
+from ..support.view_state import ViewState
+from ..support.mouse_state import MouseState
+from .coin.coin_enums import CoinNodes as Nodes
 
 #from ...containers import TrackerContainer
 

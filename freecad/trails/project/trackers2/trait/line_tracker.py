@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-#***********************************************************************
+#**************************************************************************
 #*                                                                     *
-#* Copyright (c) 2018 Joel Graff <monograff76@gmail.com>               *
+#* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
 #*                                                                     *
 #* This program is free software; you can redistribute it and/or modify*
 #* it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -21,42 +21,58 @@
 #*                                                                     *
 #***********************************************************************
 """
-PIcking services for trackers
+Line tracker class for tracker objects
 """
 
-from .coin_enums import CoinNodes as Nodes
-from .coin_enums import PickStyles as Styles
+from .base import Base
+from .style import Style
+from .select import Select
+from .geometry import Geometry
+from .coin.coin_styles import CoinStyles
+from .coin.coin_enums import CoinNodes as Nodes
 
-class Pick():
+class LineTracker(Base, Style, Select, Geometry):
     """
-    Picking services for trackers
+    Tracker object for SoLineSet
     """
 
-    #Base prototype
-    base = None
-
-    def __init__(self):
+    def __init__(self, name, points):
         """
         Constructor
         """
 
-        self.base.picker = self.base.add_node(Nodes.PICK_STYLE, 'Pick_Style')
+        super().__init__(name=name)
 
-    def set_pick_style(self, is_pickable):
+        #build node structure for the node tracker
+        self.line_set =\
+            self.geometry.add_node(Nodes.LINE_SET, self.name + 'LINE')
+
+        self.set_style(CoinStyles.DEFAULT)
+
+        #self.base_path_node = self.line_node
+
+        self.base.set_visibility(True)
+        self.update(points)
+
+    def update(self, coord=None):
         """
-        Set the selectability of the node using the SoPickStyle node
+        Update the coordinate position
+        """
+        #PyLint ignore as coordinate argument is optional here
+        #pylint: disable=arguments-differ
+
+        Geometry.set_coordinates(self, coord)
+
+    def set_style(self, style=None, draw=None, color=None):
+        """
+        Override style implementation
         """
 
-        _state = Styles.UNPICKABLE
+        Style.set_style(self, style, draw, color)
 
-        if is_pickable:
-            _state = Styles.SHAPE
-
-        self.base.group.picker.style.setValue(_state)
-
-    def is_pickable(self):
+    def finalize(self, node=None, parent=None):
         """
-        Return a bool indicating whether or not the node may be selected
+        Cleanup
         """
 
-        return self.base.group.picker.style.getValue() != Styles.UNPICKABLE
+        super().finalize(self.geometry, parent)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-#**************************************************************************
+#***********************************************************************
 #*                                                                     *
-#* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
+#* Copyright (c) 2018 Joel Graff <monograff76@gmail.com>               *
 #*                                                                     *
 #* This program is free software; you can redistribute it and/or modify*
 #* it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -21,44 +21,42 @@
 #*                                                                     *
 #***********************************************************************
 """
-Coin-based enumerations
+Picking traits for trackers
 """
 
-from pivy import coin
-from ...support.const import Const
+from .coin.coin_enums import CoinNodes as Nodes
+from .coin.coin_enums import PickStyles as Styles
 
-class MouseEvents(Const):
+class Pick():
     """
-    Mouse state event constant enumerants
-    """
-    LOCATION2 = coin.SoLocation2Event.getClassTypeId()
-    MOUSE_BUTTON = coin.SoMouseButtonEvent.getClassTypeId()
-
-class PickStyles(Const):
-    """
-    SoPickStyle enumerants
+    Picking traits for trackers
     """
 
-    UNPICKABLE = coin.SoPickStyle.UNPICKABLE
-    SHAPE = coin.SoPickStyle.SHAPE
-    BOX = coin.SoPickStyle.BOUNDING_BOX
-    SHAPE_ON_TOP = coin.SoPickStyle.SHAPE_ON_TOP
-    BOX_ON_TOP = coin.SoPickStyle.BOUNDING_BOX_ON_TOP
-    FACES = coin.SoPickStyle.SHAPE_FRONTFACES
+    #Base prototype
+    base = None
 
-class CoinNodes(Const):
-    """
-    Const class of enumerants correlating to coin node types
-    """
+    def __init__(self):
+        """
+        Constructor
+        """
 
-    COLOR = coin.SoBaseColor
-    COORDINATE = coin.SoCoordinate3
-    DRAW_STYLE = coin.SoDrawStyle
-    EVENT_CB = coin.SoEventCallback
-    GROUP = coin.SoGroup
-    LINE_SET = coin.SoLineSet
-    MARKER_SET = coin.SoMarkerSet
-    PICK_STYLE = coin.SoPickStyle
-    SWITCH = coin.SoSwitch
-    SEPARATOR = coin.SoSeparator
-    TRANSFORM = coin.SoTransform
+        self.base.picker = self.base.add_node(Nodes.PICK_STYLE, 'Pick_Style')
+
+    def set_pick_style(self, is_pickable):
+        """
+        Set the selectability of the node using the SoPickStyle node
+        """
+
+        _state = Styles.UNPICKABLE
+
+        if is_pickable:
+            _state = Styles.SHAPE
+
+        self.base.group.picker.style.setValue(_state)
+
+    def is_pickable(self):
+        """
+        Return a bool indicating whether or not the node may be selected
+        """
+
+        return self.base.group.picker.style.getValue() != Styles.UNPICKABLE

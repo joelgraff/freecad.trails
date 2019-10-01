@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #***********************************************************************
 #*                                                                     *
-#* Copyright (c) 2018 Joel Graff <monograff76@gmail.com>               *
+#* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
 #*                                                                     *
 #* This program is free software; you can redistribute it and/or modify*
 #* it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -22,46 +22,29 @@
 #***********************************************************************
 
 """
-Constant class definition
+Singleton class definition
 """
 
-__title__ = "Const.py"
-__author__ = "Joel Graff"
-__url__ = "https://www.freecadweb.org"
-
-class MetaConst(type):
+class Singleton(type):
     """
-    Metaclass to enforce constant-like behaviors
+    Singleton implementation
     """
+    _instances = {}
 
-    def __getattr__(cls, key):
+    def __call__(cls, *args, **kwargs):
         """
-        Default getter
+        Class __call__() method
         """
-        #pylint: disable=unsubscriptable-object
-        return cls[key]
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
 
-    def __setattr__(cls, key, value):
-        """
-        Default setter
-        """
-        raise TypeError
+        return cls._instances[cls]
 
-class Const(object, metaclass=MetaConst):
-    """
-    Const class for subclassing
-    """
-
-    def __getattr__(self, name):
+    def instance_of(cls):
         """
-        Default getter
+        Test for instance match
         """
+        if cls in cls._instances:
+            return cls._instances[cls]
 
-        return self[name]
-
-    def __setattr__(self, name, value):
-        """
-        Default setter
-        """
-
-        raise TypeError
+        return None

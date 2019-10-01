@@ -30,9 +30,9 @@ import FreeCADGui as Gui
 
 #from ..support.publisher import PublisherEvents as Events
 
-from .core.marker_tracker import MarkerTracker
-from .core.line_tracker import LineTracker
-from .core.base import Base
+from .trait.marker_tracker import MarkerTracker
+from .trait.line_tracker import LineTracker
+from .trait.base import Base
 
 
 class TrackerTester(Base):

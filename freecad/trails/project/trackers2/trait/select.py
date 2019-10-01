@@ -26,12 +26,10 @@ Provides SoFCSelection support for Tracker classes
 
 from pivy import coin
 
-from .coin_styles import CoinStyles
+from .coin.coin_styles import CoinStyles
+from ..support.select_state import SelectState
 
-from .select_state import SelectState
-from .select_state import SelectStateEnum as Enum
-
-from .publisher_events import PublisherEvents as Events
+#from ..support.publisher_events import PublisherEvents as Events
 
 class Select():
     """
@@ -83,7 +81,7 @@ class Select():
         Return whether or not the node is selected at all
         """
 
-        return self.sel_state.is_selected(self) > Enum.NONE
+        return self.sel_state.is_selected(self) > SelectState.States.NONE
 
     def mouse_event(self, user_data, event_cb):
         """

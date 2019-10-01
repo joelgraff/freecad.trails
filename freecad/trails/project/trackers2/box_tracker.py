@@ -22,32 +22,34 @@
 #***********************************************************************
 """
 Box tracker
-"""
 
+PRESERVED FOR FUTURE REFERENCE AS POSSIBLE RUBBERBAND SELECTION TOOL
+"""
+"""
 from pivy import coin
 
 from FreeCAD import Vector
 
-from .base_tracker import BaseTracker
-from .wire_tracker import WireTracker
-from .coin_styles import CoinStyles
+#from .base_tracker import BaseTracker
+#from .wire_tracker import WireTracker
+from .trait.coin.coin_styles import CoinStyles
 
 from ..support.drag_state import DragState
 from ..support.mouse_state import MouseState
 
 class BoxTracker(BaseTracker):
-    """
+    #"#""
     BoxTracker Class
 
     self.points - list of Vectors
     self.selction_nodes -
         list of point indices which correspond to node trackers
-    """
+    #"#""
 
     def __init__(self, names, nodes=None):
-        """
+        #"#""
         Constructor
-        """
+        #"#""
 
         self.face = coin.SoFaceSet()
 
@@ -95,16 +97,16 @@ class BoxTracker(BaseTracker):
             self.trackers.append(_wt)
 
     def mouse_event(self, arg):
-        """
+        #"#""
         Override of base function
-        """
+        #"#""
 
         pass
 
     def update(self, start_pt=None, end_pt=None):
-        """
+        #"#""
         Update function
-        """
+        #"#""
 
         if start_pt is None:
             start_pt = DragState().start
@@ -131,3 +133,4 @@ class BoxTracker(BaseTracker):
         self.coin_style = CoinStyles.DEFAULT
 
         super().refresh()
+"""
