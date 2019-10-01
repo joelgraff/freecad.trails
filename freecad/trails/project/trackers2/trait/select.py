@@ -45,7 +45,8 @@ class Select():
     active_style = None
     event_class = None
 
-    def set_style(self, style=None, draw=None, color=None): pass
+    def set_style(self, style=None, draw=None, color=None):
+        """prototype"""; pass
 
     #class static for global selection
     sel_state = SelectState()
@@ -117,7 +118,8 @@ class Select():
                 _style = CoinStyles.SELECTED
 
                 #if self.base.do_publish:
-                #    self.base.notify(Events.GEOMETRY.SELECTED, (self.name, #None))
+                #    self.base.notify(Events.GEOMETRY.SELECTED, (self.name,
+                #None))
 
         #on button up, highlight, if hovering over
         elif self.is_selected():

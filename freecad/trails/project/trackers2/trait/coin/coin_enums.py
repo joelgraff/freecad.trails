@@ -25,7 +25,7 @@ Coin-based enumerations
 """
 
 from pivy import coin
-from ....support.const import Const
+from ...support.const import Const
 
 class MouseEvents(Const):
     """

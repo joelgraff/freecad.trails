@@ -251,7 +251,7 @@ class CurveTracker(WireTracker):
         #reference the SoDrawStyle and SoBaseColor nodes of copied drag nodes
         self.drag_style = self.drag_copy.getChild(1)
         self.drag_color = self.drag_copy.getChild(2)
-        
+
         self.event_type = Events.CURVE.UPDATED
 
         #abort if PI nodes are being dragged

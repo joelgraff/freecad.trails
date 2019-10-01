@@ -26,7 +26,7 @@ Drag class for Tracker objects
 
 from ...support.singleton import Singleton
 
-from .drag_state import DragState
+#from .drag_state import DragState
 from .base import Base
 
 class DragGlobalCallbacks(metaclass=Singleton):
@@ -50,23 +50,23 @@ class DragGlobalCallbacks(metaclass=Singleton):
         #DragState().add_mouse_event(self.on_drag_callback)
         #DragState().add_button_event(self.end_drag_callback)
 
-        self.base.insert_node(DragState().drag_switch)
+        #self.base.insert_node(DragState().drag_switch)
 
     def on_drag_callback(self, so_event_cb):
         """
-        Class-level callback to update the drag state transform as a 
+        Class-level callback to update the drag state transform as a
         mouse event
         """
         print('drag_state on drag')
 
-        if not DragState().start:
-            DragState().start = Mouse.mouse_state.button1.world_position
+        #if not DragState().start:
+        #    DragState().start = Mouse.mouse_state.button1.world_position
 
-        if Mouse.mouse_state.alt_down:
-            DragState().rotate(Mouse.mouse_state.world_position)
+        #if Mouse.mouse_state.alt_down:
+        #    DragState().rotate(Mouse.mouse_state.world_position)
 
-        else:
-            DragState().translate(Mouse.mouse_state.world_position)
+        #else:
+        #    DragState().translate(Mouse.mouse_state.world_position)
 
     def end_drag_callback(self, so_event_cb):
         """
@@ -75,15 +75,17 @@ class DragGlobalCallbacks(metaclass=Singleton):
 
         _evt = so_event_cb.getEvent()
 
-        print(_evt.getButton(), _evt.isButtonPressEvent(_evt, 1), 
-        _evt.getPosition().getValue())
-        if Mouse.mouse_state.button1.dragging:
-            return
+        print(
+            _evt.getButton(), _evt.isButtonPressEvent(_evt, 1),
+            _evt.getPosition().getValue()
+        )
+        #if Mouse.mouse_state.button1.dragging:
+        #    return
 
         print('drag state end drag')
         self.terminate_callbacks()
 
-        DragState().reset()
+        #DragState().reset()
 
     def terminate_callbacks(self):
         """
@@ -93,11 +95,11 @@ class DragGlobalCallbacks(metaclass=Singleton):
         Base.view_state.remove_button_event(self.end_drag_callback)
         Base.view_state.remove_mouse_event(self.on_drag_callback)
 
-class Drag(Mouse):
+class Drag():
     """
     Drag support for tracker objects
     """
-    drag_state = DragState()
+    #drag_state = DragState()
 
     #support for Geometry and Base without inheriting to permit non-drawable
     #trackers to have drag support
@@ -105,7 +107,7 @@ class Drag(Mouse):
     name = ''
     view_state = None
 
-    def copy(self, node=None): """"""; pass
+    def copy(self, node=None): """prototype"""; pass
 
     def __init__(self):
         """
@@ -122,11 +124,11 @@ class Drag(Mouse):
         Callback for start of drag operations
         """
 
-        if not self.mouse_state.button1.dragging:
-            return
+        #if not self.mouse_state.button1.dragging:
+        #    return
 
         #copy the geo node ot the drag state
-        self.drag_state.add_node(self.copy(self.geo_node))
+        #self.drag_state.add_node(self.copy(self.geo_node))
 
         #leftover callback cleanup
         self.terminate_drag()
@@ -144,9 +146,9 @@ class Drag(Mouse):
         """
 
         #leftover callback cleanup
-        if not self.mouse_state.button1.dragging:
-            self.terminate_drag()
-            return
+        #if not self.mouse_state.button1.dragging:
+        #    self.terminate_drag()
+        #    return
 
     def end_drag(self, so_event_cb):
         """
@@ -155,8 +157,8 @@ class Drag(Mouse):
 
         _evt = so_event_cb.getEvent()
 
-        if self.mouse_state.button1.dragging:
-            return
+        #if self.mouse_state.button1.dragging:
+        #    return
 
         self.terminate_drag()
 

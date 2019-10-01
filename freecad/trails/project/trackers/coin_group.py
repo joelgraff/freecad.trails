@@ -53,5 +53,3 @@ class CoinGroup():
             self.group.addChild(self.marker)
 
         self.group.addChild(self.line)
-
-        #self.group.setName(node_id)

@@ -45,8 +45,6 @@ class Event():
         Constructor
         """
 
-        print('\n\t---->EVENT INIT')
-
         self.events = CoinGroup(
             is_separator=False, is_switched=True,
             parent=self.base, name=self.name + '__EVENTS')
@@ -63,8 +61,6 @@ class Event():
 
         self.events.set_visibility(True)
         super().__init__()
-
-        print('\n\t---->EVENT COMPLETE')
 
     def add_event_callback(self, event_type, callback):
         """

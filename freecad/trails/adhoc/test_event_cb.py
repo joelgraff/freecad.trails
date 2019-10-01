@@ -1,11 +1,12 @@
+"""Adhoc class testing"""
 from pivy import coin
 
 from ..project.trackers2.support.view_state import ViewState
 
 class EventCB():
-
+    """Adhoc class testing"""
     def __init__(self, use_path=True):
-
+        """docstring"""
         self.node = coin.SoSeparator()
         self.event_cb = coin.SoEventCallback()
         self.coordinate = coin.SoCoordinate3()
@@ -18,9 +19,11 @@ class EventCB():
         self.marker.setName('marker')
 
         self.cb_sigs = [
-        self.event_cb.addEventCallback(coin.SoLocation2Event.getClassTypeId(), self.on_mouse_cb),
+            self.event_cb.addEventCallback(
+                coin.SoLocation2Event.getClassTypeId(), self.on_mouse_cb),
 
-        self.event_cb.addEventCallback(coin.SoMouseButtonEvent.getClassTypeId(), self.on_button_cb)
+            self.event_cb.addEventCallback(
+                coin.SoMouseButtonEvent.getClassTypeId(), self.on_button_cb)
         ]
 
         self.event_cb_switch.addChild(self.event_cb)
@@ -40,6 +43,7 @@ class EventCB():
         self.event_cb.setPath(_sa.getPath())
 
     def toggle_events(self):
+        """docstring"""
         #pylint: disable=no-member
         if self.event_cb_switch.whichChild.getValue() == 0:
             self.event_cb_switch.whichChild = -1
@@ -47,14 +51,16 @@ class EventCB():
             self.event_cb_switch.whichChild = 0
 
     def on_mouse_cb(self, user_data, event_cb):
-
+        """docstring"""
         print('on_mouse_cb')
 
     def on_button_cb(self, user_data, event_cb):
-
+        """docstring"""
         print('on_button_cb')
 
         print(event_cb.getPickedPoint().getPath().getTail().getName())
-        event_cb.removeEventCallback(coin.SoLocation2Event.getClassTypeId(), self.cb_sigs[0])
+        event_cb.removeEventCallback(
+            coin.SoLocation2Event.getClassTypeId(), self.cb_sigs[0])
 
-        event_cb.removeEventCallback(coin.SoMouseButtonEvent.getClassTypeId(), self.cb_sigs[1])
+        event_cb.removeEventCallback(
+            coin.SoMouseButtonEvent.getClassTypeId(), self.cb_sigs[1])
