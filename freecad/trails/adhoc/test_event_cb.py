@@ -42,6 +42,16 @@ class EventCB():
 
         self.event_cb.setPath(_sa.getPath())
 
+        self.toggle_events()
+
+    def get_path(self, node):
+
+        _sa = coin.SoSearchAction()
+        _sa.setNode(node)
+        _sa.apply(ViewState().sg_root)
+
+        return _sa
+
     def toggle_events(self):
         """docstring"""
         #pylint: disable=no-member
@@ -63,4 +73,19 @@ class EventCB():
             coin.SoLocation2Event.getClassTypeId(), self.cb_sigs[0])
 
         event_cb.removeEventCallback(
+            coin.SoMouseButtonEvent.getClassTypeId(), self.cb_sigs[1])
+
+        self.cb_sigs.clear()
+
+    def finish(self):
+
+        ViewState().sg_root.removeChild(self.node)
+
+        if not self.cb_sigs:
+            return
+
+        self.event_cb.removeEventCallback(
+            coin.SoLocation2Event.getClassTypeId(), self.cb_sigs[0])
+
+        self.event_cb.removeEventCallback(
             coin.SoMouseButtonEvent.getClassTypeId(), self.cb_sigs[1])

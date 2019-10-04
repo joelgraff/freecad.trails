@@ -39,3 +39,26 @@ Gui.ActiveDocument.ActiveView.addEventCallbackPivy(
     coin.SoMouseButtonEvent.getClassTypeId(),
     lambda x: print('Button state: ', x.getEvent().getState())
 )
+
+def get_node(path):
+
+    root = Gui.ActiveDocument.ActiveView.getSceneGraph()
+
+    _node = root
+
+    for _i in path:
+
+        _node = _node.getChild(_i)
+        print(_node.getName())
+
+    return _node
+
+def get_path(node):
+
+    root = Gui.ActiveDocument.ActiveView.getSceneGraph()
+
+    _sa = coin.SoSearchAction()
+    _sa.setNode(node)
+    _sa.apply(root)
+
+    return _sa
