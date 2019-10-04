@@ -21,66 +21,22 @@
 #*                                                                     *
 #***********************************************************************
 """
-Style support for Tracker objects
+Task-level Singleton tracker for providing state at the task level
 """
 
-from .coin.coin_group import CoinGroup
-from .coin.coin_enums import NodeTypes as Nodes
-from .coin.coin_styles import CoinStyles
+from ..support.singleton import Singleton
+from .trait.base import Base
 
-class Style():
+class TaskTracker(Base, metaclass=Singleton):
     """
-    Style support for Tracker objects
+    Task-level Singleton tracker for providing state at the task level
     """
-
-    #members added by Base
-    base = None
-    name = ''
 
     def __init__(self):
         """
         Constructor
         """
 
-        if not self.base:
-            return
+        super().__init__('Task Tracker')
 
-        self.style = CoinGroup(
-            is_separator=False, is_switched=False,
-            parent=self.base, name=self.name +'__STYLE')
-
-        self.style.draw_style = self.style.add_node(Nodes.DRAW_STYLE)
-        self.style.color = self.style.add_node(Nodes.COLOR)
-
-        self.coin_style = CoinStyles.BASE
-        self.active_style = CoinStyles.BASE
-
-        super().__init__()
-
-    def set_style(self, style=None, draw=None, color=None):
-        """
-        Update the tracker style
-        """
-
-        if style is None:
-            style = self.coin_style
-
-        if self.active_style == style:
-            return
-
-        if not draw:
-            draw = self.style.draw_style
-
-        if not color:
-            color = self.style.color
-
-        if not style:
-            style = self.coin_style
-
-        draw.lineWidth = style.line_width
-        draw.style = style.style
-        draw.linePattern = style.line_pattern
-
-        color.rgb = style.color
-
-        self.active_style = style
+        self.set_visibility(True)

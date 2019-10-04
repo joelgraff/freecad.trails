@@ -50,6 +50,18 @@ class SelectState(metaclass=Singleton):
         self._full = []
         self._partial = []
         self._manual = []
+        self.highlight_node = None
+
+    def set_highlight(self, node=None):
+        """
+        Set the node currently being highlighted by the mouse
+        Also clears the currently highlighter
+        """
+
+        if self.highlight_node:
+            self.highlight_node.update_highlight()
+
+        self.highlight_node = node
 
     def count(self):
         """
@@ -175,6 +187,7 @@ class SelectState(metaclass=Singleton):
         # Multi-select case
         ###################
 
+        print('multi_select', tracker, _picking, _exists)
         #no tracker passed or not picking the curreng tracker:
         if tracker is None or not _picking:
             return

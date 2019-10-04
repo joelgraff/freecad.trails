@@ -26,9 +26,12 @@ Provides SoFCSelection support for Tracker classes
 
 from pivy import coin
 
-from .coin.coin_styles import CoinStyles
 from ..support.select_state import SelectState
 
+from .coin.coin_styles import CoinStyles
+from .coin.coin_enums import MouseEvents
+
+from .event import Event
 #from ..support.publisher_events import PublisherEvents as Events
 
 class Select():
@@ -36,7 +39,7 @@ class Select():
     Provides SoFCSelection support for Tracker classes
     """
 
-    #Base abd Style prototypes
+    #Base, Style and Event prototypes
     name = None
     names = []
     base = None
@@ -48,8 +51,15 @@ class Select():
     def set_style(self, style=None, draw=None, color=None):
         """prototype"""; pass
 
+    def add_event_callback(self, event_type, callback, node=None, index=-1):
+        """prototype"""; pass
+
+    def add_mouse_event(self, callback): """prototype"""; pass
+    def add_button_event(self, callback): """prototype"""; pass
+
     #class static for global selection
-    sel_state = SelectState()
+    select_state = SelectState()
+    callback_node = None
 
     def __init__(self):
         """
@@ -70,10 +80,19 @@ class Select():
         self.select.subElementName.setValue(self.names[0])
 
         self.select.setName(self.name + '__SELECT')
-        self.base.insert_child(self.fc_select, self.base.top)
+        self.base.insert_node(self.select, self.base.top)
 
-        self.add_mouse_event(self.mouse_event)
-        self.add_button_event(self.button_event)
+        #add the default select callback nodes to the first selectable
+        #tracker that's created.
+        if not Select.callback_node:
+
+            Select.callback_node = Event._default_callback_node
+
+            Select.callback_node.addEventCallback(
+                MouseEvents.LOCATION2, self._select_mouse_event)
+
+            Select.callback_node.addEventCallback(
+                MouseEvents.MOUSE_BUTTON, self._select_button_event)
 
         super().__init__()
 
@@ -82,36 +101,56 @@ class Select():
         Return whether or not the node is selected at all
         """
 
-        return self.sel_state.is_selected(self) > SelectState.States.NONE
+        return self.select_state.is_selected(self) > SelectState.States.NONE
 
-    def mouse_event(self, user_data, event_cb):
+    def _select_mouse_event(self, user_data, event_cb):
+        """
+        Global mouse event
+        """
+
+        print(self.name, 'global select mouse')
+        self.select_state.set_highlight()
+
+    def _select_button_event(self, user_data, event_cb):
+        """
+        Global button event
+        """
+
+        print(self.name, 'global select button')
+
+    def select_mouse_event(self, user_data, event_cb):
         """
         Mouse override
         """
-
-        _style = self.coin_style
 
         if self.is_selected():
-            _style = CoinStyles.SELECTED
+            self.set_style(CoinStyles.SELECTED)
 
-        elif self.do_select_highlight \
+        else:
+            self.update_highlight()
+
+    def update_highlight(self):
+        """
+        Update the highlight condition of the node
+        """
+
+        if self.do_select_highlight \
             and self.name == self.mouse_state.component:
 
-            _style = CoinStyles.SELECTED
+            self.set_style(CoinStyles.SELECTED)
 
-        self.set_style(_style)
-
-    def button_event(self, user_data, event_cb):
+    def select_button_event(self, user_data, event_cb):
         """
         Mouse override
         """
 
         _style = self.coin_style
 
+        print(self.name, 'do select ', str(self.mouse_state.button1), event_cb)
         #on button down, do selection
         if self.mouse_state.button1.pressed:
 
-            self.sel_state.select(
+            self.select_state.select(
                 self, self.mouse_state.component, self.mouse_state.ctrl_down)
 
             if self.is_selected():

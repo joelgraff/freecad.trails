@@ -38,8 +38,7 @@ from ...support import const
 from ...trackers2.tracker_tester import TrackerTester
 
 from ...trackers2.support.view_state import ViewState
-from ...trackers2.support.mouse_state import MouseState
-from ...trackers2.support.smart_tuple import SmartTuple
+from ...trackers2.task_tracker import TaskTracker
 
 def create(doc, alignment_data, object_name, is_linked):
     """
@@ -88,7 +87,7 @@ class BaseTrackerTestTask():
         self.pi_tracker = None
         self.drag_tracker = None
         self.alignment_tracker = None
-        self.callbacks = {}
+        #self.callbacks = {}
 
         self.camera_state = {
             'position': None,
@@ -129,9 +128,13 @@ class BaseTrackerTestTask():
         #deselect existing selections
         Gui.Selection.clearSelection()
 
+        self.task_tracker = TaskTracker()
         self.alignment_tracker = TrackerTester(
-            self.doc, self.Object.Name, self.alignment, is_linked
+            self.doc, self.Object.Name, self.alignment, is_linked,
+            self.task_tracker.base
         )
+
+        #self.task_tracker.insert_group(self.alignment_tracker.base)
 
         #save camera state
         _camera = self.view_state.view.getCameraNode()
@@ -141,11 +144,12 @@ class BaseTrackerTestTask():
         self.camera_state['bound box'] = self.Object.Shape.BoundBox
 
         #add mouse callbacks for updating mouse state
-        ViewState().add_mouse_event(self.mouse_event)
-        ViewState().add_button_event(self.button_event)
+        #ViewState().add_mouse_event(self.mouse_event)
+        #ViewState().add_button_event(self.button_event)
 
         self._zoom_camera()
 
+        self.task_tracker.insert_into_scenegraph(True)
         DraftTools.redraw3DView()
 
     def _zoom_camera(self, use_bound_box=True):
@@ -256,32 +260,6 @@ class BaseTrackerTestTask():
 
         if arg['Key'] == 'ESCAPE':
             self.finish()
-
-    def mouse_event(self, arg):
-        """
-        ViewState mouse event
-        """
-
-        _last_pos = SmartTuple(MouseState().world_position)
-
-        MouseState().update(arg, self.view_state)
-
-        if not (MouseState().shift_down and _last_pos._tuple\
-            and MouseState().vector.Length):
-
-            return
-
-        _vec = SmartTuple(MouseState().vector).normalize(0.10)
-        _new_pos = _last_pos.add(_vec)._tuple
-
-        MouseState().set_mouse_position(self.view_state, _new_pos)
-
-    def button_event(self, arg):
-        """
-        ViewState button event
-        """
-
-        MouseState().update(arg, self.view_state)
 
     def clean_up(self):
         """

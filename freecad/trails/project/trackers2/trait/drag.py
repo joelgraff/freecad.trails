@@ -27,14 +27,20 @@ Drag traits for Tracker objects
 from .base import Base
 from .style import Style
 from .geometry import Geometry
-from .coin.coin_enums import CoinNodes as Nodes
+from .coin.coin_enums import NodeTypes as Nodes
 from .coin.coin_styles import CoinStyles
 from .coin.coin_group import CoinGroup
 
-class Drag(Base, Style):
+class Drag():
     """
     Drag traits for tracker classes
     """
+
+    #Prototypes
+    base = None
+
+    #must be defined in the tracker object
+    drag_tracker = None
 
     def __init__(self):
         """
@@ -49,9 +55,17 @@ class Drag(Base, Style):
             parent=self.base, name=self.name + '__DRAG'
         )
 
-        self.drag.transform = self.
+        self.drag.transform = self.drag.add_node(Nodes.TRANSFORM)
+
         self.set_style(CoinStyles.DEFAULT)
 
         #self.base_path_node = self.marker_node
 
         self.base.set_visibility(True)
+
+    def set_as_global(self):
+        """
+        Set the current tracker's drag tracker as the global tracker
+        """
+
+        self.global_tracker = self.drag_tracker

@@ -30,22 +30,28 @@ import FreeCADGui as Gui
 
 #from ..support.publisher import PublisherEvents as Events
 
-from .trait.marker_tracker import MarkerTracker
-from .trait.line_tracker import LineTracker
+from .marker_tracker import MarkerTracker
+from .line_tracker import LineTracker
 from .trait.base import Base
-
 
 class TrackerTester(Base):
     """
     Tracker class for alignment design
     """
 
-    def __init__(self, doc, object_name, alignment, is_linked, datum=Vector()):
+    #declared to prevent Events intialization when inheriting Base 
+    NO_EVENTS = True
+
+    def __init__(
+        self, doc, object_name, alignment, is_linked, parent, datum=Vector()):
         """
         Constructor
         """
 
-        super().__init__('.'.join([doc.Name, object_name, 'TRACKER_TESTER']))
+        super().__init__(
+            name='.'.join([doc.Name, object_name, 'TRACKER_TESTER']),
+            parent=parent
+        )
 
         self.alignment = alignment
         self.doc = doc
@@ -55,7 +61,7 @@ class TrackerTester(Base):
         self.datum = alignment.model.data['meta']['Start']
 
         #base (placement) transformation for the alignment
-        self.base.group.transform.translation.setValue(
+        self.transform.translation.setValue(
             tuple(alignment.model.data['meta']['Start'])
         )
 
@@ -70,12 +76,9 @@ class TrackerTester(Base):
             _trackers.extend(_v)
 
         for _v in _trackers:
-            self.base.insert_group(_v.base)
+            self.insert_group(_v)
 
-        self.base.set_visibility(True)
-
-        #insert in the scenegraph root
-        self.insert_into_scenegraph()
+        self.set_visibility(True)
 
     def _update_status_bar(self):
         """
@@ -133,7 +136,9 @@ class TrackerTester(Base):
 
             _v = MarkerTracker(
                 name='.'.join(self.names[0:2] + ['MARKER-'+str(_i)]),
-                point=_pt, parent=self.base)
+                point=_pt,
+                parent=self.base
+            )
 
             _result['Nodes'].append(_v)
 
@@ -153,7 +158,9 @@ class TrackerTester(Base):
 
             _result['Tangents'].append(
                 LineTracker(
-                    '.'.join(self.names[0:2] + ['LINE'+str(_i)]), _points
+                    name='.'.join(self.names[0:2] + ['LINE'+str(_i)]), 
+                    points=_points,
+                    parent=self.base
                 )
             )
 

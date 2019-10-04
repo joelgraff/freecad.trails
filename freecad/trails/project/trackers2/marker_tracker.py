@@ -21,66 +21,53 @@
 #*                                                                     *
 #***********************************************************************
 """
-Style support for Tracker objects
+Marker tracker class for tracker objects
 """
 
-from .coin.coin_group import CoinGroup
-from .coin.coin_enums import NodeTypes as Nodes
-from .coin.coin_styles import CoinStyles
+from .support.smart_tuple import SmartTuple
+from .geometry_tracker import GeometryTracker
 
-class Style():
+class MarkerTracker(GeometryTracker):
     """
-    Style support for Tracker objects
+    Tracker object for nodes
     """
 
-    #members added by Base
-    base = None
-    name = ''
-
-    def __init__(self):
+    def __init__(self, name, point, parent):
         """
         Constructor
         """
 
-        if not self.base:
-            return
+        super().__init__(name=name, parent=parent)
 
-        self.style = CoinGroup(
-            is_separator=False, is_switched=False,
-            parent=self.base, name=self.name +'__STYLE')
+        self.is_end_node = False
+        self.point = tuple(point)
+        self.drag_point = self.point
 
-        self.style.draw_style = self.style.add_node(Nodes.DRAW_STYLE)
-        self.style.color = self.style.add_node(Nodes.COLOR)
+        #build node structure for the node tracker
 
-        self.coin_style = CoinStyles.BASE
-        self.active_style = CoinStyles.BASE
+        self.add_marker_set()
 
-        super().__init__()
+        #self.base_path_node = self.marker_node
+        self.set_style()
+        self.set_visibility(True)
+        self.update(self.point)
 
-    def set_style(self, style=None, draw=None, color=None):
+    def update(self, coordinates=None):
         """
-        Update the tracker style
+        Update the coordinate position
         """
 
-        if style is None:
-            style = self.coin_style
+        _c = coordinates
 
-        if self.active_style == style:
-            return
+        if not _c:
+            _c = self.point
+        else:
+            self.point = SmartTuple(_c)._tuple
 
-        if not draw:
-            draw = self.style.draw_style
+        self.drag_point = self.point
 
-        if not color:
-            color = self.style.color
+        super().update(_c)
 
-        if not style:
-            style = self.coin_style
-
-        draw.lineWidth = style.line_width
-        draw.style = style.style
-        draw.linePattern = style.line_pattern
-
-        color.rgb = style.color
-
-        self.active_style = style
+        #if self.do_publish:
+        #    self.dispatch(Events.NODE.UPDATED, (self.name, coordinates),
+        #False)

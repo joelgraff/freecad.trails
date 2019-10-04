@@ -23,64 +23,174 @@
 """
 Event class for Tracker objects
 """
+import weakref
+
+from ..support.smart_tuple import SmartTuple
 
 from .coin.coin_group import CoinGroup
-from .coin.coin_enums import CoinNodes as Nodes
+from .coin.coin_enums import NodeTypes as Nodes
 from .coin.coin_enums import MouseEvents as MouseEvents
+from .coin import coin_utils
 
-from ..support.publisher_events import PublisherEvents as SignalEvents
+#from ..support.publisher_events import PublisherEvents as SignalEvents
 
 class Event():
     """
     Event Callback traits.
     """
 
+    #Redefined in user-level classes
+    NO_EVENTS = False
+
     #Base prototypes
     base = None
+    view_state = None
+    mouse_state = None
     name = ''
-    def register(self, who, events, callback=None): """Prototype"""; pass
+    def get_path(self, node, parent=None): """prototype"""; pass
+
+    _self_weak_list = []
+    _default_callback_node = None
 
     def __init__(self):
         """
         Constructor
         """
 
-        self.events = CoinGroup(
-            is_separator=False, is_switched=True,
+        #disable event handling during MRO intialization triggered by Base
+        #use from custom subclasses ONLY
+        if self.NO_EVENTS:
+            return
+
+        self.event = CoinGroup(
+            switch_first=True, is_separator=False, is_switched=True,
             parent=self.base, name=self.name + '__EVENTS')
 
-        self.events.callback = \
-            self.events.add_node(Nodes.EVENT_CB, '__EVENT_CALLBACK')
+        self.event.callbacks = []
+        self.callbacks = []
 
-        self.events.root.whichChild = 0
+        self.path_nodes = []
 
-        self.callbacks = {}
+        #create a global callback for managing mouse updates
+        if not Event._default_callback_node:
 
-        self.register(
-            self, SignalEvents.GEOMETRY.APPLY_PATHING, self.set_event_path)
+            self.add_mouse_event(self._event_mouse_event)
+            self.add_button_event(self._event_button_event)
+            Event._default_callback_node = self.event.callbacks[0]
 
-        self.events.set_visibility(True)
+#            print(self.name, 'added default event callback node', #Event._default_callback_node.getName(), #Event._default_callback_node)
+
+        self.event.set_visibility(True)
+
+        Event._self_weak_list.append(weakref.ref(self))
+
         super().__init__()
 
-    def add_event_callback(self, event_type, callback):
+    def _event_mouse_event(self, data, event_cb):
+        """
+        Default mouse location event
+        """
+
+        print(self.name, 'default mouse event')
+
+        _last_pos = SmartTuple(self.mouse_state.world_position)
+
+        self.mouse_state.update(event_cb, self.view_state)
+
+        if not (self.mouse_state.shift_down and \
+            self.mouse_state.button1.dragging):
+
+        #    self.mouse_state.shift_down \
+        #    and _last_pos._tuple \
+        #    and self.mouse_state.vector.Length \
+        #    and self.mouse_state.button1.dragging):
+
+            return
+
+        _vec = SmartTuple(self.mouse_state.vector).normalize(0.10)
+        _new_pos = _last_pos.add(_vec)._tuple
+
+        self.mouse_state.set_mouse_position(self.view_state, _new_pos)
+
+
+    def _event_button_event(self, data, event_cb):
+        """
+        Default button event
+        """
+
+        print(self.name, 'default button event')
+        self.mouse_state.update(event_cb, self.view_state)
+
+    def add_event_callback_node(self):
+        """
+        Add an event callback node to the current group
+        """
+
+        self.event.callbacks.append(
+            self.event.add_node(Nodes.EVENT_CB, 'EVENT_CALLBACK')
+        )
+
+        self.callbacks.append({})
+
+    def remove_event_callback_node(self, node):
+        """
+        Remove an event callback node from the current group
+        """
+
+        if node not in self.event.callbacks:
+            return
+
+        self.event.remove_node(node)
+
+        _index = self.event.callbacks.index(node)
+
+        del self.event.callbacks[_index]
+        del self.callbacks[_index]
+
+    def set_event_paths(self):
+        """
+        Set the specified path on the event callback at the specified index
+        """
+
+        if not self.path_nodes:
+            return
+
+        print('path nodes = ', self.path_nodes[0].getName())
+        print('callbacks = ', self.event.callbacks)
+
+        if len(self.event.callbacks) < len(self.path_nodes):
+            return
+
+        for _i, _node in enumerate(self.path_nodes):
+            _node = self.path_nodes[_i]
+            _sa = coin_utils.search(_node, self.view_state.sg_root)
+            self.event.callbacks[_i].setPath(_sa.getPath())
+
+    def add_event_callback(self, event_type, callback, index=-1):
         """
         Add an event callback
         """
 
+        #if none exist, add a new one
+        #otherwise default behavior reuses last-created SoEventCb node
+        if not self.event.callbacks:
+            print(self.name, 'adding event cb node')
+            self.add_event_callback_node()
+
         _et = event_type.getName().getString()
 
         if not _et in self.callbacks:
-            self.callbacks[_et] = {}
+            self.callbacks[index][_et] = {}
 
-        _cbs = self.callbacks[_et]
+        _cbs = self.callbacks[index][_et]
 
         if callback in _cbs:
             return
 
         _cbs[callback] = \
-            self.events.callback.addEventCallback(event_type, callback)
+            self.event.callbacks[index].addEventCallback(event_type, callback)
 
-    def remove_event_callback(self, event_type, callback):
+    def remove_event_callback(self, event_type, callback, index=-1):
         """
         Remove an event callback
         """
@@ -90,12 +200,12 @@ class Event():
         if _et not in self.callbacks:
             return
 
-        _cbs = self.callbacks[_et]
+        _cbs = self.callbacks[index][_et]
 
         if callback not in _cbs:
             return
 
-        self.events.callback.removeEventCallback(
+        self.event.callbacks[index].removeEventCallback(
             event_type, _cbs[callback])
 
         del _cbs[callback]
@@ -133,7 +243,7 @@ class Event():
         Returns whether or not event switch is on
         """
 
-        return self.events.whichChild == 0
+        return self.event.whichChild == 0
 
     def toggle_event_callbacks(self):
         """
@@ -142,11 +252,11 @@ class Event():
         #PyLint doesn't detect getValue()
         #pylint: disable=no-member
 
-        if self.events.whichChild.getValue() == 0:
-            self.events.whichChild = -1
+        if self.event.whichChild.getValue() == 0:
+            self.event.whichChild = -1
 
         else:
-            self.events.whichChild = 0
+            self.event.whichChild = 0
 
     def set_event_path(self, event_type, message, verbose=False, node=None):
         """
@@ -157,7 +267,7 @@ class Event():
             node = self.base.path_node
 
         if node is None:
-            self.events.callback.setPath(self.base.path_node)
+            self.event.callback.setPath(self.base.path_node)
             return
 
-        self.events.callback.setPath(self.base.path_node(node))
+        self.event.callback.setPath(self.base.path_node(node))

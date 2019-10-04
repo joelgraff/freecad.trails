@@ -25,7 +25,7 @@ Publisher base class
 """
 
 from collections.abc import Iterable
-from .publisher_events import PublisherEvents
+from ..support.publisher_events import PublisherEvents
 
 class Publisher:
     """

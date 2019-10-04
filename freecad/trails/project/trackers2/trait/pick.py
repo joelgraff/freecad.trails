@@ -24,7 +24,7 @@
 Picking traits for trackers
 """
 
-from .coin.coin_enums import CoinNodes as Nodes
+from .coin.coin_enums import NodeTypes as Nodes
 from .coin.coin_enums import PickStyles as Styles
 
 class Pick():
@@ -40,7 +40,7 @@ class Pick():
         Constructor
         """
 
-        self.base.picker = self.base.add_node(Nodes.PICK_STYLE, 'Pick_Style')
+        self.picker = self.base.add_node(Nodes.PICK_STYLE, 'Pick_Style')
 
     def set_pick_style(self, is_pickable):
         """
@@ -52,11 +52,11 @@ class Pick():
         if is_pickable:
             _state = Styles.SHAPE
 
-        self.base.group.picker.style.setValue(_state)
+        self.picker.style.setValue(_state)
 
     def is_pickable(self):
         """
         Return a bool indicating whether or not the node may be selected
         """
 
-        return self.base.group.picker.style.getValue() != Styles.UNPICKABLE
+        return self.picker.style.getValue() != Styles.UNPICKABLE

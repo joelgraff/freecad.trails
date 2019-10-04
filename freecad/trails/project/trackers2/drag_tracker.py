@@ -21,66 +21,15 @@
 #*                                                                     *
 #***********************************************************************
 """
-Style support for Tracker objects
+Drag tracker for providing drag support to other trackers
 """
 
-from .coin.coin_group import CoinGroup
-from .coin.coin_enums import NodeTypes as Nodes
-from .coin.coin_styles import CoinStyles
+from .trait.base import Base
+from .trait.style import Style
+from .trait.event import Event
 
-class Style():
+class DragTracker(Base, Style, Event):
     """
-    Style support for Tracker objects
+    Drag tracker for providing drag support to other trackers
     """
 
-    #members added by Base
-    base = None
-    name = ''
-
-    def __init__(self):
-        """
-        Constructor
-        """
-
-        if not self.base:
-            return
-
-        self.style = CoinGroup(
-            is_separator=False, is_switched=False,
-            parent=self.base, name=self.name +'__STYLE')
-
-        self.style.draw_style = self.style.add_node(Nodes.DRAW_STYLE)
-        self.style.color = self.style.add_node(Nodes.COLOR)
-
-        self.coin_style = CoinStyles.BASE
-        self.active_style = CoinStyles.BASE
-
-        super().__init__()
-
-    def set_style(self, style=None, draw=None, color=None):
-        """
-        Update the tracker style
-        """
-
-        if style is None:
-            style = self.coin_style
-
-        if self.active_style == style:
-            return
-
-        if not draw:
-            draw = self.style.draw_style
-
-        if not color:
-            color = self.style.color
-
-        if not style:
-            style = self.coin_style
-
-        draw.lineWidth = style.line_width
-        draw.style = style.style
-        draw.linePattern = style.line_pattern
-
-        color.rgb = style.color
-
-        self.active_style = style

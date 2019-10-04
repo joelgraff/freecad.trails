@@ -24,9 +24,8 @@
 Support class for creating Coin3D node structures
 """
 
-from pivy import coin
-
-from DraftGui import todo
+from . import coin_utils as utils
+from .coin_enums import NodeTypes as Nodes
 
 class CoinGroup(object):
     """
@@ -35,49 +34,8 @@ class CoinGroup(object):
 
     scenegraph_root = None
 
-    @staticmethod
-    def add_child(event_class, parent, name=''):
-        """
-        Node creation/insertion function
-        """
-
-        _name = name
-
-        if _name == '':
-            _name = str(event_class.getClassTypeId().getName())
-
-        _node = event_class()
-        _node.setName(_name)
-
-        if parent:
-            CoinGroup.insert_child(_node, parent)
-
-        return _node
-
-    @staticmethod
-    def remove_child(node, parent):
-        """
-        Convenience wrapper for _remove_node
-        """
-
-        if parent.findChild(node) >= 0:
-            todo.delay(parent.removeChild, node)
-
-    @staticmethod
-    def insert_child(node, parent, index=-1):
-        """
-        Insert a node as a child of the passed node
-        """
-
-        _fn = parent.addChild
-
-        if index >= 0:
-            _fn = lambda _x: parent.insertChild(_x, index)
-
-        todo.delay(_fn, node)
-
-    def __init__(
-            self, is_separator=False, is_switched=False, parent=None, name=''):
+    def __init__(self, is_separator=False, is_switched=False,
+                 switch_first=True, parent=None, name=''):
 
         """
         Constructor
@@ -103,23 +61,36 @@ class CoinGroup(object):
         self.marker_set = None
         self.root = None
 
+        _top_group = None
+
         if is_switched:
-            self.switch = CoinGroup.add_child(
-                coin.SoSwitch, self.root, self.name + '__Switch')
+            self.switch = utils.add_child(
+                Nodes.SWITCH, None, self.name + '__Switch')
 
             self.root = self.switch
 
         if is_separator:
-            self.top = CoinGroup.add_child(
-                coin.SoSeparator, self.root, self.name + '__TopSeparator')
+            self.separator = utils.add_child(
+                Nodes.SEPARATOR, None, self.name + '__TopSeparator')
+
+            _top_group = self.separator
 
         else:
-            self.top = CoinGroup.add_child(
-                coin.SoGroup, self.root, self.name + '__TopGroup')
+            self.group = utils.add_child(
+                Nodes.GROUP, None, self.name + '__TopGroup')
 
-        #still no root?  the separator / group is top-level
+            _top_group = self.group
+
+        self.top = _top_group
+
         if not self.root:
             self.root = self.top
+
+        else:
+            if not switch_first:
+                self.top, self.root = self.root, self.top
+
+            self.root.addChild(self.top)
 
         if not parent:
             return
@@ -130,10 +101,10 @@ class CoinGroup(object):
             self.parent = self.parent.top
 
         else:
-            assert (isinstance(self.parent, coin.SoNode)),\
+            assert (isinstance(self.parent, Nodes.NODE)),\
                 'CoinGroup parent not of CoinGroup or SoNode type'
 
-        CoinGroup.insert_child(self.root, self.parent)
+        utils.insert_child(self.root, self.parent)
 
     def set_visibility(self, visible=True):
         """
@@ -160,19 +131,15 @@ class CoinGroup(object):
 
         return self.switch.whichChild.getValue() == 0
 
-    def insert_group(self, coin_group):
-        """
-        Insert a CoinGroup's root to the current group default node
-        """
-
-        CoinGroup.insert_child(coin_group.root, self.top)
-
-    def insert_node(self, node):
+    def insert_node(self, node, parent=None):
         """
         Insert a node into the current group default node
         """
 
-        CoinGroup.insert_child(node, self.top)
+        if parent is None:
+            parent = self.top
+
+        utils.insert_child(node, parent)
 
     def add_node(self, event_class, name=''):
         """
@@ -184,7 +151,23 @@ class CoinGroup(object):
 
         _name = self.name + '__' + name
 
-        return CoinGroup.add_child(event_class, self.top, _name)
+        return utils.add_child(event_class, self.top, _name)
+
+    def remove_node(self, node):
+        """
+        Remove an existing node from the current group
+        """
+
+        utils.remove_child(node, self.top)
+
+    def get_path(self, node, parent=None):
+        """
+        Return the path of a child node of the current parent
+        """
+        if not parent:
+            parent = self.root
+
+        return utils.get_child_path(node, parent)
 
     def copy(self):
         """
@@ -192,6 +175,13 @@ class CoinGroup(object):
         """
 
         return self.root.copy()
+
+    def dump(self):
+        """
+        Convenience function to dump contents of CoinGroup
+        """
+
+        utils.dump_node(self.root)
 
     def finalize(self, parent=None):
         """
@@ -206,4 +196,4 @@ class CoinGroup(object):
         if not _parent:
             _parent = CoinGroup.scenegraph_root
 
-        CoinGroup.remove_child(self.root, _parent)
+        utils.remove_child(self.root, _parent)

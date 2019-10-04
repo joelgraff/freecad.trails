@@ -32,7 +32,7 @@ from .subscriber import Subscriber
 from .event import Event
 from ..support.view_state import ViewState
 from ..support.mouse_state import MouseState
-from .coin.coin_enums import CoinNodes as Nodes
+from .coin.coin_enums import NodeTypes as Nodes
 
 #from ...containers import TrackerContainer
 
@@ -55,40 +55,14 @@ class Base(Publisher, Subscriber, Event):
 
     #global view state singleton
     view_state = None
+
+    #global mouse state singleton
     mouse_state = None
 
-    pathed_trackers = []
+    #global reference to the local root node at the top of the entire
+    #structure for all trackers.  Typically, this is the 'task-level' root node
+    local_root = None
 
-    """
-    @staticmethod
-    def search_node(node, parent=None):
-       # "#""
-       # Searches for a node, returning it's path.
-       # Scenegraph root assumed if parent is None
-        #"#""
-
-        if not parent:
-            parent = Base.view_state.sg_root
-
-        _sa = coin.SoSearchAction()
-        _sa.setNode(node)
-        _sa.apply(parent)
-
-        return _sa.getPath()
-
-    @staticmethod
-    def find_node(node, parent=None):
-        #"#""
-       # Find a node.
-        #"#""
-
-        _path = Base.search_node(node, parent)
-
-        if _path:
-            return _path.getTail()
-
-        return None
-    """
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Class Defiintion
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -122,21 +96,75 @@ class Base(Publisher, Subscriber, Event):
 
         self.base = CoinGroup(
             is_separator=True, is_switched=True,
-            name=self.name, parent=parent)
+            name=self.name + '_base', parent=parent)
 
-        self.base.path_node = None
-        self.base.transform = self.base.add_node(Nodes.TRANSFORM, 'Transform')
+        self.path_node = None
+        self.transform = self.base.add_node(Nodes.TRANSFORM, 'Transform')
+
+        self.top = self.base.top
+        self.root = self.base.root
+
+        #First-created tracker provides the local root node reference
+        if not Base.local_root:
+            Base.local_root = self.root
 
         super().__init__()
 
-    def insert_into_scenegraph(self):
+    def get_base(self):
+        """
+        Return the base node (for trait node construction)
+        """
+
+        return self.base
+
+    def insert_into_scenegraph(self, verbose=False):
         """
         Insert the base node into the scene graph and trigger notifications
         """
 
+        print(self.name, 'inserting into scenegraph...')
         _fn = lambda _x: Base.view_state.sg_root.insertChild(_x, 0)
 
-        todo.delay(_fn, self.base.root)
+        if verbose:
+            self.base.dump()
+
+        todo.delay(self._do_insert, None)
+        #todo.delay(_fn, self.base.root)
+        #todo.delay(Event.set_paths, None)
+
+    def _do_insert(self):
+        """
+        todo.delay callback for node insertion into scenegraph
+        """
+
+        Base.view_state.sg_root.insertChild(self.base.root, 0)
+
+        for _v in Event._self_weak_list:
+            _v().set_event_paths()
+
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Wrappers for CoinGroup methods to expose them at the tracker level
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    def set_visibility(self, visible=True):
+        """Wrapper"""
+        self.base.set_visibility(visible)
+
+    def is_visible(self):
+        """Wrapper"""
+        return self.base.is_visible()
+
+    def insert_group(self, coin_group):
+        """Wrapper"""
+        self.base.insert_node(coin_group.root)
+
+    def get_path(self, node, parent=None):
+        """Wrapper"""
+        return self.base.get_path(node, parent)
+
+    def copy(self):
+        """Wrapper"""
+        return self.base.copy()
 
     def finalize(self, node=None, parent=None):
         """
