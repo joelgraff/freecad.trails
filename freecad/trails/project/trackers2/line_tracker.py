@@ -24,55 +24,27 @@
 Line tracker class for tracker objects
 """
 
-from .base import Base
-from .style import Style
-from .select import Select
-from .geometry import Geometry
-from .coin.coin_styles import CoinStyles
-from .coin.coin_enums import CoinNodes as Nodes
+from .trait.coin.coin_styles import CoinStyles
+from .geometry_tracker import GeometryTracker
 
-class LineTracker(Base, Style, Select, Geometry):
+class LineTracker(GeometryTracker):
     """
     Tracker object for SoLineSet
     """
 
-    def __init__(self, name, points):
+    def __init__(self, name, points, parent):
         """
         Constructor
         """
 
-        super().__init__(name=name)
+        super().__init__(name=name, parent=parent)
 
         #build node structure for the node tracker
-        self.line_set =\
-            self.geometry.add_node(Nodes.LINE_SET, self.name + 'LINE')
+        self.add_line_set('LINE_SET')
 
         self.set_style(CoinStyles.DEFAULT)
 
         #self.base_path_node = self.line_node
 
-        self.base.set_visibility(True)
+        self.set_visibility(True)
         self.update(points)
-
-    def update(self, coord=None):
-        """
-        Update the coordinate position
-        """
-        #PyLint ignore as coordinate argument is optional here
-        #pylint: disable=arguments-differ
-
-        Geometry.set_coordinates(self, coord)
-
-    def set_style(self, style=None, draw=None, color=None):
-        """
-        Override style implementation
-        """
-
-        Style.set_style(self, style, draw, color)
-
-    def finalize(self, node=None, parent=None):
-        """
-        Cleanup
-        """
-
-        super().finalize(self.geometry, parent)
