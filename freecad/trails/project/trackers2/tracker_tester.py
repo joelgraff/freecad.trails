@@ -33,17 +33,16 @@ import FreeCADGui as Gui
 from .marker_tracker import MarkerTracker
 from .line_tracker import LineTracker
 from .trait.base import Base
+from .trait.event import Event
+from .trait.select import Select
 
-class TrackerTester(Base):
+class TrackerTester(Base, Event, Select):
     """
     Tracker class for alignment design
     """
 
-    #declared to prevent Events intialization when inheriting Base 
-    NO_EVENTS = True
-
-    def __init__(
-        self, doc, object_name, alignment, is_linked, parent, datum=Vector()):
+    def __init__(self, doc, object_name, alignment, is_linked, parent,
+                 datum=Vector()):
         """
         Constructor
         """
@@ -59,6 +58,9 @@ class TrackerTester(Base):
         self.status_bar = Gui.getMainWindow().statusBar()
         self.pi_list = []
         self.datum = alignment.model.data['meta']['Start']
+
+        #don't handle events, as this is a global-level tracker
+        self.handle_events = False
 
         #base (placement) transformation for the alignment
         self.transform.translation.setValue(
@@ -78,6 +80,11 @@ class TrackerTester(Base):
         for _v in _trackers:
             self.insert_group(_v)
 
+        #selection state for de-selection / unhighlighting
+        self.add_mouse_event(self.select_mouse_event)
+        self.add_button_event(self.select_button_event)
+
+        #self.add_mouse_event(self.mouse_event)
         self.set_visibility(True)
 
     def _update_status_bar(self):
@@ -90,13 +97,6 @@ class TrackerTester(Base):
         #)
 
         pass
-
-    #def mouse_event(self, arg):
-    #    """
-    #    Manage mouse actions affecting multiple nodes / wires
-    #    """
-
-    #    pass
 
     def post_select_event(self, arg):
         """

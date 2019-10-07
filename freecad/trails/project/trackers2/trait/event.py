@@ -39,9 +39,6 @@ class Event():
     Event Callback traits.
     """
 
-    #Redefined in user-level classes
-    NO_EVENTS = False
-
     #Base prototypes
     base = None
     view_state = None
@@ -52,15 +49,20 @@ class Event():
     _self_weak_list = []
     _default_callback_node = None
 
+    @staticmethod
+    def set_paths():
+        """
+        Static class method for setting paths on registered callbacks after
+        scene insertion.
+        """
+
+        for _v in Event._self_weak_list:
+            _v().set_event_paths()
+
     def __init__(self):
         """
         Constructor
         """
-
-        #disable event handling during MRO intialization triggered by Base
-        #use from custom subclasses ONLY
-        if self.NO_EVENTS:
-            return
 
         self.event = CoinGroup(
             switch_first=True, is_separator=False, is_switched=True,
@@ -78,8 +80,6 @@ class Event():
             self.add_button_event(self._event_button_event)
             Event._default_callback_node = self.event.callbacks[0]
 
-#            print(self.name, 'added default event callback node', #Event._default_callback_node.getName(), #Event._default_callback_node)
-
         self.event.set_visibility(True)
 
         Event._self_weak_list.append(weakref.ref(self))
@@ -90,8 +90,6 @@ class Event():
         """
         Default mouse location event
         """
-
-        print(self.name, 'default mouse event')
 
         _last_pos = SmartTuple(self.mouse_state.world_position)
 
@@ -118,7 +116,6 @@ class Event():
         Default button event
         """
 
-        print(self.name, 'default button event')
         self.mouse_state.update(event_cb, self.view_state)
 
     def add_event_callback_node(self):
@@ -154,9 +151,6 @@ class Event():
 
         if not self.path_nodes:
             return
-
-        print('path nodes = ', self.path_nodes[0].getName())
-        print('callbacks = ', self.event.callbacks)
 
         if len(self.event.callbacks) < len(self.path_nodes):
             return

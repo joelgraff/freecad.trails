@@ -36,7 +36,7 @@ from .coin.coin_enums import NodeTypes as Nodes
 
 #from ...containers import TrackerContainer
 
-class Base(Publisher, Subscriber, Event):
+class Base(Publisher, Subscriber):
     """
     Base class for Tracker objects
     """
@@ -122,15 +122,12 @@ class Base(Publisher, Subscriber, Event):
         Insert the base node into the scene graph and trigger notifications
         """
 
-        print(self.name, 'inserting into scenegraph...')
         _fn = lambda _x: Base.view_state.sg_root.insertChild(_x, 0)
 
         if verbose:
             self.base.dump()
 
         todo.delay(self._do_insert, None)
-        #todo.delay(_fn, self.base.root)
-        #todo.delay(Event.set_paths, None)
 
     def _do_insert(self):
         """
@@ -138,9 +135,7 @@ class Base(Publisher, Subscriber, Event):
         """
 
         Base.view_state.sg_root.insertChild(self.base.root, 0)
-
-        for _v in Event._self_weak_list:
-            _v().set_event_paths()
+        Event.set_paths()
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Wrappers for CoinGroup methods to expose them at the tracker level

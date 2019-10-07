@@ -26,6 +26,7 @@ Geometry tracker base class
 
 from .trait.base import Base
 from .trait.style import Style
+from .trait.event import Event
 from .trait.select import Select
 from .trait.geometry import Geometry
 
@@ -33,7 +34,7 @@ from .trait.coin.coin_styles import CoinStyles
 from .trait.coin.coin_enums import NodeTypes as Nodes
 from .trait.coin.coin_enums import MarkerStyles
 
-class GeometryTracker(Base, Style, Select, Geometry):
+class GeometryTracker(Base, Style, Event, Select, Geometry):
     """
     Geometry tracker base class
     """
@@ -94,12 +95,11 @@ class GeometryTracker(Base, Style, Select, Geometry):
 
         #optionally create a separate callback node for new geometry
         if self.separate_select:
-            print(self.name, 'adding ')
             self.add_event_callback_node()
 
         #events are added to the last-added event callback node
-        #self.add_mouse_event(self.select_mouse_event)
-        #self.add_button_event(self.select_button_event)
+        self.add_mouse_event(self.select_mouse_event)
+        self.add_button_event(self.select_button_event)
 
         self.path_nodes.append(node)
 

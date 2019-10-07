@@ -26,12 +26,8 @@ Provides SoFCSelection support for Tracker classes
 
 from pivy import coin
 
-from ..support.select_state import SelectState
-
 from .coin.coin_styles import CoinStyles
-from .coin.coin_enums import MouseEvents
 
-from .event import Event
 #from ..support.publisher_events import PublisherEvents as Events
 
 class Select():
@@ -47,6 +43,7 @@ class Select():
     coin_style = None
     active_style = None
     event_class = None
+    event = None
 
     def set_style(self, style=None, draw=None, color=None):
         """prototype"""; pass
@@ -58,8 +55,8 @@ class Select():
     def add_button_event(self, callback): """prototype"""; pass
 
     #class static for global selection
-    select_state = SelectState()
-    callback_node = None
+    highlight_node = None
+    selected = []
 
     def __init__(self):
         """
@@ -68,10 +65,15 @@ class Select():
         #Pylint doesn't see self.base members...
         #pylint: disable=no-member
 
-        if not self.names:
-            return
+        assert(self.names), """
+        Select.__init__(): No names defined.  Is Base inherited?
+        """
 
-        self.do_select_highlight = True
+        assert(self.event), """
+        Select.__init__(): No event node defined.  Is Event inherited?
+        """
+
+        self.handle_events = True
 
         self.select = coin.SoType.fromName("SoFCSelection").createInstance()
 
@@ -82,18 +84,6 @@ class Select():
         self.select.setName(self.name + '__SELECT')
         self.base.insert_node(self.select, self.base.top)
 
-        #add the default select callback nodes to the first selectable
-        #tracker that's created.
-        if not Select.callback_node:
-
-            Select.callback_node = Event._default_callback_node
-
-            Select.callback_node.addEventCallback(
-                MouseEvents.LOCATION2, self._select_mouse_event)
-
-            Select.callback_node.addEventCallback(
-                MouseEvents.MOUSE_BUTTON, self._select_button_event)
-
         super().__init__()
 
     def is_selected(self):
@@ -101,72 +91,115 @@ class Select():
         Return whether or not the node is selected at all
         """
 
-        return self.select_state.is_selected(self) > SelectState.States.NONE
-
-    def _select_mouse_event(self, user_data, event_cb):
-        """
-        Global mouse event
-        """
-
-        print(self.name, 'global select mouse')
-        self.select_state.set_highlight()
-
-    def _select_button_event(self, user_data, event_cb):
-        """
-        Global button event
-        """
-
-        print(self.name, 'global select button')
+        return self in Select.selected
 
     def select_mouse_event(self, user_data, event_cb):
         """
         Mouse override
         """
 
-        if self.is_selected():
-            self.set_style(CoinStyles.SELECTED)
+        self.update_highlight()
 
-        else:
-            self.update_highlight()
-
-    def update_highlight(self):
-        """
-        Update the highlight condition of the node
-        """
-
-        if self.do_select_highlight \
-            and self.name == self.mouse_state.component:
-
-            self.set_style(CoinStyles.SELECTED)
+        if self.handle_events:
+            event_cb.setHandled()
 
     def select_button_event(self, user_data, event_cb):
         """
         Mouse override
         """
 
-        _style = self.coin_style
-
-        print(self.name, 'do select ', str(self.mouse_state.button1), event_cb)
-        #on button down, do selection
         if self.mouse_state.button1.pressed:
 
-            self.select_state.select(
-                self, self.mouse_state.component, self.mouse_state.ctrl_down)
+            if self.mouse_state.ctrl_down:
+                self.do_multi_select()
 
-            if self.is_selected():
-                _style = CoinStyles.SELECTED
+            else:
+                self.do_single_select()
 
-                #if self.base.do_publish:
-                #    self.base.notify(Events.GEOMETRY.SELECTED, (self.name,
-                #None))
+        if self.handle_events:
+            event_cb.setHandled()
 
-        #on button up, highlight, if hovering over
-        elif self.is_selected():
+    def update_highlight(self):
+        """
+        Set the node currently being highlighted by the mouse
+        Also clears the currently highlighted tracker
+        """
+        #quit if node is already highlighted
+        if Select.highlight_node is self:
+            return
+
+        _no_component = self.mouse_state.component == ''
+
+        #unhighlight the current node if it exists
+        if Select.highlight_node:
+
+            #and this is a event-consuming tracker or no component was found
+            #under the mouse
+            if self.handle_events or _no_component:
+
+                if not  Select.highlight_node.is_selected():
+
+                    Select.highlight_node.set_style(
+                        Select.highlight_node.coin_style)
+
+                    Select.highlight_node = None
+
+        #Don't highlight the current tracker if it's been selected
+        #or no component was found under the mouse
+        if self.is_selected() or _no_component:
+            return
+
+        if self.handle_events:
+            #highlight and set current node as highlighted node
+            self.set_style(CoinStyles.SELECTED)
+
+            Select.highlight_node = self
+
+    def do_single_select(self):
+        """
+        Manage tracker single selection
+        """
+
+        #event is consumed and a component is under the mouse
+        if self.handle_events and self.mouse_state.component:
+
+            self.set_style(CoinStyles.SELECTED)
+
+            for _v in Select.selected:
+                _v.set_style(_v.coin_style)
+
+            Select.selected = [self]
+
+            return
+
+        #otherwise, clear all
+        self.set_style(self.coin_style)
+
+        for _v in Select.selected:
+            _v.set_style(_v.coin_style)
+
+        Select.selected = []
+
+
+    def do_multi_select(self):
+        """
+        Manage tracker multi-selection
+        """
+
+        #requires event consumer and non-empty mouse component
+        if not (self.handle_events and self.mouse_state.component):
+            return
+
+        _style = self.coin_style
+
+        if self.is_selected():
+
+            _idx = Select.selected.index(self)
+            del Select.selected[_idx]
+
+        else:
+
+            Select.selected.append(self)
             _style = CoinStyles.SELECTED
-
-        elif self.do_select_highlight:
-
-            if self.name == self.mouse_state.component:
-                _style = CoinStyles.SELECTED
 
         self.set_style(_style)
