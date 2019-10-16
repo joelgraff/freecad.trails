@@ -68,7 +68,10 @@ class TrailsWorkbench(Gui.Workbench):
 
             'Test': {
                 'gui': self.menu + self.toolbar,
-                'cmd': ['BaseTrackerTest', 'BaseTrackerLinkedTest']
+                'cmd': [
+                    'BaseTrackerTest', 'BaseTrackerLinkedTest',
+                    'PivyTrackerCommand'
+                ]
             },
 
             'Help': {
@@ -103,8 +106,10 @@ class TrailsWorkbench(Gui.Workbench):
         """
 
         from .project.commands \
-            import import_alignment_cmd, edit_alignment_cmd, base_tracker_test,\
-                trails_guide_cmd
+            import import_alignment_cmd, edit_alignment_cmd,\
+                base_tracker_test, trails_guide_cmd
+
+        from pivy_trackers.examples import pivy_tracker_command
 
         for _k, _v in self.command_ui.items():
 

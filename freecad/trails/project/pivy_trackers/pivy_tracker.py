@@ -57,6 +57,8 @@ class PivyTracker(Base, Event, Select):
         self.add_mouse_event(self.select_mouse_event)
         self.add_button_event(self.select_button_event)
 
+        self.set_visibility(True)
+
     def build_trackers(self):
         """
         Build the node and wire trackers that represent the selectable
@@ -90,13 +92,19 @@ class PivyTracker(Base, Event, Select):
             if _i > 0:
                 self.trackers.append(
                     LineTracker(
-                        name='MARKER-' + str(_i),
+                        name='LINE-' + str(_i),
                         points=[_prev, _v],
                         parent=self.base
                     )
                 )
 
             _prev = _v
+
+        #connect bact to the start
+        self.trackers.append(
+            LineTracker(
+                name='LINE-4', points=[_model[0], _model[3]], parent=self.base)
+        )
 
     def finalize(self, node=None, parent=None):
         """

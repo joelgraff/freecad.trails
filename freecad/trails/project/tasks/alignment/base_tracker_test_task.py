@@ -31,14 +31,12 @@ import FreeCADGui as Gui
 
 import DraftTools
 
+from pivy_trackers.tracker_tester import TrackerTester
+from pivy_trackers.support.view_state import ViewState
+from pivy_trackers.task_tracker import TaskTracker
+
 from ....alignment import alignment
-
 from ...support import const
-
-from ...trackers2.tracker_tester import TrackerTester
-
-from ...trackers2.support.view_state import ViewState
-from ...trackers2.task_tracker import TaskTracker
 
 def create(doc, alignment_data, object_name, is_linked):
     """
@@ -52,7 +50,7 @@ class BaseTrackerTestTask():
     Task to manage alignment editing
     """
 
-    view_state = ViewState()
+    view_state = None
 
     @staticmethod
     def set_vobj_style(vobj, style):
@@ -80,6 +78,7 @@ class BaseTrackerTestTask():
         super().__init__()
         #    '.'.join([doc.Name, 'BASE_TRACKER_TEST_TASK', 'TASK']))
 
+        self.view_state = ViewState(Gui.ActiveDocument.ActiveView)
         self.panel = None
         self.doc = doc
         self.Object = obj
