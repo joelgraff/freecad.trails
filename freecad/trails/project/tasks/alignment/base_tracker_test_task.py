@@ -31,9 +31,10 @@ import FreeCADGui as Gui
 
 import DraftTools
 
-from pivy_trackers.tracker.tracker_tester import TrackerTester
 from pivy_trackers.support.view_state import ViewState
 from pivy_trackers.tracker.task_tracker import TaskTracker
+
+from ...trackers2.tracker_tester import TrackerTester
 
 from ....alignment import alignment
 from ...support import const

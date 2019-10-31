@@ -70,7 +70,7 @@ class TrailsWorkbench(Gui.Workbench):
                 'gui': self.menu + self.toolbar,
                 'cmd': [
                     'BaseTrackerTest', 'BaseTrackerLinkedTest',
-                    'SelectDragCommand'
+                    'SelectDragCommand', 'SelectDragLinkedCommand'
                 ]
             },
 
@@ -110,6 +110,7 @@ class TrailsWorkbench(Gui.Workbench):
                 base_tracker_test, trails_guide_cmd
 
         from pivy_trackers.examples.select_drag import select_drag_command
+        from pivy_trackers.examples.select_drag_linked import select_drag_linked_command
 
         for _k, _v in self.command_ui.items():
 
