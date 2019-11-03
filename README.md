@@ -18,4 +18,4 @@ FYI, this thread was born of a parent thread:
 [Civil Engineering Design functions](https://forum.freecadweb.org/viewtopic.php?f=8&t=6973)
 
 ## Developer 
-Joel Graff ([@joelgraff](https://github.com/joelgraff) with inspiration and help from the FreeCAD community
+Joel Graff ([@joelgraff](https://github.com/joelgraff)) with inspiration and help from the FreeCAD community
