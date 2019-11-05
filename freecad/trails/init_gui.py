@@ -25,7 +25,8 @@ GUI Initialization module
 
 import os
 import FreeCADGui as Gui
-
+from freecad.trails.geometry import arc
+from .corridor import qt_dialog
 from .corridor.template import ViewTemplateLibrary
 from . import resources
 
@@ -38,7 +39,7 @@ class TrailsWorkbench(Gui.Workbench):
 
     global TRAILSWB_VERSION
 
-    MenuText = 'Trails '+TRAILSWB_VERSION
+    MenuText = 'Trails '+ TRAILSWB_VERSION
     ToolTip = 'Transportation Engineering Workbench'
     Icon = os.path.dirname(resources.__file__) + '/icons/workbench.svg'
     toolbox = []

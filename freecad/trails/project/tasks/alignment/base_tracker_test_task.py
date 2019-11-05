@@ -307,7 +307,7 @@ class BaseTrackerTestTask():
             Gui.Selection.addSelection(self.Object)
 
         if self.alignment_tracker:
-            self.alignment_tracker.finalize()
+            self.alignment_tracker.finish()
             self.alignment_tracker = None
 
         if self.camera_state:
