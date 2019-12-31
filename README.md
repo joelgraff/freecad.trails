@@ -8,6 +8,9 @@ This workbench is being developed to provide functionality specific to transport
 
 Download and extract the ZIP file into the `.FreeCAD/Mod` folder or use git to clone into `.FreeCAD/Mod`
 
+### Dependencies
+FreeCAD-Trails depends on the [pivy_trackers 2D geometry library] https://github.com/joelgraff/pivy_trackers to run.  This library provides low-level 2D rendering support through Python for FreeCAD.
+
 **Note:** `.FreeCAD/Ext` is also a valid file path and may eventually become the target path for external workbenches
 
 ## Feedback 
