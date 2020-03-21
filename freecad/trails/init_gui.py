@@ -28,6 +28,26 @@ import FreeCADGui as Gui
 
 from .corridor.template import ViewTemplateLibrary
 from . import resources
+from .point import ImportPointFile, ExportPoints
+from .surface import CreateSurface, EditSurface, Contours
+from .section import CreateGuideLines
+from . import GeoData
+
+class CommandGroup:
+    def __init__(self, cmdlist, menu, TypeId=None, tooltip=None):
+        self.cmdlist = cmdlist
+        self.menu = menu
+        self.TypeId = TypeId
+        if tooltip is None:
+            self.tooltip = menu
+        else:
+            self.tooltip = tooltip
+
+    def GetCommands(self):
+        return tuple(self.cmdlist)
+
+    def GetResources(self):
+        return {'MenuText': self.menu, 'ToolTip': self.tooltip}
 
 TRAILSWB_VERSION = '(alpha)'
 
@@ -51,6 +71,29 @@ class TrailsWorkbench(Gui.Workbench):
         self.context = 4
 
         self.command_ui = {
+
+            'Data Tools': {
+                'gui': self.menu + self.toolbar,
+                'cmd': ['Import Point File',
+                        'Export Points',
+                        'Geodata Tools'
+                        ]
+            },
+
+            'Surface Tools': {
+                'gui': self.menu + self.toolbar + self.context,
+                'cmd': ['Create Surface',
+                        'Surface Editor',
+                        'Create Contour'
+                        ]
+            },
+
+            'Section Tools': {
+                'gui': self.menu + self.toolbar,
+                'cmd': ['Create Guide Lines',
+                        'Create Sections'
+                        ]
+            },
 
             'Alignment': {
                 'gui': self.menu + self.toolbar + self.context,
@@ -113,6 +156,22 @@ class TrailsWorkbench(Gui.Workbench):
 
             if _v['gui'] & self.menu:
                 self.appendMenu(_k, _v['cmd'])
+
+    EditSurfaceSub = ['Add Triangle', 'Delete Triangle', 'Swap Edge', 
+                      'Smooth Surface']
+    Gui.addCommand('Surface Editor',
+                   CommandGroup(EditSurfaceSub,
+                                'Edit selected surface.',
+                                TypeId='Mesh::Feature'))
+
+    GeoData = ['Import OSM Map', 'Import CSV', 'Import GPX', 'Import Heights',
+               'Import SRTM', 'Import XYZ', 'Import LatLonZ',  'Import Image', 
+               'Import ASTER', 'Import LIDAR', 'Create House', 'Navigator',
+               'ElevationGrid', 'Import EMIR',
+               ]
+
+    Gui.addCommand('Geodata Tools', 
+                   CommandGroup(GeoData, 'Geodata Tools'))
 
     def Activated(self):
         """
