@@ -9,7 +9,7 @@ class house():
 	pass
 
 
-import FreeCAD,FreeCADGui
+import FreeCAD
 import Part
 import math
 
@@ -38,8 +38,6 @@ def gen_haus0(le,wi,hiall,hi,midx,wx,midy,wy):
 	he=hiall
 	he3=hi
 
-	inle=8
-	inwi=2
 	if wx==0: wx=0.0001
 	if wy==0: wy=0.0001
 
@@ -238,12 +236,6 @@ class MyApp(object):
 
 
 ## the dialog to create a house
-
-import sys
-if sys.version_info[0] !=2:
-		from importlib import reload
-
-
 def mydialog():
 	app=MyApp()
 
@@ -257,7 +249,6 @@ def mydialog():
 	miki.parse2(s6)
 
 	miki.run(s6)
-	m=miki.ids['main']
 	return miki
 
 ## test start and hide the dialog

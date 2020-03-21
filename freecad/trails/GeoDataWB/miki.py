@@ -22,19 +22,12 @@ import FreeCADGui
 #from transportationwb.say import sayexc, say
 #from transportationwb.say import  *
 
-import sys
-if sys.version_info[0] !=2:
-	from importlib import reload
-
-
 from GeoDataWB.say import sayexc, say
 from GeoDataWB.say import  *
 
 from PySide import QtGui, QtCore
 
 import re
-import pivy
-from pivy import coin
 
 #import nurbswb.configuration
 #reload (nurbswb.configuration)
@@ -361,7 +354,6 @@ class Miki(object):
 		ls = configurationString.splitlines()
 
 		# pylint: disable=unused-variable
-		app = self.app
 		line = 0
 		depth = 0
 		d = [0]*30
@@ -457,18 +449,6 @@ class Miki(object):
 		self.lines = rs
 		##\endcond
 
-		
-		#debug = getcb("mikidebug")
-		debug=0
-		#debug = 1
-		if debug:
-			say("lines parsed ...")
-			for r in rs:
-					say (r)
-			if len(self.anchors.keys()) > 0:
-				say("Anchors ....")
-				say(self.anchors)
-
 	def build(self):
 		'''execute the parsed data (expected in self.lines)'''
 		##\cond
@@ -488,10 +468,9 @@ class Miki(object):
 			if l[3] == 'obj' or l[3] == 'anchor' or l[3] == 'local class':
 					name = l[4]
 					try:
-						f = name + "()"
 						f2 = name
 					except:
-						f = creatorFunction(l[4])
+						pass
 
 					f = creatorFunction(l[4])
 
@@ -508,7 +487,7 @@ class Miki(object):
 					l.append(h)
 					self.objects.append(h)
 					##\cond
-					if self.widget == None:
+					if self.widget is None:
 						self.widget = h
 					##\endcond
 			if l[2] != 0:
@@ -565,7 +544,6 @@ class Miki(object):
 					try:
 						kk = eval("parent." + l[4])
 					except:
-
 						cn = v.__class__.__name__
 						if cn == 'int' or cn == 'float':
 							ex = "parent." + l[4] + "=" + str(v)
@@ -655,14 +633,6 @@ class Miki(object):
 		p=parent
 		c=child
 		cc = c.__class__.__name__
-		if 0:
-			say (p)
-			say (p.__class__)
-			say ('--')
-			say (c)
-			say (c.__class__)
-			say (cc)
-
 
 #		if str(c.__class__).startswith("<type 'PySide.QtGui.") or  str(c.__class__).startswith("<class 'nurbswb.miki"):
 		if str(c.__class__).startswith("<class 'PySide2.QtWidgets.") or \
@@ -721,17 +691,10 @@ class Miki(object):
 	def run(self, string, cmd=None):
 		''' parse the configuration string and execute the resulting tree'''
 
-		debug = False
-		if debug:
-			sayW("parse2 ....")
 		self.parse2(string)
-		if debug:
-			sayW("build ...#")
 		rca = self.build()
-
-		if debug:
-			sayW("showSo ...")
 		self.showSo()
+
 		if cmd != None:
 			say("CMD ...")
 			say(cmd)
@@ -750,7 +713,7 @@ class Miki(object):
 	def report(self, results=None):
 		'''some debug information about objects, anchors, roots'''
 		say("Results ...")
-		if results == None:
+		if results is None:
 			results = []
 		for r in results:
 			say(r)
@@ -798,20 +761,10 @@ class MikiDockWidget(QtGui.QDockWidget):
 		self.title_widget = title_widget
 		self.setWindowTitle(objectname)
 		self.setObjectName(objectname)
-
-#		self.toggle_title_widget(False)
-#		self.toggle_title_widget(True)
-#		self.topLevelChanged.connect(self.toggle_title_widget)
-		if 1:
-			self.setTitleBarWidget(None)
-		else:
-			self.setTitleBarWidget(self.title_widget)
-
+		self.setTitleBarWidget(None)
 		self.setMinimumSize(200, 185)
-
 		self.centralWidget = QtGui.QWidget(self)
 		self.setWidget(self.centralWidget)
-		# self.centralWidget.setMaximumHeight(800)
 
 		layout = QtGui.QVBoxLayout()
 		self.layout = layout
@@ -841,11 +794,6 @@ class MikiDockWidget(QtGui.QDockWidget):
 		self.lilayout.addWidget(scroll)
 
 		# optionaler Top button
-		if 0:
-			self.pushButton00 = QtGui.QPushButton(
-	  QtGui.QIcon('icons:freecad.svg'), objectname)
-			layout.addWidget(self.pushButton00)
-
 		self.pushButton01 = QtGui.QPushButton(
 			QtGui.QIcon(FreeCAD.ConfigGet('UserAppData') + '/Mod/mylib/icons/mars.png'),
 			"Mars")
@@ -864,10 +812,6 @@ class MikiDockWidget(QtGui.QDockWidget):
 		dw.setLayout(dwl)
 		# pylint: disable=attribute-defined-outside-init
 		self.dwl = dwl
-
-		if 0:  # Top level Icon leiste optional sichtbar machen
-			self.layout.addWidget(dw)
-		# self.setTitleBarWidget(dw)
 
 		l = QtGui.QLabel('Label')
 		# dwl.addWidget(l)
@@ -901,12 +845,7 @@ class MikiDockWidget(QtGui.QDockWidget):
 
 	def toggle_title_widget(self, off):
 		''' toggle the display of the TitleBar Widget'''
-		off=False
-		if off:
-			self.setTitleBarWidget(None)
-		else:
-			self.setTitleBarWidget(self.title_widget)
-
+		self.setTitleBarWidget(self.title_widget)
 
 def getMainWindowByName(name):
 	'''returns a main window of a given Title, 
@@ -978,29 +917,15 @@ def getdockwindowMgr2(dockwindow, winname="FreeCAD"):
 	'''add the dock window to the dockwindowManager(main window) winname'''
 
 	d3=dockwindow
-	if 1:
-		winname = "OTTO"
-		winname = "FreeCAD"
-		w = getMainWindowByName(winname)
+	winname = "FreeCAD"
+	w = getMainWindowByName(winname)
 
-		w.addDockWidget(QtCore.Qt.LeftDockWidgetArea, d3)
-		d3.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea|QtCore.Qt.RightDockWidgetArea)
+	w.addDockWidget(QtCore.Qt.LeftDockWidgetArea, d3)
+	d3.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea|QtCore.Qt.RightDockWidgetArea)
+	d3.raise_()
+	w.show()
 
-		if 0:
-			t = QtGui.QLabel('Title 1')
-			d = MikiDockWidget(t, "huhu")
-			w.addDockWidget(QtCore.Qt.LeftDockWidgetArea, d)
-			t = QtGui.QLabel('Title 2')
-			d2 = MikiDockWidget(t, "haha")
-			w.addDockWidget(QtCore.Qt.LeftDockWidgetArea, d2)
-
-			w.tabifyDockWidget(d3, d2)
-			w.tabifyDockWidget(d2, d)
-
-		d3.raise_()
-		w.show()
-
-		return w
+	return w
 
 
 
@@ -1064,11 +989,11 @@ class PicWidget(QtGui.QLabel):
 		self.label=None
 
 
-	def run_display(frame,pn):
+	def run_display(self, frame, pn):
 
 
 		import cv2
-		if frame.label == None:
+		if frame.label is None:
 			label_Image = QtGui.QLabel(frame)
 			frame.label =label_Image
 		else:
@@ -1136,8 +1061,6 @@ def createMikiGui2(layout, app):
 	miki.app = appi
 	appi.root = miki
 
-	rca = miki.run(layout)
-	#return rca,miki
 	return appi
 
 

@@ -86,8 +86,6 @@ def run(b0=50.35,l0=11.17,b=50.35,le=11.17,size=40):
 ## import the heights of a rectangle area
 
 def import_heights(b,le,size):
-
-	size=int(size)
 	size=30
 
 	lines=[]
@@ -162,30 +160,7 @@ def mydialog():
 	miki.parse2(s6)
 
 	miki.run(s6)
-	m=miki.ids['main']
 	return miki
-
-
-## test start the gui 
-def importHeights():
-	app=MyApp()
-
-	import GeoDataWB.miki as miki
-	reload(miki)
-
-	miki=miki.Miki()
-	miki.app=app
-	app.root=miki
-
-
-	miki.parse2(s6)
-
-	miki.run(s6)
-	m=miki.ids['main']
-
-
-# mytest()
-
 
 def importHeights():
 	say("runit")

@@ -15,7 +15,6 @@ import math
 # and
 # http://mathworld.wolfram.com/MercatorProjection.html
 class TransverseMercator:
-    radius = 6378137
     radius = 6378137000
     
     def __init__(self, **kwargs):

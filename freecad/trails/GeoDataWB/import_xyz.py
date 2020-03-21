@@ -17,7 +17,6 @@ import Points
 def setNice(flag=True): 
 	''' make smooth skins by setting the MeshDeviation to 0.05'''
 	p = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Part")
-	w=p.GetFloat("MeshDeviation")
 	if flag:
 		p.SetFloat("MeshDeviation",0.05)
 	else:
@@ -129,7 +128,7 @@ def showFrame(pts,u=0,v=0,d=10,lu=None,lv=None):
 	'''
 
 	say(("showframe u v to u+d v+d  in lu,lv",u,v,d,lu,lv))
-	if lu == None or lv == None:
+	if lu is None or lv is None:
 		lu,lv=getShape(pts)
 
 	say((lu,lv,u,v,d))
@@ -167,15 +166,6 @@ def import_xyz(mode,filename="/tmp/test.xyz",label='',ku=20, kv=10,lu=0,lv=0):
 		if lu>0 and lv>0:
 			sayErr("read Points001")
 
-		try:
-			App.ActiveDocument.nurbs
-		except:
-			nurbs=App.ActiveDocument.addObject("App::DocumentObjectGroup","nurbs")
-		try:
-			App.ActiveDocument.grids
-		except:
-			grids=App.ActiveDocument.addObject("App::DocumentObjectGroup","grids")
-
 		# Get or create "Point_Groups".
 		try:
 			PointGroups = FreeCAD.ActiveDocument.Point_Groups
@@ -208,15 +198,6 @@ def import_xyz(mode,filename="/tmp/test.xyz",label='',ku=20, kv=10,lu=0,lv=0):
 		say("use existing Points")
 		return App.ActiveDocument.Points.Points.Points
 	except:
-		try:
-			App.ActiveDocument.nurbs
-		except:
-			nurbs=App.ActiveDocument.addObject("App::DocumentObjectGroup","nurbs")
-		try:
-			App.ActiveDocument.grids
-		except:
-			grids=App.ActiveDocument.addObject("App::DocumentObjectGroup","grids")
-
 		# Get or create "Point_Groups".
 		try:
 			PointGroups = FreeCAD.ActiveDocument.Point_Groups
@@ -510,7 +491,6 @@ class MyApp(object):
 
 	def getfn(self):
 		''' get the filename dialog'''
-		ddir=u"/tmp/"
 		ddir="/media/thomas/b08575a9-0252-47ca-971e-f94c20b33801/geodat_DATEN/xyz_lee_county"
 		fileName = QtGui.QFileDialog.getOpenFileName(None,u"Open File",ddir);
 		s=self.root.ids['bl']
@@ -604,6 +584,11 @@ def create_grid(pu,du,dv, wb, eb, sb, nb, color=(1.0,0.0,0.0)):
 	ts=time.time()
 	sss=[]
 
+	try:
+		App.ActiveDocument.grids
+	except:
+		grids=App.ActiveDocument.addObject("App::DocumentObjectGroup","grids")
+
 	# u direction curves
 	for iu in range(sb,dv-nb):
 		pps=[]
@@ -641,6 +626,12 @@ def create_mgrid(pu,du,dv, wb, eb, sb, nb, color=(1.0,0.0,0.0)):
 	ts=time.time()
 	sss=[]
 
+	try:
+		grids = App.ActiveDocument.grids
+	except:
+		App.ActiveDocument.addObject("App::DocumentObjectGroup","grids")
+		grids = App.ActiveDocument.grids
+
 	# mesh generieren #+#
 	#alles 0,0 bis 2000, 2000
 
@@ -664,7 +655,7 @@ def create_mgrid(pu,du,dv, wb, eb, sb, nb, color=(1.0,0.0,0.0)):
 
 	Part.show(comp)
 	App.ActiveDocument.ActiveObject.ViewObject.LineColor=color
-	App.ActiveDocument.grids.addObject(App.ActiveDocument.ActiveObject)
+	grids.addObject(App.ActiveDocument.ActiveObject)
 	te=time.time()
 	say(["create grid time ",round(te-ts,5) ])
 	return App.ActiveDocument.ActiveObject
@@ -676,17 +667,18 @@ def create_mgrid(pu,du,dv, wb, eb, sb, nb, color=(1.0,0.0,0.0)):
 def create_pcl(pu,color=(1.0,0.0,0.0)):
 	'''create_pcl(pu,color=(1.0,0.0,0.0))'''
 
+	try:
+		points = App.ActiveDocument.points
+	except:
+		App.ActiveDocument.addObject("App::DocumentObjectGroup","points")
+		points = App.ActiveDocument.points
+
 	say(len(pu))
 	p=Points.Points(pu)
 	Points.show(p)
 	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=color
 	App.ActiveDocument.ActiveObject.ViewObject.PointSize=3
-	try:
-		App.ActiveDocument.points
-	except:
-		points=App.ActiveDocument.addObject("App::DocumentObjectGroup","points")
-
-	App.ActiveDocument.points.addObject(App.ActiveDocument.ActiveObject)
+	points.addObject(App.ActiveDocument.ActiveObject)
 	Gui.updateGui()
 
 #\cond
@@ -698,8 +690,6 @@ class ViewProvider:
 
 def muv(app,u=3,v=5,d=10,la=100,lb=100):
 	'''generate a quadratic mesh on startposition u,v with size d)'''
-	st=time.time()
-	tt=Part.BSplineSurface()
 	wb, eb, sb, nb = 0, 0, 0, 0
 	if u>=2: wb=2
 	if u<la-2-d: eb=2
@@ -803,18 +793,10 @@ def suv(app,u=3,v=5,d=10,la=100,lb=100):
 def suv2(label,pts,u=3,v=5,d=10,la=100,lb=100):
 
 	try:
-		App.ActiveDocument.nurbs
+		nurbs = App.ActiveDocument.nurbs
 	except:
-		nurbs=App.ActiveDocument.addObject("App::DocumentObjectGroup","nurbs")
-	try:
-		App.ActiveDocument.grids
-	except:
-		grids=App.ActiveDocument.addObject("App::DocumentObjectGroup","grids")
-	try:
-		App.ActiveDocument.points
-	except:
-		points=nurbs=App.ActiveDocument.addObject("App::DocumentObjectGroup","points")
-
+		App.ActiveDocument.addObject("App::DocumentObjectGroup","nurbs")
+		nurbs = App.ActiveDocument.nurbs
 
 	st=time.time()
 	tt=Part.BSplineSurface()
@@ -875,7 +857,7 @@ def suv2(label,pts,u=3,v=5,d=10,la=100,lb=100):
 	say([ "running time for show the shape ", round(se-st,5)])
 
 	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=color
-	App.ActiveDocument.nurbs.addObject(App.ActiveDocument.ActiveObject)
+	nurbs.addObject(App.ActiveDocument.ActiveObject)
 
 	# return tt
 	return a

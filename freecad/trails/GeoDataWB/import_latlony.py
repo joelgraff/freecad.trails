@@ -86,15 +86,14 @@ trackstring='''
 <extensions> extensionsType </extensions>    <!-- GPX extension -->
 '''
 
-import FreeCAD,FreeCADGui, Part
+import FreeCAD,FreeCADGui
 App=FreeCAD
 Gui=FreeCADGui
 
 from  GeoDataWB.transversmercator import TransverseMercator
 
 debug=0
-
-global sd
+sd
 
 def run():
 	filename='/home/thomas/.FreeCAD/Mod/geodat/testdata/latlonh.txt'
@@ -174,18 +173,7 @@ def import_latlon(filename,orig,hi):
 
 	import Draft
 	Draft.makeWire(points)
-
-
 	return
-
-
-	if orig == 'auto':
-		tm.lat, tm.lon = (max(lats)+min(lats))/2,(max(lons)+min(lons))/2
-		print ("origin:")
-		print(tm.lat,tm.lon)
-		print ("----------")
-
-
 
 	for s in seg:
 		trkpts=s['trkpt']
@@ -213,7 +201,7 @@ def import_latlon(filename,orig,hi):
 			t4=t3.split(':')
 			timx=int(t4[0])*3600+int(t4[1])*60+int(t4[2])
 			pt.append(timx)
-			if starth == None:
+			if starth is None:
 				starth=float(h)
 				starth=0
 
@@ -227,39 +215,32 @@ def import_latlon(filename,orig,hi):
 			pz.append(1000*(float(h)-starth))
 #			print(ll)
 
+	import Draft
+	Draft.makeWire(points0)
+	
+	Draft.makeWire(points)
 
-	if 1:
-		import Draft
-		if 0: #close path
-			points.append(points[0])
-		
-		
-		
-		Draft.makeWire(points0)
-		
-		Draft.makeWire(points)
+	po=App.ActiveDocument.ActiveObject
+	po.ViewObject.LineColor=(1.0,.0,0.0)
+	po.MakeFace = False
 
-		po=App.ActiveDocument.ActiveObject
-		po.ViewObject.LineColor=(1.0,.0,0.0)
-		po.MakeFace = False
+	po.Placement.Base.z= float(hi) *1000
+	po.Label="My Track" 
 
-		po.Placement.Base.z= float(hi) *1000
-		po.Label="My Track" 
+	Draft.makeWire(points2)
 
-		Draft.makeWire(points2)
-
-		po2=App.ActiveDocument.ActiveObject
-		po2.ViewObject.LineColor=(.0,.0,1.0)
-		po2.ViewObject.PointSize=5
-		po2.ViewObject.PointColor=(.0,1.0,1.0)
-		
-		po2.Placement.Base.z= float(hi)*1000
-		po2.Label="Track + 20m"
+	po2=App.ActiveDocument.ActiveObject
+	po2.ViewObject.LineColor=(.0,.0,1.0)
+	po2.ViewObject.PointSize=5
+	po2.ViewObject.PointColor=(.0,1.0,1.0)
+	
+	po2.Placement.Base.z= float(hi)*1000
+	po2.Label="Track + 20m"
 
 
-		App.activeDocument().recompute()
-		Gui.SendMsgToActiveView("ViewFit")
-		# break
+	App.activeDocument().recompute()
+	Gui.SendMsgToActiveView("ViewFit")
+	# break
 
 	#------------------------------------------------
 	# data for postprocessing
@@ -340,18 +321,6 @@ def import_latlon(filename,orig,hi):
 
 	return (str(tm.lat)+','+str(tm.lon))
 	return px,py
-
-if 0: 
-	px,py=import_gpx()
-	count=len(px)
-	pp=range(count)
-	px2=[]
-	py2=[]
-
-	import numpy as np
-	xpp=np.array(px)
-	np.average(xpp)
-	std=np.std(xpp)
 
 	for p in pp:
 		if abs(px[p]) <2*std:

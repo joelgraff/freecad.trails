@@ -61,7 +61,7 @@ def reduceGrid(pts,ku=100,kv=50):
 
 def showFrame(pts,u=0,v=0,d=10,lu=None,lv=None):
 
-	if lu == None or lv == None:
+	if lu is None or lv is None:
 		lu,lv=getShape(pts)
 
 	assert(u+d<lu)

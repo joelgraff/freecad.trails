@@ -34,21 +34,13 @@ def import_lidar(fn,obj,createPCL=False,useOrigin=False):
 #	FreeCAD.infile=inFile
 
 	pts=inFile.points[I]
-
-	if 10:
-
-		scalez=0.001
-		scalez=1.
-		ptsa=[(p[0][0],p[0][1],p[0][2]*scalez) for p in pts]
-
-	if 1:
-		import Points
-		p=Points.Points(ptsa)
-		Points.show(p)
-
+	scalez=1.0
+	ptsa=[(p[0][0],p[0][1],p[0][2]*scalez) for p in pts]
+	import Points
+	p=Points.Points(ptsa)
+	Points.show(p)
 
 	print(pts[0])
-
 
 	ptsb=np.array(ptsa)
 	ptsbxyz=ptsb.swapaxes(0,1)
@@ -99,18 +91,6 @@ def import_lidar(fn,obj,createPCL=False,useOrigin=False):
 					ptsd += [FreeCAD.Vector(ix,iy,nar[ix,iy])]
 				else:
 					ptse += [FreeCAD.Vector(ix,iy,0)]
-
-	if 0:
-		p=Points.Points(ptsd)
-		Points.show(p)
-		App.ActiveDocument.ActiveObject.ViewObject.hide()
-		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(0.,1.0,0.)
-
-
-	if 0:
-		p=Points.Points(ptse)
-		Points.show(p)
-		App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(1.,0.0,0)
 
 	obj.nar=list(nar.reshape(obj.xdim*obj.ydim))
 	return nar
@@ -179,7 +159,7 @@ def createFace(obj):
 
 		fn="face_"+str(a)+"_"+str(b)+"_"+str(c)+'_'+str(d)
 		obja=App.ActiveDocument.getObject(fn)
-		if obja == None:
+		if obja is None:
 			obja = FreeCAD.ActiveDocument.addObject("Part::Feature",fn)
 			obja.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
 			obja.ViewObject.hide()
@@ -207,14 +187,12 @@ def createFace(obj):
 				topfaces.append(((d)*x+y+1,(d)*(x+1)+y,(d)*(x+1)+y+1))
 
 		t=Mesh.Mesh((ptsda,topfaces))
-		#Mesh.show(t)
-		fn="mesh_"+str(a)+"_"+str(b)+"_"+str(c)+'_'+str(d)
 
 		if obj.meshName=="":
 			obj.meshName="LidarMesh"
 		fn=obj.meshName
 		mm=App.ActiveDocument.getObject(fn)
-		if mm == None:
+		if mm is None:
 			mm = FreeCAD.ActiveDocument.addObject("Mesh::FeaturePython",fn)
 			mm.ViewObject.ShapeColor=(random.random(),random.random(),random.random())
 
@@ -256,13 +234,6 @@ class LIDAR:
 	def execute(self,obj):
 		try: _=obj.nar[0]
 		except: return
-		bsa=createFace(obj)
-		#bsb=createFace(nar,a=620,c=620,b=70)
-		#bsc=createFace(nar,a=620,c=690,b=70)
-		pass
-
-#	def attach(self,vobj):
-#		self.Object = vobj.Object
 
 	def onChanged(self,obj,prop):
 		print("prop ",prop)
@@ -417,7 +388,7 @@ class MyApp(object):
 		fn=self.root.ids['bl'].text()
 		try:
 			obj=createLIDAR()
-			nar=import_lidar(fn,obj,self.root.ids['createPCL'].isChecked(),self.root.ids['useOrigin'].isChecked())
+			import_lidar(fn,obj,self.root.ids['createPCL'].isChecked(),self.root.ids['useOrigin'].isChecked())
 
 
 #			for bs in [bsa,bsb,bsc]:
@@ -431,7 +402,6 @@ class MyApp(object):
 
 	def getfn(self):
 		''' get the filename dialog'''
-		ddir=u"/tmp/"
 		ddir="/media/thomas/b08575a9-0252-47ca-971e-f94c20b33801/geodat_DATEN/las_lee_county"
 		fileName = QtGui.QFileDialog.getOpenFileName(None,u"Open File",ddir);
 		print(fileName)

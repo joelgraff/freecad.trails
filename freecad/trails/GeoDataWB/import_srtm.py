@@ -2,7 +2,6 @@
 Import srtm data
 """
 
-import Points
 from GeoDataWB.transversmercator import TransverseMercator
 import math
 
@@ -108,7 +107,7 @@ def runfile(fn, xw, xe, ys, yn, ox=0, oy=0):
 
 
 # download the file
-import sys, os, zipfile, traceback, time, re, platform
+import os, zipfile, re
 import urllib.request
 
 from GeoDataWB.say import *
@@ -204,33 +203,6 @@ def run(mx,my,dx,dy):
 dy=0.09
 dx=0.09
 
-
-# zugspitze
-my=47.4210641
-mx=10.9678556
-
-# nizza
-my=43.6827455
-mx=7.255056
-
-
-# puy de dome  Clermont Ferrand
-my=45.7750419
-mx=2.902975
-
-# run(mx,my,dx,dy)
-
-# mount everest
-my=28.0020784
-mx=86.9238805
-
-
-
-#  friesener berg
-my=50.2714589
-mx=11.3614118
-
-
 # outdoor inn
 my=50.3736049
 mx=11.1916430
@@ -306,7 +278,7 @@ MainWindow:
 
 '''
 
-import FreeCAD,FreeCADGui
+import FreeCAD
 
 ## the gui backend
 
@@ -420,7 +392,6 @@ def mydialog():
 	miki.parse2(s6)
 
 	miki.run(s6)
-	m=miki.ids['main']
 	return miki
 
 

@@ -14,7 +14,7 @@ if sys.version_info[0] !=2:
 
 from GeoDataWB.say import *
 
-import FreeCAD, FreeCADGui, Part
+import FreeCAD, FreeCADGui
 App=FreeCAD
 Gui=FreeCADGui
 
@@ -61,11 +61,7 @@ def parsedata(lines):
 #	print(dat)
 
 	a=np.array(a).reshape(dat['ncols'],dat['nrows'],3)
-
-	xllcorner=dat['xllcorner']
-	yllcorner=dat['yllcorner']
 	cellsize=dat['cellsize']
-
 	xllcorner=0
 	yllcorner=0
 
@@ -74,11 +70,6 @@ def parsedata(lines):
 
 	for i in range(dat['nrows']):
 		a[:,i,1]=i*cellsize+yllcorner
-
-
-	#bs=Part.BSplineSurface()
-	#bs.interpolate(a)
-	#Part.show(bs.toShape())
 
 	for i in range(dat['ncols']):
 		Draft.makeBSpline([FreeCAD.Vector(p) for  p in a[i]])
@@ -104,7 +95,6 @@ def	import_emir(
 
 	f=open(filename, 'rb')
 	lines=f.readlines()
-	rc=parsedata(lines)
 
 
 

@@ -22,8 +22,7 @@ import sys
 if sys.version_info[0] !=2:
 	from importlib import reload
 
-
-import FreeCAD, Draft,Part
+import FreeCAD, Part
 import FreeCADGui
 Gui=FreeCADGui
 App=FreeCAD
@@ -33,7 +32,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate
 import Points
-from GeoDataWB.say import say,sayErr,sayW
+from GeoDataWB.say import say,sayErr
 
 
 # test data
@@ -297,9 +296,9 @@ def showHeightMap(x,y,z,zi):
 
 	plt.colorbar()
 
-	CS = plt.contour(zi,15,linewidths=0.5,colors='k',
+	plt.contour(zi,15,linewidths=0.5,colors='k',
 			   extent=[ y.min(), y.max(),x.min(), x.max()])
-	CS = plt.contourf(zi,15,cmap=plt.cm.rainbow, 
+	plt.contourf(zi,15,cmap=plt.cm.rainbow, 
 			   extent=[ y.min(), y.max(),x.min(), x.max()])
 
 	z=z.transpose()
@@ -365,7 +364,6 @@ def createElevationGrid(mode,rbfmode=True,source=None,gridCount=20,zfactor=20,bo
 
 		x=[v[1] for v in pts]
 		y=[v[0] for v in pts]
-		z=[0.01*v[2] for v in pts]
 		# staerker
 		z=[zfactor*v[2] for v in pts]
 		px= coordLists2points(x,y,z)
@@ -375,7 +373,6 @@ def createElevationGrid(mode,rbfmode=True,source=None,gridCount=20,zfactor=20,bo
 	else:
 		# testdata
 		x,y,z= text2coordList(datatext)
-		p= coordLists2points(x,y,z)
 
 	x=np.array(x)
 	y=np.array(y)
@@ -397,9 +394,6 @@ def createElevationGrid(mode,rbfmode=True,source=None,gridCount=20,zfactor=20,bo
 	try: color=modeColor[mode]
 	except: color=(1.0,0.0,0.0)
 
-	xmin=np.min(x)
-	ymin=np.min(y)
-
 	showFace(rbf,rbf2,x,y,gridsize,color,bound)
  
 	App.ActiveDocument.ActiveObject.Label=mode + " ZFaktor " + str(zfactor) + " #"
@@ -408,22 +402,6 @@ def createElevationGrid(mode,rbfmode=True,source=None,gridCount=20,zfactor=20,bo
 
 	if matplot: showHeightMap(x,y,z,zi)
 	return rc
-
-	# interpolation for image
-	gridsize=400
-	rbf,xi,yi,zi = interpolate(x,y,z, gridsize,mode,rbfmode)
-	rbf2,xi2,yi2,zi2 = interpolate(xe,ye,ze, gridsize,mode,rbfmode,zi.shape)
-	return [rbf,rbf2,x,y,z,zi,zi2]
-
-
-if 0 and __name__ == '__main__':
-
-	createElevationGrid('thin_plate')
-	createElevationGrid('linear')
-	createElevationGrid('inverse')
-	createElevationGrid('multiquadric')
-	createElevationGrid('gaussian')
-	App.activeDocument().recompute()
 
 # radial basis function interpolator instance
 # http://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.Rbf.html
@@ -444,51 +422,6 @@ App.activeDocument().recompute()3
 
 '''
 
-if 0:
-	source=App.ActiveDocument.messdaten
-
-	# theorie:
-	# radial basis function interpolator instance
-	# http://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.Rbf.html
-
-
-	#for mode in ['linear','thin_plate', 'cubic','inverse','multiquadric','gaussian' ,'quintic' ]:
-
-	for mode in ['linear']:
-	#for mode in ['inverse','multiquadric','gaussian' ,'quintic' ]:
-	#for mode in ['inverse' ]:
-
-		# argumente 100 - anzahl linien im grid
-		# 40 streckungsfaktor nach z --> zeile 353
-		# 10 obere schranke fuer z-werte  --> zeile 245 ff
-		#
-		createElevationGrid(mode,True,source,30,-100,10)
-		App.activeDocument().recompute()
-		Gui.updateGui()
-
-
-
-if 0:
-	#
-	#
-	# texture auflegen
-	# 
-	import geodat.geodat_lib
-	import geodat.postprocessor
-	reload(geodat.postprocessor)
-
-	# nurbs=App.ActiveDocument.MySimpleHood
-	#die Flaechen asl nurbs wird gebraucht
-	nurbs=App.ActiveDocument.Shape
-	s=64
-	kzs=geodat.postprocessor.getHeights(nurbs.Shape.Surface,s)
-	fn=geodat.postprocessor.createColor2(kzs,s,1)
-	geodat.geodat_lib.addImageTexture(nurbs,fn,scale=(1,1))
-	Gui.updateGui()
-	# App.ActiveDocument.Text.LabelText=["Height Map","colormap HSV",str(s**2) + " color pixel"]
-
-
-import PySide
 from PySide import  QtGui,QtCore
 
 def srun(window):
@@ -497,7 +430,7 @@ def srun(window):
 	mode=None
 	for it in window.mode.selectedItems():
 		mode= it.text()
-	if mode == None: mode = 'linear'
+	if mode is None: mode = 'linear'
 	grid=int(window.grid.text())
 	zfac=int(window.zfac.text())
 	zmax=int(window.zmax.text())
@@ -593,7 +526,6 @@ def run():
 		fname, _ = QtGui.QFileDialog.getOpenFileName(self, 'Open file with points',fn)
 		say("Filename "+fname)
 		Points.insert(fname,"Unnamed")
-		t=App.ActiveDocument.ActiveObject.Label
 		Gui.SendMsgToActiveView("ViewFit")
 		pcl=App.ActiveDocument.ActiveObject
 

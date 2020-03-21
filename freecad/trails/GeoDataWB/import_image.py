@@ -21,9 +21,6 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
 import os.path
-
-import csv,re
-
 import random
 
 ## create the pointcloud, grid or nurbs surface
@@ -50,10 +47,7 @@ def import_image(filename=None,n=10,c=2,inverse=False,kx=10,ky=10,kz=60,gengrid=
 	'''import_image(filename=None,n=10,c=2,inverse=False,kx=10,ky=10,kz=60,gengrid=True,genblock=False,genpoles=False,pointsonly=False)
 	'''
 
-	display_mathplot=False
-	dataAsPoles=False
-
-	if filename==None:
+	if filename is None:
 		filename='/home/microelly2/Schreibtisch/test_nurbs3.png'
 	img = mpimg.imread(filename)
 
@@ -63,14 +57,9 @@ def import_image(filename=None,n=10,c=2,inverse=False,kx=10,ky=10,kz=60,gengrid=
 	if len(img.shape) == 2:
 		lum_img = img
 	else:
-		lum_img = img[:,:,c]
 		lum_img = 0.33*img[:,:,0]+0.33*img[:,:,1]+0.34*img[:,:,2]
 
 	(lu,lv)=lum_img.shape
-
-	if display_mathplot:
-		plt.imshow(lum_img)
-		plt.show()
 
 	#create a n points border
 	uu2=np.zeros((lu+2*n)*(lv+2*n))
@@ -107,12 +96,9 @@ def import_image(filename=None,n=10,c=2,inverse=False,kx=10,ky=10,kz=60,gengrid=
 	
 	tt=Part.BSplineSurface()
 	
-	if dataAsPoles:
-		pols=uu
-	else:
-		tt.interpolate(uu)
-		#  flatten the border
-		pols=tt.getPoles()
+	tt.interpolate(uu)
+	#  flatten the border
+	pols=tt.getPoles()
 
 
 	pols2=np.array(pols)
@@ -153,8 +139,7 @@ def import_image(filename=None,n=10,c=2,inverse=False,kx=10,ky=10,kz=60,gengrid=
 			ws
 		)
 
-	if 1:
-		sha=bs.toShape()
+	sha=bs.toShape()
 
 	# show the poles
 	if genpoles:
@@ -205,48 +190,8 @@ def import_image(filename=None,n=10,c=2,inverse=False,kx=10,ky=10,kz=60,gengrid=
 	bd=FreeCAD.Vector(0,-kx*(lu-1),bz)
 	cd=FreeCAD.Vector(ky*(lv-1),-kx*(lu-1),bz)
 	dd=FreeCAD.Vector(ky*(lv-1),0,bz)
-
-
-	# for nonlinear borders - experimental
-	if 0:
-		u0e=bs.uIso(0).toShape()
-		p=Part.makePolygon([ad,a,d,dd],True)
-		ll=p.Edges+[u0e.Edge1]
-		f4=Part.makeFilledFace(Part.__sortEdges__(ll))
-		Part.show(f4)
-
-		v0e=bs.vIso(0).toShape()
-		p=Part.makePolygon([bd,b,a,ad],True)
-		ll=p.Edges+[v0e.Edge1]
-		f1=Part.makeFilledFace(Part.__sortEdges__(ll))
-		#Part.show(v0e)
-		#Part.show(p)
-		Part.show(f1)
-
-		u1e=bs.uIso(1).toShape()
-		p=Part.makePolygon([bd,b,c,cd],True)
-		ll=p.Edges+[u1e.Edge1]
-		f2=Part.makeFilledFace(Part.__sortEdges__(ll))
-		# f2=Part.Face(Part.__sortEdges__(ll))
-		#Part.show(u1e)
-		#Part.show(p)
-		Part.show(f2)
-
-		v1e=bs.vIso(1).toShape()
-		p=Part.makePolygon([dd,d,c,cd],True)
-		ll=p.Edges+[v1e.Edge1]
-		f3=Part.makeFilledFace(Part.__sortEdges__(ll))
-		#Part.show(v1e)
-		#Part.show(p)
-		Part.show(f3)
-
-		p=Part.makePolygon([a,b,c,d], True)
-		f0=Part.makeFilledFace(p.Edges)
-		Part.show(f0)
-
-	if 1:
-		nb=App.ActiveDocument.addObject('Part::Spline','Nurbs ' + str(n) +   ' ' + ojn)
-		nb.Shape=sha.Face1
+	nb=App.ActiveDocument.addObject('Part::Spline','Nurbs ' + str(n) +   ' ' + ojn)
+	nb.Shape=sha.Face1
 		
 
 	if genblock:
@@ -382,22 +327,22 @@ class MyApp(object):
 				filename=filename.replace('UserAppData',FreeCAD.ConfigGet("UserAppData"))
 
 			ts=time.time()
-			bs=import_image(
-					filename,
+			import_image(
+						filename,
 
-					int(self.root.ids['border'].text()),
-					int(self.root.ids['color'].text()),
-					self.root.ids['inverse'].isChecked(),
+						int(self.root.ids['border'].text()),
+						int(self.root.ids['color'].text()),
+						self.root.ids['inverse'].isChecked(),
 
-					int(self.root.ids['kx'].text()),
-					int(self.root.ids['ky'].text()),
-					int(self.root.ids['kz'].text()),
+						int(self.root.ids['kx'].text()),
+						int(self.root.ids['ky'].text()),
+						int(self.root.ids['kz'].text()),
 
-					self.root.ids['gengrid'].isChecked(),
-					self.root.ids['genblock'].isChecked(),
-					self.root.ids['genpoles'].isChecked(),
-					self.root.ids['pointsonly'].isChecked(),
-				)
+						self.root.ids['gengrid'].isChecked(),
+						self.root.ids['genblock'].isChecked(),
+						self.root.ids['genpoles'].isChecked(),
+						self.root.ids['pointsonly'].isChecked(),
+						)
 			te=time.time()
 			say("load image time " + str(round(te-ts,2)))
 		except:

@@ -140,8 +140,6 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
 
 		import requests
 		response = requests.get(source)
-		data = response.text
-		lines = response.text.split('\n')
 		FreeCAD.t = response
 
 		f = open(fn, "w")
@@ -177,7 +175,6 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
 		status.setText("transform data ...")
 		FreeCADGui.updateGui()
 
-	relations = tree.getiterator('relation')
 	nodes = tree.getiterator('node')
 	ways = tree.getiterator('way')
 	bounds = tree.getiterator('bounds')[0]
@@ -669,7 +666,7 @@ class MyApp(object):
 						flag = '2'
 
 			except:
-				flag = flag
+				pass
 
 	def swap(self):
 		tmp1 = self.root.ids['lat'].text()
@@ -733,7 +730,6 @@ class MyApp(object):
 		b = float(bl_disp)
 		bl_disp = self.root.ids['long'].text()
 		l = float(bl_disp)
-		s = self.root.ids['s'].value()
 		WebGui.openBrowser("http://www.openstreetmap.org/#map=16/"+str(b)+'/'+str(l))
 
 	def showDistanceOnLabel(self):

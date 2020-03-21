@@ -1,4 +1,3 @@
-import pivy
 from pivy import coin
 
 

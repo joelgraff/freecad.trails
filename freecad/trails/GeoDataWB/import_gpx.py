@@ -2,14 +2,14 @@
 GPX File importer
 """
 
-import FreeCAD, FreeCADGui, Part, Draft
+import FreeCAD, FreeCADGui, Draft
 from GeoDataWB.transversmercator import TransverseMercator
 from GeoDataWB.xmltodict import parse
 from GeoDataWB.say import *
 import json, re
 
 debug = False
-global sd
+sd
 
 
 def import_gpx(filename, orig, hi):
@@ -46,9 +46,7 @@ def import_gpx(filename, orig, hi):
 	py = []
 	pz = []
 	pt = []
-	
-	startx = None
-	starty = None
+
 	starth = None
 	FreeCAD.sd = sd
 	seg = sd['gpx']['trk']['trkseg']
@@ -100,7 +98,7 @@ def import_gpx(filename, orig, hi):
 			timx = int(t4[0])*3600+int(t4[1])*60+int(t4[2])
 			pt.append(timx)
 
-			if starth == None:
+			if starth is None:
 				starth = float(h)
 				starth = 0
 
@@ -248,11 +246,6 @@ def mydialog():
 def runtest():
 	m = mydialog()
 	m.objects[0].hide()
-
-
-def importGPXTrack():
-	m = mydialog()
-
 
 if __name__ == '__main__':
 	runtest()

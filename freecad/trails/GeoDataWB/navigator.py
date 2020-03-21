@@ -186,14 +186,6 @@ class EventFilter(QtCore.QObject):
 			return True
 
 		if z == 'PySide.QtCore.QEvent.Type.HoverMove' :
-			if False:
-				FreeCAD.Console.PrintMessage("old Pos: ")
-				FreeCAD.Console.PrintMessage(e.oldPos())
-				FreeCAD.Console.PrintMessage(", new Pos: ")
-				FreeCAD.Console.PrintMessage(e.pos())
-				FreeCAD.Console.PrintMessage("\n")
-			self.lastpos=e.pos()
-			
 			try: za=int(self.output.vmap['za'].text())
 			except: za=0
 			za2=za
@@ -207,7 +199,6 @@ class EventFilter(QtCore.QObject):
 				# hier contextmenue rechte maus auschalten
 				#	FreeCAD.Console.PrintMessage('!! cancel -------------------------------------context-----------\n')
 				return True
-				pass
 
 			# wheel rotation
 			if e.type()== QtCore.QEvent.Type.Wheel:
@@ -289,7 +280,6 @@ class EventFilter(QtCore.QObject):
 				if e.type() == QtCore.QEvent.MouseButtonRelease:
 					self.output.vmap['clickcount'].setText('release')
 					return self.on_clicks(self,'Release',0)
-					return True
 
 				# double clicked
 				if e.type() == QtCore.QEvent.MouseButtonDblClick and e.button() == QtCore.Qt.LeftButton:
@@ -951,26 +941,22 @@ def myNavigatorWidget(ef):
 
 ## background image winter
 def background1(ef):
-	fn='/home/microelly2/FCB/b175_camera_controller/winter.jpg'
 	fn=os.path.dirname(__file__) +"/../pics/winter.jpg"
 	ef.tex.filename = fn
 
 ## background image dune
 def background2(ef):
-	fn='/home/microelly2/FCB/b175_camera_controller/P1170437.JPG'
 	fn=os.path.dirname(__file__) +"/../pics//P1170437.JPG"
 	ef.tex.filename = fn
 
 ## background image city
 def background3(ef):
-	fn='/home/microelly2/FCB/b175_camera_controller/P1170039.JPG'
 	fn=os.path.dirname(__file__) +"/../pics/P1170039.JPG"
 	ef.tex.filename = fn
 
 
 ## background partially transparent
 def background4(ef):
-	fn='/home/microelly2/FCB/b175_camera_controller/transpa.png'
 	fn=os.path.dirname(__file__) +"/../pics/transpa.png"
 	ef.tex.filename = fn
 
@@ -1035,8 +1021,6 @@ def navi():
 
 	 
 	# get a jpg filename
-	# jpgfilename = QtGui.QFileDialog.getOpenFileName(QtGui.qApp.activeWindow(),'Open image file','*.jpg')
-	fn='/home/microelly2/FCB/b175_camera_controller/winter.jpg'
 	fn=os.path.dirname(__file__) +"/../pics/winter.jpg"
 
 	sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
@@ -1046,76 +1030,19 @@ def navi():
 	trans = coin.SoTranslation()
 	trans.translation.setValue([0,0,0])
 	myCustomNode = coin.SoSeparator()
-	#myCustomNode.addChild(col)
 
+	cub = coin.SoSphere()
+	cub.radius.setValue(10000000)
 
-	if 0 or False:
-		cub = coin.SoCylinder()
-		cub.radius.setValue(3000)
-		cub.height.setValue(4000)
-		cub.parts.set("SIDES")
-		s=coin.SoRotationXYZ()
-		s.angle.setValue(1.5708)
-		s.axis.setValue(0)
-		myCustomNode.addChild(s)
-		s=coin.SoRotationXYZ()
-		s.angle.setValue(math.pi)
-		s.axis.setValue(1)
-		myCustomNode.addChild(s)
+	i=coin.SoRotationXYZ()
+	i.angle.setValue(1.5708)
+	i.axis.setValue(0)
+	myCustomNode.addChild(i)
 
-	else:
-
-
-		cub = coin.SoSphere()
-		cub.radius.setValue(10000000)
-
-
-
-		s=coin.SoRotationXYZ()
-		s.angle.setValue(1.5708)
-		s.axis.setValue(0)
-		myCustomNode.addChild(s)
-
-
-
-		s=coin.SoRotationXYZ()
-		s.angle.setValue(math.pi)
-		s.axis.setValue(1)
-		myCustomNode.addChild(s)
-
-
-	if False:
-		l=coin.SoDirectionalLight()
-		l.direction.setValue(coin.SbVec3f(0,1,0))
-		l.color.setValue(coin.SbColor(0,0,1))
-		myCustomNode.addChild(l)
-
-		l=coin.SoDirectionalLight()
-		l.direction.setValue(coin.SbVec3f(0,-1,0))
-		l.color.setValue(coin.SbColor(0,1,1))
-		myCustomNode.addChild(l)
-
-
-		l=coin.SoDirectionalLight()
-		l.direction.setValue(coin.SbVec3f(0,0,1))
-		l.color.setValue(coin.SbColor(1,0,0))
-		myCustomNode.addChild(l)
-
-		l=coin.SoDirectionalLight()
-		l.direction.setValue(coin.SbVec3f(0,0,-1))
-		l.color.setValue(coin.SbColor(0.6,0.6,1))
-		myCustomNode.addChild(l)
-
-
-		l=coin.SoSpotLight()
-		l.direction.setValue(coin.SbVec3f(1,0,1))
-		l.color.setValue(coin.SbColor(0,1,0))
-		l.location.setValue(coin.SbVec3f(0,0,0))
-	#	l.cutOffAngle.setValue(0.01)
-	#	l.dropOffRate.setValue(1)
-		myCustomNode.addChild(l)
-
-
+	s=coin.SoRotationXYZ()
+	s.angle.setValue(math.pi)
+	s.axis.setValue(1)
+	myCustomNode.addChild(s)
 
 	#myCustomNode.addChild(trans)
 	myCustomNode.addChild(cub)

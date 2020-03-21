@@ -33,6 +33,8 @@ from .surface import CreateSurface, EditSurface, Contours
 from .section import CreateGuideLines
 from . import GeoData
 
+TRAILSWB_VERSION = '(alpha)'
+
 class CommandGroup:
     def __init__(self, cmdlist, menu, TypeId=None, tooltip=None):
         self.cmdlist = cmdlist
@@ -48,8 +50,6 @@ class CommandGroup:
 
     def GetResources(self):
         return {'MenuText': self.menu, 'ToolTip': self.tooltip}
-
-TRAILSWB_VERSION = '(alpha)'
 
 class TrailsWorkbench(Gui.Workbench):
     """

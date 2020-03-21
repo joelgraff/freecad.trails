@@ -63,7 +63,7 @@ def import_ast(b=50.26,l=11.39):
 
 
 	dataset = gdal.Open(fn, GA_ReadOnly) 
-	if dataset == None:
+	if dataset is None:
 		msg="\nProblem cannot open " + fn + "\n"
 		FreeCAD.Console.PrintError(msg)
 		errorDialog(msg)
@@ -73,10 +73,6 @@ def import_ast(b=50.26,l=11.39):
 	rows=dataset.RasterYSize
 
 	geotransform = dataset.GetGeoTransform()
-	originX = geotransform[0]
-	originY = geotransform[3]
-	pixelWidth = geotransform[1]
-	pixelHeight = geotransform[5]
 
 	band = dataset.GetRasterBand(1)
 	data = band.ReadAsArray(0, 0, cols, rows)
@@ -96,13 +92,7 @@ def import_ast(b=50.26,l=11.39):
 
 
 	pts=[]
-	d=70
-
-	d1=20
-	d2=50
-	d1=d
-	d2=d
-
+	d1=d2=d=70
 
 	tm=TransverseMercator()
 	tm.lat=b
@@ -184,7 +174,6 @@ class MyApp(object):
 		spli=bl.split(',')
 		b=float(spli[0])
 		l=float(spli[1])
-		s=15
 		WebGui.openBrowser( "http://www.openstreetmap.org/#map=16/"+str(b)+'/'+str(l))
 
 
@@ -220,9 +209,6 @@ def import_heights(b,l,s):
 	nurbs=GeoDataWB.import_xyz.suv2(ff,pts,u=0,v=0,d=140,la=140,lb=140)
 	te=time.time()
 	print ("time to create models:",te-ts)
-
-	fn=GeoDataWB.geodat_lib.genSizeImage(size=512)
-	# geodat.geodat_lib.addImageTexture(nurbs,fn,scale=(8,3))
 	nurbs.ViewObject.Selectable = False
 
 

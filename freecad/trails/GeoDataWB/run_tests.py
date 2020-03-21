@@ -58,8 +58,6 @@ def test_import_gpx():
 	if fn.startswith('UserAppData'):
 		fn=fn.replace('UserAppData',FreeCAD.ConfigGet("UserAppData"))
 
-
-	orig="50.3729107,11.1913920"
 	orig='auto'
 	hi=100
 	geodat.import_gpx.import_gpx(fn,orig,hi)

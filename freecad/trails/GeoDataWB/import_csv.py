@@ -2,7 +2,7 @@
 CSV File importer
 """
 
-import FreeCAD, FreeCADGui, Part, Draft
+import FreeCAD, FreeCADGui, Draft
 from GeoDataWB.transversmercator import TransverseMercator
 from GeoDataWB.say import *
 import csv, re

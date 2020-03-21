@@ -14,7 +14,6 @@ import FreeCAD as App
 import numpy as np
 from matplotlib import cm
 import matplotlib.pyplot as plt
-import matplotlib.mlab as ml
 from mpl_toolkits.mplot3d.axes3d import *
 
 
@@ -167,12 +166,6 @@ def run(testnumber):
 
 
 	grid=gengrid(pcl)
-
-	im=cv2plot(grid, cv2.COLORMAP_RAINBOW)
-	# cv2.COLORMAP_HSV
-	#im=cv2plot(grid, cv2.COLORMAP_JET)
-
-
 	geodat_lib.addImageTexture(nurbs,"/tmp/foo.png",scale=(1,1))
 	#add(nurbs,"/tmp/100_200.png")
 
