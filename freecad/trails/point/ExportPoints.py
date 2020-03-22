@@ -78,10 +78,11 @@ class ExportPoints:
             return
 
         try:
-            PointGroups = FreeCAD.ActiveDocument.Point_Groups
-        except:
-            PointGroups = FreeCAD.ActiveDocument.addObject(
+            PointGroups = FreeCAD.ActiveDocument.Point_Groups.Group
+        except Exception:
+            FreeCAD.ActiveDocument.addObject(
                 "App::DocumentObjectGroup", 'Point_Groups')
+            PointGroups = FreeCAD.ActiveDocument.Point_Groups.Group
             PointGroups.Label = "Point Groups"
 
         # Show UI.
@@ -93,7 +94,6 @@ class ExportPoints:
         # Clear previous operation.
         UI.FileDestinationLE.clear()
         UI.PointGroupsLW.clear()
-        PointGroups = FreeCAD.ActiveDocument.Point_Groups.Group
 
         for PointGroup in PointGroups:
             self.GroupList.append(PointGroup.Name)
@@ -144,7 +144,7 @@ class ExportPoints:
         # Create point file.
         try:
             File = open(FileDestinationLE, 'w')
-        except:
+        except Exception:
             FreeCAD.Console.PrintMessage("Can't open file")
 
         Counter = 1

@@ -92,15 +92,6 @@ def	import_emir(
 	if filename.startswith('UserAppData'):
 		filename=filename.replace('UserAppData',FreeCAD.ConfigGet("UserAppData"))
 
-
-	f=open(filename, 'rb')
-
-
-
-
-
-
-
 s6='''
 MainWindow:
 	VerticalLayout:
@@ -146,7 +137,7 @@ class MyApp(object):
 					#self.root.ids['data'].text(),
 					#self.root.ids['data'].toPlainText(),
 			)
-		except:
+		except Exception:
 				sayexc()
 
 	def getfn(self):

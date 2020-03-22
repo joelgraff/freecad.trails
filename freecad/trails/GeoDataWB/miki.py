@@ -118,7 +118,7 @@ def VerticalLayoutTab(title=''):
 
 	try:
 		FreeCAD.w5.append(w)
-	except:
+	except Exception:
 		FreeCAD.w5 = [w]
 
 	if title != '':
@@ -164,7 +164,7 @@ def DockWidget(title=''):
 	# ComboViewShowWidget(w,True)
 	try:
 		FreeCAD.w5.append(w)
-	except:
+	except Exception:
 		FreeCAD.w5 = [w]
 
 	getdockwindowMgr2(w, "FreeCAD")
@@ -191,7 +191,7 @@ def MainWindow(title=''):
 
 	try:
 		FreeCAD.w5.append(w)
-	except:
+	except Exception:
 		FreeCAD.w5 = [w]
 	return w
 
@@ -399,7 +399,7 @@ class Miki(object):
 					depth -= 1
 				try:
 					d[depth] = l
-				except:
+				except Exception:
 					sayexc(str([l, ltxt]))
 
 				parent = ln[l - 1]
@@ -462,7 +462,7 @@ class Miki(object):
 			if l[3] == 'cmd':
 				try:
 					exec(l[4])
-				except:
+				except Exception:
 					sayexc(str(["Error exec:", l[4]]))
 				continue
 			if l[3] == 'obj' or l[3] == 'anchor' or l[3] == 'local class':
@@ -496,7 +496,7 @@ class Miki(object):
 					try:
 						child = self.lines[l[6]][7]
 						self.addChild(parent, child)
-					except:
+					except Exception:
 						# link eines attribs
 						method = l[4]
 						v = self.lines[l[6]][6]
@@ -538,7 +538,7 @@ class Miki(object):
 
 					try:
 						kk = eval("parent." + l[4])
-					except:
+					except Exception:
 						cn = v.__class__.__name__
 						if cn == 'int' or cn == 'float':
 							ex = "parent." + l[4] + "=" + str(v)
@@ -648,7 +648,7 @@ class Miki(object):
 			# "Add children to object"
 			try:
 				p.children.append(c)
-			except:
+			except Exception:
 				p.children = [c]
 			return
 		try:
@@ -663,22 +663,22 @@ class Miki(object):
 			else:
 				try:
 					p.addObject(c)
-				except:
+				except Exception:
 					try:
 						if c.startswith('__MAGIC_'):
 							run_magic(p,c)
-					except:
+					except Exception:
 						FreeCAD.Console.PrintError("\naddObject funktioniert nicht A")
 						FreeCAD.Console.PrintError([p, c])
-		except:
+		except Exception:
 				try:
 					print ("TRy to add",c)
 					p.addObject(c)
-				except:
+				except Exception:
 					try:
 						if c.startswith('__MAGIC_'):
 							run_magic(p,c)
-					except:
+					except Exception:
 						FreeCAD.Console.PrintError("\naddObject funktioniert nicht BBB")
 						FreeCAD.Console.PrintError([p, c])
 
@@ -899,7 +899,7 @@ def MyTabWidget(title=''):
 
 	try:
 		FreeCAD.w5.append(w)
-	except:
+	except Exception:
 		FreeCAD.w5 = [w]
 	return w
 

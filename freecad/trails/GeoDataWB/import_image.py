@@ -337,7 +337,7 @@ class MyApp(object):
 						)
 			te=time.time()
 			say("load image time " + str(round(te-ts,2)))
-		except:
+		except Exception:
 			sayexc()
 
 	def getfn(self):

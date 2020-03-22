@@ -71,7 +71,7 @@ def getShape(pts):
 			dist=round(dist)
 			ls.append(dist)
 			try:dists[dist] += 1
-			except: dists[dist]=1
+			except Exception: dists[dist]=1
 	say(dists.keys())
 	mm=np.mean(list(dists.keys()))
 
@@ -87,7 +87,7 @@ def getShape(pts):
 		dy=len(pts)/dx
 		say(("getshape shape: ",dx,dy))
 		return dx,dy
-	except:
+	except Exception:
 		return (len(pts),1)
 
 
@@ -137,7 +137,7 @@ def showFrame(pts,u=0,v=0,d=10,lu=None,lv=None):
 
 	try:
 		ff=FreeCAD.ActiveDocument.frame
-	except:
+	except Exception:
 		ff=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","frame")
 		ViewProvider(ff.ViewObject)
 
@@ -169,14 +169,14 @@ def import_xyz(mode,filename="/tmp/test.xyz",label='',ku=20, kv=10,lu=0,lv=0):
 		# Get or create "Point_Groups".
 		try:
 			PointGroups = FreeCAD.ActiveDocument.Point_Groups
-		except:
+		except Exception:
 			PointGroups = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", 'Point_Groups')
 			PointGroups.Label = "Point Groups"
 
 		# Get or create "Points".
 		try:
 			FreeCAD.ActiveDocument.Points
-		except:
+		except Exception:
 			Points = FreeCAD.ActiveDocument.addObject('Points::Feature', "Points")
 			PointGroups.addObject(Points)
 
@@ -197,18 +197,18 @@ def import_xyz(mode,filename="/tmp/test.xyz",label='',ku=20, kv=10,lu=0,lv=0):
 		App.ActiveDocument.Points
 		say("use existing Points")
 		return App.ActiveDocument.Points.Points.Points
-	except:
+	except Exception:
 		# Get or create "Point_Groups".
 		try:
 			PointGroups = FreeCAD.ActiveDocument.Point_Groups
-		except:
+		except Exception:
 			PointGroups = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", 'Point_Groups')
 			PointGroups.Label = "Point Groups"
 
 		# Get or create "Points".
 		try:
 			FreeCAD.ActiveDocument.Points
-		except:
+		except Exception:
 			Points = FreeCAD.ActiveDocument.addObject('Points::Feature', "Points")
 			PointGroups.addObject(Points)
 
@@ -237,7 +237,7 @@ def import_xyz(mode,filename="/tmp/test.xyz",label='',ku=20, kv=10,lu=0,lv=0):
 				#pts.append(FreeCAD.Vector(float(p[0])-32356000.00,float(p[1])-5638000.00,hfac*float(p[2])))
 
 				pts.append(FreeCAD.Vector(float(p[0]),float(p[1]),hfac*float(p[2])))
-			except: 
+			except Exception: 
 				sayErr(("error line ",i,p,l))
 			if i % 1000 == 0:
 				Gui.updateGui()
@@ -425,7 +425,7 @@ class MyApp(object):
 			else:
 				self.root.ids['img1'].show()
 				self.root.ids['img2'].hide()
-		except:
+		except Exception:
 			pass
 
 	def update(self):
@@ -482,7 +482,7 @@ class MyApp(object):
 			self.root.ids['main'].hide()
 			self.root.ids['img1'].hide()
 			self.root.ids['img2'].hide()
-		except:
+		except Exception:
 				sayexc()
 
 
@@ -586,7 +586,7 @@ def create_grid(pu,du,dv, wb, eb, sb, nb, color=(1.0,0.0,0.0)):
 
 	try:
 		grids = App.ActiveDocument.grids
-	except:
+	except Exception:
 		App.ActiveDocument.addObject("App::DocumentObjectGroup","grids")
 		grids = App.ActiveDocument.grids
 
@@ -629,7 +629,7 @@ def create_mgrid(pu,du,dv, wb, eb, sb, nb, color=(1.0,0.0,0.0)):
 
 	try:
 		grids = App.ActiveDocument.grids
-	except:
+	except Exception:
 		App.ActiveDocument.addObject("App::DocumentObjectGroup","grids")
 		grids = App.ActiveDocument.grids
 
@@ -670,7 +670,7 @@ def create_pcl(pu,color=(1.0,0.0,0.0)):
 
 	try:
 		points = App.ActiveDocument.points
-	except:
+	except Exception:
 		App.ActiveDocument.addObject("App::DocumentObjectGroup","points")
 		points = App.ActiveDocument.points
 
@@ -704,7 +704,7 @@ def muv(app,u=3,v=5,d=10,la=100,lb=100):
 	pu=[]
 	say([ "(wb,eb,sb,nb,du,dv)", (wb,eb,sb,nb,du,dv)])
 	try: pts=app.pts
-	except: pts=app
+	except Exception: pts=app
 
 	for k in range(dv):
 		pu += pts[u+v*la+la*k:u+v*la+du+la*k]
@@ -743,7 +743,7 @@ def suv(app,u=3,v=5,d=10,la=100,lb=100):
 	say([ "(wb,eb,sb,nb,du,dv)", (wb,eb,sb,nb,du,dv)])
 	say('u,v',u,v)
 	try: pts=app.pts
-	except: pts=app
+	except Exception: pts=app
 	for k in range(dv):
 		pu += pts[u+v*la+la*k:u+v*la+du+la*k]
 		uu.append(pts[u+v*la+la*k:u+v*la+du+la*k])
@@ -795,7 +795,7 @@ def suv2(label,pts,u=3,v=5,d=10,la=100,lb=100):
 
 	try:
 		nurbs = App.ActiveDocument.nurbs
-	except:
+	except Exception:
 		App.ActiveDocument.addObject("App::DocumentObjectGroup","nurbs")
 		nurbs = App.ActiveDocument.nurbs
 
@@ -821,14 +821,14 @@ def suv2(label,pts,u=3,v=5,d=10,la=100,lb=100):
 
 	try:
 		App.ActiveDocument.ActiveObject.ViewObject.hide()
-	except: pass
+	except Exception: pass
 
 	# create point cloud
 	create_pcl(pu,color)
 	Gui.updateGui()
 	try:
 		App.ActiveDocument.ActiveObject.ViewObject.hide()
-	except:
+	except Exception:
 		pass
 
 	#create bspline grid

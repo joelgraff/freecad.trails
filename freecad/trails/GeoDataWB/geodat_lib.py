@@ -69,7 +69,7 @@ def showFrame(pts,u=0,v=0,d=10,lu=None,lv=None):
 
 	try:
 		ff=FreeCAD.ActiveDocument.frame
-	except:
+	except Exception:
 		ff=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","frame")
 		ViewProvider(ff.ViewObject)
 
@@ -160,7 +160,7 @@ def addImageTexture(obj,fn,scale=(1,1)):
 	try:
 		cl[1].scaleFactor.getValue()
 		rootnode.removeChild(1) 
-	except:
+	except Exception:
 		print("no texture scaler found")
 
 
@@ -168,7 +168,7 @@ def addImageTexture(obj,fn,scale=(1,1)):
 	try:
 		cl[1].filename.getValue()
 		rootnode.removeChild(1) 
-	except:
+	except Exception:
 		print("no texture image found")
 
 	tex =  coin.SoTexture2()

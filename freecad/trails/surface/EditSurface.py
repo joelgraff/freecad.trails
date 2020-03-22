@@ -148,7 +148,7 @@ class SwapEdge:
                             CopyMesh.swapEdge(
                                 self.FaceIndexes[0], self.FaceIndexes[1])
 
-                        except:
+                        except Exception:
                             pass
 
                         surface.Mesh = CopyMesh

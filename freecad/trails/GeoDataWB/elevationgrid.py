@@ -151,7 +151,7 @@ def text2coordList(datatext):
 				x.append(xv)
 				y.append(yv)
 				z.append(10*zv)
-			except:
+			except Exception:
 				sayErr(("Fehler in Zeile ",zn))
 
 	x=np.array(x)
@@ -182,7 +182,7 @@ def coordLists2points(x,y,z):
 	try:
 		# simple list
 		n=len(x)
-	except:
+	except Exception:
 		# numpy
 		n=x.shape(0)
 
@@ -392,7 +392,7 @@ def createElevationGrid(mode,rbfmode=True,source=None,gridCount=20,zfactor=20,bo
 	zi=zi1
 
 	try: color=modeColor[mode]
-	except: color=(1.0,0.0,0.0)
+	except Exception: color=(1.0,0.0,0.0)
 
 	showFace(rbf,rbf2,x,y,gridsize,color,bound)
  
@@ -514,7 +514,7 @@ def dialog(points):
 def run():
 	import Points
 	try: pcl=FreeCADGui.Selection.getSelection()[0]
-	except:
+	except Exception:
 		self=None
 		Gui.ActiveDocument=None
 		App.newDocument("Unnamed")

@@ -66,15 +66,16 @@ class CreateSurface:
     def Activated(self):
         try:
             self.Surfaces = FreeCAD.ActiveDocument.Surfaces
-        except:
+        except Exception:
             self.Surfaces = FreeCAD.ActiveDocument.addObject(
                 "App::DocumentObjectGroup", 'Surfaces')
 
         try:
-            PointGroups = FreeCAD.ActiveDocument.Point_Groups
-        except:
-            PointGroups = FreeCAD.ActiveDocument.addObject(
+            PointGroups = FreeCAD.ActiveDocument.Point_Groups.Group
+        except Exception:
+            FreeCAD.ActiveDocument.addObject(
                 "App::DocumentObjectGroup", 'Point_Groups')
+            PointGroups = FreeCAD.ActiveDocument.Point_Groups.Group
             PointGroups.Label = "Point Groups"
 
         self.IPFui.setParent(FreeCADGui.getMainWindow())
@@ -83,7 +84,6 @@ class CreateSurface:
         model = QtGui.QStandardItemModel()
         self.IPFui.PointGroupsLV.setModel(model)
 
-        PointGroups = FreeCAD.ActiveDocument.Point_Groups.Group
         self.GroupList = []
 
         for PointGroup in PointGroups:

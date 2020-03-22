@@ -149,7 +149,7 @@ def import_latlon(filename,orig,hi):
 		seg['trkpt']
 		ss=seg
 		seg=[ss]
-	except:
+	except Exception:
 		pass
 	'''
 
@@ -239,7 +239,7 @@ class MyApp(object):
 					self.root.ids['h'].text(),
 			)
 			self.root.ids['orig'].setText(rc),
-		except:
+		except Exception:
 				sayexc()
 
 	def getfn(self):

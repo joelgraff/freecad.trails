@@ -59,7 +59,7 @@ class CreateContour:
         # todo : try - except part should be changed
         try:
             self.Contours = FreeCAD.ActiveDocument.Contours
-        except:
+        except Exception:
             self.Contours = FreeCAD.ActiveDocument.addObject(
                 "App::DocumentObjectGroup", 'Contours')
 

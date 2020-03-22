@@ -46,7 +46,7 @@ def sayexc(mess='',last=False):
 # whenever the module is loaded stop an old eventserver
 try:
 	stop()
-except:
+except Exception:
 	pass
 
 ## the debug window for runtime parameter
@@ -181,7 +181,7 @@ class EventFilter(QtCore.QObject):
 
 		if z == 'PySide.QtCore.QEvent.Type.HoverMove' :
 			try: za=int(self.output.vmap['za'].text())
-			except: za=0
+			except Exception: za=0
 			za2=za
 			self.output.vmap['xa'].setText(str(e.pos().x()))
 			self.output.vmap['ya'].setText(str(e.pos().y()))
@@ -206,7 +206,7 @@ class EventFilter(QtCore.QObject):
 				self.output.vmap['ya'].setText(str(e.globalY()))
 
 				try: za=int(self.output.vmap['za'].text())
-				except: za=0
+				except Exception: za=0
 				za2=za+int(e.delta())
 				self.output.vmap['za'].setText(str(za2))
 				return self.on_move(self,[e.globalX(),e.globalY(),za2],[e.x(),e.y(),e.delta()] )
@@ -220,7 +220,7 @@ class EventFilter(QtCore.QObject):
 				myclass=o.__class__.__name__ 
 				try: 
 					mytext=o.text()
-				except: 
+				except Exception: 
 					mytext="???"
 				if myclass=='QTabBar':
 					windowlist.append([myclass,str(o.tabText(o.currentIndex())),o.currentIndex()])
@@ -245,21 +245,21 @@ class EventFilter(QtCore.QObject):
 #								Msg( p.__class__.__name__ +" objectName:" + p.objectName()+ "\n" )
 								label2=p.objectName()
 								if label2!='': label=label2
-							except: pass
+							except Exception: pass
 							try: 
 #								Msg( p.__class__.__name__ +" windowTitle" + p.windowTitle()+ "\n" )
 								label2=p.windowTitle()
 								if label2!='': label=label2
-							except: pass
+							except Exception: pass
 							try: 
 #								Msg( p.__class__.__name__ +" tabTExt" + p.tabText()+ "\n" )
 								label2=p.tabText()
 								if label2!='': label=label2
-							except: pass
+							except Exception: pass
 							windowlist.append([p.__class__.__name__ ,str(label)])
 							p=widget.parent()
 							widget=p
-						except:
+						except Exception:
 							widget=None
 				stack=''
 				for t in windowlist:
@@ -313,7 +313,7 @@ class EventFilter(QtCore.QObject):
 					return self.on_clicks(self,'Right',1)
 #					return True
 
-		except:
+		except Exception:
 			sayexc()
 		return False
 
@@ -593,7 +593,7 @@ def on_keypress2(ef,keystring):
 			t=FreeCAD.Vector(prpos)
 			try:
 				t.normalize()
-			except:
+			except Exception:
 				pass
 			
 			
@@ -629,7 +629,7 @@ def on_keypress2(ef,keystring):
 			ef.output.deleteLater()
 			ef.navi.deleteLater()
 			sg.removeChild(ef.background)
-	except:
+	except Exception:
 		sayexc()
 		stop()
 	return True
@@ -681,7 +681,7 @@ def on_clicks3(ef,button,count):
 		if ef.windowlist[0][1]=='Testme':
 			print("call HUHU")
 			return False
-	except:
+	except Exception:
 		return True
 
 

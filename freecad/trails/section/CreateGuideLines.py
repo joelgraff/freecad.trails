@@ -70,14 +70,14 @@ class CreateGuideLines:
     def Activated(self):
         try:
             self.GuideLineGroup = FreeCAD.ActiveDocument.Alignments
-        except:
+        except Exception:
             self.GuideLineGroup = FreeCAD.ActiveDocument.addObject(
                 "App::DocumentObjectGroup", 'Alignments')
             self.GuideLineGroup.Label = "Alignments"
 
         try:
             self.GuideLineGroup = FreeCAD.ActiveDocument.GuideLines
-        except:
+        except Exception:
             self.GuideLineGroup = FreeCAD.ActiveDocument.addObject(
                 "App::DocumentObjectGroup", 'GuideLines')
             self.GuideLineGroup.Label = "Guide Lines"

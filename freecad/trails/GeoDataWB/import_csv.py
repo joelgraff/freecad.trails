@@ -116,7 +116,7 @@ class MyApp(object):
 					self.root.ids['orig'].text(),
 					self.root.ids['data'].toPlainText(),
 			)
-		except:
+		except Exception:
 			sayexc()
 
 	def getfn(self):

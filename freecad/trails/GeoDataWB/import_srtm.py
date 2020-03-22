@@ -172,14 +172,14 @@ def run(mx,my,dx,dy):
 		# Get or create "Point_Groups".
 		try:
 			PointGroups = FreeCAD.ActiveDocument.Point_Groups
-		except:
+		except Exception:
 			PointGroups = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", 'Point_Groups')
 			PointGroups.Label = "Point Groups"
 
 		# Get or create "Points".
 		try:
 			FreeCAD.ActiveDocument.Points
-		except:
+		except Exception:
 			Points = FreeCAD.ActiveDocument.addObject('Points::Feature', "Points")
 			PointGroups.addObject(Points)
 

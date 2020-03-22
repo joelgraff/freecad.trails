@@ -66,7 +66,7 @@ class CreateSections:
 
         try:
             self.GuideLines = FreeCAD.ActiveDocument.GuideLines
-        except:
+        except Exception:
             self.GuideLines = FreeCAD.ActiveDocument.addObject(
                 "App::DocumentObjectGroup", 'GuideLines')
             self.GuideLines.Label = "Guide Lines"
@@ -82,7 +82,7 @@ class CreateSections:
         self.IPFui.SelectSurfacesLW.clear()
         try:
             self.Surfaces = FreeCAD.ActiveDocument.Surfaces
-        except:
+        except Exception:
             self.Surfaces = FreeCAD.ActiveDocument.addObject(
                 "App::DocumentObjectGroup", 'Surfaces')
             self.Surfaces.Label = "Surfaces"
@@ -104,7 +104,7 @@ class CreateSections:
 
         try:
             self.SectionsGroup = FreeCAD.ActiveDocument.Sections
-        except:
+        except Exception:
             self.SectionsGroup = FreeCAD.ActiveDocument.addObject(
                 "App::DocumentObjectGroup", 'Sections')
             self.SectionsGroup.Label = "Sections"

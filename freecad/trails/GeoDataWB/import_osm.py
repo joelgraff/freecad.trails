@@ -128,7 +128,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
 		f = open(fn, "r")
 		content = f.read()
 
-	except:
+	except Exception:
 		sayW("no cache file, so I connect to  openstreetmap.org...")
 		lk = bk
 		b1 = b-bk/1113*10
@@ -220,7 +220,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
 		root.insertChild(myLight, 0)
 		say("beleuchtung auf grundobjekt eingeschaltet")
 
-	except:
+	except Exception:
 		sayexc("Beleuchtung 272")
 
 	cam = '''#Inventor V2.1 ascii
@@ -310,7 +310,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
 				if str(t.params['k']) == 'building:height':
 					h = int(str(t.params['v']))*1000
 
-			except:
+			except Exception:
 				sayErr("unexpected error ######################################################")
 
 		name = str(st) + st2 + " " + str(nr)
@@ -342,7 +342,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
 					try:
 						height = heights[m.params['lat']+' '+m.params['lon']]*1000 - baseheight
 
-					except:
+					except Exception:
 						sayErr("---no height available for " + m.params['lat']+' '+m.params['lon'])
 						height = 0
 
@@ -665,7 +665,7 @@ class MyApp(object):
 						self.root.ids['long'].setText(x)
 						flag = '2'
 
-			except:
+			except Exception:
 				pass
 
 	def swap(self):

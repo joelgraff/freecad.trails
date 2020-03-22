@@ -233,7 +233,7 @@ class LIDAR:
 
 	def execute(self,obj):
 		try: _=obj.nar[0]
-		except: return
+		except Exception: return
 
 	def onChanged(self,obj,prop):
 		print("prop ",prop)
@@ -396,7 +396,7 @@ class MyApp(object):
 #				psh=sh.makeParallelProjection(App.ActiveDocument.BSpline.Shape,FreeCAD.Vector(0,0,1))
 #				Part.show(psh)
 
-		except:
+		except Exception:
 				sayexc()
 
 

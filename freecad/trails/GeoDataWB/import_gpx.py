@@ -56,7 +56,7 @@ def import_gpx(filename, orig, hi):
 		ss = seg
 		seg = [ss]
 
-	except:
+	except Exception:
 		pass
 
 	lats = []
@@ -209,7 +209,7 @@ class MyApp(object):
 			)
 			self.root.ids['orig'].setText(rc),
 
-		except:
+		except Exception:
 			sayexc()
 
 	def getfn(self):
