@@ -7,7 +7,6 @@
     "tracker_url": "https://github.com/vvoovv/blender-geo/issues",
 '''
 
-import os
 import math
 
 # see conversion formulas at

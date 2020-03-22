@@ -585,9 +585,10 @@ def create_grid(pu,du,dv, wb, eb, sb, nb, color=(1.0,0.0,0.0)):
 	sss=[]
 
 	try:
-		App.ActiveDocument.grids
+		grids = App.ActiveDocument.grids
 	except:
-		grids=App.ActiveDocument.addObject("App::DocumentObjectGroup","grids")
+		App.ActiveDocument.addObject("App::DocumentObjectGroup","grids")
+		grids = App.ActiveDocument.grids
 
 	# u direction curves
 	for iu in range(sb,dv-nb):
@@ -613,7 +614,7 @@ def create_grid(pu,du,dv, wb, eb, sb, nb, color=(1.0,0.0,0.0)):
 
 	Part.show(comp)
 	App.ActiveDocument.ActiveObject.ViewObject.LineColor=color
-	App.ActiveDocument.grids.addObject(App.ActiveDocument.ActiveObject)
+	grids.addObject(App.ActiveDocument.ActiveObject)
 	te=time.time()
 	say(["create grid time ",round(te-ts,5) ])
 	return App.ActiveDocument.ActiveObject

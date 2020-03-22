@@ -4,10 +4,10 @@ Import data from OpenStreetMap
 
 import FreeCAD, FreeCADGui, WebGui, Part
 from pivy import coin
-from GeoDataWB import my_xmlparser
-from GeoDataWB.transversmercator import TransverseMercator
-import GeoDataWB.inventortools as inventortools
-from GeoDataWB.say import *
+from . import my_xmlparser
+from .transversmercator import TransverseMercator
+from . import inventortools as inventortools
+from .say import *
 import json, urllib
 
 debug = False
@@ -745,7 +745,7 @@ def mydialog():
 	"""
 
 	app = MyApp()
-	import GeoDataWB.miki as miki
+	from . import miki
 
 	miki = miki.Miki()
 	miki.app = app

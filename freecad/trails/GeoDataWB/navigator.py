@@ -15,7 +15,6 @@
 #http://doc.qt.io/qt-5/richtext-html-subset.html
 
 from GeoDataWB.say import *
-import PySide
 from PySide import QtGui,QtCore
 
 import FreeCAD,FreeCADGui
@@ -26,18 +25,13 @@ App=FreeCAD
 Err=FreeCAD.Console.PrintError
 Msg=FreeCAD.Console.PrintMessage
 
-import FreeCADGui
-from PySide import QtGui
 from pivy import coin
-
-import sys
-from PySide import QtGui, QtCore
 import os
 
 
 #\endcond
 
-import time,sys,traceback,math
+import time,math
 from pivy import coin
 '''
 def sayexc(mess='',last=False):
@@ -354,9 +348,6 @@ def keypress(ef,keystring):
 	if keystring=='Z':
 		camera.Placement.Base.z += 10
 
-	ax=camera.Placement.Rotation.Axis
-	an=camera.Placement.Rotation.Angle
-	an=an* 180/math.pi
 	[y,p,r]=camera.Placement.Rotation.toEuler()
 
 	if keystring=='G':
@@ -1025,8 +1016,6 @@ def navi():
 
 	sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
 
-	col = coin.SoBaseColor()
-	#col.rgb=(1,0,0)
 	trans = coin.SoTranslation()
 	trans.translation.setValue([0,0,0])
 	myCustomNode = coin.SoSeparator()

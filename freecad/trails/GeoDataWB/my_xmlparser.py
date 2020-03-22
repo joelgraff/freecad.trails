@@ -5,9 +5,8 @@ fn='/home/thomas/Dokumente/freecad_buch/D006_landxml/FreeCAD_Document.xml'
 # http://landxml.org/schema/LandXML-2.0/samples/Carlson Software/corridor from CD3-2.0.xml
 
 import re
-from GeoDataWB.say import say
+from .say import say
 from PySide import QtGui
-import FreeCADGui as Gui
 import FreeCAD
 
 class node():
@@ -71,7 +70,7 @@ def parseParams(string):
 
 def getData(fn,pb=None):
 	
-	if pb==None:
+	if pb is None:
 		pb=QtGui.QProgressBar()
 		pb.show()
 
@@ -102,7 +101,7 @@ def getData(fn,pb=None):
 
 		line=content[i].strip()
 		j=0
-		while re.search(r">\s*$", line) == None and j<60:
+		while re.search(r">\s*$", line) is None and j<60:
 			i += 1
 			j += 1
 			line += content[i] 

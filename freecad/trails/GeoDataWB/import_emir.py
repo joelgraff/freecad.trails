@@ -94,7 +94,6 @@ def	import_emir(
 
 
 	f=open(filename, 'rb')
-	lines=f.readlines()
 
 
 

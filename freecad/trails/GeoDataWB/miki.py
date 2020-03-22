@@ -467,11 +467,6 @@ class Miki(object):
 				continue
 			if l[3] == 'obj' or l[3] == 'anchor' or l[3] == 'local class':
 					name = l[4]
-					try:
-						f2 = name
-					except:
-						pass
-
 					f = creatorFunction(l[4])
 
 					if len(l) < 7:  # no name for object
@@ -479,7 +474,7 @@ class Miki(object):
 
 					if l[3] == 'local class':
 						exec("class " + name + "(object):pass")
-						h = eval(f2)
+						h = eval(name)
 					else:
 						h = eval(f)
 					if len(l) < 7:

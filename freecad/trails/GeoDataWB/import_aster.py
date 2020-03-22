@@ -71,9 +71,6 @@ def import_ast(b=50.26,l=11.39):
 
 	cols=dataset.RasterXSize
 	rows=dataset.RasterYSize
-
-	geotransform = dataset.GetGeoTransform()
-
 	band = dataset.GetRasterBand(1)
 	data = band.ReadAsArray(0, 0, cols, rows)
 
@@ -92,7 +89,7 @@ def import_ast(b=50.26,l=11.39):
 
 
 	pts=[]
-	d1=d2=d=70
+	d1=d2=70
 
 	tm=TransverseMercator()
 	tm.lat=b

@@ -9,7 +9,6 @@
 #-------------------------------------------------
 
 #\cond
-import Draft
 import FreeCADGui,FreeCAD
 App=FreeCAD
 Gui=FreeCADGui
@@ -17,8 +16,6 @@ Gui=FreeCADGui
 from importlib import reload
 
 import numpy as np
-import geodat
-import time
 import cv2
 import matplotlib
 #\endcond
@@ -214,7 +211,6 @@ def runtest():
 	reload(geodat.testdata)
 
 	nurbs=geodat.testdata.bspline()
-	pcl=geodat.testdata.pcl()
 
 	import geodat.geodat_lib
 	fn=geodat.testdata.image(mirroru=True)

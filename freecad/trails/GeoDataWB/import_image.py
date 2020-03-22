@@ -10,14 +10,6 @@
 
 from GeoDataWB.say import *
 import Points
-
-import sys
-if sys.version_info[0] !=2:
-	from importlib import reload
-
-
-
-import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
 import os.path

@@ -7,19 +7,12 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
-import FreeCAD
-
-import FreeCADGui
+import FreeCAD, FreeCADGui
 App=FreeCAD
 Gui=FreeCADGui
 
-import PySide
 from PySide import QtCore, QtGui
 
-import FreeCAD
-import Draft, Part
-
-import numpy as np
 
 
 #import matplotlib
@@ -27,7 +20,7 @@ import numpy as np
 #from matplotlib.pyplot import cm 
 
 
-import os,random,time,sys,traceback
+import sys,traceback
 
 def sayd(s):
 	if hasattr(FreeCAD,'animation_debug'):
@@ -51,7 +44,7 @@ def sayW(s):
 
 def errorDialog(msg):
     diag = QtGui.QMessageBox(QtGui.QMessageBox.Critical,u"Error Message",msg )
-    diag.setWindowFlags(PySide.QtCore.Qt.WindowStaysOnTopHint)
+    diag.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
     diag.exec_()
 
 

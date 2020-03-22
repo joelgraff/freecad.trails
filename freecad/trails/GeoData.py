@@ -27,7 +27,7 @@ import FreeCADGui
 class import_csv:
 
     def Activated(self):
-        import GeoDataWB.import_csv
+        from .GeoDataWB import import_csv
         GeoDataWB.import_csv.mydialog()
 
     def GetResources(self):
@@ -41,10 +41,7 @@ class import_csv:
 class import_emir:
 
     def Activated(self):
-        import GeoDataWB.import_emir
-        from importlib import reload
-
-        reload(GeoDataWB.import_emir)
+        from .GeoDataWB import import_emir
         GeoDataWB.import_emir.mydialog()
 
     def GetResources(self):
@@ -58,10 +55,7 @@ class import_emir:
 class import_xyz:
 
     def Activated(self):
-        import GeoDataWB.import_xyz
-        from importlib import reload
-
-        reload(GeoDataWB.import_xyz)
+        from .GeoDataWB import import_xyz
         GeoDataWB.import_xyz.mydialog(False)
 
     def GetResources(self):
@@ -75,10 +69,7 @@ class import_xyz:
 class import_image:
 
     def Activated(self):
-        import GeoDataWB.import_image
-        from importlib import reload
-
-        reload(GeoDataWB.import_image)
+        from .GeoDataWB import import_image
         GeoDataWB.import_image.mydialog(False)
 
     def GetResources(self):
@@ -92,8 +83,7 @@ class import_image:
 class import_gpx:
 
     def Activated(self):
-        import GeoDataWB.import_gpx
-
+        from .GeoDataWB import import_gpx
         GeoDataWB.import_gpx.mydialog()
 
     def GetResources(self):
@@ -107,9 +97,7 @@ class import_gpx:
 class import_latlony:
 
     def Activated(self):
-        import GeoDataWB.import_latlony
-        from importlib import reload
-        reload(GeoDataWB.import_latlony)
+        from .GeoDataWB import import_latlony
         GeoDataWB.import_latlony.mydialog()
         # GeoDataWB.import_latlony.run()
 
@@ -124,10 +112,7 @@ class import_latlony:
 class import_aster:
 
     def Activated(self):
-        import GeoDataWB.import_aster
-        from importlib import reload
-
-        reload(GeoDataWB.import_aster)
+        from .GeoDataWB import import_aster
         GeoDataWB.import_aster.mydialog()
 
     def GetResources(self):
@@ -141,10 +126,7 @@ class import_aster:
 class import_lidar:
 
     def Activated(self):
-        import GeoDataWB.import_lidar
-        from importlib import reload
-
-        reload(GeoDataWB.import_lidar)
+        from .GeoDataWB import import_lidar
         GeoDataWB.import_lidar.mydialog()
 
     def GetResources(self):
@@ -158,7 +140,7 @@ class import_lidar:
 class navigator:
 
     def Activated(self):
-        import GeoDataWB.navigator
+        from .GeoDataWB import navigator
         FreeCADGui.activeDocument().activeView().setCameraType("Perspective")
         FreeCADGui.updateGui()
         GeoDataWB.navigator.navi()
@@ -174,10 +156,8 @@ class navigator:
 class import_osm:
 
     def Activated(self):
-        import GeoDataWB.import_osm
-        from importlib import reload
-        reload(GeoDataWB.import_osm)
-        GeoDataWB.import_osm.mydialog()
+        from .GeoDataWB import import_osm
+        import_osm.mydialog()
 
     def GetResources(self):
         return {
@@ -190,10 +170,7 @@ class import_osm:
 class importheights:
 
     def Activated(self):
-        import GeoDataWB.import_heights
-        from importlib import reload
-
-        reload(GeoDataWB.import_heights)
+        from .GeoDataWB import import_heights
         GeoDataWB.import_heights.mydialog()
 
     def GetResources(self):
@@ -207,10 +184,7 @@ class importheights:
 class importsrtm:
 
     def Activated(self):
-        import GeoDataWB.import_srtm
-        from importlib import reload
-
-        reload(GeoDataWB.import_srtm)
+        from .GeoDataWB import import_srtm
         GeoDataWB.import_srtm.mydialog()
 
     def GetResources(self):
@@ -224,10 +198,7 @@ class importsrtm:
 class createHouse:
 
     def Activated(self):
-        import GeoDataWB.createhouse
-        from importlib import reload
-
-        reload(GeoDataWB.createhouse)
+        from .GeoDataWB import createhouse
         FreeCAD.rc = GeoDataWB.createhouse.mydialog()
 
     def GetResources(self):
@@ -242,12 +213,8 @@ class ElevationGrid:
 
     def Activated(self):
 
-        import GeoDataWB.elevationgrid
-        from importlib import reload
-
-        reload(GeoDataWB.elevationgrid)
+        from .GeoDataWB import elevationgrid
         GeoDataWB.elevationgrid.run()
-        # FreeCAD.rc=GeoDataWB.createhouse.mydialog()
 
     def GetResources(self):
         return {
