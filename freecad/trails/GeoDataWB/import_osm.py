@@ -8,7 +8,7 @@ from . import my_xmlparser
 from .transversmercator import TransverseMercator
 from . import inventortools as inventortools
 from .say import *
-import json, urllib
+import json, urllib.request
 
 debug = False
 
@@ -138,14 +138,13 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
 		source = 'http://api.openstreetmap.org/api/0.6/map?bbox='+str(l1)+','+str(b1)+','+str(l2)+','+str(b2)
 		say(source)
 
-		import requests
-		response = requests.get(source)
+		response = urllib.request.urlopen(source)
 		FreeCAD.t = response
 
 		f = open(fn, "w")
-		if response.status_code == 200:
+		if response.getcode == 200:
 			with open(fn, 'wb') as f:
-				for chunk in response.iter_content(1024):
+				for chunk in response.readlines(1024):
 					f.write(chunk)
 		f.close()
 

@@ -32,7 +32,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate
 import Points
-from GeoDataWB.say import say,sayErr
+from .say import say,sayErr
 
 
 # test data

@@ -22,10 +22,11 @@ import FreeCADGui
 #from transportationwb.say import sayexc, say
 #from transportationwb.say import  *
 
-from GeoDataWB.say import sayexc, say
-from GeoDataWB.say import  *
+from .say import sayexc, say
+from .say import  *
 
 from PySide import QtGui, QtCore
+import PySide
 
 import re
 
@@ -354,6 +355,7 @@ class Miki(object):
 		ls = configurationString.splitlines()
 
 		# pylint: disable=unused-variable
+		app = self.app
 		line = 0
 		depth = 0
 		d = [0]*30
@@ -1009,9 +1011,9 @@ class PicWidget(QtGui.QLabel):
 		if frame.sizeX!=0 and frame.sizeY!=0:
 			image_profile = image_profile.scaled(frame.sizeX,frame.sizeY, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation) # To scale image for example and keep its Aspect Ration    
 		label_Image.setPixmap(QtGui.QPixmap.fromImage(image_profile))
-		frame.setMinimumSize(PySide.QtCore.QSize( im.shape[1], im.shape[0]))
+		frame.setMinimumSize(QtCore.QSize( im.shape[1], im.shape[0]))
 		if frame.sizeX!=0 and frame.sizeY!=0:
-			frame.setMinimumSize(PySide.QtCore.QSize(frame.sizeX,frame.sizeY))
+			frame.setMinimumSize(QtCore.QSize(frame.sizeX,frame.sizeY))
 		label_Image.setAlignment(QtCore.Qt.AlignCenter)
 		
 		return frame

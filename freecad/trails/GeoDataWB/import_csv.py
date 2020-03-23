@@ -3,8 +3,8 @@ CSV File importer
 """
 
 import FreeCAD, FreeCADGui, Draft
-from GeoDataWB.transversmercator import TransverseMercator
-from GeoDataWB.say import *
+from .transversmercator import TransverseMercator
+from .say import *
 import csv, re
 
 
@@ -128,7 +128,7 @@ class MyApp(object):
 def mydialog():
 	app = MyApp()
 
-	import GeoDataWB.miki as miki
+	from . import miki
 
 	miki = miki.Miki()
 	miki.app = app

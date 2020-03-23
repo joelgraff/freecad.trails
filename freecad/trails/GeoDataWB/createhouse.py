@@ -239,7 +239,7 @@ class MyApp(object):
 def mydialog():
 	app=MyApp()
 
-	import GeoDataWB.miki as miki
+	from . import miki
 
 	miki=miki.Miki()
 	miki.app=app

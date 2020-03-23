@@ -3,21 +3,16 @@ GPX File importer
 """
 
 import FreeCAD, FreeCADGui, Draft
-from GeoDataWB.transversmercator import TransverseMercator
-from GeoDataWB.xmltodict import parse
-from GeoDataWB.say import *
+from .transversmercator import TransverseMercator
+from .xmltodict import parse
+from .say import *
 import json, re
-
-debug = False
-sd
-
 
 def import_gpx(filename, orig, hi):
 	"""
 	Import a gpx trackfile
 	"""
 
-	global sd
 	f = open(filename, "r")
 	c1 = f.read()
 	content = re.sub('^\<\?[^\>]+\?\>', '', c1)
@@ -36,9 +31,6 @@ def import_gpx(filename, orig, hi):
 	
 	sd = parse(content)
 
-	if debug:
-		print(json.dumps(sd, indent=4))
-	
 	points = []
 	points2 = []
 	points0 = []
@@ -231,7 +223,7 @@ def mydialog():
 
 	app = MyApp()
 
-	import GeoDataWB.miki as miki
+	from . import miki
 
 	miki = miki.Miki()
 	miki.app = app

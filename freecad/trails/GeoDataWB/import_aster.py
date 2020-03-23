@@ -22,9 +22,9 @@ When presenting or publishing ASTER GDEM data, I agree to include "ASTER GDEM is
 Because there are known inaccuracies and artifacts in the data set, please use the product with awareness of its limitations. The data are provided "as is" and neither NASA nor METI/ERSDAC will be responsible for any damages resulting from use of the data.
 '''
 
-from GeoDataWB.say import *
+from .say import *
 
-from  GeoDataWB.transversmercator import TransverseMercator
+from .transversmercator import TransverseMercator
 
 import gdal
 from gdalconst import * 
@@ -180,7 +180,7 @@ def mydialog():
 	'''the dialog to import a gdal file'''
 
 	app=MyApp()
-	import GeoDataWB.miki as gmiki
+	from . import miki
 	miki=gmiki.Miki()
 
 	miki.app=app
@@ -195,7 +195,7 @@ def mydialog():
 
 def import_heights(b,l,s):
 
-	import GeoDataWB.import_xyz
+	from . import import_xyz
 
 	ts=time.time()
 
@@ -203,7 +203,7 @@ def import_heights(b,l,s):
 	pts=pcl
 	ff="N" + str(b) + " E" + str(l)
 
-	nurbs=GeoDataWB.import_xyz.suv2(ff,pts,u=0,v=0,d=140,la=140,lb=140)
+	nurbs=import_xyz.suv2(ff,pts,u=0,v=0,d=140,la=140,lb=140)
 	te=time.time()
 	print ("time to create models:",te-ts)
 	nurbs.ViewObject.Selectable = False

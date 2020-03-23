@@ -8,7 +8,7 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
-from GeoDataWB.say import *
+from .say import *
 import Points
 import matplotlib.image as mpimg
 import numpy as np
@@ -317,7 +317,7 @@ class MyApp(object):
 			filename=self.root.ids['bl'].text()
 			if filename.startswith('UserAppData'):
 				filename=filename.replace('UserAppData',FreeCAD.ConfigGet("UserAppData"))
-
+			import time
 			ts=time.time()
 			import_image(
 						filename,
@@ -352,8 +352,7 @@ def mydialog(run=True):
 
 	app=MyApp()
 
-	import GeoDataWB.miki as miki
-	reload(miki)
+	from . import miki
 
 	miki=miki.Miki()
 	miki.app=app

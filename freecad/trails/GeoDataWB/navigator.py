@@ -14,7 +14,7 @@
 #http://doc.qt.io/qt-5/qcolor.html#setNamedColor
 #http://doc.qt.io/qt-5/richtext-html-subset.html
 
-from GeoDataWB.say import *
+from .say import *
 from PySide import QtGui,QtCore
 
 import FreeCAD,FreeCADGui

@@ -9,10 +9,9 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
-
-from GeoDataWB.say import *
-
+from .say import *
 import Points
+import time
 
 def setNice(flag=True): 
 	''' make smooth skins by setting the MeshDeviation to 0.05'''
@@ -540,7 +539,7 @@ class MyApp(object):
 def mydialog(run=True):
 	'''the gui startup'''
 
-	import GeoDataWB.miki as miki
+	from . import miki
 
 	app=MyApp()
 

@@ -12,7 +12,7 @@ if sys.version_info[0] !=2:
 	from importlib import reload
 
 
-from GeoDataWB.say import *
+from .say import *
 
 import FreeCAD, FreeCADGui
 App=FreeCAD
@@ -33,7 +33,7 @@ cellsize     10.000000000000
 
 
 def parsedata(lines):
-	
+	import Draft
 	print(lines)
 	dat={}
 	a=lines[0].decode().split()
@@ -91,6 +91,10 @@ def	import_emir(
 	#lines=data.splitlines()
 	if filename.startswith('UserAppData'):
 		filename=filename.replace('UserAppData',FreeCAD.ConfigGet("UserAppData"))
+
+	f=open(filename, 'rb')
+	lines=f.readlines()
+	parsedata(lines)
 
 s6='''
 MainWindow:
@@ -150,7 +154,7 @@ class MyApp(object):
 def mydialog():
 	app=MyApp()
 
-	import GeoDataWB.miki as miki
+	from . import miki
 	reload(miki)
 
 	miki=miki.Miki()

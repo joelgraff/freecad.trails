@@ -7,7 +7,9 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
-from GeoDataWB.say import *
+import FreeCAD, FreeCADGui
+from .transversmercator import TransverseMercator
+from .say import *
 
 # test-data from https://en.wikipedia.org/wiki/GPS_Exchange_Format
 
@@ -86,14 +88,6 @@ trackstring='''
 <extensions> extensionsType </extensions>    <!-- GPX extension -->
 '''
 
-import FreeCAD,FreeCADGui
-App=FreeCAD
-Gui=FreeCADGui
-
-from  GeoDataWB.transversmercator import TransverseMercator
-
-debug=0
-sd
 
 def run():
 	filename='/home/thomas/.FreeCAD/Mod/geodat/testdata/latlonh.txt'
@@ -102,18 +96,13 @@ def run():
 
 
 def import_latlon(filename,orig,hi):
-	global sd
 	# content=trackstring
 	
 #	fn='/home/microelly2/FCB/b202_gmx_tracks/im_haus.gpx'
 #	filename='/home/microelly2/FCB/b202_gmx_tracks/neufang.gpx'
-	
-	
+
 	f=open(filename,"r")
 	c1=f.read()
-	import re
-	#content = re.sub('^\<\?[^\>]+\?\>', '', c1)
-
 
 	tm=TransverseMercator()
 
@@ -128,9 +117,11 @@ def import_latlon(filename,orig,hi):
 		tm.lon=origin[1]
 	center=tm.fromGeographic(tm.lat,tm.lon)
 
+	import numpy as np
 	FreeCAD.c=c1
-	vals=np.array([float(c) for c in c1.split()])
-	#vals=vals.reshape(len(vals)/3,3)
+	vals=[]
+	for c in c1.split():
+		vals.append(float(c))
 	'''
 	points=[]
 	points2=[]
@@ -157,14 +148,12 @@ def import_latlon(filename,orig,hi):
 	lons=[]
 
 	points=[]
-	
-	for v in vals:
-		lats.append(float(v[0]))
-		lons.append(float(v[1]))
-		ll=tm.fromGeographic(float(v[0]),float(v[1]))
-
-		points.append(FreeCAD.Vector(ll[0]-center[0],ll[1]-center[1],1000*(float(v[2]))))
-
+	for i in range(0, len(vals), 3):
+		print(vals[i],vals[i+1],vals[i+2])
+		lats.append(float(vals[i]))
+		lons.append(float(vals[i+1]))
+		ll=tm.fromGeographic(float(vals[i]),float(vals[i+1]))
+		points.append(FreeCAD.Vector(ll[0]-center[0],ll[1]-center[1],1000*(float(vals[i+2]))))
 
 	print (min(lats),max(lats))
 	print (min(lons),max(lons))
@@ -226,8 +215,6 @@ MainWindow:
 
 '''.format(inn)
 
-import FreeCAD,FreeCADGui
-
 class MyApp(object):
 
 	def run(self):
@@ -251,7 +238,7 @@ class MyApp(object):
 def mydialog():
 	app=MyApp()
 
-	import GeoDataWB.miki as miki
+	from . import miki
 
 	miki=miki.Miki()
 	miki.app=app

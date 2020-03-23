@@ -2,9 +2,11 @@
 Import srtm data
 """
 
-from GeoDataWB.transversmercator import TransverseMercator
 import math
-
+import os, zipfile, re
+import urllib.request
+from .transversmercator import TransverseMercator
+from .say import *
 
 # Create a QProgressBar widget for long running process
 def createProgressBar(label=None):
@@ -104,15 +106,6 @@ def runfile(fn, xw, xe, ys, yn, ox=0, oy=0):
 
 	pb.hide()
 	return pts
-
-
-# download the file
-import os, zipfile, re
-import urllib.request
-
-from GeoDataWB.say import *
-
-
 
 ## download the data files from /geoweb.hft-stuttgart.de/SRTM
 
@@ -382,7 +375,7 @@ class MyApp(object):
 def mydialog():
 	app=MyApp()
 
-	import GeoDataWB.miki as miki
+	from . import miki
 
 	miki=miki.Miki()
 	miki.app=app
