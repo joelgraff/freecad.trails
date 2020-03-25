@@ -7,12 +7,7 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
-import sys
-if sys.version_info[0] !=2:
-	from importlib import reload
-
-
-from .say import *
+from .say import sayexc
 
 import FreeCAD, FreeCADGui
 App=FreeCAD

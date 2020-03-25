@@ -1,9 +1,5 @@
 # testfalle
-from geodat.say import *
-
-import sys
-if sys.version_info[0] !=2:
-	from importlib import reload
+from .say import say
 
 cleanup=False
 

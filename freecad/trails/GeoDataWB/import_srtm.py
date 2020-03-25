@@ -6,7 +6,7 @@ import math
 import os, zipfile, re
 import urllib.request
 from .transversmercator import TransverseMercator
-from .say import *
+from .say import say
 
 # Create a QProgressBar widget for long running process
 def createProgressBar(label=None):

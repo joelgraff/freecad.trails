@@ -9,7 +9,7 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
-from .say import *
+from .say import say,sayErr,sayexc,sayW
 import Points
 import time
 

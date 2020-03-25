@@ -9,7 +9,7 @@
 
 import FreeCAD, FreeCADGui
 from .transversmercator import TransverseMercator
-from .say import *
+from .say import say, sayexc
 
 # test-data from https://en.wikipedia.org/wiki/GPS_Exchange_Format
 

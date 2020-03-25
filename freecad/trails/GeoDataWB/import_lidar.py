@@ -8,15 +8,9 @@
 #-------------------------------------------------
 
 
-from .say import *
+from .say import sayexc
 
 import Points
-
-import sys
-if sys.version_info[0] !=2:
-	from importlib import reload
-
-
 import time
 from laspy.file import File
 import numpy as np

@@ -22,7 +22,7 @@ When presenting or publishing ASTER GDEM data, I agree to include "ASTER GDEM is
 Because there are known inaccuracies and artifacts in the data set, please use the product with awareness of its limitations. The data are provided "as is" and neither NASA nor METI/ERSDAC will be responsible for any damages resulting from use of the data.
 '''
 
-from .say import *
+from .say import errorDialog
 
 from .transversmercator import TransverseMercator
 

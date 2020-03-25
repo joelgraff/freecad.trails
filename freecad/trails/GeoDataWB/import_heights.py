@@ -9,8 +9,8 @@
 #-------------------------------------------------
 
 import FreeCAD, FreeCADGui, Draft
-from  GeoDataWB.transversmercator import TransverseMercator
-from GeoDataWB.say import *
+from  .transversmercator import TransverseMercator
+from .say import say
 
 tm=TransverseMercator()
 

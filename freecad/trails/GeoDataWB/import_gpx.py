@@ -5,7 +5,7 @@ GPX File importer
 import FreeCAD, FreeCADGui, Draft
 from .transversmercator import TransverseMercator
 from .xmltodict import parse
-from .say import *
+from .say import sayexc
 import json, re
 
 def import_gpx(filename, orig, hi):

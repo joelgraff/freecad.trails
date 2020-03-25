@@ -4,7 +4,7 @@ CSV File importer
 
 import FreeCAD, FreeCADGui, Draft
 from .transversmercator import TransverseMercator
-from .say import *
+from .say import sayexc
 import csv, re
 
 

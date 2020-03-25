@@ -8,7 +8,7 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
-from .say import *
+from .say import say, sayexc
 import Points
 import matplotlib.image as mpimg
 import numpy as np

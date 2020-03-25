@@ -7,7 +7,7 @@ from pivy import coin
 from . import my_xmlparser
 from .transversmercator import TransverseMercator
 from . import inventortools as inventortools
-from .say import *
+from .say import say,sayErr,sayexc,sayW
 import json, urllib.request
 
 debug = False
