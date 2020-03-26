@@ -215,7 +215,8 @@ class ImportPointFile:
 
         # Set delimiter.
         if UI.DelimiterCB.currentText() == "Space":
-            reader = csv.reader(File, delimiter=' ')
+            reader = csv.reader(File, delimiter=' ',
+                skipinitialspace=True)
 
         if UI.DelimiterCB.currentText() == "Comma":
             reader = csv.reader(File, delimiter=',')
@@ -235,14 +236,29 @@ class ImportPointFile:
                 numRows = UI.PreviewTW.rowCount()
                 UI.PreviewTW.insertRow(numRows)
 
-                UI.PreviewTW.setItem(
-                    numRows, 0, QtGui.QTableWidgetItem(row[PN]))
-                UI.PreviewTW.setItem(
-                    numRows, 1, QtGui.QTableWidgetItem(row[N]))
-                UI.PreviewTW.setItem(
-                    numRows, 2, QtGui.QTableWidgetItem(row[E]))
-                UI.PreviewTW.setItem(
-                    numRows, 3, QtGui.QTableWidgetItem(row[Z]))
+                try:
+                    UI.PreviewTW.setItem(
+                        numRows, 0, QtGui.QTableWidgetItem(row[PN]))
+                except Exception:
+                    pass
+
+                try:
+                    UI.PreviewTW.setItem(
+                        numRows, 1, QtGui.QTableWidgetItem(row[N]))
+                except Exception:
+                    pass
+
+                try:
+                    UI.PreviewTW.setItem(
+                        numRows, 2, QtGui.QTableWidgetItem(row[E]))
+                except Exception:
+                    pass
+
+                try:
+                    UI.PreviewTW.setItem(
+                        numRows, 3, QtGui.QTableWidgetItem(row[Z]))
+                except Exception:
+                    pass
 
                 try:
                     UI.PreviewTW.setItem(
@@ -256,9 +272,12 @@ class ImportPointFile:
                     Counter += 1
 
             elif Operation == "Import":
-                self.PointList.append((float(row[E]) * 1000,
-                                       float(row[N]) * 1000,
-                                       float(row[Z]) * 1000))
+                try:
+                    self.PointList.append((float(row[E]) * 1000,
+                                           float(row[N]) * 1000,
+                                           float(row[Z]) * 1000))
+                except Exception:
+                    pass
 
     def Preview(self):
         """

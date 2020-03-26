@@ -124,7 +124,7 @@ MainWindow:
 
 '''
 
-import FreeCAD,FreeCADGui
+from PySide import QtGui
 
 class MyApp(object):
 
@@ -140,7 +140,7 @@ class MyApp(object):
 				sayexc()
 
 	def getfn(self):
-		fileName = QtGui.QFileDialog.getOpenFileName(None,u"Open File",u"/tmp/");
+		fileName = QtGui.QFileDialog.getOpenFileName(None,u"Open File",u"/tmp/")
 		print(fileName)
 		s=self.root.ids['bl']
 		s.setText(fileName[0])
@@ -150,7 +150,6 @@ def mydialog():
 	app=MyApp()
 
 	from . import miki
-	reload(miki)
 
 	miki=miki.Miki()
 	miki.app=app
