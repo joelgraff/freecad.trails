@@ -57,7 +57,7 @@ class TrailsWorkbench(Gui.Workbench):
     """
 
     MenuText = 'Trails '+ TRAILSWB_VERSION
-    ToolTip = 'Transportation Engineering Workbench'
+    ToolTip = 'Transportation and Geomatics Engineering Workbench'
     Icon = os.path.dirname(resources.__file__) + '/icons/workbench.svg'
     toolbox = []
 
@@ -74,49 +74,62 @@ class TrailsWorkbench(Gui.Workbench):
 
             'Data Tools': {
                 'gui': self.menu + self.toolbar,
-                'cmd': ['Import Point File',
-                        'Export Points',
-                        'Geodata Tools'
-                        ]
+                'cmd': [
+                    'Import Point File',
+                    'Export Points',
+                    'Geodata Tools'
+                    ]
             },
 
             'Surface Tools': {
                 'gui': self.menu + self.toolbar + self.context,
-                'cmd': ['Create Surface',
-                        'Surface Editor',
-                        'Create Contour'
-                        ]
+                'cmd': [
+                    'Create Surface',
+                    'Surface Editor',
+                    'Create Contour'
+                    ]
             },
 
             'Section Tools': {
                 'gui': self.menu + self.toolbar,
-                'cmd': ['Create Guide Lines',
-                        'Create Sections'
-                        ]
+                'cmd': [
+                    'Create Guide Lines',
+                    'Create Sections'
+                    ]
             },
 
             'Alignment': {
                 'gui': self.menu + self.toolbar + self.context,
-                'cmd': ['ImportAlignmentCmd',
-                        'EditAlignmentCmd',
-                       ]
+                'cmd': [
+                    'ImportAlignmentCmd',
+                    'EditAlignmentCmd',
+                    ]
             },
 
             'Element Template': {
                 'gui': self.menu + self.toolbar + self.context,
-                'cmd': ['ViewTemplateLibrary',]
+                'cmd': ['ViewTemplateLibrary']
             },
 
             'Test': {
                 'gui': self.menu + self.toolbar,
                 'cmd': [
-                    'BaseTrackerTest', 'BaseTrackerLinkedTest'
-                ]
+                    'BaseTrackerTest',
+                    'BaseTrackerLinkedTest'
+                    ]
             },
 
             'Help': {
                 'gui': self.toolbar,
                 'cmd': ['TrailsGuide']
+            },
+
+            'Draft': {
+                'gui': self.toolbar,
+                'cmd': [
+                        'Drawing Tools',
+                        'Modification Tools'
+                        ]
             }
         }
 
@@ -172,6 +185,16 @@ class TrailsWorkbench(Gui.Workbench):
 
     Gui.addCommand('Geodata Tools', 
                    CommandGroup(GeoData, 'Geodata Tools'))
+
+    import draftutils.init_tools as it
+    draft_drawing_commands = it.get_draft_drawing_commands()
+    draft_modification_commands = it.get_draft_modification_commands()
+
+    Gui.addCommand('Drawing Tools', 
+                   CommandGroup(draft_drawing_commands, 'Draft creation tools'))
+
+    Gui.addCommand('Modification Tools', 
+                   CommandGroup(draft_modification_commands, 'Draft modification tools'))
 
     def Activated(self):
         """
