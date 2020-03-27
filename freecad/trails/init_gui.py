@@ -28,10 +28,6 @@ import FreeCADGui as Gui
 
 from .corridor.template import ViewTemplateLibrary
 from . import resources
-from .point import ImportPointFile, ExportPoints
-from .surface import CreateSurface, EditSurface, Contours
-from .section import CreateGuideLines
-from . import GeoData
 
 TRAILSWB_VERSION = '(alpha)'
 
@@ -124,12 +120,12 @@ class TrailsWorkbench(Gui.Workbench):
                 'cmd': ['TrailsGuide']
             },
 
-            'Draft': {
+            'Draft Tools': {
                 'gui': self.toolbar,
                 'cmd': [
-                        'Drawing Tools',
-                        'Modification Tools'
-                        ]
+                    'Drawing Tools',
+                    'Modification Tools'
+                    ]
             }
         }
 
@@ -158,6 +154,10 @@ class TrailsWorkbench(Gui.Workbench):
         Called when the workbench is first activated.
         """
 
+        from .point import ImportPointFile, ExportPoints
+        from .surface import CreateSurface, EditSurface, Contours
+        from .section import CreateGuideLines
+        from . import GeoData
         from .project.commands \
             import import_alignment_cmd, edit_alignment_cmd,\
                 base_tracker_test, trails_guide_cmd
@@ -172,6 +172,7 @@ class TrailsWorkbench(Gui.Workbench):
 
     EditSurfaceSub = ['Add Triangle', 'Delete Triangle', 'Swap Edge', 
                       'Smooth Surface']
+
     Gui.addCommand('Surface Editor',
                    CommandGroup(EditSurfaceSub,
                                 'Edit selected surface.',

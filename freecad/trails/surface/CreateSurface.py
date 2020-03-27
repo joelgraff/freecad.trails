@@ -109,18 +109,24 @@ class CreateSurface:
             return False
 
     def MaxAngle(self, P1, P2, P3):
+        """
+        Calculation of the inclination of a line from two Vectors
+        """
         import math
         MaxAngleLE = self.IPFui.MaxAngleLE.text()
-        List = [[P1, P2], [P2, P3], [P3, P1]]
+        List = [[P1, P2, P3], [P2, P3, P1], [P3, P1, P2]]
         Result = []
-        for i, j in List:
-            Radian = FreeCAD.Vector(i).getAngle(FreeCAD.Vector(j))
+        for j, k, l in List:
+            j[2] = k[2] = l[2] = 0
+            D1 = FreeCAD.Vector(j).sub(FreeCAD.Vector(k))
+            D2 = FreeCAD.Vector(l).sub(FreeCAD.Vector(k))
+            Radian = D1.getAngle(D2)
             Angle = math.degrees(Radian)
             Result.append(Angle)
             
-        if Result[0] <= int(MaxAngleLE)*1000 \
-                and Result[1] <= int(MaxAngleLE)*1000 \
-                and Result[2] <= int(MaxAngleLE)*1000:
+        if Result[0] <= int(MaxAngleLE) \
+                and Result[1] <= int(MaxAngleLE) \
+                and Result[2] <= int(MaxAngleLE):
             return True
         else:
             return False
