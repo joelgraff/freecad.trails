@@ -27,9 +27,13 @@ import os
 
 
 class AddTriangle:
+    """
+    Command to add a tirangle to mesh
+    """
 
     def __init__(self):
 
+        # Definitions
         self.Path = os.path.dirname(__file__)
 
         self.resources = {
@@ -39,13 +43,20 @@ class AddTriangle:
                 }
 
     def GetResources(self):
-        # Return the command resources dictionary
+        """
+        Return the command resources dictionary
+        """
         return self.resources
 
     def IsActive(self):
+        """
+        Define tool button activation situation
+        """
+        # Check for document
         if FreeCAD.ActiveDocument is None:
             return False
 
+        # Check for selected object
         if FreeCADGui.Selection.getSelection() is not None:
             selection = FreeCADGui.Selection.getSelection()[-1]
             if selection.TypeId == 'Mesh::Feature':
@@ -53,14 +64,23 @@ class AddTriangle:
         return False
 
     def Activated(self):
+        """
+        Run when tool button clicked
+        """
+        # Call for Mesh.Addfacet function
         FreeCADGui.runCommand("Mesh_AddFacet")
 
 FreeCADGui.addCommand('Add Triangle', AddTriangle())
 
 
 class DeleteTriangle:
+    """
+    Command to delete a tirangle from mesh
+    """
 
     def __init__(self):
+
+        # Definitions
         self.Path = os.path.dirname(__file__)
 
         self.resources = {
@@ -70,13 +90,20 @@ class DeleteTriangle:
               }
 
     def GetResources(self):
-        # Return the command resources dictionary
+        """
+        Return the command resources dictionary
+        """
         return self.resources
 
     def IsActive(self):
+        """
+        Define tool button activation situation
+        """
+        # Check for document
         if FreeCAD.ActiveDocument is None:
             return False
 
+        # Check for selected object
         if FreeCADGui.Selection.getSelection() is not None:
             selection = FreeCADGui.Selection.getSelection()[-1]
             if selection.TypeId == 'Mesh::Feature':
@@ -85,6 +112,10 @@ class DeleteTriangle:
 
     @staticmethod
     def Activated():
+        """
+        Run when tool button clicked
+        """
+        # Call for Mesh.RemoveComponents function
         FreeCADGui.runCommand("Mesh_RemoveComponents")
 
 
@@ -92,8 +123,13 @@ FreeCADGui.addCommand('Delete Triangle', DeleteTriangle())
 
 
 class SwapEdge:
+    """
+    Command to swap an edge between two triangles
+    """
 
     def __init__(self):
+
+        # Definitions
         self.Path = os.path.dirname(__file__)
 
         self.resources = {
@@ -103,13 +139,20 @@ class SwapEdge:
             }
 
     def GetResources(self):
-        # Return the command resources dictionary
+        """
+        Return the command resources dictionary
+        """
         return self.resources
 
     def IsActive(self):
+        """
+        Define tool button activation situation
+        """
+        # Check for document
         if FreeCAD.ActiveDocument is None:
             return False
 
+        # Check for selected object
         if FreeCADGui.Selection.getSelection() is not None:
             selection = FreeCADGui.Selection.getSelection()[-1]
             if selection.TypeId == 'Mesh::Feature':
@@ -117,22 +160,35 @@ class SwapEdge:
         return False
 
     def Activated(self):
+        """
+        Run when tool button clicked
+        """
+        # Create an event callback for SwapEdge() function
         self.FaceIndexes = []
         self.MC = FreeCADGui.ActiveDocument.ActiveView.addEventCallbackPivy(
             coin.SoMouseButtonEvent.getClassTypeId(), self.SwapEdge)
 
     def SwapEdge(self, cb):
+        """
+        Take two triangle by mouse clicks and swap edge between them
+        """
+        # Get event
         event = cb.getEvent()
+
+        # If mouse right button pressed finish swap edge operation
         if event.getButton() == coin.SoMouseButtonEvent.BUTTON2 \
                 and event.getState() == coin.SoMouseButtonEvent.DOWN:
             FreeCADGui.ActiveDocument.ActiveView.removeEventCallbackPivy(
                 coin.SoMouseButtonEvent.getClassTypeId(), self.MC)
+
+        # If mouse left button pressed get picked point
         if event.getButton() == coin.SoMouseButtonEvent.BUTTON1 \
                 and event.getState() == coin.SoMouseButtonEvent.DOWN:
-            pp = cb.getPickedPoint()
+            pickedPoint = cb.getPickedPoint()
 
-            if pp is not None:
-                detail = pp.getDetail()
+            # Get triangle index at picket point
+            if pickedPoint is not None:
+                detail = pickedPoint.getDetail()
 
                 if detail.isOfType(coin.SoFaceDetail.getClassTypeId()):
                     face_detail = coin.cast(
@@ -140,6 +196,7 @@ class SwapEdge:
                     index = face_detail.getFaceIndex()
                     self.FaceIndexes.append(index)
 
+                    # try to swap edge between picked triangle
                     if len(self.FaceIndexes) == 2:
                         surface = FreeCADGui.Selection.getSelection()[-1]
                         CopyMesh = surface.Mesh.copy()
@@ -149,7 +206,7 @@ class SwapEdge:
                                 self.FaceIndexes[0], self.FaceIndexes[1])
 
                         except Exception:
-                            pass
+                            print("The edge between these triangles cannot be swappable")
 
                         surface.Mesh = CopyMesh
                         self.FaceIndexes.clear()
@@ -158,8 +215,13 @@ FreeCADGui.addCommand('Swap Edge', SwapEdge())
 
 
 class SmoothSurface:
+    """
+    Command to smooth mesh surface
+    """
 
     def __init__(self):
+
+        # Definitions
         self.Path = os.path.dirname(__file__)
 
         self.resources = {
@@ -169,14 +231,20 @@ class SmoothSurface:
             }
 
     def GetResources(self):
-
-        # Return the command resources dictionary
+        """
+        Return the command resources dictionary
+        """
         return self.resources
 
     def IsActive(self):
+        """
+        Define tool button activation situation
+        """
+        # Check for document
         if FreeCAD.ActiveDocument is None:
             return False
 
+        # Check for selected object
         if FreeCADGui.Selection.getSelection() is not None:
             selection = FreeCADGui.Selection.getSelection()[-1]
             if selection.TypeId == 'Mesh::Feature':
@@ -185,6 +253,10 @@ class SmoothSurface:
 
     @staticmethod
     def Activated():
+        """
+        Run when tool button clicked
+        """
+        # Get selected surface and smooth it
         surface = FreeCADGui.Selection.getSelection()[0]
         surface.Mesh.smooth()
 
