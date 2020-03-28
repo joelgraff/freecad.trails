@@ -32,10 +32,14 @@ class AddTriangle:
     """
 
     def __init__(self):
+        """
+        Constructor
+        """
 
-        # Definitions
+        # Get file path
         self.Path = os.path.dirname(__file__)
 
+        # Set icon,  menu text and tooltip
         self.resources = {
             'Pixmap': self.Path + '/../Resources/Icons/EditSurface.svg',
             'MenuText': "Add Triangle",
@@ -65,7 +69,7 @@ class AddTriangle:
 
     def Activated(self):
         """
-        Run when tool button clicked
+        Command activation method
         """
         # Call for Mesh.Addfacet function
         FreeCADGui.runCommand("Mesh_AddFacet")
@@ -79,10 +83,14 @@ class DeleteTriangle:
     """
 
     def __init__(self):
+        """
+        Constructor
+        """
 
-        # Definitions
+        # Get file path
         self.Path = os.path.dirname(__file__)
 
+        # Set icon,  menu text and tooltip
         self.resources = {
             'Pixmap': self.Path + '/../Resources/Icons/EditSurface.svg',
             'MenuText': "Delete Triangle",
@@ -113,7 +121,7 @@ class DeleteTriangle:
     @staticmethod
     def Activated():
         """
-        Run when tool button clicked
+        Command activation method
         """
         # Call for Mesh.RemoveComponents function
         FreeCADGui.runCommand("Mesh_RemoveComponents")
@@ -128,10 +136,14 @@ class SwapEdge:
     """
 
     def __init__(self):
+        """
+        Constructor
+        """
 
-        # Definitions
+        # Get file path
         self.Path = os.path.dirname(__file__)
 
+        # Set icon,  menu text and tooltip
         self.resources = {
             'Pixmap': self.Path + '/../Resources/Icons/EditSurface.svg',
             'MenuText': "Swap Edge",
@@ -161,7 +173,7 @@ class SwapEdge:
 
     def Activated(self):
         """
-        Run when tool button clicked
+        Command activation method
         """
         # Create an event callback for SwapEdge() function
         self.FaceIndexes = []
@@ -220,10 +232,14 @@ class SmoothSurface:
     """
 
     def __init__(self):
+        """
+        Constructor
+        """
 
-        # Definitions
+        # Get file path
         self.Path = os.path.dirname(__file__)
 
+        # Set icon,  menu text and tooltip
         self.resources = {
             'Pixmap': self.Path + '/../Resources/Icons/EditSurface.svg',
             'MenuText': "Smooth Surface",
@@ -254,7 +270,7 @@ class SmoothSurface:
     @staticmethod
     def Activated():
         """
-        Run when tool button clicked
+        Command activation method
         """
         # Get selected surface and smooth it
         surface = FreeCADGui.Selection.getSelection()[0]

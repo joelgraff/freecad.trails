@@ -35,27 +35,24 @@ class ExportPoints:
         Constructor
         """
 
-        # Get file path.
+        # Get file path
         self.Path = os.path.dirname(__file__)
 
-        # Get *.ui files.
-        self.EP = FreeCADGui.PySideUic.loadUi(self.Path + "/ExportPoints.ui")
-
-        # Set icon,  menu text and tooltip.
+        # Set icon,  menu text and tooltip
         self.Resources = {
             'Pixmap': self.Path + '/../Resources/Icons/ExportPoints.svg',
             'MenuText': "Export Points",
             'ToolTip': "Export points to point file."
         }
 
-        # To do.
+        # Get *.ui file(s)
+        self.EP = FreeCADGui.PySideUic.loadUi(self.Path + "/ExportPoints.ui")
+
+        # UI connections
         UI = self.EP
         UI.BrowseB.clicked.connect(self.FileDestination)
         UI.ExportB.clicked.connect(self.ExportPointsToFile)
         UI.CancelB.clicked.connect(UI.close)
-
-        # Create empty point group names list.
-        self.GroupList = []
 
     def GetResources(self):
         """
@@ -65,6 +62,10 @@ class ExportPoints:
         return self.Resources
 
     def IsActive(self):
+        """
+        Define tool button activation situation
+        """
+        # Check for document
         if FreeCAD.ActiveDocument is None:
             return False
         return True
@@ -73,10 +74,7 @@ class ExportPoints:
         """
         Command activation method
         """
-
-        if FreeCAD.ActiveDocument is None:
-            return
-
+        # Create 'Point_Groups' group
         try:
             PointGroups = FreeCAD.ActiveDocument.Point_Groups.Group
         except Exception:
@@ -85,16 +83,18 @@ class ExportPoints:
             PointGroups = FreeCAD.ActiveDocument.Point_Groups.Group
             PointGroups.Label = "Point Groups"
 
-        # Show UI.
+        # Set and show UI
         UI = self.EP
         UI.setParent(FreeCADGui.getMainWindow())
         UI.setWindowFlags(QtCore.Qt.Window)
         UI.show()
 
-        # Clear previous operation.
+        # Clear previous operation
         UI.FileDestinationLE.clear()
         UI.PointGroupsLW.clear()
 
+        # Add point groups to QListWidget
+        self.GroupList = []
         for PointGroup in PointGroups:
             self.GroupList.append(PointGroup.Name)
             SubGroupName = PointGroup.Label
@@ -104,14 +104,14 @@ class ExportPoints:
         """
         Get file destination.
         """
-
+        # Select file
         UI = self.EP
         fileName = QtGui.QFileDialog.getSaveFileName(
             None, 'Save File', os.getenv("HOME"), Filter='*.txt')
 
+        # Add ".txt" if needed
         if fileName[0][-4:] == ".txt":
             fn = fileName[0]
-
         else:
             fn = fileName[0] + ".txt"
 
@@ -121,8 +121,7 @@ class ExportPoints:
         """
         Export selected point group(s).
         """
-
-        # Get UI variables.
+        # Get user inputs
         UI = self.EP
         PointName = UI.PointNameLE.text()
         Northing = UI.NorthingLE.text()
@@ -135,24 +134,25 @@ class ExportPoints:
         if FileDestinationLE.strip() == "" or UI.PointGroupsLW.count() < 1:
             return
 
-        # Set delimiter.
+        # Set delimiter
         if UI.DelimiterCB.currentText() == "Space":
             Delimiter = ' '
         elif UI.DelimiterCB.currentText() == "Comma":
             Delimiter = ','
 
-        # Create point file.
+        # Create point file
         try:
             File = open(FileDestinationLE, 'w')
         except Exception:
             FreeCAD.Console.PrintMessage("Can't open file")
 
+        # Get selected point groups
         Counter = 1
-
         for SelectedIndex in UI.PointGroupsLW.selectedIndexes():
             Index = self.GroupList[SelectedIndex.row()]
             PointGroup = FreeCAD.ActiveDocument.getObject(Index)
 
+            # Print points to the file
             for Point in PointGroup.Points.Points:
                 pn = str(Counter)
                 xx = str(round(float(Point.x) / 1000, 3))

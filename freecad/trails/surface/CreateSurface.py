@@ -34,21 +34,25 @@ class CreateSurface:
     """
 
     def __init__(self):
+        """
+        Constructor
+        """
 
-        # Definitions
+        # Get file path
         self.Path = os.path.dirname(__file__)
 
+        # Set icon,  menu text and tooltip
         self.resources = {
             'Pixmap': self.Path + '/../Resources/Icons/CreateSurface.svg',
             'MenuText': "Create Surface",
             'ToolTip': "Create surface from selected point group(s)."
             }
 
-        # Import *.ui file(s)
+        # Get *.ui file(s)
         self.IPFui = FreeCADGui.PySideUic.loadUi(
             self.Path + "/CreateSurface.ui")
 
-        # To Do List
+        # UI connections
         UI = self.IPFui
         UI.CreateB.clicked.connect(self.CreateSurface)
         UI.CancelB.clicked.connect(UI.close)
@@ -70,9 +74,9 @@ class CreateSurface:
 
     def Activated(self):
         """
-        Run when tool button clicked
+        Command activation method
         """
-        # Create 'Surfaces' and 'Point_Groups' document object groups
+        # Create 'Surfaces' and 'Point_Groups' groups
         try:
             self.Surfaces = FreeCAD.ActiveDocument.Surfaces
         except Exception:
@@ -88,7 +92,7 @@ class CreateSurface:
             PointGroups = FreeCAD.ActiveDocument.Point_Groups.Group
             PointGroups.Label = "Point Groups"
 
-        # Set and show window
+        # Set and show UI
         self.IPFui.setParent(FreeCADGui.getMainWindow())
         self.IPFui.setWindowFlags(QtCore.Qt.Window)
         self.IPFui.show()

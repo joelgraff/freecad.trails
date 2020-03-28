@@ -28,14 +28,18 @@ import Draft
 
 class CreateContour:
     """
-    Command to create cotour lines
+    Command to create contour lines
     """
 
     def __init__(self):
+        """
+        Constructor
+        """
 
-        # Definitions
+        # Get file path
         self.Path = os.path.dirname(__file__)
 
+        # Set icon,  menu text and tooltip
         self.resources = {
                 'Pixmap': self.Path + '/../Resources/Icons/EditSurface.svg',
                 'MenuText': "Create Contour",
@@ -64,7 +68,7 @@ class CreateContour:
 
     def Activated(self):
         """
-        Run when tool button clicked
+        Command activation method
         """
         # Get selected surface mesh
         surface = FreeCADGui.Selection.getSelection()[-1]
