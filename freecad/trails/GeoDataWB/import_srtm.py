@@ -7,6 +7,7 @@ import os, zipfile, re
 import urllib.request
 from .transversmercator import TransverseMercator
 from .say import say
+from PySide import QtCore, QtGui
 
 # Create a QProgressBar widget for long running process
 def createProgressBar(label=None):
@@ -184,7 +185,7 @@ def run(mx,my,dx,dy):
 		PointGroup.Points = PointObject
 
 	FreeCAD.ActiveDocument.recompute()
-	Gui.SendMsgToActiveView("ViewFit")
+	FreeCADGui.SendMsgToActiveView("ViewFit")
 
 	return pts
 

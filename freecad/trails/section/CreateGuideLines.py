@@ -198,6 +198,7 @@ class CreateGuideLines:
             return
 
         Stations = []
+        AlgPl = Alignment.Placement.Base
         Geometry = Alignment.Proxy.model.data['geometry']
 
         for Geo in Geometry:
@@ -231,6 +232,7 @@ class CreateGuideLines:
             RightEnd = Coord.add(vec.negative().multiply(int(r)*1000))
 
             GuideLine = Draft.makeWire([LeftEnd, Coord, RightEnd])
+            GuideLine.Placement.Base = AlgPl
             GuideLine.Label = str(round(Station, 3))
             FreeCAD.ActiveDocument.getObject(GLGIndexName).addObject(GuideLine)
             FreeCAD.ActiveDocument.recompute()
