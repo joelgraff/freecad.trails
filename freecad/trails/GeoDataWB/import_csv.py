@@ -6,6 +6,7 @@ import FreeCAD, FreeCADGui, Draft
 from .transversmercator import TransverseMercator
 from .say import sayexc
 import csv, re
+from PySide import QtGui
 
 
 def import_csv(fn, orig, datatext = None):

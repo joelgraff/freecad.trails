@@ -10,6 +10,7 @@
 import FreeCAD, FreeCADGui
 from .transversmercator import TransverseMercator
 from .say import say, sayexc
+from PySide import QtGui
 
 # test-data from https://en.wikipedia.org/wiki/GPS_Exchange_Format
 
@@ -162,6 +163,7 @@ def import_latlon(filename,orig,hi):
 
 	import Draft
 	Draft.makeWire(points)
+	FreeCAD.ActiveDocument.recompute()
 	return
 
 inn=FreeCAD.ConfigGet("UserAppData")

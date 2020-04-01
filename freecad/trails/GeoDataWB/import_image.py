@@ -8,12 +8,14 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
+import FreeCAD, FreeCADGui
 from .say import say, sayexc
 import Points
 import matplotlib.image as mpimg
 import numpy as np
 import os.path
 import random
+from PySide import QtGui
 
 ## create the pointcloud, grid or nurbs surface
 #
@@ -79,10 +81,10 @@ def import_image(filename=None,n=10,c=2,inverse=False,kx=10,ky=10,kz=60,gengrid=
 	# show the points
 	p=Points.Points(pts)
 	Points.show(p)
-	App.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(1.0,.0,1.0)
-	App.ActiveDocument.ActiveObject.Label="Points " + str(lv) +" " + str(lu) + " _"
+	FreeCAD.ActiveDocument.ActiveObject.ViewObject.ShapeColor=(1.0,.0,1.0)
+	FreeCAD.ActiveDocument.ActiveObject.Label="Points " + str(lv) +" " + str(lu) + " _"
 	say ((("u, v, points"),u,v,len(pts)))
-	Gui.updateGui()
+	FreeCADGui.updateGui()
 
 	if pointsonly: return
 	

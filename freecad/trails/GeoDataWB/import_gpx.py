@@ -7,6 +7,7 @@ from .transversmercator import TransverseMercator
 from .xmltodict import parse
 from .say import sayexc
 import json, re
+from PySide import QtGui
 
 def import_gpx(filename, orig, hi):
 	"""
