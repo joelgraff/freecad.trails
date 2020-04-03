@@ -432,7 +432,7 @@ def get_segments(spiral, deltas, _dtype=Vector):
     if _reverse:
         _points = _points[::-1]
 
-    _points = [_v.add(_delta) for _v in _points]
+    _points = [_v.add(_draw_start) for _v in _points]
 
     return _points
 
@@ -568,7 +568,7 @@ def get_tangent_vector(spiral, distance):
     #of the coordinate returned from get_segments()
     _is_forward = int(spiral['StartRadius'] == math.inf)
 
-    return _coords[_is_forward], _tangent
+    return _coords[_is_forward-1], _tangent
 
 def get_position_offset(line_dict, coord):
     """

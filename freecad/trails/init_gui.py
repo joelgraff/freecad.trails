@@ -31,13 +31,29 @@ from . import resources
 
 TRAILSWB_VERSION = '(alpha)'
 
+class CommandGroup:
+    def __init__(self, cmdlist, menu, TypeId=None, tooltip=None):
+        self.cmdlist = cmdlist
+        self.menu = menu
+        self.TypeId = TypeId
+        if tooltip is None:
+            self.tooltip = menu
+        else:
+            self.tooltip = tooltip
+
+    def GetCommands(self):
+        return tuple(self.cmdlist)
+
+    def GetResources(self):
+        return {'MenuText': self.menu, 'ToolTip': self.tooltip}
+
 class TrailsWorkbench(Gui.Workbench):
     """
     Class which gets initiated at startup of the GUI.
     """
 
     MenuText = 'Trails '+ TRAILSWB_VERSION
-    ToolTip = 'Transportation Engineering Workbench'
+    ToolTip = 'Transportation and Geomatics Engineering Workbench'
     Icon = os.path.dirname(resources.__file__) + '/icons/workbench.svg'
     toolbox = []
 
@@ -52,28 +68,64 @@ class TrailsWorkbench(Gui.Workbench):
 
         self.command_ui = {
 
+            'Data Tools': {
+                'gui': self.menu + self.toolbar,
+                'cmd': [
+                    'Import Point File',
+                    'Export Points',
+                    'Geodata Tools'
+                    ]
+            },
+
+            'Surface Tools': {
+                'gui': self.menu + self.toolbar + self.context,
+                'cmd': [
+                    'Create Surface',
+                    'Surface Editor',
+                    'Create Contour'
+                    ]
+            },
+
+            'Section Tools': {
+                'gui': self.menu + self.toolbar,
+                'cmd': [
+                    'Create Guide Lines',
+                    'Create Sections'
+                    ]
+            },
+
             'Alignment': {
                 'gui': self.menu + self.toolbar + self.context,
-                'cmd': ['ImportAlignmentCmd',
-                        'EditAlignmentCmd',
-                       ]
+                'cmd': [
+                    'ImportAlignmentCmd',
+                    'EditAlignmentCmd',
+                    ]
             },
 
             'Element Template': {
                 'gui': self.menu + self.toolbar + self.context,
-                'cmd': ['ViewTemplateLibrary',]
+                'cmd': ['ViewTemplateLibrary']
             },
 
             'Test': {
                 'gui': self.menu + self.toolbar,
                 'cmd': [
-                    'BaseTrackerTest', 'BaseTrackerLinkedTest'
-                ]
+                    'BaseTrackerTest',
+                    'BaseTrackerLinkedTest'
+                    ]
             },
 
             'Help': {
                 'gui': self.toolbar,
                 'cmd': ['TrailsGuide']
+            },
+
+            'Draft Tools': {
+                'gui': self.toolbar,
+                'cmd': [
+                    'Drawing Tools',
+                    'Modification Tools'
+                    ]
             }
         }
 
@@ -102,6 +154,10 @@ class TrailsWorkbench(Gui.Workbench):
         Called when the workbench is first activated.
         """
 
+        from .point import ImportPointFile, ExportPoints
+        from .surface import CreateSurface, EditSurface, Contours
+        from .section import CreateGuideLines
+        from . import GeoData
         from .project.commands \
             import import_alignment_cmd, edit_alignment_cmd,\
                 base_tracker_test, trails_guide_cmd
@@ -113,6 +169,33 @@ class TrailsWorkbench(Gui.Workbench):
 
             if _v['gui'] & self.menu:
                 self.appendMenu(_k, _v['cmd'])
+
+    EditSurfaceSub = ['Add Triangle', 'Delete Triangle', 'Swap Edge', 
+                      'Smooth Surface']
+
+    Gui.addCommand('Surface Editor',
+                   CommandGroup(EditSurfaceSub,
+                                'Edit selected surface.',
+                                TypeId='Mesh::Feature'))
+
+    GeoData = ['Import OSM Map', 'Import CSV', 'Import GPX', 'Import Heights',
+               'Import SRTM', 'Import XYZ', 'Import LatLonZ',  'Import Image', 
+               'Import ASTER', 'Import LIDAR', 'Create House', 'Navigator',
+               'ElevationGrid', 'Import EMIR',
+               ]
+
+    Gui.addCommand('Geodata Tools', 
+                   CommandGroup(GeoData, 'Geodata Tools'))
+
+    import draftutils.init_tools as it
+    draft_drawing_commands = it.get_draft_drawing_commands()
+    draft_modification_commands = it.get_draft_modification_commands()
+
+    Gui.addCommand('Drawing Tools', 
+                   CommandGroup(draft_drawing_commands, 'Draft creation tools'))
+
+    Gui.addCommand('Modification Tools', 
+                   CommandGroup(draft_modification_commands, 'Draft modification tools'))
 
     def Activated(self):
         """

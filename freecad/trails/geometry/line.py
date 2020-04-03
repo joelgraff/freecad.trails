@@ -224,9 +224,9 @@ def get_ortho_vector(line, distance, side=''):
 
     if _side in ['r', 'rt', 'right']:
         _dir = -1.0
-
-    start = line.start
-    end = line.end
+    start = line['Start']
+    end = line['End']
+    bearing = line['BearingIn']
 
     if (start is None) or (end is None):
         return None, None
@@ -234,7 +234,7 @@ def get_ortho_vector(line, distance, side=''):
     _delta = end.sub(start).normalize()
     _left = Vector(-_delta.y, _delta.x, 0.0)
 
-    _coord = get_coordinate(line.start, line.end, distance)
+    _coord = get_coordinate(start, bearing, distance)
 
     return _coord, _left.multiply(_dir)
 
