@@ -24,6 +24,7 @@
 import FreeCAD
 import FreeCADGui
 from PySide import QtCore, QtGui
+from freecad.trails import ICONPATH
 import csv
 import os
 
@@ -38,6 +39,13 @@ class ImportPointFile:
         Constructor
         """
 
+        # Set icon,  menu text and tooltip
+        self.Resources = {
+            'Pixmap': ICONPATH + '/icons/ImportPointFile.svg',
+            'MenuText': "Import Point File",
+            'ToolTip': "Import point file which includes survey data."
+        }
+
         # Get file path
         self.Path = os.path.dirname(__file__)
 
@@ -46,13 +54,6 @@ class ImportPointFile:
             self.Path + "/ImportPointFile.ui")
         self.CPGui = FreeCADGui.PySideUic.loadUi(
             self.Path + "/CreatePointGroup.ui")
-
-        # Set icon,  menu text and tooltip
-        self.Resources = {
-            'Pixmap': self.Path + '/../Resources/Icons/ImportPointFile.svg',
-            'MenuText': "Import Point File",
-            'ToolTip': "Import point file which includes survey data."
-        }
 
         # UI connections
         UI = self.IPFui

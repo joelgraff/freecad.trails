@@ -22,6 +22,7 @@
 
 import FreeCAD
 import FreeCADGui
+from freecad.trails import ICONPATH
 import os
 import Draft
 
@@ -35,15 +36,14 @@ class CreateContour:
         """
         Constructor
         """
+        # Set icon,  menu text and tooltip
+        self.resources = {
+                'Pixmap': ICONPATH + '/icons/EditSurface.svg',
+                'MenuText': "Create Contour",
+                'ToolTip': "Create contour on selected surface."}
 
         # Get file path
         self.Path = os.path.dirname(__file__)
-
-        # Set icon,  menu text and tooltip
-        self.resources = {
-                'Pixmap': self.Path + '/../Resources/Icons/EditSurface.svg',
-                'MenuText': "Create Contour",
-                'ToolTip': "Create contour on selected surface."}
 
     def GetResources(self):
         """

@@ -27,20 +27,21 @@ import FreeCADGui
 import Draft
 from FreeCAD import Vector
 from PySide import QtCore, QtGui
+from freecad.trails import ICONPATH
 
 
 class CreateGuideLines:
 
     def __init__(self):
 
-        # Command to create guide lines for selected alignment.
-        self.Path = os.path.dirname(__file__)
-
         self.resources = {
-            'Pixmap': self.Path + '/../Resources/Icons/CreateGuideLines.svg',
+            'Pixmap': ICONPATH + '/icons/CreateGuideLines.svg',
             'MenuText': "Create Guide Lines",
             'ToolTip': "Create guide lines for selected alignment"
                     }
+
+        # Command to create guide lines for selected alignment.
+        self.Path = os.path.dirname(__file__)
 
         self.IPFui = FreeCADGui.PySideUic.loadUi(
             self.Path + "/CreateGuideLines.ui")

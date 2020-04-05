@@ -23,6 +23,7 @@
 import FreeCAD
 import FreeCADGui
 from PySide import QtCore, QtGui
+from freecad.trails import ICONPATH
 import MeshPart
 import Draft
 import os
@@ -31,14 +32,15 @@ import os
 class CreateSections:
 
     def __init__(self):
-        # Command to create sections for every selected surfaces.
-        self.Path = os.path.dirname(__file__)
 
         self.Resources = {
-            'Pixmap': self.Path + '/../Resources/Icons/CreateSections.svg',
+            'Pixmap': ICONPATH + '/icons/CreateSections.svg',
             'MenuText': "Create Sections",
             'ToolTip': "Create Sections"
         }
+
+        # Command to create sections for every selected surfaces.
+        self.Path = os.path.dirname(__file__)
 
         # Import *.ui file(s)
         self.IPFui = FreeCADGui.PySideUic.loadUi(

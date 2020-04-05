@@ -24,6 +24,7 @@ import FreeCAD
 import FreeCADGui
 from FreeCAD import Base
 from PySide import QtCore, QtGui
+from freecad.trails import ICONPATH
 import Mesh
 import os
 
@@ -38,15 +39,15 @@ class CreateSurface:
         Constructor
         """
 
-        # Get file path
-        self.Path = os.path.dirname(__file__)
-
         # Set icon,  menu text and tooltip
         self.resources = {
-            'Pixmap': self.Path + '/../Resources/Icons/CreateSurface.svg',
+            'Pixmap': ICONPATH + '/icons/CreateSurface.svg',
             'MenuText': "Create Surface",
             'ToolTip': "Create surface from selected point group(s)."
             }
+
+        # Get file path
+        self.Path = os.path.dirname(__file__)
 
         # Get *.ui file(s)
         self.IPFui = FreeCADGui.PySideUic.loadUi(

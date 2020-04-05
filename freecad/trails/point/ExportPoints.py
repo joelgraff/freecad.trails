@@ -23,6 +23,7 @@
 import FreeCAD
 import FreeCADGui
 from PySide import QtCore, QtGui
+from freecad.trails import ICONPATH
 import os
 
 class ExportPoints:
@@ -35,15 +36,15 @@ class ExportPoints:
         Constructor
         """
 
-        # Get file path
-        self.Path = os.path.dirname(__file__)
-
         # Set icon,  menu text and tooltip
         self.Resources = {
-            'Pixmap': self.Path + '/../Resources/Icons/ExportPoints.svg',
+            'Pixmap': ICONPATH + '/icons/ExportPoints.svg',
             'MenuText': "Export Points",
             'ToolTip': "Export points to point file."
         }
+
+        # Get file path
+        self.Path = os.path.dirname(__file__)
 
         # Get *.ui file(s)
         self.EP = FreeCADGui.PySideUic.loadUi(self.Path + "/ExportPoints.ui")
