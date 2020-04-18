@@ -90,12 +90,13 @@ class CreateSections:
             self.Surfaces.Label = "Surfaces"
 
         SurfacesGroup = self.Surfaces.Group
-        self.SurfacesList = []
+        self.SurfacesList = {}
 
-        for group in SurfacesGroup:
-            if group.TypeId == 'Mesh::Feature':
-                self.SurfacesList.append(group.Name)
-                self.IPFui.SelectSurfacesLW.addItem(group.Label)
+        for surface in SurfacesGroup:
+            if surface.TypeId == 'Mesh::Feature':
+                self.SurfacesList[surface.Label] = surface
+                self.IPFui.SelectSurfacesLW.addItem(surface.Label)
+        print(self.SurfacesList)
 
     def CreateSections(self):
         FreeCADVersion = FreeCAD.Version()
@@ -120,34 +121,35 @@ class CreateSections:
 
         GuideLineName = self.GuideLinesList[GuideLineIndex]
         GuideLine = FreeCAD.ActiveDocument.getObject(GuideLineName).Group
+        for SelectedItem in self.IPFui.SelectSurfacesLW.selectedItems():
+            Surface = self.SurfacesList[SelectedItem.text()]
 
-        # GuideLinesGroup = FreeCAD.ActiveDocument.GuideLines.Group
-        CopyMesh = FreeCAD.ActiveDocument.Surface.Mesh.copy()
-        Base = CopyMesh.Placement.Base
-        CopyMesh.Placement.move(Base.negative())
+            CopyMesh = Surface.Mesh.copy()
+            Base = CopyMesh.Placement.Base
+            CopyMesh.Placement.move(Base.negative())
 
-        for Wire in GuideLine:
-            CopyShape = Wire.Shape.copy()
-            CopyShape.Placement.move(Base.negative())
+            for Wire in GuideLine:
+                CopyShape = Wire.Shape.copy()
+                CopyShape.Placement.move(Base.negative())
 
-            Param1 = MeshPart.findSectionParameters(
-                CopyShape.Edge1, CopyMesh, FreeCAD.Vector(0, 0, 1))
-            Param1.insert(0, CopyShape.Edge1.FirstParameter+1)
-            Param1.append(CopyShape.Edge1.LastParameter-1)
+                Param1 = MeshPart.findSectionParameters(
+                    CopyShape.Edge1, CopyMesh, FreeCAD.Vector(0, 0, 1))
+                Param1.insert(0, CopyShape.Edge1.FirstParameter+1)
+                Param1.append(CopyShape.Edge1.LastParameter-1)
 
-            Param2 = MeshPart.findSectionParameters(
-                CopyShape.Edge2, CopyMesh, FreeCAD.Vector(0, 0, 1))
-            Param2.insert(0, CopyShape.Edge2.FirstParameter+1)
-            Param2.append(CopyShape.Edge2.LastParameter-1)
+                Param2 = MeshPart.findSectionParameters(
+                    CopyShape.Edge2, CopyMesh, FreeCAD.Vector(0, 0, 1))
+                Param2.insert(0, CopyShape.Edge2.FirstParameter+1)
+                Param2.append(CopyShape.Edge2.LastParameter-1)
 
-            Points1 = [CopyShape.Edge1.valueAt(i) for i in Param1]
-            Points2 = [CopyShape.Edge2.valueAt(i) for i in Param2]
+                Points1 = [CopyShape.Edge1.valueAt(i) for i in Param1]
+                Points2 = [CopyShape.Edge2.valueAt(i) for i in Param2]
 
-            Section = MeshPart.projectPointsOnMesh(
-                Points1+Points2, CopyMesh, FreeCAD.Vector(0, 0, 1))
-            Pwire = Draft.makeWire(Section)
-            Pwire.Placement.move(Base)
-            self.SectionsGroup.addObject(Pwire)
+                Section = MeshPart.projectPointsOnMesh(
+                    Points1+Points2, CopyMesh, FreeCAD.Vector(0, 0, 1))
+                Pwire = Draft.makeWire(Section)
+                Pwire.Placement.move(Base)
+                self.SectionsGroup.addObject(Pwire)
 
         FreeCAD.ActiveDocument.recompute()
 
