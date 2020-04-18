@@ -96,7 +96,24 @@ class CreateSections:
             if surface.TypeId == 'Mesh::Feature':
                 self.SurfacesList[surface.Label] = surface
                 self.IPFui.SelectSurfacesLW.addItem(surface.Label)
-        print(self.SurfacesList)
+
+    def convert2View(self, Section):
+        import math
+        sectionView = []
+        sectionView.append(FreeCAD.Vector(0, 0, 0))
+        for i in range(0, len(Section)-1):
+            point = Section[i]
+            pointNext = Section[i+1]
+            pointVirt = FreeCAD.Vector(pointNext.x, pointNext.y, point.z)
+            vecReal = point.sub(pointNext)
+            vecVir = point.sub(pointVirt)
+            length = vecReal.Length
+            angle = vecVir.getAngle(vecReal)
+            dx = length * math.cos(angle)
+            dy = length * math.sin(angle)
+            if vecVir.z - vecReal.z < 0: dy = -dy
+            sectionView.append(sectionView[-1].add(FreeCAD.Vector(dx, dy, 0)))
+        return sectionView
 
     def CreateSections(self):
         FreeCADVersion = FreeCAD.Version()
@@ -125,12 +142,10 @@ class CreateSections:
             Surface = self.SurfacesList[SelectedItem.text()]
 
             CopyMesh = Surface.Mesh.copy()
-            Base = CopyMesh.Placement.Base
-            CopyMesh.Placement.move(Base.negative())
-
+            plDelta = FreeCAD.Vector(0, 0, 0)
             for Wire in GuideLine:
                 CopyShape = Wire.Shape.copy()
-                CopyShape.Placement.move(Base.negative())
+                Base = CopyShape.Placement.Base
 
                 Param1 = MeshPart.findSectionParameters(
                     CopyShape.Edge1, CopyMesh, FreeCAD.Vector(0, 0, 1))
@@ -147,8 +162,11 @@ class CreateSections:
 
                 Section = MeshPart.projectPointsOnMesh(
                     Points1+Points2, CopyMesh, FreeCAD.Vector(0, 0, 1))
-                Pwire = Draft.makeWire(Section)
+                sectionView = self.convert2View(Section)
+                Pwire = Draft.makeWire(sectionView)
+                Base = Base.add(plDelta)
                 Pwire.Placement.move(Base)
+                plDelta = plDelta.add(FreeCAD.Vector(50000, 0, 0))
                 self.SectionsGroup.addObject(Pwire)
 
         FreeCAD.ActiveDocument.recompute()
