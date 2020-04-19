@@ -29,6 +29,8 @@ import Draft
 import os
 
 
+view = FreeCADGui.ActiveDocument.ActiveView
+
 class CreateSections:
 
     def __init__(self):
@@ -97,9 +99,11 @@ class CreateSections:
                 self.SurfacesList[surface.Label] = surface
                 self.IPFui.SelectSurfacesLW.addItem(surface.Label)
 
-    def convert2View(self, Section):
+    @staticmethod
+    def convert2View(Section, origin):
         import math
         sectionView = []
+        if origin: Section.insert(0, origin)
         sectionView.append(FreeCAD.Vector(0, 0, 0))
         for i in range(0, len(Section)-1):
             point = Section[i]
@@ -113,7 +117,21 @@ class CreateSections:
             dy = length * math.sin(angle)
             if vecVir.z - vecReal.z < 0: dy = -dy
             sectionView.append(sectionView[-1].add(FreeCAD.Vector(dx, dy, 0)))
+        sectionView.pop(0)
         return sectionView
+
+    def placeSecViews(self, event):
+        """
+        Select section views location
+        """
+        try:
+            if (event["Button"] == "BUTTON1") and (event["State"] == "DOWN"):
+                clickPos = event["Position"]
+                view.removeEventCallback("SoEvent", self.callback)
+                position = view.getPoint(clickPos)
+                self.drawSecViews(position)
+        except Exception: pass
+
 
     def CreateSections(self):
         FreeCADVersion = FreeCAD.Version()
@@ -129,23 +147,24 @@ class CreateSections:
                 "App::DocumentObjectGroup", 'Sections')
             self.SectionsGroup.Label = "Sections"
 
-        GuideLineIndex = self.IPFui.GLGCB.currentIndex()
+        self.GuideLineIndex = self.IPFui.GLGCB.currentIndex()
 
-        if GuideLineIndex < 0:
+        if self.GuideLineIndex < 0:
             FreeCAD.Console.PrintMessage(
                 "No Guide Lines Group")
             return
 
-        GuideLineName = self.GuideLinesList[GuideLineIndex]
-        GuideLine = FreeCAD.ActiveDocument.getObject(GuideLineName).Group
-        for SelectedItem in self.IPFui.SelectSurfacesLW.selectedItems():
-            Surface = self.SurfacesList[SelectedItem.text()]
+        self.callback = view.addEventCallback("SoEvent",self.placeSecViews)
 
-            CopyMesh = Surface.Mesh.copy()
-            plDelta = FreeCAD.Vector(0, 0, 0)
-            for Wire in GuideLine:
-                CopyShape = Wire.Shape.copy()
-                Base = CopyShape.Placement.Base
+    def drawSecViews(self, position):
+        GuideLineName = self.GuideLinesList[self.GuideLineIndex]
+        GuideLine = FreeCAD.ActiveDocument.getObject(GuideLineName).Group
+        for Wire in GuideLine:
+            CopyShape = Wire.Shape.copy()
+            origin = None
+            for SelectedItem in self.IPFui.SelectSurfacesLW.selectedItems():
+                Surface = self.SurfacesList[SelectedItem.text()]
+                CopyMesh = Surface.Mesh.copy()
 
                 Param1 = MeshPart.findSectionParameters(
                     CopyShape.Edge1, CopyMesh, FreeCAD.Vector(0, 0, 1))
@@ -162,14 +181,12 @@ class CreateSections:
 
                 Section = MeshPart.projectPointsOnMesh(
                     Points1+Points2, CopyMesh, FreeCAD.Vector(0, 0, 1))
-                sectionView = self.convert2View(Section)
+                sectionView = self.convert2View(Section, origin)
                 Pwire = Draft.makeWire(sectionView)
-                Base = Base.add(plDelta)
-                Pwire.Placement.move(Base)
-                plDelta = plDelta.add(FreeCAD.Vector(50000, 0, 0))
+                Pwire.Placement.move(position)
                 self.SectionsGroup.addObject(Pwire)
-
+                origin = Section[0]
+            origin = None
+            position = position.add(FreeCAD.Vector(110000, 0, 0))
         FreeCAD.ActiveDocument.recompute()
-
-
 FreeCADGui.addCommand('Create Sections', CreateSections())
