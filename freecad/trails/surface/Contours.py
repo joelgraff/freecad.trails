@@ -74,6 +74,7 @@ class CreateContour:
         surface = FreeCADGui.Selection.getSelection()[-1]
         base = surface.Mesh.Placement.Base
         copy_mesh = surface.Mesh.copy()
+        copy_mesh.Placement.Base = FreeCAD.Vector(0, 0, base.z)
 
         # Create group for contour lines
         try:
@@ -92,7 +93,7 @@ class CreateContour:
         # Define placement
         Pl = FreeCAD.Placement()
         Pl.Rotation.Q = (0.0, 0.0, 0.0, 1.0)
-        Pl.Base = FreeCAD.Vector(base.x, base.y, base.z)
+        Pl.Base = FreeCAD.Vector(base.x, base.y, 0)
 
         # Create wire
         WireObj = FreeCAD.ActiveDocument.addObject(
@@ -133,6 +134,6 @@ class CreateContour:
 
                 for i in CrossSections[0]:
                     Contour = self.Wire(H, i, Base)
-                    Contour.Label = str(H)
+                    Contour.Label = str(H/1000)
 
 FreeCADGui.addCommand('Create Contour', CreateContour())
