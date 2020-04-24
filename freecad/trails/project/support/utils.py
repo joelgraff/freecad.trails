@@ -280,3 +280,16 @@ def scrub_stationing(station):
         return -1
 
     return float(scrub)
+
+def rendering_fix(base):
+    """
+    To fix rendering issue
+    """
+    iterx = base.x/1677.7216
+    itery = base.y/1677.7216
+    iterz = base.z/1677.7216
+
+    scale_factor = App.Vector(iterx, itery, iterz)
+    normalized_base = scale_factor.multiply(1677.7216)
+
+    return normalized_base

@@ -25,6 +25,7 @@ import FreeCADGui
 from FreeCAD import Base
 from PySide import QtCore, QtGui
 from freecad.trails import ICONPATH
+from ..project.support import utils
 import Mesh
 import os
 
@@ -165,7 +166,7 @@ class CreateSurface:
             return
 
         # Get selected group(s) points
-        Test = []
+        test = []
         for SelectedIndex in self.IPFui.PointGroupsLV.selectedIndexes():
             Index = self.GroupList[SelectedIndex.row()]
             PointGroup = FreeCAD.ActiveDocument.getObject(Index)
@@ -174,18 +175,19 @@ class CreateSurface:
                 xx = float(Point.x)
                 yy = float(Point.y)
                 zz = float(Point.z)
-                Test.append([xx, yy, zz])
+                test.append([xx, yy, zz])
 
         # Normalize points
-        Data = np.array(Test)
-        DataOn = Data.mean(axis=0)
-        Basex = FreeCAD.Vector(DataOn[0], DataOn[1], DataOn[2])
-        Data -= DataOn
-        Test = Data
+        fpoint = test[0]
+        base = FreeCAD.Vector(fpoint[0], fpoint[1], fpoint[2])
+        nbase = utils.rendering_fix(base)
+        data = []
+        for i in test:
+            data.append([i[0] - nbase.x, i[1] - nbase.y, i[2] - nbase.z])
+        Data = np.array(data) 
 
         # Create delaunay triangulation
         tri = scipy.spatial.Delaunay(Data[:, :2])
-        print(Data)
 
         MeshList = []
 
@@ -197,12 +199,12 @@ class CreateSurface:
             #Test triangle
             if self.MaxLength(Data[first], Data[second], Data[third])\
                     and self.MaxAngle(Data[first], Data[second], Data[third]):
-                MeshList.append(Test[first])
-                MeshList.append(Test[second])
-                MeshList.append(Test[third])
+                MeshList.append(Data[first])
+                MeshList.append(Data[second])
+                MeshList.append(Data[third])
 
         MeshObject = Mesh.Mesh(MeshList)
-        MeshObject.Placement.move(Basex)
+        MeshObject.Placement.move(nbase)
         SurfaceNameLE = self.IPFui.SurfaceNameLE.text()
         Surface = FreeCAD.ActiveDocument.addObject(
             "Mesh::Feature", SurfaceNameLE)
