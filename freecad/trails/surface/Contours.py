@@ -23,6 +23,7 @@
 import FreeCAD
 import FreeCADGui
 from freecad.trails import ICONPATH
+from ..project.support import utils
 import os
 import Draft
 
@@ -86,35 +87,6 @@ class CreateContour:
 
         self.CreateContour(copy_mesh, base)
 
-    def Wire(self, H, PointList, base, Support=None):
-        """
-        Create a wire by using given name
-        """
-        # Define placement
-        Pl = FreeCAD.Placement()
-        Pl.Rotation.Q = (0.0, 0.0, 0.0, 1.0)
-        Pl.Base = FreeCAD.Vector(base.x, base.y, 0)
-
-        # Create wire
-        WireObj = FreeCAD.ActiveDocument.addObject(
-            "Part::Part2DObjectPython", "_"+str(H))
-
-        # Add Draft.Wire properties and view provider
-        Draft._Wire(WireObj)
-        WireObj.Points = PointList
-        WireObj.Closed = False
-        WireObj.Support = Support
-        WireObj.MakeFace = False
-        WireObj.Placement = Pl
-
-        if FreeCADGui:
-            Draft._ViewProviderWire(WireObj.ViewObject)
-            Draft.formatObject(WireObj)
-            Draft.select(WireObj)
-            self.Contours.addObject(WireObj)
-        FreeCAD.ActiveDocument.recompute()
-        return WireObj
-
     def CreateContour(self, Mesh, Base):
         """
         Create contour lines for selected surface
@@ -133,7 +105,9 @@ class CreateContour:
                     [((0, 0, H), (0, 0, 1))], 0.000001)
 
                 for i in CrossSections[0]:
-                    Contour = self.Wire(H, i, Base)
+                    Contour = utils.make_wire(i, str(H/1000))
                     Contour.Label = str(H/1000)
+                    Contour.Placement.move(FreeCAD.Vector(Base.x, Base.y, 0))
+        FreeCAD.ActiveDocument.recompute()
 
 FreeCADGui.addCommand('Create Contour', CreateContour())
