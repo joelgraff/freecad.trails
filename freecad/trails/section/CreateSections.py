@@ -28,17 +28,14 @@ import MeshPart
 import Draft
 import os
 
-
-view = FreeCADGui.ActiveDocument.ActiveView
-
 class CreateSections:
 
     def __init__(self):
 
         self.Resources = {
             'Pixmap': ICONPATH + '/icons/CreateSections.svg',
-            'MenuText': "Create Sections",
-            'ToolTip': "Create Sections"
+            'MenuText': "Create Section Views",
+            'ToolTip': "Create Section Views"
         }
 
         # Command to create sections for every selected surfaces.
@@ -62,6 +59,7 @@ class CreateSections:
         return True
 
     def Activated(self):
+        self.view = FreeCADGui.ActiveDocument.ActiveView
         self.IPFui.setParent(FreeCADGui.getMainWindow())
         self.IPFui.setWindowFlags(QtCore.Qt.Window)
         self.IPFui.show()
@@ -100,7 +98,7 @@ class CreateSections:
                 self.IPFui.SelectSurfacesLW.addItem(surface.Label)
 
     @staticmethod
-    def convert2View(Section, origin):
+    def convert2View(Section, origin=None):
         import math
         sectionView = []
         if origin: Section.insert(0, origin)
@@ -127,8 +125,8 @@ class CreateSections:
         try:
             if (event["Button"] == "BUTTON1") and (event["State"] == "DOWN"):
                 clickPos = event["Position"]
-                view.removeEventCallback("SoEvent", self.callback)
-                position = view.getPoint(clickPos)
+                self.view.removeEventCallback("SoEvent", self.callback)
+                position = self.view.getPoint(clickPos)
                 self.drawSecViews(position)
         except Exception: pass
 
@@ -154,11 +152,21 @@ class CreateSections:
                 "No Guide Lines Group")
             return
 
-        self.callback = view.addEventCallback("SoEvent",self.placeSecViews)
+        self.callback = self.view.addEventCallback("SoEvent",self.placeSecViews)
 
-    def drawSecViews(self, position):
+    def drawSecViews(self, pos):
+        import math
+        position = pos
+        _counter = 0
+        _buffer = 10000
+
         GuideLineName = self.GuideLinesList[self.GuideLineIndex]
         GuideLine = FreeCAD.ActiveDocument.getObject(GuideLineName).Group
+
+        sec_view_row = math.ceil(len(GuideLine)**0.5)
+
+        view_width =[]
+        view_heigth =[]
         for Wire in GuideLine:
             CopyShape = Wire.Shape.copy()
             origin = None
@@ -183,10 +191,29 @@ class CreateSections:
                     Points1+Points2, CopyMesh, FreeCAD.Vector(0, 0, 1))
                 sectionView = self.convert2View(Section, origin)
                 Pwire = Draft.makeWire(sectionView)
+
+                view_width.append([min(i.x for i in sectionView), max(i.x for i in sectionView)])
+                view_heigth.append([min(i.y for i in sectionView), max(i.y for i in sectionView)])
+
                 Pwire.Placement.move(position)
                 self.SectionsGroup.addObject(Pwire)
                 origin = Section[0]
-            origin = None
-            position = position.add(FreeCAD.Vector(110000, 0, 0))
+
+            if _counter == sec_view_row:
+                dx = max(i[1] for i in view_width) - min(i[0] for i in view_width)
+                shifting = position.x - pos.x + _buffer
+                _reposition = FreeCAD.Vector(dx + shifting, 0, 0)
+                position = pos.add(_reposition)
+                view_width.clear()
+                view_heigth.clear()
+                _counter = 0
+            else:
+                dy = max(i[1] for i in view_heigth) - min(i[0] for i in view_heigth)
+                shifting = _buffer
+                _reposition = FreeCAD.Vector(0, -(dy + shifting), 0)
+                position = position.add(_reposition)
+                view_heigth.clear()
+                _counter += 1
+
         FreeCAD.ActiveDocument.recompute()
-FreeCADGui.addCommand('Create Sections', CreateSections())
+FreeCADGui.addCommand('Create Section Views', CreateSections())

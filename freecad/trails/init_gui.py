@@ -90,7 +90,7 @@ class TrailsWorkbench(Gui.Workbench):
                 'gui': self.menu + self.toolbar,
                 'cmd': [
                     'Create Guide Lines',
-                    'Create Sections'
+                    'Create Section Views'
                     ]
             },
 
