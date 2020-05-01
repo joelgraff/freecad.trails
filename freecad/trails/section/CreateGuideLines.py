@@ -175,10 +175,19 @@ class CreateGuideLines:
             self.IPFui.EndStationLE.setEnabled(True)
 
     def CreateGuideLines(self):
+        """
+        Generates guidelines along a selected alignment
+        """
+
+        #get left and right offsets from centerline
         l = self.IPFui.LeftLengthLE.text()
         r = self.IPFui.RightLengthLE.text()
+
+        #station limits
         FirstStation = self.IPFui.StartStationLE.text()
         LastStation = self.IPFui.EndStationLE.text()
+
+        #target group
         glg_index = self.IPFui.GLGroupCB.currentIndex()
 
         if glg_index < 0:
@@ -187,9 +196,12 @@ class CreateGuideLines:
             return
 
         GLGIndexName = self.GLGList[glg_index]
+
+        #guideline intervals
         TangentIncrement = self.IPFui.TIncrementLE.text()
         CurveSpiralIncrement = self.IPFui.CSIncrementLE.text()
 
+        #retrieve alignment data
         Alignment, Start, End = self.getAlignmentInfos()
 
         if Alignment is None :
@@ -197,11 +209,14 @@ class CreateGuideLines:
                 "Please add a Alignment object to the Alignment Group")
             return
 
+        #get 3D coordinate dataset and placement
         Stations = []
         AlgPl = Alignment.Placement.Base
         Geometry = Alignment.Proxy.model.data['geometry']
 
         for Geo in Geometry:
+
+            #compute starting and ending stations based on alignment
             StartStation = Geo.get('StartStation')
             EndStation = Geo.get('StartStation')+Geo.get('Length')/1000
 
@@ -209,31 +224,52 @@ class CreateGuideLines:
                 if self.IPFui.HorGeoPointsChB.isChecked():
                     Stations.append(StartStation)
 
+            #generate line intervals
             if Geo.get('Type') == 'Line':
-                for i in range(round(float(StartStation)), round(float(EndStation))):
+
+                #Iterate the station range, rounding to the nearest whole
+                for i in range(
+                    round(float(StartStation)), round(float(EndStation))):
+
+                    #add stations which land on increments exactly
                     if i % int(TangentIncrement) == 0:
                         Stations.append(i)
 
+            #generate curve intervals
             elif Geo.get('Type') == 'Curve' or Geo["Type"] == 'Spiral':
-                for i in range(round(float(StartStation)), round(float(EndStation))):
+
+                for i in range(
+                    round(float(StartStation)), round(float(EndStation))):
+
                     if i % int(CurveSpiralIncrement) == 0:
                         Stations.append(i)
+
+        #add the end station, rounded to the nearest three decimals
         Stations.append(round(End,3))
 
         Result = []
+
+        #iterate the stations, appending what falls in the specified limits
         for Station in Stations:
+
             if float(FirstStation) <= Station <= float(LastStation):
                 Result.append(Station)
+
         Result.sort()
 
+        #iterate the final list of stations,
+        #computing coordinates and orthoginals for guidelines
         for Station in Result:
+
             Coord, vec = Alignment.Proxy.model.get_orthogonal( Station, "Left")
             LeftEnd = Coord.add(FreeCAD.Vector(vec).multiply(int(l)*1000))
             RightEnd = Coord.add(vec.negative().multiply(int(r)*1000))
 
+            #generate guide line object and add to document
             GuideLine = Draft.makeWire([LeftEnd, Coord, RightEnd])
             GuideLine.Placement.Base = AlgPl
             GuideLine.Label = str(round(Station, 3))
+
             FreeCAD.ActiveDocument.getObject(GLGIndexName).addObject(GuideLine)
             FreeCAD.ActiveDocument.recompute()
 
