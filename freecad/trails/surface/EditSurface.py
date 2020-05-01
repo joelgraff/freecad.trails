@@ -23,6 +23,7 @@
 import FreeCAD
 import FreeCADGui
 from pivy import coin
+from freecad.trails import ICONPATH
 import os
 
 
@@ -36,12 +37,9 @@ class AddTriangle:
         Constructor
         """
 
-        # Get file path
-        self.Path = os.path.dirname(__file__)
-
         # Set icon,  menu text and tooltip
         self.resources = {
-            'Pixmap': self.Path + '/../Resources/Icons/EditSurface.svg',
+            'Pixmap': ICONPATH + '/icons/EditSurface.svg',
             'MenuText': "Add Triangle",
             'ToolTip': "Add a triangle to selected surface."
                 }
@@ -87,12 +85,9 @@ class DeleteTriangle:
         Constructor
         """
 
-        # Get file path
-        self.Path = os.path.dirname(__file__)
-
         # Set icon,  menu text and tooltip
         self.resources = {
-            'Pixmap': self.Path + '/../Resources/Icons/EditSurface.svg',
+            'Pixmap': ICONPATH + '/icons/EditSurface.svg',
             'MenuText': "Delete Triangle",
             'ToolTip': "Delete triangles from selected surface."
               }
@@ -140,12 +135,9 @@ class SwapEdge:
         Constructor
         """
 
-        # Get file path
-        self.Path = os.path.dirname(__file__)
-
         # Set icon,  menu text and tooltip
         self.resources = {
-            'Pixmap': self.Path + '/../Resources/Icons/EditSurface.svg',
+            'Pixmap': ICONPATH + '/icons/EditSurface.svg',
             'MenuText': "Swap Edge",
             'ToolTip': "Swap Edge of selected surface."
             }
@@ -236,12 +228,9 @@ class SmoothSurface:
         Constructor
         """
 
-        # Get file path
-        self.Path = os.path.dirname(__file__)
-
         # Set icon,  menu text and tooltip
         self.resources = {
-            'Pixmap': self.Path + '/../Resources/Icons/EditSurface.svg',
+            'Pixmap': ICONPATH + '/icons/EditSurface.svg',
             'MenuText': "Smooth Surface",
             'ToolTip': "Smooth selected surface."
             }

@@ -90,7 +90,7 @@ class TrailsWorkbench(Gui.Workbench):
                 'gui': self.menu + self.toolbar,
                 'cmd': [
                     'Create Guide Lines',
-                    'Create Sections'
+                    'Create Section Views'
                     ]
             },
 
@@ -124,7 +124,8 @@ class TrailsWorkbench(Gui.Workbench):
                 'gui': self.toolbar,
                 'cmd': [
                     'Drawing Tools',
-                    'Modification Tools'
+                    'Modification Tools',
+                    'Utility Tools'
                     ]
             }
         }
@@ -190,12 +191,16 @@ class TrailsWorkbench(Gui.Workbench):
     import draftutils.init_tools as it
     draft_drawing_commands = it.get_draft_drawing_commands()
     draft_modification_commands = it.get_draft_modification_commands()
+    draft_small_commands = it.get_draft_small_commands()
 
     Gui.addCommand('Drawing Tools', 
                    CommandGroup(draft_drawing_commands, 'Draft creation tools'))
 
     Gui.addCommand('Modification Tools', 
                    CommandGroup(draft_modification_commands, 'Draft modification tools'))
+
+    Gui.addCommand('Utility Tools', 
+                   CommandGroup(draft_small_commands, 'Draft utility tools'))
 
     def Activated(self):
         """
