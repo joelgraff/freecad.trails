@@ -98,23 +98,34 @@ class CreateSections:
                 self.IPFui.SelectSurfacesLW.addItem(surface.Label)
 
     @staticmethod
-    def convert2View(Section, origin=None):
+    def convert2View(section, origin=None):
         import math
         sectionView = []
-        if origin: Section.insert(0, origin)
+
+        if origin: section.insert(0, origin)
         sectionView.append(FreeCAD.Vector(0, 0, 0))
-        for i in range(0, len(Section)-1):
-            point = Section[i]
-            pointNext = Section[i+1]
-            pointVirt = FreeCAD.Vector(pointNext.x, pointNext.y, point.z)
-            vecReal = point.sub(pointNext)
-            vecVir = point.sub(pointVirt)
-            length = vecReal.Length
-            angle = vecVir.getAngle(vecReal)
-            dx = length * math.cos(angle)
-            dy = length * math.sin(angle)
-            if vecVir.z - vecReal.z < 0: dy = -dy
+
+        for i in range(0, len(section)-1):
+            virtual_point = FreeCAD.Vector(section[i+1].x, section[i+1].y, section[i].z)
+
+            real_vector = section[i].sub(section[i+1])
+            virtual_vector = section[i].sub(virtual_point)
+            _length = real_vector.Length
+            _angle = virtual_vector.getAngle(real_vector)
+
+            dx = _length * math.cos(_angle)
+            dy = _length * math.sin(_angle)
+
+            if i == 0 and origin:
+                side_point = FreeCAD.Vector(section[-1].x, section[-1].y, section[0].z)
+                first_vector = section[0].sub(virtual_point)
+                second_vector = virtual_point.sub(side_point)
+                second_vector = first_vector.add(second_vector.normalize())
+                if first_vector.Length > second_vector.Length: dx = -dx
+
+            if virtual_vector.z < real_vector.z: dy = -dy
             sectionView.append(sectionView[-1].add(FreeCAD.Vector(dx, dy, 0)))
+
         sectionView.pop(0)
         return sectionView
 
@@ -156,62 +167,59 @@ class CreateSections:
 
     def drawSecViews(self, pos):
         import math
-        position = pos
+        _position = pos
         _counter = 0
         _buffer = 10000
 
         GuideLineName = self.GuideLinesList[self.GuideLineIndex]
-        GuideLine = FreeCAD.ActiveDocument.getObject(GuideLineName).Group
+        guide_lines = FreeCAD.ActiveDocument.getObject(GuideLineName).Group
 
-        sec_view_row = math.ceil(len(GuideLine)**0.5)
+        multi_views_nor = math.ceil(len(guide_lines)**0.5)
 
         view_width =[]
         view_heigth =[]
-        for Wire in GuideLine:
-            CopyShape = Wire.Shape.copy()
-            origin = None
+        for guide_line in guide_lines:
+            _origin = None
             for SelectedItem in self.IPFui.SelectSurfacesLW.selectedItems():
-                Surface = self.SurfacesList[SelectedItem.text()]
-                CopyMesh = Surface.Mesh.copy()
+                _surface = self.SurfacesList[SelectedItem.text()]
+                _points = []
 
-                Param1 = MeshPart.findSectionParameters(
-                    CopyShape.Edge1, CopyMesh, FreeCAD.Vector(0, 0, 1))
-                Param1.insert(0, CopyShape.Edge1.FirstParameter+1)
-                Param1.append(CopyShape.Edge1.LastParameter-1)
+                for _edge in guide_line.Shape.Edges:
+                    _params = MeshPart.findSectionParameters(
+                        _edge, _surface.Mesh, FreeCAD.Vector(0, 0, 1))
+                    _params.insert(0, _edge.FirstParameter+1)
+                    _params.append(_edge.LastParameter-1)
 
-                Param2 = MeshPart.findSectionParameters(
-                    CopyShape.Edge2, CopyMesh, FreeCAD.Vector(0, 0, 1))
-                Param2.insert(0, CopyShape.Edge2.FirstParameter+1)
-                Param2.append(CopyShape.Edge2.LastParameter-1)
+                    _values = [_edge.valueAt(i) for i in _params]
+                    _points += _values
 
-                Points1 = [CopyShape.Edge1.valueAt(i) for i in Param1]
-                Points2 = [CopyShape.Edge2.valueAt(i) for i in Param2]
+                section_points = MeshPart.projectPointsOnMesh(
+                    _points, _surface.Mesh, FreeCAD.Vector(0, 0, 1))
 
-                Section = MeshPart.projectPointsOnMesh(
-                    Points1+Points2, CopyMesh, FreeCAD.Vector(0, 0, 1))
-                sectionView = self.convert2View(Section, origin)
-                Pwire = Draft.makeWire(sectionView)
+                sec_points_2d = self.convert2View(section_points, _origin)
+                _section = Draft.makeWire(sec_points_2d)
 
-                view_width.append([min(i.x for i in sectionView), max(i.x for i in sectionView)])
-                view_heigth.append([min(i.y for i in sectionView), max(i.y for i in sectionView)])
+                view_width.append([min(i.x for i in sec_points_2d),
+                    max(i.x for i in sec_points_2d)])
+                view_heigth.append([min(i.y for i in sec_points_2d),
+                    max(i.y for i in sec_points_2d)])
 
-                Pwire.Placement.move(position)
-                self.SectionsGroup.addObject(Pwire)
-                origin = Section[0]
+                _section.Placement.move(_position)
+                self.SectionsGroup.addObject(_section)
+                _origin = section_points[0]
 
-            if _counter == sec_view_row:
-                dx = max(i[1] for i in view_width) - min(i[0] for i in view_width)
-                shifting = position.x - pos.x + _buffer
-                _reposition = FreeCAD.Vector(dx + shifting, 0, 0)
-                position = pos.add(_reposition)
+            if _counter == multi_views_nor:
+                _dx = max(i[1] for i in view_width) - min(i[0] for i in view_width)
+                _shifting = _position.x - pos.x + _buffer
+                _reposition = FreeCAD.Vector(_dx + _shifting, 0, 0)
+                _position = pos.add(_reposition)
                 view_width.clear()
                 view_heigth.clear()
                 _counter = 0
             else:
-                dy = max(i[1] for i in view_heigth) - min(i[0] for i in view_heigth)
-                shifting = _buffer
-                _reposition = FreeCAD.Vector(0, -(dy + shifting), 0)
-                position = position.add(_reposition)
+                _dy = max(i[1] for i in view_heigth) - min(i[0] for i in view_heigth)
+                _reposition = FreeCAD.Vector(0, -(_dy + _buffer), 0)
+                _position = _position.add(_reposition)
                 view_heigth.clear()
                 _counter += 1
 
