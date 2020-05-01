@@ -283,7 +283,7 @@ def scrub_stationing(station):
 
 def rendering_fix(base):
     """
-    To fix rendering issue
+    Computes a relative origin to offset large coordinates to prevent rendering issues at large scales.
     """
     iterx = base.x/1677.7216
     itery = base.y/1677.7216
