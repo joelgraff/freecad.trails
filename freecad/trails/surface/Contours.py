@@ -108,6 +108,7 @@ class CreateContour:
                     Contour = utils.make_wire(i, str(H/1000))
                     Contour.Label = str(H/1000)
                     Contour.Placement.move(FreeCAD.Vector(Base.x, Base.y, 0))
+                    self.Contours.addObject(Contour)
         FreeCAD.ActiveDocument.recompute()
 
 FreeCADGui.addCommand('Create Contour', CreateContour())
