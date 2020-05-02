@@ -410,7 +410,7 @@ def get_segments(spiral, deltas, _dtype=Vector):
     _two_rad_len_root = math.sqrt(2.0 * _radius * _length)
     _forty_rad2_len2 = 40.0 * _radius**2 * _length**2
     _root_deltas = [math.sqrt(_v) for _v in deltas]
-    
+
     for _i, _delta in enumerate(deltas):
 
         #calculate length of curve at the current delta
@@ -542,8 +542,11 @@ def get_tangent_vector(spiral, distance):
     Calculate the vector tangent to the spiral for the given distance
     """
 
+    #tangent starting angle
     _tan_start = spiral['BearingIn']
     _dist_squared = distance**2
+
+    #spiral direction
     _dir = spiral['Direction']
 
     if spiral['EndRadius'] > spiral['StartRadius']:

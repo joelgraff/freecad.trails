@@ -109,3 +109,4 @@ freecad/trails/__pycache__/__init__.cpython-36.pyc
 .vscode
 freecad/trails/resources/ui/edit_alignment_task.ui.autosave
 freecad/trails/resources/data/alignment/A1.xml
+.vscode/settings.json

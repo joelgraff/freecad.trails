@@ -174,7 +174,7 @@ class AlignmentModel:
             _coord = _geo.get('Start')
             _d = abs(_coord.Length - _prev_coord.Length)
 
-            if not support.within_tolerance(_d, tolerance=0.01):
+            if not support.within_tolerance(_d, tolerance=0.1):
 
                 #build the line using the provided parameters and add it
                 _geo_list.append(
@@ -657,6 +657,7 @@ class AlignmentModel:
             'Spiral': spiral,
         }
 
+        #return orthogonal for valid curve types
         if curve.get('Type') in _fn:
             return _fn[curve.get('Type')].get_ortho_vector(
                 curve, distance, side)
