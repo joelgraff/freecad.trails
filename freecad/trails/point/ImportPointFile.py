@@ -24,6 +24,8 @@
 import FreeCAD
 import FreeCADGui
 from PySide import QtCore, QtGui
+from freecad.trails import ICONPATH
+from ..project.support import utils
 import csv
 import os
 
@@ -38,6 +40,13 @@ class ImportPointFile:
         Constructor
         """
 
+        # Set icon,  menu text and tooltip
+        self.Resources = {
+            'Pixmap': ICONPATH + '/icons/ImportPointFile.svg',
+            'MenuText': "Import Point File",
+            'ToolTip': "Import point file which includes survey data."
+        }
+
         # Get file path
         self.Path = os.path.dirname(__file__)
 
@@ -46,13 +55,6 @@ class ImportPointFile:
             self.Path + "/ImportPointFile.ui")
         self.CPGui = FreeCADGui.PySideUic.loadUi(
             self.Path + "/CreatePointGroup.ui")
-
-        # Set icon,  menu text and tooltip
-        self.Resources = {
-            'Pixmap': self.Path + '/../Resources/Icons/ImportPointFile.svg',
-            'MenuText': "Import Point File",
-            'ToolTip': "Import point file which includes survey data."
-        }
 
         # UI connections
         UI = self.IPFui
@@ -316,15 +318,18 @@ class ImportPointFile:
             self.FileReader(File, "Import")
 
         List = []
-        Base = self.PointList[0]
+        fpoint = self.PointList[0]
+        base = FreeCAD.Vector(fpoint[0], fpoint[1], fpoint[2])
+        nbase = utils.rendering_fix(base)
+
         for Point in self.PointList:
-            Point = (Point[0]-Base[0], Point[1]-Base[1], Point[2]-Base[2])
+            Point = (Point[0]-nbase.x, Point[1]-nbase.y, Point[2]-nbase.z)
             List.append(Point)
 
         PointObject = PointGroup.Points.copy()
         PointObject.addPoints(List)
         PointGroup.Points = PointObject
-        PointGroup.Placement.Base = Base
+        PointGroup.Placement.move(nbase)
         FreeCAD.ActiveDocument.recompute()
         FreeCADGui.SendMsgToActiveView("ViewFit")
         UI.close()

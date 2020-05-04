@@ -2,6 +2,7 @@
 Import srtm data
 """
 
+import FreeCAD, FreeCADGui
 import math
 import os, zipfile, re
 import urllib.request
@@ -272,7 +273,6 @@ MainWindow:
 
 '''
 
-import FreeCAD
 
 ## the gui backend
 

@@ -24,6 +24,8 @@ import FreeCAD
 import FreeCADGui
 from FreeCAD import Base
 from PySide import QtCore, QtGui
+from freecad.trails import ICONPATH
+from ..project.support import utils
 import Mesh
 import os
 
@@ -38,15 +40,15 @@ class CreateSurface:
         Constructor
         """
 
-        # Get file path
-        self.Path = os.path.dirname(__file__)
-
         # Set icon,  menu text and tooltip
         self.resources = {
-            'Pixmap': self.Path + '/../Resources/Icons/CreateSurface.svg',
+            'Pixmap': ICONPATH + '/icons/CreateSurface.svg',
             'MenuText': "Create Surface",
             'ToolTip': "Create surface from selected point group(s)."
             }
+
+        # Get file path
+        self.Path = os.path.dirname(__file__)
 
         # Get *.ui file(s)
         self.IPFui = FreeCADGui.PySideUic.loadUi(
@@ -113,14 +115,16 @@ class CreateSurface:
         """
         Calculation of the 2D length between triangle edges
         """
+        p1 = FreeCAD.Vector(P1[0], P1[1], 0)
+        p2 = FreeCAD.Vector(P2[0], P2[1], 0)
+        p3 = FreeCAD.Vector(P3[0], P3[1], 0)
         # Get user input
         MaxlengthLE = self.IPFui.MaxlengthLE.text()
 
         # Calculate length between triangle vertices
-        List = [[P1, P2], [P2, P3], [P3, P1]]
+        List = [[p1, p2], [p2, p3], [p3, p1]]
         for i, j in List:
-            i[2] = j[2] = 0
-            D1 = FreeCAD.Vector(i).sub(FreeCAD.Vector(j))
+            D1 = i.sub(j)
 
             # Compare with input
             if D1.Length > int(MaxlengthLE)*1000:
@@ -132,16 +136,18 @@ class CreateSurface:
         Calculation of the 2D angle between triangle edges
         """
         import math
+        p1 = FreeCAD.Vector(P1[0], P1[1], 0)
+        p2 = FreeCAD.Vector(P2[0], P2[1], 0)
+        p3 = FreeCAD.Vector(P3[0], P3[1], 0)
 
         # Get user input
         MaxAngleLE = self.IPFui.MaxAngleLE.text()
 
         # Calculate angle between triangle vertices
-        List = [[P1, P2, P3], [P2, P3, P1], [P3, P1, P2]]
+        List = [[p1, p2, p3], [p2, p3, p1], [p3, p1, p2]]
         for j, k, l in List:
-            j[2] = k[2] = l[2] = 0
-            D1 = FreeCAD.Vector(j).sub(FreeCAD.Vector(k))
-            D2 = FreeCAD.Vector(l).sub(FreeCAD.Vector(k))
+            D1 = j.sub(k)
+            D2 = l.sub(k)
             Radian = D1.getAngle(D2)
             Degree = math.degrees(Radian)
 
@@ -152,6 +158,7 @@ class CreateSurface:
 
     def CreateSurface(self):
         import numpy as np
+        import scipy.spatial
 
         # Print warning if there isn't selected group
         if len(self.IPFui.PointGroupsLV.selectedIndexes()) < 1:
@@ -159,7 +166,7 @@ class CreateSurface:
             return
 
         # Get selected group(s) points
-        Test = []
+        test = []
         for SelectedIndex in self.IPFui.PointGroupsLV.selectedIndexes():
             Index = self.GroupList[SelectedIndex.row()]
             PointGroup = FreeCAD.ActiveDocument.getObject(Index)
@@ -168,33 +175,36 @@ class CreateSurface:
                 xx = float(Point.x)
                 yy = float(Point.y)
                 zz = float(Point.z)
-                Test.append([xx, yy, zz])
+                test.append([xx, yy, zz])
 
         # Normalize points
-        Data = np.array(Test)
-        DataOn = Data.mean(axis=0)
-        Data -= DataOn
-
-        from .Delaunator import Delaunator
+        fpoint = test[0]
+        base = FreeCAD.Vector(fpoint[0], fpoint[1], fpoint[2])
+        nbase = utils.rendering_fix(base)
+        data = []
+        for i in test:
+            data.append([i[0] - nbase.x, i[1] - nbase.y, i[2] - nbase.z])
+        Data = np.array(data) 
 
         # Create delaunay triangulation
-        triangles = Delaunator(Data[:, :2]).triangles
+        tri = scipy.spatial.Delaunay(Data[:, :2])
 
         MeshList = []
-        for i in range(0, len(triangles), 3):
-            V1 = triangles[i]
-            V2 = triangles[i+1]
-            V3 = triangles[i+2]
+
+        for i in tri.vertices:
+            first = int(i[0])
+            second = int(i[1])
+            third = int(i[2])
 
             #Test triangle
-            if self.MaxLength(Data[V1], Data[V2], Data[V3])\
-                    and self.MaxAngle(Data[V1], Data[V2], Data[V3]):
-                MeshList.append(Test[V3])
-                MeshList.append(Test[V2])
-                MeshList.append(Test[V1])
+            if self.MaxLength(Data[first], Data[second], Data[third])\
+                    and self.MaxAngle(Data[first], Data[second], Data[third]):
+                MeshList.append(Data[first])
+                MeshList.append(Data[second])
+                MeshList.append(Data[third])
 
-        #Create mesh surface
         MeshObject = Mesh.Mesh(MeshList)
+        MeshObject.Placement.move(nbase)
         SurfaceNameLE = self.IPFui.SurfaceNameLE.text()
         Surface = FreeCAD.ActiveDocument.addObject(
             "Mesh::Feature", SurfaceNameLE)
