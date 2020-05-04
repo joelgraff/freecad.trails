@@ -166,6 +166,8 @@ class AlignmentModel:
         _prev_coord = self.data['meta']['Start']
         _geo_list = []
 
+        #iterate through all geometry, looking for coordiante gaps
+        #and filling them with line segments.
         for _geo in self.data.get('geometry'):
 
             if not _geo:
@@ -192,6 +194,8 @@ class AlignmentModel:
 
         _length = 0.0
 
+        #fill in the alignment length.  If the end of the alignment falls short
+        #of the calculated length, append a line to complete it.
         if not self.data.get('meta').get('Length'):
 
             _end = self.data.get('meta').get('End')
@@ -238,7 +242,7 @@ class AlignmentModel:
                         'Start': _start,
                         'End': _end,
                         'StartStation': self.get_alignment_station(
-                            _geo['InternalStation'][0]),
+                            _geo['InternalStation'][1]),
                         'BearingOut': bearing
                     }).to_dict()
                 )
@@ -494,6 +498,7 @@ class AlignmentModel:
             #if no station is provided, try to infer it from the start
             #coordinate and the previous station
             if geo_station is None:
+
                 geo_station = prev_station
 
                 if not geo_coord:
@@ -578,7 +583,7 @@ class AlignmentModel:
 
         #start station represents beginning of enclosing equation
         #and raw station represents distance within equation to point
-        return _start_sta + _dist
+        return (_start_sta + _dist) / units.scale_factor()
 
     def get_station_offset(self, coordinate):
         """
