@@ -176,7 +176,7 @@ class AlignmentModel:
             _coord = _geo.get('Start')
             _d = abs(_coord.Length - _prev_coord.Length)
 
-            if not support.within_tolerance(_d, tolerance=0.1):
+            if not support.within_tolerance(_d, tolerance=0.01):
 
                 #build the line using the provided parameters and add it
                 _geo_list.append(
@@ -583,7 +583,7 @@ class AlignmentModel:
 
         #start station represents beginning of enclosing equation
         #and raw station represents distance within equation to point
-        return (_start_sta + _dist) / units.scale_factor()
+        return _start_sta + (_dist / units.scale_factor())
 
     def get_station_offset(self, coordinate):
         """
