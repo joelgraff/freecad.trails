@@ -29,6 +29,8 @@ import FreeCADGui as Gui
 from .corridor.template import ViewTemplateLibrary
 from . import resources
 
+from draftutils import init_tools as draft_tools
+
 TRAILSWB_VERSION = '(alpha)'
 
 class CommandGroup:
@@ -65,7 +67,12 @@ class TrailsWorkbench(Gui.Workbench):
         self.menu = 1
         self.toolbar = 2
         self.context = 4
+        self.group = 8
 
+        #dictionary key = name of command / command group.
+        #'gui' - locations in gui where commands are accessed, (summed bitflags)
+        #'cmd' - list of commands to display
+        #'group' - Tuple containing the subgroup description and type.  None/undefined if no group
         self.command_ui = {
 
             'Data Tools': {
@@ -127,6 +134,57 @@ class TrailsWorkbench(Gui.Workbench):
                     'Modification Tools',
                     'Utility Tools'
                     ]
+            },
+
+            'Surface Editor': {
+                'gui': self.group,
+                'cmd': [
+                    'Add Triangle',
+                    'Delete Triangle',
+                    'Swap Edge',
+                    'Smooth Surface'
+                ],
+                'tooltip': 'Edit selected surface',
+                'type_id': 'Mesh::Feature'
+            },
+
+            'Geodata Tools': {
+                'gui': self.group,
+                'cmd': [
+                    'Import OSM Map',
+                    'Import CSV',
+                    'Import GPX',
+                    'Import Heights',
+                    'Import SRTM',
+                    'Import XYZ',
+                    'Import LatLonZ',
+                    'Import Image',
+                    'Import ASTER',
+                    'Import LIDAR',
+                    'Create House',
+                    'Navigator',
+                    'ElevationGrid',
+                    'Import EMIR',
+               ],
+               'tooltip': 'Geodata Tools'
+            },
+
+            'Drawing Tools': {
+                'gui': self.group,
+                'cmd': draft_tools.get_draft_drawing_commands(),
+                'tooltip': 'Draft creation tools'
+            },
+
+            'Modification Tools': {
+                'gui': self.group,
+                'cmd': draft_tools.get_draft_modification_commands(),
+                'tooltip': 'Draft modification tools'
+            },
+
+            'Utility Tools': {
+                'gui': self.group,
+                'cmd': draft_tools.get_draft_utility_commands(),
+                'tooltip': 'Draft utility tools'
             }
         }
 
@@ -171,36 +229,10 @@ class TrailsWorkbench(Gui.Workbench):
             if _v['gui'] & self.menu:
                 self.appendMenu(_k, _v['cmd'])
 
-    EditSurfaceSub = ['Add Triangle', 'Delete Triangle', 'Swap Edge', 
-                      'Smooth Surface']
-
-    Gui.addCommand('Surface Editor',
-                   CommandGroup(EditSurfaceSub,
-                                'Edit selected surface.',
-                                TypeId='Mesh::Feature'))
-
-    GeoData = ['Import OSM Map', 'Import CSV', 'Import GPX', 'Import Heights',
-               'Import SRTM', 'Import XYZ', 'Import LatLonZ',  'Import Image', 
-               'Import ASTER', 'Import LIDAR', 'Create House', 'Navigator',
-               'ElevationGrid', 'Import EMIR',
-               ]
-
-    Gui.addCommand('Geodata Tools', 
-                   CommandGroup(GeoData, 'Geodata Tools'))
-
-    import draftutils.init_tools as it
-    draft_drawing_commands = it.get_draft_drawing_commands()
-    draft_modification_commands = it.get_draft_modification_commands()
-    draft_small_commands = it.get_draft_small_commands()
-
-    Gui.addCommand('Drawing Tools', 
-                   CommandGroup(draft_drawing_commands, 'Draft creation tools'))
-
-    Gui.addCommand('Modification Tools', 
-                   CommandGroup(draft_modification_commands, 'Draft modification tools'))
-
-    Gui.addCommand('Utility Tools', 
-                   CommandGroup(draft_small_commands, 'Draft utility tools'))
+            if _v['gui'] & self.group:
+                Gui.addCommand(_k, CommandGroup(
+                    _v['cmd'], _v['tooltip'], _v.get('type_id'))
+                )
 
     def Activated(self):
         """
@@ -224,5 +256,4 @@ class TrailsWorkbench(Gui.Workbench):
             if _v['gui'] & self.context:
                 self.appendContextMenu(_k, _v['cmds'])
 
-print('ADDING TRAILS WORKBENCH....')
 Gui.addWorkbench(TrailsWorkbench())
