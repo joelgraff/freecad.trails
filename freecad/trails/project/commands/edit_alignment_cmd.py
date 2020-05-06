@@ -27,16 +27,16 @@ Command to edit an alignment
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from DraftTools import DraftTool
-
-from ..support import utils
-
 from ... import resources
-from ...alignment import alignment as hz_align
 
-from ..tasks.alignment import edit_alignment_task 
+from PySide import QtCore
+from ..tasks.alignment import edit_alignment_task
 
-class EditAlignmentCmd(DraftTool):
+from ..support.view_state import ViewState
+from DraftTools import Modifier
+from . import camera_zoom as cz
+
+class EditAlignmentCmd(Modifier):
     """
     Initiates and manages drawing activities for alignment creation
     """
@@ -47,8 +47,7 @@ class EditAlignmentCmd(DraftTool):
         """
 
         self.doc = None
-        self.view = None
-        self.edit_alignment_task = None
+        self.task = None
         self.is_activated = False
         self.call = None
         self.tmp_group = None
@@ -79,7 +78,7 @@ class EditAlignmentCmd(DraftTool):
         Icon resources.
         """
 
-        icon_path = resources.__path__[0] + '/icons/new_alignment.svg'
+        icon_path = resources.__path__[0] + '/icons/alignment_editor.svg'
 
         return {'Pixmap'  : icon_path,
                 'Accel'   : 'Ctrl+Shift+D',
@@ -98,45 +97,17 @@ class EditAlignmentCmd(DraftTool):
         obj = Gui.Selection.getSelection()[0]
         data = obj.Proxy.get_data_copy()
 
-        DraftTool.Activated(self, name=utils.translate('Alignment'))
-
         self.doc = App.ActiveDocument
-        self.view = Gui.ActiveDocument.ActiveView
-
-        #self.call = self.view.addEventCallback('SoEvent', self.action)
+        ViewState().view = Gui.ActiveDocument.ActiveView
 
         #create alignment editing task
-        self.edit_alignment_task = \
-            edit_alignment_task.create(self.doc, self.view, data, obj)
+        self.task = edit_alignment_task.create(self.doc, data, obj)
 
-    def get_current_tracker(self, info):
-        """
-        Update tracker selection styles and states
-        """
+        #cz._zoom_camera(cz.Camera())
 
-        if info:
-            obj_name = info['Component']
+        Gui.Control.showDialog(self.task)
+        self.task.setup()
 
-            _it = iter(self.trackers)
-
-            if 'Tracker' in obj_name:
-                val = next(_x for _x in _it if _x == obj_name)
-                return val, _it
-
-        return None, None
-
-    def finish(self, closed=False, cont=False):
-        """
-        Finish drawing the alignment object
-        """
-
-        if self.edit_alignment_task:
-            self.edit_alignment_task.finish()
-            self.edit_alignment_task = None
-
-        if self.call:
-            self.view.removeEventCallback('SoEvent', self.action)
-
-        self.is_activated = False
+        Modifier.Activated(self, 'EditAlignmentCommand')
 
 Gui.addCommand('EditAlignmentCmd', EditAlignmentCmd())

@@ -1,0 +1,17 @@
+path_classifiers:
+  template:
+    - freecad/trails/resources
+    - freecad/trails/project/commands/command_template.py
+    - freecad/trails/init_gui.py
+
+  test:
+    - freecad/trails/project/commands/spiral_test.py
+    - freecad/trails/TestFPO.py
+
+  legacy:
+    - freecad/trails/corridor/loft
+    - freecad/trails/alignment/VerticalAlignment.py
+    - freecad/trails/alignment/VerticalCurve.py
+    - freecad/trails/alignment/GenerateVerticalAlignment.py
+    - freecad/trails/alignment/ImportVerticalCurve.py
+    - freecad/trails/corridor/template/TemplateLibrary.py

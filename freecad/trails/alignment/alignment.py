@@ -30,7 +30,7 @@ import FreeCAD as App
 import Draft
 
 from ..project.support import properties, units
-from ..geometry import support, arc
+from ..geometry import support
 from . import alignment_group, alignment_model
 
 _CLASS_NAME = 'Alignment'
@@ -41,7 +41,7 @@ __author__ = 'Joel Graff'
 __url__ = "https://www.freecadweb.org"
 
 
-def create(geometry, object_name='', no_visual=False):
+def create(geometry, object_name='', no_visual=False, zero_reference=True):
     """
     Class construction method
     object_name - Optional. Name of new object.  Defaults to class name.
@@ -52,29 +52,30 @@ def create(geometry, object_name='', no_visual=False):
         print('No curve geometry supplied')
         return
 
-    _obj = None
     _name = _CLASS_NAME
 
     if object_name:
         _name = object_name
 
-    parent = alignment_group.create()
+    _obj = None
 
-    _obj = parent.Object.newObject(_TYPE, _name)
+    if no_visual:
+        _obj = App.ActiveDocument.addObject(_TYPE, _name)
+
+    else:
+        parent = alignment_group.create()
+        _obj = parent.Object.newObject(_TYPE, _name)
 
     result = Alignment(_obj, _name)
-    result.set_geometry(geometry)
+    result.set_geometry(geometry, zero_reference)
 
     if not no_visual:
+
         Draft._ViewProviderWire(_obj.ViewObject)
 
     App.ActiveDocument.recompute()
-    return result
 
-#Construction order:
-#Calc arc parameters
-#Sort arcs
-#calculate arc start coordinates by internal position and apply to arcs
+    return result
 
 class Alignment(Draft._Wire):
     """
@@ -190,6 +191,51 @@ class Alignment(Draft._Wire):
 
         self.build_curve_edge_dict()
 
+    def _plot_vectors(self, stations, interval=1.0, is_ortho=True):
+        """
+        Testing function to plot coordinates and vectors between specified
+        stations.
+
+        stations - tuple / list of starting / ending stations
+        is_ortho - bool, False plots tangent, True plots orthogonal
+        """
+
+        if not stations:
+            stations = [
+                self.model.data.get('meta').get('StartStation'),
+                self.model.data.get('meta').get('StartStation') \
+                    + self.model.data.get('meta').get('Length') / 1000.0
+            ]
+
+        _pos = stations[0]
+        _items = []
+
+        while _pos < stations[1]:
+
+            if is_ortho:
+                _items.append(tuple(self.model.get_orthogonal(_pos, 'Left')))
+
+            else:
+                _items.append(tuple(self.model.get_tangent(_pos)))
+
+            _pos += interval
+
+        for _v in _items:
+
+            _start = _v[0]
+            _end = _start + _v[1] * 100000.0
+
+            _pt = [self.model.data.get('meta').get('Start')]*2
+            _pt[0] = _pt[0].add(_start)
+            _pt[1] = _pt[1].add(_end)
+
+            line = Draft.makeWire(_pt, closed=False, face=False, support=None)
+
+            Draft.autogroup(line)
+
+        App.ActiveDocument.recompute()
+
+
     def build_curve_edge_dict(self):
         """
         Build the dictionary which correlates edges to their corresponding
@@ -197,17 +243,17 @@ class Alignment(Draft._Wire):
         """
 
         curve_dict = {}
-        curves = self.model.data['geometry']
+        curves = self.model.data.get('geometry')
 
         #iterate the curves, creating the dictionary for each curve
         #that lists it's wire edges keyed by it's Edge index
         for curve in curves:
 
-            if curve['Type'] == 'Line':
+            if curve.get('Type') == 'Line':
                 continue
 
             curve_edges = self.Object.Shape.Edges
-            curve_pts = [curve['Start'], curve['End']]
+            curve_pts = [curve.get('Start'), curve.get('End')]
             edge_dict = {}
 
             #iterate edge list, add edges that fall within curve limits
@@ -263,6 +309,21 @@ class Alignment(Draft._Wire):
 
         return deepcopy(self.model.data)
 
+    def get_length(self):
+        """
+        Return the alignment length
+        """
+
+        return self.model.data.get('meta').get('Length')
+
+    def get_curves(self):
+        """
+        Return a list of only the curves
+        """
+
+        return [_v for _v in self.model.data.get('geometry') \
+            if _v.get('Type') != 'Line']
+
     def get_geometry(self, curve_hash=None):
         """
         Return the geometry of the curve matching the specified hash
@@ -270,27 +331,52 @@ class Alignment(Draft._Wire):
         """
 
         if not curve_hash:
-            return self.model.data['geometry']
+            return self.model.data.get('geometry')
 
-        for _geo in self.model.data['geometry']:
+        for _geo in self.model.data.get('geometry'):
 
             if _geo['Hash'] == curve_hash:
                 return _geo
 
         return None
 
-    def set_geometry(self, geometry):
+    def update_curves(self, curves, pi_list, zero_reference=False):
+        """
+        Assign updated alignment curves to the model.
+        """
+
+        _model = {
+            'meta': {
+                'Start': pi_list[0],
+                'StartStation':
+                    self.model.data.get('meta').get('StartStation'),
+                'End': pi_list[-1],
+            },
+            'geometry': curves,
+            'station': self.model.data.get('station')
+        }
+
+        self.set_geometry(_model, zero_reference)
+
+    def set_geometry(self, geometry, zero_reference=True):
         """
         Assign geometry to the alignment object
         """
+        self.model = alignment_model.AlignmentModel(geometry, zero_reference)
 
-        self.model = alignment_model.AlignmentModel(geometry)
+        if self.model.errors:
+            for _err in self.model.errors:
+                print('Error in alignment {0}: {1}'\
+                    .format(self.Object.Label, _err)
+                     )
+
+            self.model.errors.clear()
 
         self.assign_meta_data()
 
         return self.model.errors
 
-    def assign_meta_data(self):
+    def assign_meta_data(self, model=None):
         """
         Extract the meta data for the alignment from the data set
         Check it for errors
@@ -299,95 +385,25 @@ class Alignment(Draft._Wire):
 
         obj = self.Object
 
-        meta = self.model.data['meta']
+        meta = self.model.data.get('meta')
 
         if meta.get('ID'):
-            obj.ID = meta['ID']
+            obj.ID = meta.get('ID')
 
         if meta.get('Description'):
-            obj.Description = meta['Description']
+            obj.Description = meta.get('Description')
 
         if meta.get('ObjectID'):
-            obj.ObjectID = meta['ObjectID']
+            obj.ObjectID = meta.get('ObjectID')
 
         if meta.get('Length'):
-            obj.Length = meta['Length']
+            obj.Length = meta.get('Length')
 
         if meta.get('Status'):
-            obj.Status = meta['Status']
+            obj.Status = meta.get('Status')
 
         if meta.get('StartStation'):
-            obj.Start_Station = str(meta['StartStation']) + ' ft'
-
-    def discretize_geometry(self, interval=10.0, interval_type='Segment'):
-        """
-        Discretizes the alignment geometry to a series of vector points
-        """
-
-        geometry = self.model.data['geometry']
-        points = [[App.Vector()]]
-        last_curve = None
-        hashes = {}
-
-        #discretize each arc in the geometry list,
-        #store each point set as a sublist in the main points list
-        for curve in geometry:
-
-            if not curve:
-                continue
-
-            curve_hash = hash(tuple(curve['Start']) + tuple(curve['End']))
-
-            if curve['Type'] == 'Curve':
-
-                _pts, _hsh = arc.get_points(curve, interval, interval_type)
-
-                points.append(_pts)
-                hashes = {**hashes,
-                          **dict.fromkeys(set(_hsh), curve_hash)}
-
-            elif curve['Type'] == 'Line':
-                points.append([curve['Start'], curve['End']])
-
-            last_curve = curve
-
-        self.hashes = hashes
-
-        #store the last point of the first geometry for the next iteration
-        _prev = points[0][-1]
-        result = points[0]
-
-        if not (_prev and result):
-            return None
-
-        #iterate the point sets, adding them to the result set
-        #and eliminating any duplicate points
-        for item in points[1:]:
-
-            if _prev.sub(item[0]).Length < 0.0001:
-                result.extend(item[1:])
-            else:
-                result.extend(item)
-
-            _prev = item[-1]
-
-        last_tangent = abs(
-            self.model.data['meta']['Length'] \
-                - last_curve['InternalStation'][1]
-            )
-
-        if not support.within_tolerance(last_tangent):
-            _vec = support.vector_from_angle(last_curve['BearingOut'])\
-                .multiply(last_tangent)
-
-            last_point = result[-1]
-
-            result.append(last_point.add(_vec))
-
-        if not self.model.data['meta'].get('End'):
-            self.model.data['meta']['End'] = result[-1]
-
-        return result
+            obj.Start_Station = str(meta.get('StartStation')) + ' ft'
 
     def onChanged(self, obj, prop):
         """
@@ -408,7 +424,8 @@ class Alignment(Draft._Wire):
                 self.Object.Seg_Value = 200.0
 
             elif _prop == 'Tolerance':
-                self.Object.Seg_Value = int(1000.0 / units.scale_factor()) / 100.0
+                self.Object.Seg_Value = \
+                    int(1000.0 / units.scale_factor()) / 100.0
 
     def execute(self, obj):
         """
@@ -417,8 +434,9 @@ class Alignment(Draft._Wire):
         if hasattr(self, 'no_execute'):
             return
 
-        points = self.discretize_geometry(
-            self.Object.Seg_Value, self.Object.Method)
+        points = self.model.discretize_geometry(
+            [0.0], self.Object.Method, self.Object.Seg_Value
+        )
 
         if not points:
             return
@@ -426,7 +444,7 @@ class Alignment(Draft._Wire):
         self.Object.Points = points
 
         _pl = App.Placement()
-        _pl.Base = self.model.data['meta']['Start']
+        _pl.Base = self.model.data.get('meta').get('Start')
 
         self.Object.Placement = _pl
 

@@ -99,7 +99,23 @@ def get_ortho(vector, rot):
 
     return App.Vector(result.y, -result.x, 0.0).normalize().multiply(rot)
 
-def get_bearing(vector):
+def get_quadrant(vector):
+    """
+    Returns the quadrant of the vector:
+    0 = 0-90
+    1 = 90-180
+    2 = 180-270
+    3 = 270-360
+
+    zero values will read positive, defaulting to right / upper halves
+    """
+
+    _v = int(vector.y < 0.0)
+    _h = int(vector.x < 0.0)
+
+    return [[0, 1], [3, 2]][_h][_v]
+
+def get_bearing(vector, reference=C.UP):
     """
     Returns the absolute bearing of the passed vector.
     Bearing is measured clockwise from +y 'north' (0,1,0)
@@ -114,15 +130,15 @@ def get_bearing(vector):
     if not isinstance(vector, App.Vector):
         return None
 
-    rot = get_rotation(C.UP, result)
-    angle = rot * C.UP.getAngle(result)
+    rot = get_rotation(reference, result)
+    angle = rot * reference.getAngle(result)
 
     if angle < 0.0:
         angle += C.TWO_PI
 
     return angle
 
-def within_tolerance(lhs, rhs=None):
+def within_tolerance(lhs, rhs=None, tolerance=None):
     """
     Determine if two values are within a pre-defined tolerance
 
@@ -134,8 +150,11 @@ def within_tolerance(lhs, rhs=None):
     and errors if any checks fail
     """
 
+    if tolerance is None:
+        tolerance = C.TOLERANCE
+
     #item list eliminates none types
-    item_list = [_v for _v in [lhs, rhs] if _v]
+    item_list = [_v for _v in [lhs, rhs] if _v is not None]
 
     if not item_list:
         print('utils.within_tolerance() - empty item list')
@@ -178,7 +197,7 @@ def within_tolerance(lhs, rhs=None):
             abs(_i[0] - _i[1]) for _i in zip(items[0], items[1])
         ]
 
-    _truth = [abs(_i) <= C.TOLERANCE for _i in _delta]
+    _truth = [abs(_i) <= tolerance for _i in _delta]
 
     return all(_truth)
 

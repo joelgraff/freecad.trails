@@ -27,53 +27,19 @@ Customized edit tracker from DraftTrackers.editTracker
 from pivy import coin
 
 from FreeCAD import Vector
-import FreeCADGui as Gui
+
+from ..support.drag_state import DragState
+from ..support.view_state import ViewState
+from ..support.mouse_state import MouseState
+
+from ..support.publisher import PublisherEvents as Events
 
 from .base_tracker import BaseTracker
-from ..support.const import Const
 
 class NodeTracker(BaseTracker):
     """
-    A custom edit tracker
+    Tracker object for nodes
     """
-
-
-    class STYLE(Const):
-        """
-        Style constants for nodes
-        """
-
-        DEFAULT = {
-            'id': 'default',
-            'shape': 'default',
-            'size': 9,
-            'color': (0.8, 0.8, 0.8),
-            'select': True
-        }
-
-        ROLL_OUTER = {
-            'id': 'roll_outer',
-            'shape': 'circle',
-            'size': 9,
-            'color': (0.4, 0.8, 0.4),
-            'select': True
-        }
-
-        ROLL_INNER = {
-            'id': 'roll_inner',
-            'shape': 'cross',
-            'size': 5,
-            'color': (0.4, 0.8, 0.4),
-            'select': True
-        }
-
-        SELECTED = {
-            'id': 'selected',
-            'shape': 'default',
-            'size': 9,
-            'color': (1.0, 0.9, 0.0),
-            'select': True
-        }
 
     def __init__(self, names, point, nodes=None):
         """
@@ -81,128 +47,140 @@ class NodeTracker(BaseTracker):
         """
 
         self.type = 'NODE'
+
         if not nodes:
             nodes = []
 
         elif not isinstance(nodes, list):
             nodes = [nodes]
 
-        self.groups = {
-            'default': [],
-            'rollover': []
-        }
+        self.is_end_node = False
+        self.point = tuple(point)
+        self.ui_message = {}
 
-        self.switch = coin.SoSwitch() # this is the on/off switch
+        #build node structure for the node tracker
         self.coord = coin.SoCoordinate3()
-        self.name = names[2]
+        self.marker = coin.SoMarkerSet()
+        self.drag_point = self.point
 
-        self.switch.setName(self.name)
+        super().__init__(
+            names=names, children=[self.coord, self.marker] + nodes
+        )
 
-        self.switch.addChild(self.create_default(names))
-        self.switch.addChild(self.create_rollover(names))
+        self.update()
 
-        super().__init__(names=names, children=nodes + [self.switch],
-                         select=False, group=True)
-
-        self.on()
-
-    def off(self):
+    def button_event(self, arg):
         """
-        Override for base tracker function
+        Override base implementation
         """
 
-        super().off(self.switch)
+        super().button_event(arg)
 
-    def on(self):
-        """
-        Override for base tracker function
-        """
+        if self.is_selected() and MouseState().button1.state != 'UP':
+            self.dispatch(Events.NODE.SELECTED, (self.name, self.point))
 
-        super().on(self.switch)
-
-    def create_rollover(self, names):
+    def start_drag(self):
         """
-        Create the rollover node tracker
+        Initialize drag ops
         """
 
-        group = coin.SoGroup()
+        if not self.is_selected():
+            return
 
-        for style in [self.STYLE.ROLL_INNER, self.STYLE.ROLL_OUTER]:
+        super().start_drag()
 
-            marker = coin.SoMarkerSet()
+        self.drag_point = self.point
 
-            marker.markerIndex = \
-                Gui.getMarkerIndex(style['shape'], style['size'])
+        if self == DragState().drag_node:
+            MouseState().set_mouse_position(self.point)
 
-            nam = names[:]
-            nam[2] += '.' +style['id']
-
-            child = BaseTracker(nam, [self.coord, marker], style['select'])
-            child.color.rgb = style['color']
-
-            group.addChild(child.node)
-
-            self.groups['rollover'].append(child)
-
-        return group
-
-    def create_default(self, names):
+    def on_drag(self):
         """
-        Create the default node tracker
+        Override of base function
         """
 
-        style = self.STYLE.DEFAULT
+        if not (self.drag_point and DragState().drag_node):
+            return
 
-        marker = coin.SoMarkerSet()
+        super().on_drag()
 
-        marker.markerIndex = Gui.getMarkerIndex(style['shape'], style['size'])
+        self.update_drag_point()
 
-        nam = names[:]
-        nam[2] += '.' +style['id']
-
-        child = BaseTracker(nam, [self.coord, marker], style['select'])
-        child.color.rgb = style['color']
-
-        group = coin.SoGroup()
-        group.addChild(child.node)
-
-        self.groups['default'].append(child)
-
-        return group
-
-    def default(self):
+    def end_drag(self):
         """
-        Set node to default style
+        Override of base function
         """
 
-        for _child in self.groups['default']:
-            _child.color.rgb = self.STYLE.DEFAULT['color']
+        if self.drag_point and DragState().drag_node and not DragState().abort:
+            self.update_drag_point()
+            self.update(self.drag_point)
 
-        if self.switch.whichChild:
-            self.switch.whichChild = 0
+        super().end_drag()
 
-    def selected(self):
+    def notify(self, event_type, message):
         """
-        Set node to select style
+        Override of Subscriber method
         """
 
-        for _child in self.groups['default']:
-            _child.color.rgb = self.STYLE.SELECTED['color']
+        super().notify(event_type, message, True)
 
-        if self.switch.whichChild:
-            self.switch.whichChild = 0
+        if not self.is_selected():
+            return
 
-    def update(self, coord):
+        if event_type != Events.NODE.UPDATE:
+            return
+
+        _coord = message[1]
+
+        if not isinstance(_coord, tuple):
+            _coord = tuple(_coord)
+
+        if len(_coord) == 2:
+            _coord = _coord + (0.0,)
+
+        self.update(_coord, True)
+
+    def update_drag_point(self):
+        """
+        Update the drag point based on the selection method
+        """
+
+        if self.select_state == 'MANUAL':
+            self.drag_point = \
+                self.drag_copy.getChild(3).point.getValues()[0].getValue()
+
+        else:
+            self.drag_point = tuple(ViewState().transform_points(
+                [self.point], DragState().node_group)[0])
+
+        self.drag_point = self.drag_point[0:3]
+
+        #notify node updatefor sake of curve changes
+        self.dispatch(Events.NODE.UPDATED, (self.name, self.drag_point), True)
+
+    def update(self, coord=None, do_notify=False):
         """
         Update the coordinate position
         """
+
+        #if we have a list of points, pick the first
+        if isinstance(coord, list):
+            coord = coord[0]
+
+        if not coord:
+            coord = self.point
 
         _c = coord
 
         if not isinstance(coord, tuple):
             _c = tuple(_c)
 
-        self.coord.point.setValue(_c)
+        self.coord.point.setValue(_c[:3])
+        self.point = _c
+        self.drag_point = self.point
+
+        if do_notify:
+            self.dispatch(Events.NODE.UPDATED, (self.name, self.point), False)
 
     def get(self):
         """
@@ -211,9 +189,9 @@ class NodeTracker(BaseTracker):
 
         return Vector(self.coord.point.getValues()[0].getValue())
 
-    def finalize(self):
+    def finalize(self, node=None, parent=None):
         """
         Cleanup
         """
 
-        pass
+        super().finalize(self.get_node(), parent)

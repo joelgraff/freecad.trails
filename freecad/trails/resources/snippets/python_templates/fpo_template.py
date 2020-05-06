@@ -63,7 +63,7 @@ class _TEMPLATE_CLASS():
 
     def __init__(self, obj):
         """
-        Main class intialization
+        Main class initialization
         """
 
         self.Enabled = False

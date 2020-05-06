@@ -102,7 +102,7 @@ class NewProjectCmd():
 
         #new project dialog
         dlg = QtGui.QInputDialog()
-        dlg.setWindowTitle("New Proejct")
+        dlg.setWindowTitle("New Project")
         dlg.setLabelText('Enter project name:')
         dlg.setWindowModality(QtCore.Qt.ApplicationModal)
         dlg.setTextValue('New Project')
@@ -122,7 +122,7 @@ class NewProjectCmd():
         #substitute underscores for spaces for internal naming
         project_name = project_name.replace(' ', '_')
 
-        #set up intial references
+        #set up initial references
         App.setActiveDocument(project_name)
 
         App.ActiveDocument = App.getDocument(project_name)

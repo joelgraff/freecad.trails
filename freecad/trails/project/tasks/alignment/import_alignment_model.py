@@ -29,7 +29,7 @@ import PySide.QtCore as QtCore
 
 class ImportAlignmentModel(QtCore.QAbstractTableModel):
     """
-    Data model for aligment import tasks
+    Data model for alignment import tasks
     """
     default_flags = QtCore.Qt.ItemIsEditable \
                     | QtCore.Qt.ItemIsEnabled \

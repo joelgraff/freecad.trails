@@ -27,11 +27,134 @@ Arc generation tools
 import math
 import numpy
 
-import FreeCAD as App
+from FreeCAD import Vector, Console
 
 from ..project.support import units, utils
 from . import support
 from ..project.support.utils import Const, Constants as C
+
+
+class Arc():
+    """
+    Arc class object
+    """
+
+    _keys = [
+        'ID', 'Type', 'Start', 'End', 'PI', 'Center', 'BearingIn',
+        'BearingOut', 'Length', 'StartStation', 'InternalStation', 'Delta',
+        'Direction', 'Tangent', 'Radius', 'Chord', 'Middle', 'MiddleOrdinate',
+        'External', 'CurveType', 'Hash', 'Description', 'Status', 'ObjectID',
+        'Note', 'Bearings', 'Points'
+    ]
+
+    def __init__(self, source_arc=None):
+        """
+        Arc class constructor
+        """
+
+        self.id = ''
+        self.type = 'Curve'
+        self.start = None
+        self.end = None
+        self.pi = None
+        self.center = None
+        self.bearing_in = math.nan
+        self.bearing_out = math.nan
+        self.length = 0.0
+        self.start_station = 0.0
+        self.internal_station = 0.0
+        self.delta = 0.0
+        self.direction = 0.0
+        self.tangent = 0.0
+        self.radius = 0.0
+        self.chord = 0.0
+        self.middle = 0.0
+        self.middle_ordinate = 0.0
+        self.external = 0.0
+        self.curve_type = 'Arc'
+        self.hash = ''
+        self.description = ''
+        self.status = ''
+        self.object_id = ''
+        self.note = ''
+        self.bearings = None
+        self.points = []
+
+        if isinstance(source_arc, Arc):
+            self.__dict__ = source_arc.__dict__.copy()
+            self._key_pairs = source_arc._key_pairs.copy()
+            return
+
+        #build a list of key pairs fir string-based lookup
+        self._key_pairs = {}
+
+        _keys = list(self.__dict__.keys())
+
+        for _i, _k in enumerate(Arc._keys):
+            self._key_pairs[_k] = _keys[_i]
+
+        if not source_arc:
+            return
+
+        if isinstance(source_arc, dict):
+            for _k, _v in source_arc.items():
+                self.set(_k, _v)
+
+    def __str__(self):
+        """
+        String representation
+        """
+
+        return str(self.__dict__)
+
+    def to_dict(self):
+        """
+        Return the object as a dictionary
+        """
+
+        _result = {}
+
+        _result.update(
+            [(_k, getattr(self, _v)) for _k, _v in self._key_pairs.items()])
+
+        return _result
+
+    def get(self, key):
+        """
+        Generic getter for class attributes
+        """
+
+        if not key in self._key_pairs:
+
+            Console.PrintError('\nArc.get(): Bad key: ' + key + '\n')
+            return None
+
+        return getattr(self, self._key_pairs[key])
+
+    def set(self, key, value):
+        """
+        Generic setter for class attributes
+        """
+
+        if not key in self.__dict__:
+
+            if not key in self._key_pairs:
+
+                Console.PrintError('\nArc.set(): Bad key: ' + key + '\n')
+                return
+
+            else:
+                key = self._key_pairs[key]
+
+        setattr(self, key, value)
+
+    def update(self, values):
+        """
+        Update the parameters of the arc with values in passed dictionary
+        """
+
+        for _k, _v in values.items():
+            self.set(_k, _v)
 
 def _create_geo_func():
 
@@ -62,6 +185,15 @@ def _create_geo_func():
     _fn[5][2] = _fn[4][0]
     _fn[5][3] = _fn[4][0]
 
+    #-------------------------------------------------------------------
+    #   bearing lambdas for the curve's vector dot products:
+    #       0 - Radius Start    (START - CENTER)
+    #       1 - Radius End      (END - CENTER)
+    #       2 - Tangent Start   (PI - START)
+    #       3 - Tangent End     (END - PI)
+    #       4 - Middle Ordinate (PI - CENTER)
+    #       5 - Chord           (END - START)
+    #-------------------------------------------------------------------
     _fn[6][0] = lambda _x, _delta, _rot: _x + _rot*C.HALF_PI
     _fn[6][1] = lambda _x, _delta, _rot: _x + _rot*(-_delta+C.HALF_PI)
     _fn[6][2] = lambda _x, _delta, _rot: _x
@@ -78,11 +210,34 @@ class _GEO(Const):
     '''
     FUNC = _create_geo_func()
 
+    #list of vector pairs to calculate rotations
+    ROT_PAIRS = [
+        [1, 2, 4, 5],
+        [3, 5],
+        [1, 3, 5],
+        [0],
+        [1, 2, 3, 5],
+        [3]
+    ]
+
 def get_scalar_matrix(vecs):
     """
     Calculate the square matrix of scalars
     for the provided vectors
     """
+
+    #-------------------------------
+    #matrix format:
+    #
+    #   |  RST
+    #   |        REND
+    #   |                TST
+    #   |                        TEND
+    #   |                                MORD
+    #   |                                       CHORD
+    #   |                                                UP
+    #--------------------------------
+
     #ensure list is a list of lists (not vectors)
     #and create the matrix
     mat_list = [list(_v) if _v else [0, 0, 0] for _v in vecs]
@@ -95,23 +250,24 @@ def get_scalar_matrix(vecs):
     mat_list.append(list(C.UP))
 
     mat = numpy.matrix(mat_list)
-    result = mat * mat.T
+    _result = mat * mat.T
 
     #abort for non-square matrices
-    if result.shape[0] != result.shape[1] != 6:
+    if (_result.shape[0] != _result.shape[1]) or (_result.shape[0] != 7):
         return None
 
     #calculate the magnitudes first (minus the UP vector)
     for _i in range(0, 6):
-        result.A[_i][_i] = math.sqrt(result.A[_i][_i])
+        _result.A[_i][_i] = math.sqrt(_result.A[_i][_i])
 
     #calculate the delta for the lower left side
     for _i in range(0, 7):
-        _d1 = result.A[_i][_i]
+        _d1 = _result.A[_i][_i]
 
         for _j in range(0, _i):
-            _denom = _d1 * result.A[_j][_j]
-            _n = result.A[_i][_j]
+
+            _denom = _d1 * _result.A[_j][_j]
+            _n = _result.A[_i][_j]
 
             _angle = None
 
@@ -130,15 +286,17 @@ def get_scalar_matrix(vecs):
                     if _angle < 0.0:
                         _angle += C.TWO_PI
 
-            result.A[_i][_j] = _angle
+            _result.A[_i][_j] = _angle
 
     #lower left half contains angles, diagonal contains scalars
-    return result
+    return _result
 
 def get_bearings(arc, mat, delta, rot):
     """
     Calculate the bearings from the matrix and delta value
     """
+    if rot is None:
+        rot = 0.0
 
     bearing_in = arc.get('BearingIn')
     bearing_out = arc.get('BearingOut')
@@ -148,14 +306,25 @@ def get_bearings(arc, mat, delta, rot):
     for _i in range(0, 6):
         bearings.append(_GEO.FUNC[6][_i](mat.A[6][_i], delta, rot))
 
-    _b = [_v % C.TWO_PI for _v in bearings[0:6] if utils.to_float(_v)]
+    #normalize bearings within [0, 2 * PI]
+    #this is accomlpished by reducing bearings in excess of 2PI and
+    #converting negative bearings to positives
+    _b = [_v - (C.TWO_PI * int(_v / C.TWO_PI)) + (C.TWO_PI * int(_v < 0.0)) \
+            for _v in bearings[0:6] if utils.to_float(_v)
+         ]
 
     if _b:
 
         _deltas = [abs(_i - _j) for _i in _b for _j in _b]
 
         #check to ensure all tangent start bearing values are identical
-        if not support.within_tolerance(_deltas):
+        if not support.within_tolerance(_deltas[0:2]):
+            return None
+
+        if not support.within_tolerance(_deltas[2:4]):
+            return None
+
+        if not support.within_tolerance(_deltas[4:6]):
             return None
 
         #default to calculated if different from supplied bearing
@@ -167,7 +336,13 @@ def get_bearings(arc, mat, delta, rot):
 
     #a negative rotation could push out bearing under pi
     #a positive rotation could push out bearing over 2pi
-    _b_out = bearing_in + (delta * rot)
+    _b_out = bearing_out
+
+    #restrict start bearing to [0, PI]
+    _b_in = abs(bearing_in - int(bearing_in / math.pi) * math.pi)
+
+    if not _b_out:
+        _b_out = _b_in + (delta * rot)
 
     if _b_out < 0.0:
         _b_out += C.TWO_PI
@@ -195,6 +370,15 @@ def get_bearings(arc, mat, delta, rot):
 
     if not utils.to_float(_int[1]):
         _int[1] = _rad[0] + rot * ((math.pi + delta) / 2.0)
+
+    if _rad is None:
+        _rad = arc.get('Radius')
+
+    if _tan is None:
+        _tan = arc.get('Tangent')
+
+    if _int is None:
+        _int = arc.get('Delta')
 
     mat_bearings = {
         'Radius': _rad,
@@ -228,28 +412,38 @@ def get_lengths(arc, mat):
         if not _s:
             continue
 
+        #duplicate the only calculated length
+        if len(_s) == 1:
+            _s.append(_s[0])
+
         #if both were calculated and they aren't the same, quit
         if all(_s) and not support.within_tolerance(_s[0], _s[1]):
-            return None
 
-        if _s[0] and support.within_tolerance(_s[0], params[_i]):
-            continue
+            _attribs = ['radius', 'Start-Center-End']
 
-        params[_i] = _s[0]
+            if _i == 1:
+                _attribs = ['tangent', 'Start-PI-End']
+
+            Console.PrintWarning("""
+            \nArc {0} length and {1} distance mismatch by {2:f} mm. Using calculated value of {3:f} mm
+            """\
+                .format(_attribs[0], _attribs[1], abs(_s[1] - _s[0]), _s[0]))
+
+        if _s[0]:
+            if not support.within_tolerance(_s[0], params[_i]):
+                params[_i] = _s[0]
 
     #test middle and chord.
     #If no user-defined value or out-of-tolerance, use calculated
     for _i in range(4, 6):
 
-        if lengths[_i] \
-           and support.within_tolerance(lengths[_i], params[_i - 2]):
-
-            continue
-
-        params[_i - 2] = lengths[_i]
+        if lengths[_i]:
+            if not support.within_tolerance(lengths[_i], params[_i - 2]):
+                params[_i - 2] = lengths[_i]
 
     return {'Radius': params[0],
             'Tangent': params[1],
+            'Middle': params[2],
             'Chord': params[3]}
 
 def get_delta(arc, mat):
@@ -261,19 +455,22 @@ def get_delta(arc, mat):
     #get the delta from the arc data as a default
     delta = arc.get('Delta')
 
+    #calculate the delta from the provided bearings, if they exist
     if not delta:
         if arc.get('BearingIn') and arc.get('BearingOut'):
-            delta = abs(arc['BearingOut'] - arc['BearingIn'])
+            delta = abs(arc.get('BearingOut') - arc.get('BearingIn'))
 
-    #find the first occurence of the delta value
-    for _i in range(1, 6):
-        for _j in range(0, _i):
-            if utils.to_float(mat.A[_i][_j]):
-                delta = mat.A[_i][_j]
-                break
-
+    #find the first occurrence of the delta value in the matrix
     if not delta:
-        return None
+        for _i in range(1, 6):
+            for _j in range(0, _i):
+                if utils.to_float(mat.A[_i][_j]):
+                    delta = mat.A[_i][_j]
+                    break
+
+    #if delta exceeds PI radians, swap it for lesser angle
+    if delta:
+        delta = abs((int(delta > math.pi) * C.TWO_PI) - delta)
 
     return {'Delta':delta}
 
@@ -281,15 +478,39 @@ def get_rotation(arc, vecs):
     """
     Determine the dirction of rotation
     """
-    _v1 = [_v for _v in vecs[0:3] if _v and _v != App.Vector()]
-    _v2 = [_v for _v in vecs[3:] if _v and _v != App.Vector()]
 
-    if not (_v1 and _v2):
-        return {'Direction': arc.get('Direction')}
+    #list all valid vector indices
+    _idx = [_i for _i, _v in enumerate(vecs) if _v != Vector()]
 
-    return {'Direction': support.get_rotation(_v1[0], _v2[1])}
+    _v1 = None
+    _v2 = None
 
-def get_missing_parameters(arc, new_arc):
+    for _i in _idx:
+        _l = _GEO.ROT_PAIRS[_i]
+        _m = [_j for _j in _l if vecs[_j] != Vector()]
+
+        if _m:
+            _v1 = vecs[_i]
+            _v2 = vecs[_m[0]]
+            break
+
+    if not _v1:
+        _v1 = support.vector_from_angle(arc.get('BearingIn'))
+
+    if not _v2:
+        _v2 = support.vector_from_angle(arc.get('BearingOut'))
+
+    _rot = None
+
+    if _v1 and _v2:
+        _rot = support.get_rotation(_v1, _v2)
+
+    else:
+        _rot = arc.get('Direction')
+
+    return {'Direction': _rot}
+
+def get_missing_parameters(arc, new_arc, points):
     """
     Calculate any missing parameters from the original arc
     using the values from the new arc.
@@ -303,23 +524,61 @@ def get_missing_parameters(arc, new_arc):
     """
 
     #by this point, missing radius / delta is a problem
-    if new_arc.get('Radius') is None or new_arc.get('Delta') is None:
+    #missing both?  stop now.
+    if not new_arc.get('Radius') and not new_arc.get('Delta'):
         return None
 
+    _half_delta = new_arc.delta / 2.0
+    _cos_half_delta = math.cos(_half_delta)
+
+    #missing radius requires middle ordinate (or PI / Center coords)
+    if not new_arc.get('Radius'):
+
+        #attempt to assign middle length of curve
+        if not new_arc.middle:
+
+            if points[2] and points[3]:
+                new_arc.middle = points[3].sub(points[2]).Length
+
+            elif arc.tangent:
+                new_arc.middle = arc.tangent / math.sin(arc.delta / 2.0)
+
+        #build radius from external, middle ordinate or middle length
+        if new_arc.middle:
+            new_arc.radius = new_arc.middle * _cos_half_delta
+
+        elif new_arc.middle_ordinate:
+            new_arc.radius = new_arc.middle_ordinate / (1 - _cos_half_delta)
+
+        elif new_arc.external:
+            new_arc.radius = new_arc.external / ((1/_cos_half_delta) - 1)
+
+        #abort if unable to determine radius
+        if not new_arc.radius:
+            return None
+
+        if not new_arc.middle:
+            new_arc.middle = \
+                new_arc.radius * (_cos_half_delta + (1/_cos_half_delta))
+
     #pre-calculate values and fill in remaining parameters
-    radius = new_arc['Radius']
-    delta = new_arc['Delta']
-    half_delta = delta / 2.0
+    #radius = new_arc.get('Radius')
+    #delta = new_arc.get('Delta')
 
-    new_arc['Length'] = radius * delta
-    new_arc['External'] = radius * ((1.0 / math.cos(half_delta)) - 1.0)
-    new_arc['MiddleOrdinate'] = radius * (1.0 - math.cos(half_delta))
+    if not new_arc.length:
+        new_arc.length = new_arc.radius * new_arc.delta
 
-    if not new_arc.get('Tangent'):
-        new_arc['Tangent'] = radius * math.tan(half_delta)
+    if not new_arc.external:
+        new_arc.external = new_arc.radius * (1.0 / (_cos_half_delta - 1.0))
 
-    if not new_arc.get('Chord'):
-        new_arc['Chord'] = 2.0 * radius * math.sin(half_delta)
+    if not new_arc.middle_ordinate:
+        new_arc.middle_ordinate = new_arc.radius * (1.0 - _cos_half_delta)
+
+    if not new_arc.tangent:
+        new_arc.tangent = new_arc.radius * math.tan(_half_delta)
+
+    if not new_arc.chord:
+        new_arc.chord = 2.0 * new_arc.radius * math.sin(_half_delta)
 
     #quality-check - ensure everything is defined and default to
     #existing where within tolerance
@@ -350,7 +609,7 @@ def get_coordinates(arc, points):
 
     vectors = {}
 
-    for _k, _v in arc['Bearings'].items():
+    for _k, _v in arc.get('Bearings').items():
         vectors[_k] = [support.vector_from_angle(_x) for _x in _v]
 
     _start = points[0]
@@ -358,14 +617,15 @@ def get_coordinates(arc, points):
     _center = points[2]
     _pi = points[3]
 
-    _vr = vectors['Radius'][0].multiply(arc['Radius'])
-    _vt = vectors['Tangent'][0].multiply(arc['Tangent'])
-    _vc = vectors['Internal'][1].multiply(arc['Chord'])
+    _vr = vectors.get('Radius')[0].multiply(arc.get('Radius'))
+    _vt0 = vectors.get('Tangent')[0].multiply(arc.get('Tangent'))
+    _vt1 = vectors.get('Tangent')[1].multiply(arc.get('Tangent'))
+    _vc = vectors.get('Internal')[1].multiply(arc.get('Chord'))
 
     if not _start:
 
         if _pi:
-            _start = _pi.sub(_vt)
+            _start = _pi.sub(_vt0)
 
         elif _center:
             _start = _center.add(_vr)
@@ -377,92 +637,114 @@ def get_coordinates(arc, points):
         return None
 
     if not _pi:
-        _pi = _start.add(_vt)
+        _pi = _start.add(_vt0)
 
     if not _center:
         _center = _start.sub(_vr)
 
     if not _end:
-        _end = _start.add(_vc)
+        _end = _pi.add(_vt1)
 
     return {'Start': _start, 'Center': _center, 'End': _end, 'PI': _pi}
 
-def get_parameters(arc):
+def get_parameters(source_arc, as_dict=True):
     """
     Given a minimum of existing parameters, return a fully-described arc
     """
+
+    _result = Arc(source_arc)
+
     #Vector order:
     #Radius in / out, Tangent in / out, Middle, and Chord
-    points = [arc.get('Start'), arc.get('End'),
-              arc.get('Center'), arc.get('PI')]
+    points = [_result.start, _result.end, _result.center, _result.pi]
 
     point_count = len([_v for _v in points if _v])
 
     #define the curve start at the origin if none is provided
     if point_count == 0:
-        points[0] = App.Vector()
+        points[0] = Vector()
 
-    vecs = [support.safe_sub(arc.get('Start'), arc.get('Center'), True),
-            support.safe_sub(arc.get('End'), arc.get('Center'), True),
-            support.safe_sub(arc.get('PI'), arc.get('Start'), True),
-            support.safe_sub(arc.get('End'), arc.get('PI'), True),
-            support.safe_sub(arc.get('PI'), arc.get('Center'), True),
-            support.safe_sub(arc.get('End'), arc.get('Start'), True)
+    vecs = [support.safe_sub(_result.start, _result.center, True),
+            support.safe_sub(_result.end, _result.center, True),
+            support.safe_sub(_result.pi, _result.start, True),
+            support.safe_sub(_result.end, _result.pi, True),
+            support.safe_sub(_result.pi, _result.center, True),
+            support.safe_sub(_result.end, _result.start, True)
            ]
 
-    result = {'Type': 'Curve'}
-
     mat = get_scalar_matrix(vecs)
-    _p = get_lengths(arc, mat)
+    _p = get_lengths(_result, mat)
 
     if not _p:
-        print("""
-        Invalid curve definition: cannot determine radius / tangent lengths
-        """)
-        return None
+        Console.PrintError("""
+        Invalid curve definition: cannot determine radius / tangent lengths.
+        Arc:
+        """+ str(_result))
 
-    result.update(_p)
-    _p = get_delta(arc, mat)
+        _result.radius = 0.0
+        return _result
 
-    if not _p:
-        print('Invalid curve definition: cannot determine central angle')
-        return None
-
-    result.update(_p)
-    _p = get_rotation(arc, vecs)
+    _result.update(_p)
+    _p = get_delta(_result, mat)
 
     if not _p:
-        print('Invalid curve definition: cannot determine curve direction')
+        Console.PrintError(
+            'Invalid curve definition: cannot determine central angle.' +
+            '\nArc:\n' + str(_result)
+        )
         return None
 
-    result.update(_p)
-    _p = get_bearings(arc, mat, result['Delta'], result['Direction'])
+    _result.update(_p)
+    _p = get_rotation(_result, vecs)
 
     if not _p:
-        print('Invalid curve definition: cannot determine curve bearings')
+        Console.PrintError(
+            'Invalid curve definition: cannot determine curve direction.' +
+            '\nArc:\n' + str(_result)
+        )
         return None
 
-    result.update(_p)
-    _p = get_missing_parameters(result, result)
+    _result.update(_p)
+    _p = get_bearings(_result, mat, _result.get('Delta'), _result.get('Direction'))
 
     if not _p:
-        print('Invalid curve definition: cannot calculate all parameters')
+        Console.PrintError(
+            'Invalid curve definition: cannot determine curve bearings.' +
+            '\nArc:\n' + str(_result)
+        )
         return None
 
-    result.update(_p)
-    _p = get_coordinates(result, points)
+    _result.update(_p)
+    _p = get_missing_parameters(_result, _result, points)
 
     if not _p:
-        print('Invalid curve definition: cannot calculate coordinates')
+        Console.PrintError(
+            'Invalid curve definition: cannot calculate all parameters.' +
+            '\nArc:\n' + str(_result)
+        )
         return None
 
-    result.update(_p)
+    _result.update(_p)
+    _p = get_coordinates(_result, points)
+
+    if not _p:
+        Console.PrintError(
+            'Invalid curve definition: cannot calculate coordinates' +
+            '\nArc:\n' + str(_result)
+        )
+        return None
+
+    _result.update(_p)
 
     #get rid of the Bearings dict since we're done using it
-    result.pop('Bearings')
+    #_result.pop('Bearings')
 
-    #merge the result with the original dict to preserve other values
-    return {**arc, **result}
+    #merge the _result with the original dict to preserve other values
+
+    if as_dict:
+        return _result.to_dict()
+
+    return _result
 
     #scale_factor = 1.0 / Units.scale_factor()
 
@@ -476,7 +758,7 @@ def convert_units(arc, to_document=False):
 
     angle_keys = ['Delta', 'BearingIn', 'BearingOut']
 
-    result = {}
+    _result = {}
 
     angle_fn = math.radians
     scale_factor = units.scale_factor()
@@ -487,150 +769,19 @@ def convert_units(arc, to_document=False):
 
     for _k, _v in arc.items():
 
-        result[_k] = _v
+        _result[_k] = _v
 
         if _v is None:
             continue
 
         if _k in angle_keys:
-            result[_k] = angle_fn(_v)
+            _result[_k] = angle_fn(_v)
             continue
 
         if _k != 'Direction':
-            result[_k] = _v * scale_factor
+            _result[_k] = _v * scale_factor
 
-    return result
-
-def parameter_test(excludes=None):
-    """
-    Testing routine
-    """
-    scale_factor = 1.0 / units.scale_factor()
-
-    radius = 670.00
-    delta = 50.3161
-    half_delta = math.radians(delta) / 2.0
-
-    arc = {
-        'Type': 'arc',
-        'Direction': -1,
-        'Delta': delta,
-        'Radius': radius,
-        'Length': radius * math.radians(delta),
-        'Tangent': radius * math.tan(half_delta),
-        'Chord': 2 * radius * math.sin(half_delta),
-        'External': radius * ((1 / math.cos(half_delta) - 1)),
-        'MiddleOrd': radius * (1 - math.cos(half_delta)),
-        'BearingIn': 139.3986,
-        'BearingOut': 89.0825,
-
-        'Start': App.Vector(
-            122056.0603640062, -142398.20717496306, 0.0
-            ).multiply(scale_factor),
-
-        'Center': App.Vector(
-            277108.1622932797, -9495.910944558627, 0.0
-            ).multiply(scale_factor),
-
-        'End': App.Vector(
-            280378.2141876281, -213685.7280672748, 0.0
-            ).multiply(scale_factor),
-
-        'PI': App.Vector(
-            184476.32163324804, -215221.57431973785, 0.0
-            ).multiply(scale_factor)
-    }
-
-    #convert the arc to system units before processing
-    #and back to document units on return
-
-    comp = {'Type': 'Curve',
-            'Radius': 670.0,
-            'Tangent': 314.67910063712156,
-            'Chord': 569.6563702820052,
-            'Delta': 50.31609999999997,
-            'Direction': -1.0,
-            'BearingIn': 139.3986,
-            'BearingOut': 89.0825,
-            'Length': 588.3816798810212,
-            'External': 70.21816809491217,
-            'Middle': 63.5571709144523,
-            'Start': App.Vector(400.4463922703616, -467.1857190779628, 0.0),
-            'Center': App.Vector(909.147514086, -31.1545634664, 0.0),
-            'End': App.Vector(919.8760307993049, -701.0686616380407, 0.0),
-            'PI': App.Vector(605.2372756996326, -706.1075272957279, 0.0)
-            }
-
-
-    if excludes:
-        return run_test(arc, comp, excludes)
-
-    keys = ['Start', 'End', 'Center', 'PI']
-
-    run_test(arc, comp, None)
-
-    for i in range(0, 4):
-        run_test(arc, comp, [keys[i]])
-        for j in range(i + 1, 4):
-            run_test(arc, comp, [keys[i], keys[j]])
-            for k in range(j + 1, 4):
-                run_test(arc, comp, [keys[i], keys[j], keys[k]])
-
-    run_test(arc, comp, keys)
-
-    return arc
-
-def run_test(arc, comp, excludes):
-    """
-    Testing routine
-    """
-    import copy
-    dct = copy.deepcopy(arc)
-
-    if excludes:
-        for _exclude in excludes:
-            dct[_exclude] = None
-
-    result = convert_units(get_parameters(convert_units(dct)), True)
-
-    print('----------- Comparison errors: ------------- \n')
-    print('Exclusions: ', excludes)
-
-    for _k, _v in comp.items():
-
-        _w = result[_k]
-        _x = _v
-
-        if isinstance(_v, App.Vector):
-            _x = _v.Length
-            _w = _w.Length
-
-        if not support.within_tolerance(_x, _w):
-            print('Mismatch on %s: %f (%f)' % (_k, _w, _x))
-
-    return result
-
-#############
-#test output:
-#############
-#Radius vectors:  [Vector (-508.7011218152017, -436.03115561156324, 0.0),
-#Vector (10.728516713741602, -669.914098171641, 0.0)]
-
-#Tangent vectors:  [Vector (204.79088342927093, -238.92180821776492, -0.0),
-#Vector (314.63875509967215, 5.038865657687206, 0.0)]
-
-#Middle vector:  Vector (-303.9102383859307, -674.9529638293282, 0.0)
-#bearings:  [2.4329645426705673, 1.5547829309078485]
-
-#{'Direction': -1.0, 'Delta': 50.3161, 'Radius': 670.0, 'Length':
-#588.3816798810216, 'Tangent': 314.67910063712156, 'Chord': 569.6563702820052,
-# 'External': 70.21816809491217, 'MiddleOrd': 63.55717091445238, 'BearingIn':
-# 139.3986, 'BearingOut': 89.0825, 'Start': Vector (400.44639227036157,
-# -467.1857190779628, 0.0), 'Center': Vector (909.1475140855633,
-# -31.154563466399697, 0.0), 'End': Vector (919.8760307993049,
-# -701.0686616380407, 0.0), 'PI': Vector (605.2372756996326,
-# -706.1075272957279,
-# 0.0)}
+    return _result
 
 def get_coord_on_arc(start, radius, direction, distance):
     """
@@ -640,10 +791,9 @@ def get_coord_on_arc(start, radius, direction, distance):
 
     delta = distance / radius
 
-    return App.Vector(math.sin(delta), 1 - math.cos(delta), 0.0).multiply(radius) + start
-
-
-    return None
+    return Vector(
+        math.sin(delta), 1 - math.cos(delta), 0.0
+        ).multiply(radius) + start
 
 def get_ortho_vector(arc_dict, distance, side=''):
     """
@@ -657,10 +807,10 @@ def get_ortho_vector(arc_dict, distance, side=''):
                 regardless of case
     """
 
-    direction = arc_dict['Direction']
-    bearing = arc_dict['BearingIn']
-    radius = arc_dict['Radius']
-    start = arc_dict['Start']
+    direction = arc_dict.get('Direction')
+    bearing = arc_dict.get('BearingIn')
+    radius = arc_dict.get('Radius')
+    start = arc_dict.get('Start')
     _side = side.lower()
     _x = 1.0
 
@@ -675,7 +825,7 @@ def get_ortho_vector(arc_dict, distance, side=''):
     if not coord:
         return None, None
 
-    ortho = App.Vector(arc_dict['Center']).sub(coord).multiply(_x).normalize()
+    ortho = Vector(arc_dict.get('Center')).sub(coord).multiply(_x).normalize()
 
     return coord, ortho
 
@@ -699,7 +849,7 @@ def get_tangent_vector(arc_dict, distance):
 
     return coord, ortho
 
-def get_segments(bearing, deltas, direction, start, radius):
+def get_segments(bearing, deltas, direction, start, radius, _dtype=Vector):
     """
     Calculate the coordinates of the curve segments
 
@@ -710,88 +860,157 @@ def get_segments(bearing, deltas, direction, start, radius):
     radius - arc radius
     """
 
-    _forward = App.Vector(math.sin(bearing), math.cos(bearing), 0.0)
-    _right = App.Vector(_forward.y, -_forward.x, 0.0)
-    _points = [start]
+    _forward = Vector(math.sin(bearing), math.cos(bearing), 0.0)
+    _right = Vector(_forward.y, -_forward.x, 0.0)
+
+    _points = [_dtype(start)]
 
     for delta in deltas:
 
-        _dfw = App.Vector(_forward).multiply(math.sin(delta))
-        _drt = App.Vector(_right).multiply(direction * (1.0 - math.cos(delta)))
+        _dfw = Vector(_forward).multiply(math.sin(delta))
+        _drt = Vector(_right).multiply(direction * (1.0 - math.cos(delta)))
 
-        _points.append(start.add(_dfw.add(_drt).multiply(radius)))
+        _vec = start.add(_dfw.add(_drt).multiply(radius))
+
+        if _dtype is not Vector:
+            _vec = _dtype(_vec)
+
+        _points.append(_vec)
 
     return _points
 
-def get_points(arc_dict, interval, interval_type='Segment', layer=0.0):
+def get_position_offset(arc, coord):
+    """
+    Find the distance along the arc and the offset for the given coordinate
+    """
+
+    _center = arc.get('Center')
+
+    #vectors from center point toward start, end, and coordinate
+    _vecs = [
+        _v.sub(_center).normalize() for _v in [arc.get('Start'), arc.get('End'), coord]
+    ]
+
+    _rad = arc.get('Radius')
+
+    #polar angles
+    _thetas = [math.acos(_v.x) for _v in _vecs]
+    _thetas = [_v if _v > 0 else C.TWO_PI + _v for _v in _thetas]
+
+    #if theta falls between start and end vectors, test to see if coord
+    #distance is > or < radius to determine side.
+
+    _offset = coord.distanceToPoint(_center) - _rad
+
+    #if the coord theta falls between the start / end radii thetas,
+    #return the point on the arc,
+    #the offset (adjusted for arc direction and side,
+    #and 0 (point falls on arc)
+    _min_theta = min(_thetas[:2])
+    _max_theta = max(_thetas[:2])
+
+    if _min_theta <= _thetas[2] <= _max_theta:
+
+        return _center.add(_vecs[2].multiply(_rad)), _offset * arc.get('Direction'), 0
+
+    #otherwise, if the offset is less than the radius,
+    #determine which theta is closer (start or end) and return
+    #-1 if clsoer to start
+    if abs(_offset) < _rad:
+
+        _deltas = [abs(_min_theta - _thetas[2]), abs(_max_theta - _thetas[2])]
+
+        if _deltas[0] < _deltas[1]:
+            if _min_theta == _thetas[0]:
+                return None, None, -1
+
+    #default point exceeds end of arc
+    return None, None, 1
+
+def get_points(
+        arc, size=10.0, method='Segment', interval=None, _dtype=Vector):
     """
     Discretize an arc into the specified segments.
     Resulting list of coordinates omits provided starting point and
     concludes with end point
 
-    arc_dict    - A dictionary containing key elemnts:
+    arc_dict    - A dictionary containing key elements:
         Direction   - non-zero.  <0 = ccw, >0 = cw
         Radius      - in document units (non-zero, positive)
         Delta       - in radians (non-zero, positive)
         BearingIn   - true north starting bearing in radians (0 to 2*pi)
         BearingOut  - true north ending bearing in radians (0 to 2*pi)
 
-    interval    - value for the interval type (non-zero, positive)
+    size        - size of discrete elements (non-zero, positive)
 
-    interval_type: (defaults to segment for invalid values)
-        'Segment'   - subdivide into n equal segments
+    method     (Method of discretization)
+        'Segment'   - subdivide into n equal segments (default)
         'Interval'  - subdivide into fixed length segments
         'Tolerance' - limit error between segment and curve
 
+    interval    - Start and distance along arc to discretize
     layer       - the z coordinate to apply to all points
 
     Points are returned references to start_coord
     """
 
-    angle = arc_dict['Delta']
-    direction = arc_dict['Direction']
-    bearing_in = arc_dict['BearingIn']
-    radius = arc_dict['Radius']
-    start = arc_dict['Start']
+    _arc = arc
 
-    result = [start]
+    if isinstance(arc, dict):
+        _arc = Arc(arc)
+
+    angle = _arc.delta
+    direction = _arc.direction
+    bearing_in = _arc.bearing_in
+    radius = _arc.radius
+    start = _arc.start
+
+    if not radius:
+        return [_arc.pi]
+
+    if not interval:
+        interval = [0.0, 0.0]
+
+    _delta_angle = interval[0] / radius
+    _start_angle = bearing_in + (_delta_angle * direction)
+
+    #get the start coordinate at the actual starting point on the curve
+    if interval[0] > 0.0:
+
+        start = get_segments(
+            bearing_in, [_delta_angle], direction, start, radius
+        )[1]
+
+    #if the distance is specified, calculate the central angle from that
+    #otherwise, the new central angle is the old central angle less the delta
+    if interval[1] > 0.0:
+        angle = interval[1] / radius
+    else:
+        angle = angle - _delta_angle
 
     #define the incremental angle for segment calculations,
     #defaulting to 'Segment'
-    _delta = angle / interval
+    _delta = angle / size
 
-    _ratio = (interval * units.scale_factor()) / radius
+    _ratio = (size * units.scale_factor()) / radius
 
-    if interval_type == 'Interval':
+    if method == 'Interval':
         _delta = _ratio
 
-    elif interval_type == 'Tolerance':
+    elif method == 'Tolerance':
         _delta = 2.0 * math.acos(1 - _ratio)
 
     #pre-calculate the segment deltas,
     #increasing from zero to the central angle
+    if _delta == 0.0:
+        return None, None
+
     segment_deltas = [
-        float(_i + 1) * _delta for _i in range(0, int(angle / _delta) + 1)
+        float(_i + 1) * _delta for _i in range(0, int(angle / _delta))
     ]
 
-    segment_deltas[-1] = angle
+    _arc.points = get_segments(
+        _start_angle, segment_deltas, direction, start, radius, _dtype
+    )
 
-    points = get_segments(bearing_in, segment_deltas, direction, start, radius)
-
-    _forward = App.Vector(math.sin(bearing_in), math.cos(bearing_in), 0.0)
-    _right = App.Vector(_forward.y, -_forward.x, 0.0)
-    hashes = []
-
-    _prev = None
-
-    for _pt in points:
-
-        #store the hash of the starting and ending coordinates
-        #aka - the segment hash
-        if _prev:
-            hashes.append(hash(tuple(_prev) + tuple(_pt)))
-
-        _pt.z = layer
-        _prev = _pt
-
-    return points, hashes
+    return _arc.points

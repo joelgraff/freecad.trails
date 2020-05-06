@@ -34,9 +34,9 @@ import FreeCADGui as Gui
 
 from . import import_xml_subtask #, ImportCsvSubtask
 
+from ...support import utils
 from .... import resources
 from ....alignment import alignment_group, alignment
-
 
 class ImportAlignmentTask:
     """
@@ -69,11 +69,9 @@ class ImportAlignmentTask:
 
         alignment_group.create()
 
-        for key, value in data['Alignments'].items():
+        for _v in data['Alignments'].values():
 
-            result = alignment.create(
-                value, value['meta']['ID'] + ' Horiz'
-            )
+            result = alignment.create(_v, _v['meta']['ID'] + ' Horiz')
 
             if result.errors:
                 errors += result.errors
@@ -86,6 +84,12 @@ class ImportAlignmentTask:
 
             for _e in errors:
                 print(_e)
+
+        if result.errors:
+            errors += result.errors
+            result.errors = []
+
+            App.ActiveDocument.recompute()
 
         Gui.SendMsgToActiveView("ViewFit")
 
@@ -176,7 +180,7 @@ class ImportAlignmentTask:
         """
         Initiailze the task window and controls
         """
-        _mw = self.getMainWindow()
+        _mw = utils.getMainWindow()
 
         form = _mw.findChild(QtGui.QWidget, 'TaskPanel')
 
@@ -187,14 +191,14 @@ class ImportAlignmentTask:
 
         self.form = form
 
-    def getMainWindow(self):
+    def macro_load(self, file_path):
         """
-        Return reference to main window
+        Allow loading a file via macro / automation
         """
-        top = QtGui.QApplication.topLevelWidgets()
 
-        for item in top:
-            if item.metaObject().className() == 'Gui::MainWindow':
-                return item
+        filename = 'import_alignment_task_xml_subpanel.ui'
+        subpanel = Gui.PySideUic.loadUi(self.ui_path + filename, None)
 
-        raise RuntimeError('No main window found')
+        self.subtask = import_xml_subtask.create(subpanel, file_path)
+
+        self.accept()
