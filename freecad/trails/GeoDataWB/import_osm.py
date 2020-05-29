@@ -8,7 +8,7 @@ from . import my_xmlparser
 from .transversmercator import TransverseMercator
 from . import inventortools as inventortools
 from .say import say,sayErr,sayexc,sayW
-import json, urllib.request
+import json, urllib.request, time
 
 debug = False
 
@@ -82,12 +82,12 @@ def organize():
 	GRP_highways, GRP_building, GRP_landuse
 	"""
 
-	highways = App.activeDocument().addObject("App::DocumentObjectGroup", "GRP_highways")
-	landuse = App.activeDocument().addObject("App::DocumentObjectGroup", "GRP_landuse")
-	buildings = App.activeDocument().addObject("App::DocumentObjectGroup", "GRP_building")
-	pathes = App.activeDocument().addObject("App::DocumentObjectGroup", "GRP_pathes")
+	highways = FreeCAD.activeDocument().addObject("App::DocumentObjectGroup", "GRP_highways")
+	landuse = FreeCAD.activeDocument().addObject("App::DocumentObjectGroup", "GRP_landuse")
+	buildings = FreeCAD.activeDocument().addObject("App::DocumentObjectGroup", "GRP_building")
+	pathes = FreeCAD.activeDocument().addObject("App::DocumentObjectGroup", "GRP_pathes")
 
-	for oj in App.activeDocument().Objects:
+	for oj in FreeCAD.activeDocument().Objects:
 		if oj.Label.startswith('building'):
 			buildings.addObject(oj)
 
@@ -142,10 +142,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
 		FreeCAD.t = response
 
 		f = open(fn, "w")
-		if response.getcode == 200:
-			with open(fn, 'wb') as f:
-				for chunk in response.readlines(1024):
-					f.write(chunk)
+		f.write(response.read().decode('utf8'))
 		f.close()
 
 	if elevation:
@@ -205,9 +202,9 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
 		status.setText("create visualizations  ...")
 		FreeCADGui.updateGui()
 
-	App.newDocument("OSM Map")
+	FreeCAD.newDocument("OSM Map")
 	say("Datei erzeugt")
-	area = App.ActiveDocument.addObject("Part::Plane", "area")
+	area = FreeCAD.ActiveDocument.addObject("Part::Plane", "area")
 	obj = FreeCAD.ActiveDocument.ActiveObject
 	say("grundflaeche erzeugt")
 
@@ -352,11 +349,11 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
 		# Create 2D map
 		pp = Part.makePolygon(polis)
 		Part.show(pp)
-		z = App.ActiveDocument.ActiveObject
+		z = FreeCAD.ActiveDocument.ActiveObject
 		z.Label = "w_"+wid
 
 		if name == ' ':
-			g = App.ActiveDocument.addObject("Part::Extrusion", name)
+			g = FreeCAD.ActiveDocument.addObject("Part::Extrusion", name)
 			g.Base = z
 			g.ViewObject.ShapeColor = (1.00, 1.00, 0.00)
 			g.Dir = (0, 0, 10)
@@ -364,7 +361,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
 			g.Label = 'way ex '
 
 		if building:
-			g = App.ActiveDocument.addObject("Part::Extrusion", name)
+			g = FreeCAD.ActiveDocument.addObject("Part::Extrusion", name)
 			g.Base = z
 			g.ViewObject.ShapeColor = (1.00, 1.00, 1.00)
 
@@ -378,7 +375,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
 			inventortools.setcolors2(obj)
 
 		if landuse:
-			g = App.ActiveDocument.addObject("Part::Extrusion", name)
+			g = FreeCAD.ActiveDocument.addObject("Part::Extrusion", name)
 			g.Base = z
 
 			if nr == 'residential':
@@ -398,7 +395,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
 			g.Solid = True
 
 		if highway:
-			g = App.ActiveDocument.addObject("Part::Extrusion", "highway")
+			g = FreeCAD.ActiveDocument.addObject("Part::Extrusion", "highway")
 			g.Base = z
 			g.ViewObject.LineColor = (0.00, 0.00, 1.00)
 			g.ViewObject.LineWidth = 10
