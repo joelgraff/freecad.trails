@@ -169,7 +169,7 @@ class CreateSections:
         import math
         _position = pos
         _counter = 0
-        _buffer = 10000
+        _buffer = 50000
 
         GuideLineName = self.GuideLinesList[self.GuideLineIndex]
         guide_lines = FreeCAD.ActiveDocument.getObject(GuideLineName).Group
