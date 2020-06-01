@@ -148,16 +148,18 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         }
 
         self.alignment_tracker = AlignmentTracker(
-            self.doc, self.Object.Name, self.alignment
+            self.Object.Name, self.alignment
         )
 
         self.terminator_tracker = TerminatorTracker()
 
         #subscribe the alignment tracker to all events from the task
         #and subscribe the task to task events from the tracker
-        self.alignment_tracker.register(self, Events.ALIGNMENT.UPDATED)
-        self.register(self.alignment_tracker, Events.ALIGNMENT.UPDATE)
-        self.terminator_tracker.register(self, Events.TASK.EVENTS)
+        #self.alignment_tracker.register(self, Events.ALIGNMENT.UPDATED)
+        #self.register(self.alignment_tracker, Events.ALIGNMENT.UPDATE)
+        #self.terminator_tracker.register(self, Events.TASK.EVENTS)
+
+        self.alignment_tracker.insert_into_scenegraph(True)
 
         #save camera state
         _camera = ViewState().view.getCameraNode()
