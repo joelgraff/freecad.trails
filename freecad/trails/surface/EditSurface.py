@@ -39,7 +39,7 @@ class AddTriangle:
 
         # Set icon,  menu text and tooltip
         self.resources = {
-            'Pixmap': ICONPATH + '/icons/EditSurface.svg',
+            'Pixmap': ICONPATH + '/icons/AddTriangle.svg',
             'MenuText': "Add Triangle",
             'ToolTip': "Add a triangle to selected surface."
                 }
@@ -87,7 +87,7 @@ class DeleteTriangle:
 
         # Set icon,  menu text and tooltip
         self.resources = {
-            'Pixmap': ICONPATH + '/icons/EditSurface.svg',
+            'Pixmap': ICONPATH + '/icons/DeleteTriangle.svg',
             'MenuText': "Delete Triangle",
             'ToolTip': "Delete triangles from selected surface."
               }
@@ -137,7 +137,7 @@ class SwapEdge:
 
         # Set icon,  menu text and tooltip
         self.resources = {
-            'Pixmap': ICONPATH + '/icons/EditSurface.svg',
+            'Pixmap': ICONPATH + '/icons/SwapEdge.svg',
             'MenuText': "Swap Edge",
             'ToolTip': "Swap Edge of selected surface."
             }
@@ -230,7 +230,7 @@ class SmoothSurface:
 
         # Set icon,  menu text and tooltip
         self.resources = {
-            'Pixmap': ICONPATH + '/icons/EditSurface.svg',
+            'Pixmap': ICONPATH + '/icons/SmoothSurface.svg',
             'MenuText': "Smooth Surface",
             'ToolTip': "Smooth selected surface."
             }

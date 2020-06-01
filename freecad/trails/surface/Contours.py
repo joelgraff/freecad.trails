@@ -39,7 +39,7 @@ class CreateContour:
         """
         # Set icon,  menu text and tooltip
         self.resources = {
-                'Pixmap': ICONPATH + '/icons/EditSurface.svg',
+                'Pixmap': ICONPATH + '/icons/Contours.svg',
                 'MenuText': "Create Contour",
                 'ToolTip': "Create contour on selected surface."}
 
