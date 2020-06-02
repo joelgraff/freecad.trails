@@ -89,13 +89,6 @@ trackstring='''
 <extensions> extensionsType </extensions>    <!-- GPX extension -->
 '''
 
-
-def run():
-	filename='/home/thomas/.FreeCAD/Mod/geodat/testdata/latlonh.txt'
-	orig='102.0793929 13.82877942'
-	import_latlon(filename,orig,0)
-
-
 def import_latlon(filename,orig,hi,op):
 	# content=trackstring
 	
@@ -165,14 +158,14 @@ def import_latlon(filename,orig,hi,op):
 		# Get or create "Point_Groups".
 		try:
 			PointGroups = FreeCAD.ActiveDocument.Point_Groups
-		except:
+		except Exception:
 			PointGroups = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", 'Point_Groups')
 			PointGroups.Label = "Point Groups"
 
 		# Get or create "Points".
 		try:
 			FreeCAD.ActiveDocument.Points
-		except:
+		except Exception:
 			Points = FreeCAD.ActiveDocument.addObject('Points::Feature', "Points")
 			PointGroups.addObject(Points)
 
