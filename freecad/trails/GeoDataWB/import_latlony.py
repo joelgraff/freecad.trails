@@ -89,14 +89,7 @@ trackstring='''
 <extensions> extensionsType </extensions>    <!-- GPX extension -->
 '''
 
-
-def run():
-	filename='/home/thomas/.FreeCAD/Mod/geodat/testdata/latlonh.txt'
-	orig='102.0793929 13.82877942'
-	import_latlon(filename,orig,0)
-
-
-def import_latlon(filename,orig,hi):
+def import_latlon(filename,orig,hi,op):
 	# content=trackstring
 	
 #	fn='/home/microelly2/FCB/b202_gmx_tracks/im_haus.gpx'
@@ -161,8 +154,31 @@ def import_latlon(filename,orig,hi):
 	print ((max(lats)+min(lats))/2,(max(lons)+min(lons))/2)
 	print ((max(lats)-min(lats))/2,(max(lons)-min(lons))/2)
 
-	import Draft
-	Draft.makeWire(points)
+	if op == True:
+		# Get or create "Point_Groups".
+		try:
+			PointGroups = FreeCAD.ActiveDocument.Point_Groups
+		except Exception:
+			PointGroups = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", 'Point_Groups')
+			PointGroups.Label = "Point Groups"
+
+		# Get or create "Points".
+		try:
+			FreeCAD.ActiveDocument.Points
+		except Exception:
+			Points = FreeCAD.ActiveDocument.addObject('Points::Feature', "Points")
+			PointGroups.addObject(Points)
+
+		PointGroup = FreeCAD.ActiveDocument.addObject('Points::Feature', "Point_Group")
+		PointGroup.Label = "LatLonH"
+		FreeCAD.ActiveDocument.Point_Groups.addObject(PointGroup)
+		PointObject = PointGroup.Points.copy()
+		PointObject.addPoints(points)
+		PointGroup.Points = PointObject
+	else:
+		import Draft
+		Draft.makeWire(points)
+
 	FreeCAD.ActiveDocument.recompute()
 	return
 
@@ -210,6 +226,10 @@ MainWindow:
 			setText: "Generate Data Nodes "
 #			clicked.connect: app.run_co2
 
+		QtGui.QRadioButton:
+			setText: "Only points"
+			id: 'op'
+
 
 		QtGui.QPushButton:
 			setText: "Run values"
@@ -226,6 +246,7 @@ class MyApp(object):
 					filename,
 					self.root.ids['orig'].text(),
 					self.root.ids['h'].text(),
+					self.root.ids['op'].isChecked(),
 			)
 			self.root.ids['orig'].setText(rc),
 		except Exception:
