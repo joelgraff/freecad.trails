@@ -46,7 +46,7 @@ class AlignmentModel:
     """
     Alignment model for the alignment FeaturePython class
     """
-    def __init__(self, geometry=None, zero_reference=True):
+    def __init__(self, geometry=None, zero_reference=False):
         """
         Default Constructor
         """

@@ -24,94 +24,45 @@
 Tracker for alignment editing
 """
 
-from pivy import coin
-
 from FreeCAD import Vector
-
 import FreeCADGui as Gui
 
-from .base_tracker import BaseTracker
+from pivy_trackers.tracker.context_tracker import ContextTracker
+from pivy_trackers.tracker.line_tracker import LineTracker
 
-from ..support.mouse_state import MouseState
-from ..support.view_state import ViewState
-from ..support.select_state import SelectState
-from ..support.drag_state import DragState
-from ..support.publisher import Publisher
-from ..support.publisher import PublisherEvents as Events
+from ...geometry.arc import Arc
 
-from .node_tracker import NodeTracker
-from .wire_tracker import WireTracker
-from .curve_tracker import CurveTracker
-
-class AlignmentTracker(BaseTracker, Publisher):
+class AlignmentTracker(ContextTracker):
     """
     Tracker class for alignment design
     """
 
-    def __init__(self, doc, object_name, alignment, datum=Vector()):
+    def __init__(self, object_name, alignment, datum=Vector()):
         """
         Constructor
         """
 
+        super().__init__(name='ALIGNMENT_TRACKER',
+            view=Gui.ActiveDocument.ActiveView, parent=None)
+
         self.alignment = alignment
-        self.doc = doc
-        self.names = [doc.Name, object_name, 'ALIGNMENT_TRACKER']
-        self.user_dragging = False
         self.status_bar = Gui.getMainWindow().statusBar()
         self.pi_list = []
-        self.datum = alignment.model.data.get('meta').get('Start')
-        self.drag_curves = []
+        self.model = self.alignment.model.data
+        self.datum = self.model.get('meta').get('Start')
 
-        self.message_queue = {}
+        #build a list of coordinates from curves in the geometry
+        _nodes = [tuple(_v.get('PI'))\
+            for _v in self.model.get('geometry') if _v.get('Type') != 'Line']
 
-        #base (placement) transformation for the alignment
-        self.transform = coin.SoTransform()
-        self.transform.translation.setValue(
-            tuple(alignment.model.data.get('meta').get('Start'))
-        )
-        super().__init__(names=self.names, children=[self.transform])
+        _nodes += [tuple(self.model.get('meta').get('End'))]
 
-        #scenegraph node structure for editing and dragging operations
-        self.groups = {
-            'EDIT': coin.SoGroup(),
-            'DRAG': coin.SoGroup(),
-            'SELECTED': coin.SoSeparator(),
-            'PARTIAL': coin.SoSeparator(),
-        }
+        print(_nodes)
 
-        self.state.draggable = True
+        _line = LineTracker('line', _nodes, self.base)
 
-        self.drag_transform = coin.SoTransform()
-
-        #add two nodes to the drag group - the transform and a dummy node
-        #which provides a way to access the transform matrix
-        self.groups['SELECTED'].addChild(self.drag_transform)
-        self.groups['SELECTED'].addChild(coin.SoSeparator())
-
-        self.groups['DRAG'].addChild(self.groups['SELECTED'])
-        self.groups['DRAG'].addChild(self.groups['PARTIAL'])
-
-        self.node.addChild(self.groups['EDIT'])
-        self.node.addChild(self.groups['DRAG'])
-
-        #generate initial node trackers and wire trackers for mouse interaction
-        #and add them to the scenegraph
-        self.trackers = {}
-        self.build_trackers()
-
-        _trackers = []
-        for _v in self.trackers.values():
-            _trackers.extend(_v)
-
-        for _v in _trackers:
-            self.insert_node(_v.get_node(), self.groups['EDIT'])
-
-        #insert in the scenegraph root
-        self.insert_node(self.get_node())
-
-        self.select_cb = \
-            ViewState().view.addEventCallback(
-                'SoMouseButtonEvent', self.post_select_event)
+        self.set_visibility()
+        self.insert_into_scenegraph(verbose=True)
 
     def notify(self, event_type, message):
         """
@@ -273,6 +224,7 @@ class AlignmentTracker(BaseTracker, Publisher):
         portions of the alignment geometry
         """
 
+        print('building trackers')
         _names = self.names[:2]
         _model = self.alignment.model.data
 
@@ -283,12 +235,13 @@ class AlignmentTracker(BaseTracker, Publisher):
 
         _nodes += [_model.get('meta').get('End')]
 
+
         #build the trackers
         self.trackers['Nodes'] = self._build_node_trackers(_nodes, _names)
         self.trackers['Tangents'] = self._build_wire_trackers(_names)
         self.trackers['Curves'] = self._build_curve_trackers(_names)
 
-        self._signalize_trackers()
+        #self._signalize_trackers()
 
     def _signalize_trackers(self):
         """
@@ -350,18 +303,20 @@ class AlignmentTracker(BaseTracker, Publisher):
         Generate the curve trackers for the alignment
         """
 
-        _curves = self.alignment.get_curves()
+        _curves = [Arc(_v) for _v in self.alignment.get_curves()]
         _result = []
 
         for _i in range(0, len(self.trackers['Tangents']) - 1):
 
+            print(type(_curves[_i]))
             _ct = CurveTracker(
-                names=names + ['CURVE-' + str(_i)],
+                name='test' + str(_i),
                 curve=_curves[_i],
-                pi_nodes=self.trackers['Nodes'][_i:_i+3]
+                pi_list=self.trackers['Nodes'][_i:_i+3],
+                parent=self.node,
+                view = Gui.ActiveDocument.ActiveView
             )
 
-            _ct.set_selectability(True)
             _result.append(_ct)
 
         return _result

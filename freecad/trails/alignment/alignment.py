@@ -41,7 +41,7 @@ __author__ = 'Joel Graff'
 __url__ = "https://www.freecadweb.org"
 
 
-def create(geometry, object_name='', no_visual=False, zero_reference=True):
+def create(geometry, object_name='', no_visual=False, zero_reference=False):
     """
     Class construction method
     object_name - Optional. Name of new object.  Defaults to class name.
@@ -358,7 +358,7 @@ class Alignment(Draft._Wire):
 
         self.set_geometry(_model, zero_reference)
 
-    def set_geometry(self, geometry, zero_reference=True):
+    def set_geometry(self, geometry, zero_reference=False):
         """
         Assign geometry to the alignment object
         """
