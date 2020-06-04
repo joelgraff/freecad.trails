@@ -281,15 +281,25 @@ def scrub_stationing(station):
 
     return float(scrub)
 
-def rendering_fix(base):
+def get_geo(system, coords):
     """
-    Computes a relative origin to offset large coordinates to prevent rendering issues at large scales.
+    Example
+    system = ["UTM", "Z35", "FLAT"]
+    coords = [4275011518.128912, 507510589.4751387, 0.0]
     """
-    iterx = base.x/1677.7216
-    itery = base.y/1677.7216
-    iterz = base.z/1677.7216
+    from pivy import coin
 
-    scale_factor = App.Vector(iterx, itery, iterz)
-    normalized_base = scale_factor.multiply(1677.7216)
+    sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
+    node = sg.getChild(0)
 
-    return normalized_base
+    if not isinstance(node, coin.SoGeoOrigin):
+        node = coin.SoGeoOrigin()
+        sg.insertChild(node,0)
+
+    node.geoSystem.setValues(system)
+    node.geoCoords.setValue(coords[0], coords[1], coords[2])
+
+    geo_system =  node.geoSystem.getValues()
+    geo_coord =  node.geoCoords.getValue().getValue()
+
+    return geo_system, geo_coord
