@@ -286,7 +286,9 @@ def get_geo(system, coords):
     Example
     system = ["UTM", "Z35", "FLAT"]
     coords = [4275011518.128912, 507510589.4751387, 0.0]
+    get_geo(system, coords)
     """
+    import FreeCADGui
     from pivy import coin
 
     sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
