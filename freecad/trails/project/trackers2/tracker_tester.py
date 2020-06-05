@@ -28,11 +28,11 @@ from FreeCAD import Vector
 
 import FreeCADGui as Gui
 
-from pivy_trackers.tracker.marker_tracker import MarkerTracker
-from pivy_trackers.tracker.line_tracker import LineTracker
-from pivy_trackers.trait.base import Base
-from pivy_trackers.trait.event import Event
-from pivy_trackers.trait.select import Select
+from pivy_trackers.pivy_trackers.tracker.marker_tracker import MarkerTracker
+from pivy_trackers.pivy_trackers.tracker.line_tracker import LineTracker
+from pivy_trackers.pivy_trackers.trait.base import Base
+from pivy_trackers.pivy_trackers.trait.event import Event
+from pivy_trackers.pivy_trackers.trait.select import Select
 
 class TrackerTester(Base, Event, Select):
     """

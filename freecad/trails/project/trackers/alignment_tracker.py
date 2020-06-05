@@ -27,8 +27,8 @@ Tracker for alignment editing
 from FreeCAD import Vector
 import FreeCADGui as Gui
 
-from pivy_trackers.tracker.context_tracker import ContextTracker
-from pivy_trackers.tracker.line_tracker import LineTracker
+from pivy_trackers.pivy_trackers.tracker.context_tracker import ContextTracker
+from pivy_trackers.pivy_trackers.tracker.line_tracker import LineTracker
 
 from ...geometry.arc import Arc
 
