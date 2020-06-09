@@ -29,3 +29,28 @@ import os
 __path__ = __import__('pkgutil').extend_path(__path__, __name__)
 
 ICONPATH = os.path.join(os.path.dirname(__file__), "resources")
+
+def import_module(path, name=None):
+    """
+    Return an import of a module specified by path and module name
+    """
+
+    _name_list = []
+
+    if name:
+        _name_list = [name]
+
+    return __import__(path, globals(), locals(), _name_list)
+
+def import_class(path, name):
+    """
+    Return a refence to the class specified by path and module name
+    """
+
+    return getattr(import_module(path, name), name)
+
+ContextTracker = import_class(
+    'pivy_trackers.pivy_trackers.tracker.context_tracker', 'ContextTracker')
+
+LineTracker= import_class(
+    'pivy_trackers.pivy_trackers.tracker.line_tracker', 'LineTracker')
