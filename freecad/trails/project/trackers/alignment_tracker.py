@@ -27,8 +27,10 @@ Tracker for alignment editing
 from FreeCAD import Vector
 import FreeCADGui as Gui
 
-from pivy_trackers.tracker.context_tracker import ContextTracker
-from pivy_trackers.tracker.line_tracker import LineTracker
+from freecad.trails import ContextTracker, LineTracker
+
+#from PivyTrackers.tracker.context_tracker import ContextTracker
+#from PivyTrackers.tracker.line_tracker import LineTracker
 
 from ...geometry.arc import Arc
 
@@ -41,6 +43,9 @@ class AlignmentTracker(ContextTracker):
         """
         Constructor
         """
+        import sys
+        print(sys.path)
+        print ('GENERATING ALIGNMENT TRACKER')
 
         super().__init__(name='ALIGNMENT_TRACKER',
             view=Gui.ActiveDocument.ActiveView, parent=None)

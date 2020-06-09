@@ -116,21 +116,34 @@ class AlignmentModel:
         self.validate_datum()
         self.validate_stationing()
 
+        print('\n\t-----1-----\n')
+        print(self.data['geometry'])
+
         if not self.validate_bearings():
             return False
 
         self.validate_coordinates(zero_reference)
 
+        print('\n\t-----2-----\n')
+        print(self.data['geometry'])
+
         if not self.validate_alignment():
             return False
+
+        print('\n\t-----3-----\n')
+        print(self.data['geometry'])
 
         #call once more to catch geometry added by validate_alignment()
         self.validate_stationing()
 
+        print('\n\t-----4-----\n')
+        print(self.data['geometry'])
+
         if zero_reference:
             self.zero_reference_coordinates()
+
         #run discretization to force coordinate transformation updates
-        #self.discretize_geometry()
+        self.discretize_geometry()
 
         return True
 
