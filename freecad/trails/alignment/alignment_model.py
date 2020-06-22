@@ -113,7 +113,17 @@ class AlignmentModel:
             _geometry.append(_geo)
 
         self.data['geometry'] = _geometry
+
+
+        print('\n\t-----0a-----\n')
+        print(self.data['geometry'])
+
         self.validate_datum()
+
+
+        print('\n\t-----10b----\n')
+        print(self.data['geometry'])
+
         self.validate_stationing()
 
         print('\n\t-----1-----\n')
@@ -121,6 +131,9 @@ class AlignmentModel:
 
         if not self.validate_bearings():
             return False
+
+        print('\n\t-----1b-----\n')
+        print(self.data['geometry'])
 
         self.validate_coordinates(zero_reference)
 
@@ -380,7 +393,7 @@ class AlignmentModel:
                      'StartStation': _datum.get('StartStation'), 'Length': 0.0
                     }
 
-        if not zero_reference:
+        if zero_reference:
             _prev_geo['End'] = Vector()
 
         for _geo in _geo_data:
@@ -428,6 +441,7 @@ class AlignmentModel:
                         _geo.get('BearingIn')
                     ).multiply(_sta_len)
 
+                    print('New Start', _prev_geo.get('End'), _bearing_vector)
                     _start_pt = _prev_geo.get('End').add(_bearing_vector)
                     _geo['Start'] = _start_pt
 
@@ -833,4 +847,5 @@ class AlignmentModel:
         if not self.data.get('meta').get('End'):
             self.data.get('meta')['End'] = result[-1]
 
+        print('\n', result, '\n')
         return result
