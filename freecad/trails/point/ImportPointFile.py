@@ -319,8 +319,7 @@ class ImportPointFile:
 
         List = []
         fpoint = self.PointList[0]
-        base = FreeCAD.Vector(fpoint[0], fpoint[1], fpoint[2])
-        nbase = utils.rendering_fix(base)
+        nbase = FreeCAD.Vector(fpoint[0], fpoint[1], fpoint[2])
 
         for Point in self.PointList:
             Point = (Point[0]-nbase.x, Point[1]-nbase.y, Point[2]-nbase.z)
