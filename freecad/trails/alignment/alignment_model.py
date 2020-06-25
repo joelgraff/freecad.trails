@@ -114,43 +114,20 @@ class AlignmentModel:
 
         self.data['geometry'] = _geometry
 
-
-        print('\n\t-----0a-----\n')
-        print(self.data['geometry'])
-
         self.validate_datum()
 
-
-        print('\n\t-----10b----\n')
-        print(self.data['geometry'])
-
         self.validate_stationing()
-
-        print('\n\t-----1-----\n')
-        print(self.data['geometry'])
 
         if not self.validate_bearings():
             return False
 
-        print('\n\t-----1b-----\n')
-        print(self.data['geometry'])
-
         self.validate_coordinates(zero_reference)
-
-        print('\n\t-----2-----\n')
-        print(self.data['geometry'])
 
         if not self.validate_alignment():
             return False
 
-        print('\n\t-----3-----\n')
-        print(self.data['geometry'])
-
         #call once more to catch geometry added by validate_alignment()
         self.validate_stationing()
-
-        print('\n\t-----4-----\n')
-        print(self.data['geometry'])
 
         if zero_reference:
             self.zero_reference_coordinates()
@@ -729,8 +706,8 @@ class AlignmentModel:
         delta - discretization interval parameter
         """
 
-        print('\n\t===========', self.data.get('meta').get('ID'))
         geometry = self.data.get('geometry')
+
         points = []
         last_curve = None
 
@@ -847,5 +824,4 @@ class AlignmentModel:
         if not self.data.get('meta').get('End'):
             self.data.get('meta')['End'] = result[-1]
 
-        print('\n', result, '\n')
         return result

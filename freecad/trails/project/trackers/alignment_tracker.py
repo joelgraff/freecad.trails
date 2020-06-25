@@ -27,7 +27,7 @@ Tracker for alignment editing
 from FreeCAD import Vector
 import FreeCADGui as Gui
 
-from freecad.trails import ContextTracker, LineTracker
+from freecad.trails import ContextTracker, LineTracker, PolyLineTracker
 
 from ...geometry.arc import Arc
 
@@ -57,8 +57,11 @@ class AlignmentTracker(ContextTracker):
 
         _nodes += [tuple(self.model.get('meta').get('End'))]
 
-        _line = LineTracker('line', _nodes, self.base)
-        _line.show_markers()
+        _poly_line = PolyLineTracker('alignment', _nodes, self.base)
+        #   _poly_line.show_markers()
+
+        #_line = LineTracker('line', _nodes, self.base)
+        #_line.show_markers()
 
         self.set_visibility()
         self.insert_into_scenegraph(verbose=True)

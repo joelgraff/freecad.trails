@@ -54,3 +54,6 @@ ContextTracker = import_class(
 
 LineTracker= import_class(
     'pivy_trackers.pivy_trackers.tracker.line_tracker', 'LineTracker')
+
+PolyLineTracker = import_class(
+    'pivy_trackers.pivy_trackers.tracker.polyline_tracker', 'PolyLineTracker')
