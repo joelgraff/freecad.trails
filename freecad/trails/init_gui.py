@@ -183,7 +183,7 @@ class TrailsWorkbench(Gui.Workbench):
 
             'Utility Tools': {
                 'gui': self.group,
-                'cmd': draft_tools.get_draft_utility_commands(),
+                'cmd': draft_tools.get_draft_small_commands(),
                 'tooltip': 'Draft utility tools'
             }
         }
