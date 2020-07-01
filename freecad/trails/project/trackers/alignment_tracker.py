@@ -27,10 +27,7 @@ Tracker for alignment editing
 from FreeCAD import Vector
 import FreeCADGui as Gui
 
-from freecad.trails import ContextTracker, LineTracker
-
-#from PivyTrackers.tracker.context_tracker import ContextTracker
-#from PivyTrackers.tracker.line_tracker import LineTracker
+from freecad.trails import ContextTracker, LineTracker, PolyLineTracker
 
 from ...geometry.arc import Arc
 
@@ -43,9 +40,6 @@ class AlignmentTracker(ContextTracker):
         """
         Constructor
         """
-        import sys
-        print(sys.path)
-        print ('GENERATING ALIGNMENT TRACKER')
 
         super().__init__(name='ALIGNMENT_TRACKER',
             view=Gui.ActiveDocument.ActiveView, parent=None)
@@ -57,14 +51,17 @@ class AlignmentTracker(ContextTracker):
         self.datum = self.model.get('meta').get('Start')
 
         #build a list of coordinates from curves in the geometry
-        _nodes = [tuple(_v.get('PI'))\
+        _nodes = [tuple(self.datum)]
+        _nodes += [tuple(_v.get('PI'))\
             for _v in self.model.get('geometry') if _v.get('Type') != 'Line']
 
         _nodes += [tuple(self.model.get('meta').get('End'))]
 
-        print(_nodes)
+        _poly_line = PolyLineTracker('alignment', _nodes, self.base)
+        #   _poly_line.show_markers()
 
-        _line = LineTracker('line', _nodes, self.base)
+        #_line = LineTracker('line', _nodes, self.base)
+        #_line.show_markers()
 
         self.set_visibility()
         self.insert_into_scenegraph(verbose=True)
@@ -229,7 +226,6 @@ class AlignmentTracker(ContextTracker):
         portions of the alignment geometry
         """
 
-        print('building trackers')
         _names = self.names[:2]
         _model = self.alignment.model.data
 

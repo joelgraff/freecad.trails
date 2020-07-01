@@ -444,7 +444,7 @@ class Alignment(Draft._Wire):
         self.Object.Points = points
 
         _pl = App.Placement()
-        _pl.Base = self.model.data.get('meta').get('Start')
+        #_pl.Base = self.model.data.get('meta').get('Start')
 
         self.Object.Placement = _pl
 

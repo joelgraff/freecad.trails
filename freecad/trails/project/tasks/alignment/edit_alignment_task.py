@@ -89,6 +89,8 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         self.ui = self.ui_path + 'edit_alignment_task.ui'
         self.unit_scale = units.scale_factor()
 
+        self.status_bar = Gui.getMainWindow().statusBar()
+
         self.masks = {
             'float': '#90000.99',
             'degree_float': '900.99\u00b0',
@@ -170,7 +172,16 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
 
         self._zoom_camera, self
 
+        self.alignment_tracker.mouse_state.callbacks.append(self.update_status_bar)
+
         DraftTools.redraw3DView()
+
+    def update_status_bar(self, mouse_state):
+        """
+        Update the status bar with the current mouse coordinates
+        """
+
+        self.status_bar.showMessage(str(mouse_state.world_position))
 
     def _zoom_camera(self, use_bound_box=True):
         """

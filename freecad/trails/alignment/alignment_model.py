@@ -113,31 +113,21 @@ class AlignmentModel:
             _geometry.append(_geo)
 
         self.data['geometry'] = _geometry
-        self.validate_datum()
-        self.validate_stationing()
 
-        print('\n\t-----1-----\n')
-        print(self.data['geometry'])
+        self.validate_datum()
+
+        self.validate_stationing()
 
         if not self.validate_bearings():
             return False
 
         self.validate_coordinates(zero_reference)
 
-        print('\n\t-----2-----\n')
-        print(self.data['geometry'])
-
         if not self.validate_alignment():
             return False
 
-        print('\n\t-----3-----\n')
-        print(self.data['geometry'])
-
         #call once more to catch geometry added by validate_alignment()
         self.validate_stationing()
-
-        print('\n\t-----4-----\n')
-        print(self.data['geometry'])
 
         if zero_reference:
             self.zero_reference_coordinates()
@@ -380,7 +370,7 @@ class AlignmentModel:
                      'StartStation': _datum.get('StartStation'), 'Length': 0.0
                     }
 
-        if not zero_reference:
+        if zero_reference:
             _prev_geo['End'] = Vector()
 
         for _geo in _geo_data:
@@ -428,6 +418,7 @@ class AlignmentModel:
                         _geo.get('BearingIn')
                     ).multiply(_sta_len)
 
+                    print('New Start', _prev_geo.get('End'), _bearing_vector)
                     _start_pt = _prev_geo.get('End').add(_bearing_vector)
                     _geo['Start'] = _start_pt
 
@@ -715,8 +706,8 @@ class AlignmentModel:
         delta - discretization interval parameter
         """
 
-        print('\n\t===========', self.data.get('meta').get('ID'))
         geometry = self.data.get('geometry')
+
         points = []
         last_curve = None
 
