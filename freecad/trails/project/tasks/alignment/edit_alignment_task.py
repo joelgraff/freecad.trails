@@ -40,7 +40,6 @@ from ....alignment import alignment
 from ...support import const, utils, units
 from ...support.mouse_state import MouseState
 from ...support.view_state import ViewState
-from ...support.drag_state import DragState
 
 from ...support.publisher import Publisher
 from ...support.publisher import PublisherEvents as Events
@@ -48,7 +47,6 @@ from ...support.publisher import PublisherEvents as Events
 from ...support.subscriber import Subscriber
 
 from ...trackers.alignment_tracker import AlignmentTracker
-from ...trackers.terminator_tracker import TerminatorTracker
 
 def create(doc, alignment_data, object_name):
     """
@@ -152,8 +150,6 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         self.alignment_tracker = AlignmentTracker(
             self.Object.Name, self.alignment
         )
-
-        self.terminator_tracker = TerminatorTracker()
 
         #subscribe the alignment tracker to all events from the task
         #and subscribe the task to task events from the tracker
@@ -356,9 +352,6 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         """
 
         #force refresh the view matrix if dragging
-        if DragState().node_group:
-            ViewState().get_matrix(DragState().node_group)
-
         self.mouse.update(arg, ViewState().view.getCursorPos())
 
         if MouseState().shiftDown:

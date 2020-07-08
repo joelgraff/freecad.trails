@@ -114,14 +114,6 @@ class TrailsWorkbench(Gui.Workbench):
                 'cmd': ['ViewTemplateLibrary']
             },
 
-            'Test': {
-                'gui': self.menu + self.toolbar,
-                'cmd': [
-                    'BaseTrackerTest',
-                    'BaseTrackerLinkedTest'
-                    ]
-            },
-
             'Help': {
                 'gui': self.toolbar,
                 'cmd': ['TrailsGuide']
@@ -219,7 +211,7 @@ class TrailsWorkbench(Gui.Workbench):
         from . import GeoData
         from .project.commands \
             import import_alignment_cmd, edit_alignment_cmd,\
-                base_tracker_test, trails_guide_cmd
+                trails_guide_cmd
 
         for _k, _v in self.command_ui.items():
 
