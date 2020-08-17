@@ -28,10 +28,12 @@ import math
 import numpy
 
 from FreeCAD import Vector, Console
+from freecad_python_support.tuple_math import TupleMath
+from freecad_python_support.const import Const
 
 from ..project.support import units, utils
 from . import support
-from ..project.support.utils import Const, Constants as C
+from ..project.support.utils import Constants as C
 
 
 class Arc():
@@ -85,7 +87,7 @@ class Arc():
             self._key_pairs = source_arc._key_pairs.copy()
             return
 
-        #build a list of key pairs fir string-based lookup
+        #build a list of key pairs for string-based lookup
         self._key_pairs = {}
 
         _keys = list(self.__dict__.keys())
@@ -97,6 +99,7 @@ class Arc():
             return
 
         if isinstance(source_arc, dict):
+
             for _k, _v in source_arc.items():
                 self.set(_k, _v)
 
@@ -124,12 +127,15 @@ class Arc():
         Generic getter for class attributes
         """
 
-        if not key in self._key_pairs:
+        if not key in self.__dict__:
 
-            Console.PrintError('\nArc.get(): Bad key: ' + key + '\n')
-            return None
+            assert (key in self._key_pairs), """
+                \nArc.get(): Bad key: ' + key + '\n')
+                """
 
-        return getattr(self, self._key_pairs[key])
+            key = self._key_pairs[key]
+
+        return getattr(self, key)
 
     def set(self, key, value):
         """
@@ -138,13 +144,11 @@ class Arc():
 
         if not key in self.__dict__:
 
-            if not key in self._key_pairs:
+            assert (key in self._key_pairs), """
+                \nArc.set(): Bad key: ' + key + '\n')
+                """
 
-                Console.PrintError('\nArc.set(): Bad key: ' + key + '\n')
-                return
-
-            else:
-                key = self._key_pairs[key]
+            key = self._key_pairs[key]
 
         setattr(self, key, value)
 
@@ -303,6 +307,8 @@ def get_bearings(arc, mat, delta, rot):
 
     bearings = []
 
+    #calculate the bearings using other curve properties
+    #for later comparison to ensure curve is valid
     for _i in range(0, 6):
         bearings.append(_GEO.FUNC[6][_i](mat.A[6][_i], delta, rot))
 
@@ -318,21 +324,23 @@ def get_bearings(arc, mat, delta, rot):
         _deltas = [abs(_i - _j) for _i in _b for _j in _b]
 
         #check to ensure all tangent start bearing values are identical
-        if not support.within_tolerance(_deltas[0:2]):
-            return None
+        assert(support.within_tolerance(_deltas[0:2])), """
+            Tangents exceed tolerances
+        """
 
-        if not support.within_tolerance(_deltas[2:4]):
-            return None
+        assert(support.within_tolerance(_deltas[2:4])), """
+            Tangents exceed tolerances
+        """
 
-        if not support.within_tolerance(_deltas[4:6]):
-            return None
+        assert(support.within_tolerance(_deltas[4:6])), """
+            Tangents exceed tolerances
+        """
 
         #default to calculated if different from supplied bearing
         if not support.within_tolerance(_b[0], bearing_in):
             bearing_in = _b[0]
 
-    if not bearing_in:
-        return None
+    assert(bearing_in), 'Unable to determine bearing_in'
 
     #a negative rotation could push out bearing under pi
     #a positive rotation could push out bearing over 2pi
@@ -656,83 +664,66 @@ def get_parameters(source_arc, as_dict=True):
 
     #Vector order:
     #Radius in / out, Tangent in / out, Middle, and Chord
-    points = [_result.start, _result.end, _result.center, _result.pi]
 
+    _v = [_result.start, _result.end, _result.center, _result.pi]
+
+    points = [Vector(_w) if _w else None for _w in _v]
     point_count = len([_v for _v in points if _v])
 
     #define the curve start at the origin if none is provided
     if point_count == 0:
         points[0] = Vector()
 
-    vecs = [support.safe_sub(_result.start, _result.center, True),
-            support.safe_sub(_result.end, _result.center, True),
-            support.safe_sub(_result.pi, _result.start, True),
-            support.safe_sub(_result.end, _result.pi, True),
-            support.safe_sub(_result.pi, _result.center, True),
-            support.safe_sub(_result.end, _result.start, True)
-           ]
+    _vecs = [
+        support.safe_sub(points[0], points[2], True),
+        support.safe_sub(points[1], points[2], True),
+        support.safe_sub(points[3], points[0], True),
+        support.safe_sub(points[1], points[3], True),
+        support.safe_sub(points[3], points[2], True),
+        support.safe_sub(points[1], points[0], True)
+    ]
 
-    mat = get_scalar_matrix(vecs)
+    mat = get_scalar_matrix(_vecs)
     _p = get_lengths(_result, mat)
 
-    if not _p:
-        Console.PrintError("""
-        Invalid curve definition: cannot determine radius / tangent lengths.
-        Arc:
-        """+ str(_result))
-
-        _result.radius = 0.0
-        return _result
+    assert(_p), """
+        Invalid curve: cannot determine radius / tangent lengths.\nArc:\n{}
+        """.format(str(_result))
 
     _result.update(_p)
     _p = get_delta(_result, mat)
 
-    if not _p:
-        Console.PrintError(
-            'Invalid curve definition: cannot determine central angle.' +
-            '\nArc:\n' + str(_result)
-        )
-        return None
+    assert(_p), """
+        Invalid curve: cannot determine central angle.\nArc:\n{}
+        """.format(str(_result))
 
     _result.update(_p)
-    _p = get_rotation(_result, vecs)
+    _p = get_rotation(_result, _vecs)
 
-    if not _p:
-        Console.PrintError(
-            'Invalid curve definition: cannot determine curve direction.' +
-            '\nArc:\n' + str(_result)
-        )
-        return None
+    assert(_p), """
+        Invalid curve: cannot determine curve direction.\nArc:\n{}
+        """.format(str(_result))
 
     _result.update(_p)
     _p = get_bearings(_result, mat, _result.get('Delta'), _result.get('Direction'))
 
-    if not _p:
-        Console.PrintError(
-            'Invalid curve definition: cannot determine curve bearings.' +
-            '\nArc:\n' + str(_result)
-        )
-        return None
+    assert(_p), """
+            Invalid curve: cannot determine curve bearings.\nArc:\n{}
+        """.format(str(_result))
 
     _result.update(_p)
     _p = get_missing_parameters(_result, _result, points)
 
-    if not _p:
-        Console.PrintError(
-            'Invalid curve definition: cannot calculate all parameters.' +
-            '\nArc:\n' + str(_result)
-        )
-        return None
+    assert(_p), """
+            Invalid curve: cannot calculate all parameters.\nArc:\n{}
+        """.format(str(_result))
 
     _result.update(_p)
     _p = get_coordinates(_result, points)
 
-    if not _p:
-        Console.PrintError(
-            'Invalid curve definition: cannot calculate coordinates' +
-            '\nArc:\n' + str(_result)
-        )
-        return None
+    assert(_p), """
+        Invalid curve: cannot calculate coordinates\nArc:\n{}
+        """.format(str(_result))
 
     _result.update(_p)
 

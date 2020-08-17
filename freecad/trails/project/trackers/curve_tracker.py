@@ -23,28 +23,34 @@
 Curve tracker class for tracker objects
 """
 
-from pivy_trackers.tracker.line_tracker import LineTracker
+from pivy_trackers.pivy_trackers.tracker.line_tracker import LineTracker
+from pivy_trackers.pivy_trackers.tracker.polyline_tracker import PolyLineTracker
+from pivy_trackers.pivy_trackers.tracker.box_tracker import BoxTracker
 
 from ...geometry import arc, spiral, support
 
-from pivy_trackers.coin import coin_utils
+from pivy_trackers.pivy_trackers.coin import coin_utils
 
 from collections.abc import Iterable
-#from ..support.tuple_math import TupleMath
+from freecad_python_support.tuple_math import TupleMath
 
-from pivy_trackers.coin.coin_enums import NodeTypes as Nodes
-from pivy_trackers.coin.todo import todo
+from pivy_trackers.pivy_trackers.coin.coin_enums import NodeTypes as Nodes
+from pivy_trackers.pivy_trackers.coin.coin_styles import CoinStyles
+from pivy_trackers.pivy_trackers.coin.todo import todo
 
-from pivy_trackers.tracker.marker_tracker import MarkerTracker
-from pivy_trackers.tracker.context_tracker import ContextTracker
+from pivy_trackers.pivy_trackers.tracker.marker_tracker import MarkerTracker
+from pivy_trackers.pivy_trackers.tracker.geometry_tracker import GeometryTracker
+from pivy_trackers.pivy_trackers.tracker.context_tracker import ContextTracker
 
-print('IMPORT CURVE_TRACKER')
-class CurveTracker(ContextTracker):
+from pivy_trackers.pivy_trackers.trait.drag import Drag
+from pivy_trackers.pivy_trackers.trait.style import Style
+
+class CurveTracker(ContextTracker, Style, Drag):
     """
     Tracker object for managing curves
     """
 
-    def __init__(self, name, curve, pi_list, parent, view=None):
+    def __init__(self, name, curve, parent, view=None):
         """
         Constructor
         """
@@ -53,53 +59,58 @@ class CurveTracker(ContextTracker):
 
         super().__init__(name=name, parent=parent, view=view)
 
-        self.trackers = self.build_trackers(curve, pi_list)
+        self.curve_tracker = None
+        self.param_tracker = None
+        self.arc = None
 
-    def build_trackers(self, curve, pi_list):
+        self.build_trackers(parent, curve)
+
+        self.set_visibility()
+
+        self.last_rebuild = None
+
+    def build_trackers(self, parent, curve):
         """
         Generate trackers based on the passed point list
         """
-
-        for _k, _v in curve.__dict__.items():
-            print(_k, '\t', _v)
-
         _name = self.name
 
         if not curve.curve_type:
             _name += curve.type
 
-        self.arc_tracker = LineTracker(_name, curve.points, self.base)
+        self.arc = curve
+        self.arc.points = arc.get_points(self.arc, _dtype=tuple)
 
-        return
-
-        #nodes
-        _labels = ['Start', 'Center', 'End']
-        _points = [self.curve.get(_k) for _k in _labels]
-
-        for _i, _v in enumerate(_points):
-
-            _nt = NodeTracker(
-                names[:2] + [self.name + '-' + _labels[_i]], _v
+        self.param_tracker = PolyLineTracker(
+            _name + '_radius',
+            [tuple(curve.start), tuple(curve.center), tuple(curve.end)],
+            self.base
             )
 
-            _nt.set_visibility(False)
-            _nt.state.multi_select = False
-            _nt.show_drag_line = False
+        self.c_tracker =\
+            LineTracker(_name + '_CURVE ', curve.points, self.base)
 
-            _nt.update()
+        self.c_tracker.set_visibility()
 
-            self.node_trackers.append(_nt)
+        _n = ['start', 'center', 'end']
+        _i = 0
 
-            _nt.register(self, [Events.NODE.UPDATED, Events.NODE.SELECTED])
+        for _l in self.param_tracker.lines:
 
-        #radius wire
-        self.wire_tracker = WireTracker(names[:2] + [self.name + '-Radius'])
+            for _m in _l.markers:
 
-        self.wire_tracker.set_points(nodes=self.node_trackers)
-        self.wire_tracker.set_selectability(False)
-        self.wire_tracker.set_visibility(False)
-        self.wire_tracker.update()
+                _m.name = _m.name + '_' + '_n[_i]'
+                _i += 1
 
+        self.param_tracker.set_visibility()
+
+        print('\n\t-=-=-= CONSTRUCTED',self.name, '\n')
+        #self.base.dump(self.base.root)
+
+    def find_geometry(self, name):
+        """
+        Find the geometry specified by name
+        """
     def get_length(self):
         """
         Return the curve length
@@ -121,6 +132,33 @@ class CurveTracker(ContextTracker):
         """
         Set the curve radius
         """
+
+    def set_pi(self, pi):
+        """
+        Set the arc pi
+        """
+
+        self.arc.pi = pi
+
+    def set_bearings(self, bearing_in=None, bearing_out=None):
+        """
+        Set the curve bearings for the next recalculation
+        """
+
+        if bearing_in is None:
+            bearing_in = self.arc.bearing_in
+
+        if bearing_out is None:
+            bearing_out = self.arc.bearing_out
+
+        _arc = arc.Arc()
+        _arc.bearing_in = bearing_in
+        _arc.bearing_out = bearing_out
+        _arc.radius = self.arc.radius
+        _arc.direction = self.arc.direction
+        _arc.pi = self.arc.pi
+
+        self.arc = _arc
 
     def show_markers(self):
         """
@@ -148,28 +186,45 @@ class CurveTracker(ContextTracker):
 
         self.line.numVertices.setValues(0, len(groups), groups)
 
-    def update(self, coordinates=None, matrix=None, groups=None, notify=True):
+    def update(self, arc_obj=None):
         """
         Override of Geometry method
         """
 
-        super().update(coordinates=coordinates, matrix=matrix, notify=notify)
+        #super().update(coordinates=coordinates, matrix=matrix, notify=notify)
 
-        if self.text and self.text.is_visible():
+        if not arc_obj:
+            arc_obj = self.arc
 
-            self.text.set_translation(
-                TupleMath.mean(self.coordinates)
-            )
+        self.arc = arc.Arc(arc.get_parameters(arc_obj))
+        _points = arc.get_points(self.arc, _dtype=tuple)
+        _coordinate = self.drag_copy.getChild(0).getChild(2).getChild(1)
+        _coordinate.point.setValues(_points)
 
-        if self.update_cb:
-            self.update_cb()
+        #self.c_tracker.update(_points)
 
-        if groups:
-            self.groups = groups
-            self.line.numVertices.setValues(0, len(groups), groups)
+        #if self.update_cb:
+         #   self.update_cb()
 
-        if self.coordinates:
-            self.center = TupleMath.mean(self.coordinates)
+        #if groups:
+        #    self.groups = groups
+        #    self.line.numVertices.setValues(0, len(groups), groups)
+
+        #if self.coordinates:
+         #   self.center = TupleMath.mean(self.coordinates)
+
+        #if self.text and self.text.is_visible():
+        #    self._update_text()
+
+
+    def _update_text(self):
+        """
+        Update curve-specific text
+        """
+
+        self.text.set_translation(
+            TupleMath.mean(self.coordinates)
+        )
 
         self.text_center = self.center
         self.set_text_translation((0.0, 0.0, 0.0))
@@ -190,14 +245,27 @@ class CurveTracker(ContextTracker):
         Start of drag operations
         """
 
-        super().before_drag(user_data)
+        self.drag_copy = self.base.copy().getChild(0).getChild(5)
+        Drag.drag_tracker.insert_no_drag(self.drag_copy)
+
+        draw = self.drag_copy.getChild(0).getChild(1).getChild(0)
+        color = self.drag_copy.getChild(0).getChild(1).getChild(1)
+
+        style = CoinStyles.DASHED
+        style.color = CoinStyles.Color.BLUE
+
+        draw.lineWidth = style.line_width
+        draw.style = style.style
+        draw.linePattern = style.line_pattern
+
+        color.rgb = style.color
 
     def on_drag(self, user_data):
         """
         During drag operations
         """
 
-        super().on_drag(user_data)
+        #super().on_drag(user_data)
 
     def after_drag(self, user_data):
         """
@@ -205,7 +273,7 @@ class CurveTracker(ContextTracker):
         """
 
         self.text_copies = []
-        super().after_drag(user_data)
+        #super().after_drag(user_data)
 
     def drag_mouse_event(self, user_data, event_cb):
         """

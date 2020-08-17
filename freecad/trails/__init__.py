@@ -57,3 +57,6 @@ LineTracker= import_class(
 
 PolyLineTracker = import_class(
     'pivy_trackers.pivy_trackers.tracker.polyline_tracker', 'PolyLineTracker')
+
+Drag = import_class(
+    'pivy_trackers.pivy_trackers.trait.drag', 'Drag')

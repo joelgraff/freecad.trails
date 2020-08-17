@@ -27,8 +27,14 @@ Tracker for alignment editing
 from FreeCAD import Vector
 import FreeCADGui as Gui
 
-from freecad.trails import ContextTracker, LineTracker, PolyLineTracker
+from types import SimpleNamespace
 
+from freecad.trails import ContextTracker, PolyLineTracker, LineTracker, Drag
+from .curve_tracker import CurveTracker
+
+from freecad_python_support.tuple_math import TupleMath
+
+from ...geometry import arc
 from ...geometry.arc import Arc
 
 class AlignmentTracker(ContextTracker):
@@ -47,8 +53,10 @@ class AlignmentTracker(ContextTracker):
         self.alignment = alignment
         self.status_bar = Gui.getMainWindow().statusBar()
         self.pi_list = []
+        self.curve_trackers = []
         self.model = self.alignment.model.data
         self.datum = self.model.get('meta').get('Start')
+        self.last_rebuild = None
 
         #build a list of coordinates from curves in the geometry
         _nodes = [tuple(self.datum)]
@@ -57,14 +65,57 @@ class AlignmentTracker(ContextTracker):
 
         _nodes += [tuple(self.model.get('meta').get('End'))]
 
-        _poly_line = PolyLineTracker('alignment', _nodes, self.base)
-        #   _poly_line.show_markers()
+        self.alignment_tracker = PolyLineTracker('alignment', _nodes, self.base)
 
-        #_line = LineTracker('line', _nodes, self.base)
-        #_line.show_markers()
+        _i = 0
+
+        for _l in self.alignment_tracker.lines:
+
+            for _m in _l.markers:
+
+                _m.name = 'PI_' + str(_i)
+                _i += 1
+
+        _curves = [Arc(_v) for _v in self.alignment.get_curves()]
+
+        for _i, _curve in enumerate(_curves):
+            self.curve_trackers.append(
+                CurveTracker('curve_' + str(_i), _curve, self.base))
+
+        _lines = self.alignment_tracker.lines
+        _max = len(_lines) - 1
+
+        #iterate the curves, then the alignment lines, adding the
+        #starting marker on each line to the full drag callbacks
+        for _i, _c in enumerate(self.curve_trackers):
+
+            _p = None
+            _n = None
+
+            if _i > 0:
+                _p = self.curve_trackers[_i - 1]
+
+            if _i < _max - 1:
+                _n = self.curve_trackers[_i + 1]
+
+            for _j in range(_i, min(_i+3, _max)):
+
+                for _m in _lines[_j].markers:
+                    print('APPEND TO MARKER', _j)
+
+                    for _v in [_p, _c, _n]:
+
+                        if _v:
+                            _m.before_drag_callbacks.append(_v.before_drag)
+
+                    _m.on_drag_callbacks.append(self.on_drag_tracker_update)
+
+        #add the end marker on the last line
+        _lines[-1].markers[-1].on_drag_callbacks.append(
+            self.on_drag_tracker_update
+        )
 
         self.set_visibility()
-        self.insert_into_scenegraph(verbose=True)
 
     def notify(self, event_type, message):
         """
@@ -95,6 +146,262 @@ class AlignmentTracker(ContextTracker):
 
         if event_type == Events.ALIGNMENT.UPDATE:
             self.dispatch(Events.NODE.UPDATE, message, False)
+
+    def on_drag_tracker_update(self, user_data):
+        """
+        Adhoc callback to force update the curve drag tracker geometry
+        by recaluclating it afresh
+        """
+
+        _names = ['PI', 'start', 'center', 'end']
+        _has_name = [_v in user_data.obj.name for _v in _names]
+        _pi_nums = [int(s) for s in user_data.obj.name if s.isdigit()]
+        _matrix = Drag.drag_tracker.get_matrix()
+
+        #pi change requires bearing update
+        if _has_name[0]:
+            self.rebuild_bearings(_matrix, _pi_nums)
+
+        #_curves = self.rebuild_curve(user_data)
+        #print('\n\trebuilt curves =\n',_curves)
+
+        #if not _curves.cur:
+        #    print('\n\t-=-=-=-=-=-=-=CURVE REBUILD FAILED-=-=-=-=-=-=-\n')
+        #    return
+
+        #print(self.curve_trackers[_curves.cur[0]].drag_copy) #.getChild(2).getChild(1).getValues())
+
+        #self.base.dump(self.curve_trackers[_curves.cur[0]].drag_copy)
+
+    def rebuild_bearings(self, matrix, pi_nums):
+        """
+        Recaluclate bearings and update curves accordingly
+        """
+
+        _xlate = matrix.getValue()[3]
+
+        if _xlate == self.last_rebuild:
+            return _result
+
+        if  not pi_nums:
+            return _result
+
+        _pi_num = pi_nums[0]
+
+        _bearing = SimpleNamespace(inbound=None, outbound=None)
+        _pi = SimpleNamespace(prev=None, cur=None, next=None)
+        _tan = SimpleNamespace(prev=None, next=None)
+
+        _pi.cur = TupleMath.add(self.alignment_tracker.points[_pi_num], _xlate)
+
+        _pi_range = list(range(_pi_num - 2, _pi_num + 3))
+
+        _pi_points = [self.alignment_tracker.points[_v]\
+            if 0 <= _v < len(self.alignment_tracker.points) else None\
+                for _v in _pi_range]
+
+        _pi_points[2] = _pi.cur
+
+        _tan_len = []
+        _pprev = None
+
+        for _p in _pi_points:
+
+            if not _p:
+                _tan_len.append(None)
+                continue
+
+            if _pprev:
+                _tan_len.append(
+                    TupleMath.length(TupleMath.subtract(_p, _pprev)))
+
+            _pprev = _p
+
+        if _pi_points[1] is not None:
+            _pi.prev = self.alignment_tracker.points[_pi_range[1]]
+
+        if _pi_points[3] is not None:
+            _pi.next = self.alignment_tracker.points[_pi_range[3]]
+
+        if _pi.next:
+            _tan.next = TupleMath.subtract(_pi.next, _pi.cur)
+            _bearing.next = TupleMath.bearing(_tan.next)
+
+        if _pi.prev:
+            _tan.prev = TupleMath.subtract(_pi.cur, _pi.prev)
+            _bearing.prev = TupleMath.bearing(_tan.prev)
+
+        #iterate the curves to be changed by the change in PI and update their bearings
+
+        _i = 0
+
+        for _c in self.curve_trackers[
+            max(0, _pi_num-2):min(_pi_num + 1, len(self.curve_trackers))]:
+
+            #previous curve
+            if not _i:
+                _c.set_bearings(bearing_out = _bearing.prev)
+
+            #next curve
+            elif _i == 2:
+                _c.set_bearings(bearing_in = _bearing.next)
+
+            #curve under selected PI
+            else:
+                _c.set_pi(_pi.cur)
+                _c.set_bearings(_bearing.prev, _bearing.next)
+
+            _i += 1
+
+            _c.update()
+
+    def rebuild_curve(self, user_data):
+        """
+        Rebuild the curve based on the passed matrix transformation
+        """
+
+
+
+        _result = SimpleNamespace(prev=None, cur=None, next=None)
+        _xlate = user_data.matrix.getValue()[3]
+
+        if _xlate == self.last_rebuild:
+            return _result
+
+        _names = ['PI', 'start', 'center', 'end']
+        _has_name = [_v in user_data.obj.name for _v in _names]
+
+        if not _has_name:
+            return _result
+
+        _nam = None
+
+        #start / end are connected one-way to PI.  So PI preempts
+        if _has_name[0]:
+
+            _nam = user_data.obj.name
+            _pi_num = [int(s) for s in _nam if s.isdigit()]
+
+            print ('PROCESSING PI ', _nam)
+
+            if  not _pi_num:
+                return _result
+
+            _pi_num = _pi_num[0]
+
+            _in_bearing = None
+            _out_bearing = None
+
+            _prev_pi = None
+            _next_pi = None
+
+            _prev_tan = None
+            _next_tan = None
+
+            _pi = TupleMath.add(self.alignment_tracker.points[_pi_num], _xlate)
+
+            _pi_indices = list(range(_pi_num - 2, _pi_num + 3))
+
+            _pi_list = [self.alignment_tracker.points[_v]\
+                if 0 <= _v < len(self.alignment_tracker.points) else None\
+                    for _v in _pi_indices]
+
+            _pi_list[2] = _pi
+
+            _tan_len = []
+            _pprev = None
+
+            for _p in _pi_list:
+
+                if not _p:
+                    _tan_len.append(None)
+                    continue
+
+                if _pprev:
+                    _tan_len.append(
+                        TupleMath.length(TupleMath.subtract(_p, _pprev)))
+
+                _pprev = _p
+
+            if _pi_list[1] is not None:
+                _prev_pi = self.alignment_tracker.points[_pi_indices[1]]
+
+            if _pi_list[3] is not None:
+                _next_pi = self.alignment_tracker.points[_pi_indices[3]]
+
+            if _next_pi:
+                _next_tan = TupleMath.subtract(_next_pi, _pi)
+                _out_bearing = TupleMath.bearing(_next_tan)
+
+            if _prev_pi:
+                _prev_tan = TupleMath.subtract(_pi, _prev_pi)
+                _in_bearing = TupleMath.bearing(_prev_tan)
+
+            _ex_arc = self.curve_trackers[_pi_indices[2]-1]
+            _arc = Arc()
+
+            _arc.bearing_in = _in_bearing
+            _arc.bearing_out = _out_bearing
+            _arc.pi = _pi
+            _arc.direction = \
+                _ex_arc.curve.direction
+            _arc.radius = _ex_arc.curve.radius
+
+            _ex_arc.update(_arc)
+
+            #self.curve_trackers[_pi_indices[2]-1] = _ex_arc
+            _result.cur = (_pi_indices[2] - 1, _ex_arc)
+
+            if _prev_pi:
+
+                #_tan_len = TupleMath.length(_prev_tan)
+
+                if _ex_arc.curve.tangent > _tan_len[1]:
+                    print('CURRENT CURVE ERROR!!!')
+
+                _prev_arc = self.curve_trackers[_pi_indices[1]-1]
+                _arc = Arc()
+
+                _arc.bearing_in = _prev_arc.curve.bearing_in
+                _arc.bearing_out = _in_bearing
+                _arc.pi = _prev_arc.curve.pi
+                _arc.direction = _prev_arc.curve.direction
+                _arc.radius = _prev_arc.curve.radius
+
+                _prev_arc.update(_arc)
+
+                #self.curve_trackers[_pi_indices[1]-1] = _prev_arc
+                _result.prev = (_pi_indices[1] - 1, _prev_arc)
+
+                if _prev_arc.curve.tangent > _tan_len[1]:
+                    print('PREV CURVE ERROR!!!')
+
+            if _next_pi:
+
+                if _ex_arc.curve.tangent > _tan_len[2]:
+                    print('CURRENT CURVE ERROR!!!')
+
+                _next_arc = self.curve_trackers[_pi_indices[3]-1]
+
+                _arc = Arc()
+
+                _arc.bearing_in = _out_bearing
+                _arc.bearing_out = _next_arc.curve.bearing_out
+                _arc.pi = _next_arc.curve.pi
+                _arc.direction = _next_arc.curve.direction
+                _arc.radius = _next_arc.curve.radius
+
+                _next_arc.update(_arc)
+
+                #self.curve_trackers[_pi_indices[3]-1] = _next_arc
+                _result.next = (_pi_indices[3] - 1, _next_arc)
+
+                if _next_arc.curve.tangent > _tan_len[2]:
+                    print('NEXT CURVE ERROR!!!!')
+
+            self.last_rebuild = _xlate
+
+        return _result
 
     def get_updates(self):
         """
@@ -168,11 +475,6 @@ class AlignmentTracker(ContextTracker):
         """
 
         super().end_drag()
-
-        for _v in self.drag_curves:
-
-            if not _v.is_valid:
-                DragState().abort = True
 
         self.drag_curves = []
 
@@ -327,9 +629,8 @@ class AlignmentTracker(ContextTracker):
         Cleanup the tracker
         """
 
-        for _t in self.trackers.values():
-            for _u in _t:
-                _u.finalize()
+        for _t in self.curve_trackers:
+            _t.finalize()
 
         self.remove_node(self.groups['EDIT'], self.get_node())
         self.remove_node(self.groups['DRAG'], self.get_node())
