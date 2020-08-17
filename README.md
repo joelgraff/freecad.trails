@@ -30,7 +30,11 @@ This workbench is being developed to provide functionality specific to Transport
 Download and extract the ZIP file into the `.FreeCAD/Mod` folder or use git to clone into `.FreeCAD/Mod`
 
 ### Dependencies
-FreeCAD-Trails depends on the [pivy_trackers 2D geometry library] https://github.com/joelgraff/pivy_trackers to run.  This library provides low-level 2D rendering support through Python for FreeCAD.
+FreeCAD-Trails depends on the [pivy_trackers 2D geometry library] https://github.com/joelgraff/pivy_trackers and my own [FreeCAD_python_support] https://github.com/joelgraff/freecad_python_support repo to run.  Pivy_trackers provides low-level 2D rendering support through Python for FreeCAD.  FreeCAD_python_support is a collection of python support functions.  Both are included in the FreeCAD Trails project as submodules.
+
+In order to clone the repo with the complete supporting submodules, invoke git from the /Mod folder at the commandline as follows:
+
+`git clone --recursive https://github.com/joelgraff/freecad.trails.git`
 
 ### For GeoData Functions
 * cv2
