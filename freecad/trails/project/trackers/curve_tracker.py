@@ -25,7 +25,6 @@ Curve tracker class for tracker objects
 
 from pivy_trackers.pivy_trackers.tracker.line_tracker import LineTracker
 from pivy_trackers.pivy_trackers.tracker.polyline_tracker import PolyLineTracker
-from pivy_trackers.pivy_trackers.tracker.box_tracker import BoxTracker
 
 from ...geometry import arc, spiral, support
 
