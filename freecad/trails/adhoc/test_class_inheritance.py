@@ -55,7 +55,7 @@ class D():
 class E(D, C): #Selection
 
     print('E create' )
-    def refresh(self): print('sel refresh')
+    def refresh(self): print('self refresh')
 
     def __init__(self):
 
