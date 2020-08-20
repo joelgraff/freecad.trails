@@ -103,9 +103,6 @@ class CurveTracker(ContextTracker, Style, Drag):
 
         self.param_tracker.set_visibility()
 
-        print('\n\t-=-=-= CONSTRUCTED',self.name, '\n')
-        #self.base.dump(self.base.root)
-
     def find_geometry(self, name):
         """
         Find the geometry specified by name
@@ -194,27 +191,26 @@ class CurveTracker(ContextTracker, Style, Drag):
 
         if not arc_obj:
             arc_obj = self.arc
+        else:
+            self.arc = arc.Arc(arc.get_parameters(arc_obj))
 
-        self.arc = arc.Arc(arc.get_parameters(arc_obj))
+        if not all([self.arc.start, self.arc.end, self.arc.center]):
+            self.arc = arc.Arc(arc.get_parameters(arc_obj))
+
         _points = arc.get_points(self.arc, _dtype=tuple)
-        _coordinate = self.drag_copy.getChild(0).getChild(2).getChild(1)
-        _coordinate.point.setValues(_points)
 
-        #self.c_tracker.update(_points)
+        if self.drag_copy:
+            _coordinate = self.drag_copy.getChild(0).getChild(2).getChild(1)
+            _coordinate.point.setValues(_points)
 
-        #if self.update_cb:
-         #   self.update_cb()
+        else:
 
-        #if groups:
-        #    self.groups = groups
-        #    self.line.numVertices.setValues(0, len(groups), groups)
+            self.c_tracker.update(_points)
 
-        #if self.coordinates:
-         #   self.center = TupleMath.mean(self.coordinates)
+            _pts = [
+                tuple(self.arc.start), tuple(self.arc.center), tuple(self.arc.end)]
 
-        #if self.text and self.text.is_visible():
-        #    self._update_text()
-
+            self.param_tracker.update(_pts)
 
     def _update_text(self):
         """
@@ -244,6 +240,10 @@ class CurveTracker(ContextTracker, Style, Drag):
         Start of drag operations
         """
 
+        #abort as the drag has alredy been set up.
+        if self.drag_copy:
+            return
+
         self.drag_copy = self.base.copy().getChild(0).getChild(5)
         Drag.drag_tracker.insert_no_drag(self.drag_copy)
 
@@ -272,6 +272,8 @@ class CurveTracker(ContextTracker, Style, Drag):
         """
 
         self.text_copies = []
+        self.drag_copy = None
+        print(self.name, 'after_drag')
         #super().after_drag(user_data)
 
     def drag_mouse_event(self, user_data, event_cb):
