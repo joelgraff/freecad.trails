@@ -22,13 +22,16 @@ When presenting or publishing ASTER GDEM data, I agree to include "ASTER GDEM is
 Because there are known inaccuracies and artifacts in the data set, please use the product with awareness of its limitations. The data are provided "as is" and neither NASA nor METI/ERSDAC will be responsible for any damages resulting from use of the data.
 '''
 
+import time
+
+import FreeCAD
+
 from .say import errorDialog
 
 from .transversmercator import TransverseMercator
 
 import gdal
 from gdalconst import * 
-
 
 import WebGui
 import Points
@@ -181,7 +184,7 @@ def mydialog():
 
 	app=MyApp()
 	from . import miki
-	miki=gmiki.Miki()
+	miki = miki.Miki()
 
 	miki.app=app
 	app.root=miki

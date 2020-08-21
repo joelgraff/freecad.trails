@@ -7,15 +7,21 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
+import numpy as np
+import os
+import random
+import time
+from laspy.file import File
+
+import FreeCAD
+import FreeCAD as App
+import FreeCADGui as Gui
+import Mesh
+import Part
+import Points
 
 from .say import sayexc
 
-import Points
-import time
-from laspy.file import File
-import numpy as np
-import Mesh
-import random
 
 
 def import_lidar(fn,obj,createPCL=False,useOrigin=False):
@@ -396,6 +402,7 @@ class MyApp(object):
 
 	def getfn(self):
 		''' get the filename dialog'''
+		from PySide import QtGui
 		ddir="/media/thomas/b08575a9-0252-47ca-971e-f94c20b33801/geodat_DATEN/las_lee_county"
 		fileName = QtGui.QFileDialog.getOpenFileName(None,u"Open File",ddir);
 		print(fileName)

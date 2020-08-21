@@ -81,7 +81,7 @@ def ComboViewShowWidget(widget, tabMode=False):
 def creatorFunction(name):
 	'''generates a python code string for the creation of a Qt/Part/So-Object'''
 
-	print ("create object",name)
+	# print ("create object",name)
 	if name.startswith('Part.'):
 		[_, c] = name.split('.')
 		return "App.activeDocument().addObject('Part::" + c + "','test')"

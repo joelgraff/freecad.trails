@@ -9,9 +9,18 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
-from .say import say,sayErr,sayexc,sayW
-import Points
 import time
+
+import FreeCAD as App
+
+import Part
+import Points
+
+from .say import say
+from .say import sayErr
+from .say import sayexc
+from .say import sayW
+
 
 def setNice(flag=True): 
 	''' make smooth skins by setting the MeshDeviation to 0.05'''
