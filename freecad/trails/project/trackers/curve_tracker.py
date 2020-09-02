@@ -154,7 +154,7 @@ class CurveTracker(ContextTracker, Style, Drag):
         _arc.direction = self.arc.direction
         _arc.pi = self.arc.pi
 
-        self.arc = _arc
+        self.arc = arc.Arc(arc.get_parameters(_arc))
 
     def show_markers(self):
         """
@@ -186,8 +186,6 @@ class CurveTracker(ContextTracker, Style, Drag):
         """
         Override of Geometry method
         """
-
-        #super().update(coordinates=coordinates, matrix=matrix, notify=notify)
 
         if not arc_obj:
             arc_obj = self.arc

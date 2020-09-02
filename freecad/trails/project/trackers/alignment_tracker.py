@@ -56,7 +56,8 @@ class AlignmentTracker(ContextTracker):
         self.curve_trackers = []
         self.model = self.alignment.model.data
         self.datum = self.model.get('meta').get('Start')
-        self.last_rebuild = None
+        self.last_update = None
+        self.pi_nodes = []
 
         #build a list of coordinates from curves in the geometry
         _nodes = [tuple(self.datum)]
@@ -71,10 +72,19 @@ class AlignmentTracker(ContextTracker):
 
         for _l in self.alignment_tracker.lines:
 
+            _j = 0
+
             for _m in _l.markers:
 
                 _m.name = 'PI_' + str(_i)
                 _i += 1
+
+                if not _j:
+                    self.pi_nodes.append(_m)
+                    j = +1
+
+        #keep a local list of each marker / pi node
+        self.pi_nodes.append(self.alignment_tracker.lines[-1].markers[-1])
 
         _curves = [Arc(_v) for _v in self.alignment.get_curves()]
 
@@ -83,12 +93,24 @@ class AlignmentTracker(ContextTracker):
                 CurveTracker('curve_' + str(_i), _curve, self.base))
 
         _lines = self.alignment_tracker.lines
-        _max = len(_lines) - 1
 
         #iterate the curves, then the alignment lines, adding the
         #starting marker on each line to the full drag callbacks
         for _i, _c in enumerate(self.curve_trackers):
 
+            for _j in range(_i,_i+3):
+                self.pi_nodes[_j].before_drag_callbacks.append(_c.before_drag)
+
+        for _m in self.pi_nodes:
+
+            _m.on_drag_callbacks.append(self.on_drag_tracker)
+            _m.after_drag_callbacks.append(self.after_drag_tracker)
+
+        self.set_visibility()
+
+        return
+
+        if False:
             _p = None
             _n = None
 
@@ -101,7 +123,6 @@ class AlignmentTracker(ContextTracker):
             for _j in range(_i, min(_i+3, _max)):
 
                 for _m in _lines[_j].markers:
-                    print('APPEND TO MARKER', _j)
 
                     for _v in [_p, _c, _n]:
 
@@ -155,6 +176,10 @@ class AlignmentTracker(ContextTracker):
         by recaluclating it afresh
         """
 
+        if not self.alignment_tracker.points:
+
+            self.alignment_tracker.points = self.alignment_tracker.get_coordinates()
+
         _names = ['PI', 'start', 'center', 'end']
         _has_name = [_v in user_data.obj.name for _v in _names]
         _pi_nums = [int(s) for s in user_data.obj.name if s.isdigit()]
@@ -171,6 +196,7 @@ class AlignmentTracker(ContextTracker):
         """
 
         self.drag_copy = None
+        self.alignment_tracker.points = None
 
         for _c in self.curve_trackers:
             _c.drag_copy = None
@@ -183,27 +209,33 @@ class AlignmentTracker(ContextTracker):
 
         _xlate = matrix.getValue()[3]
 
-        if _xlate == self.last_rebuild:
-            return _result
+        if _xlate == self.last_update:
+            return
+
+        self.last_update=_xlate
 
         if  not pi_nums:
-            return _result
+            return
 
         _pi_num = pi_nums[0]
 
-        _bearing = SimpleNamespace(inbound=None, outbound=None)
+        _bearing = SimpleNamespace(prev=None, next=None)
         _pi = SimpleNamespace(prev=None, cur=None, next=None)
         _tan = SimpleNamespace(prev=None, next=None)
 
         _pi.cur = TupleMath.add(self.alignment_tracker.points[_pi_num], _xlate)
+        _pi_max = len(self.alignment_tracker.points)
 
-        _pi_range = list(range(_pi_num - 2, _pi_num + 3))
+        #defines a range of five PI's to iterate, centered on the current PI
+        _pi_range = tuple(range(_pi_num-2, _pi_num + 3))
 
-        _pi_points = [self.alignment_tracker.points[_v]\
-            if 0 <= _v < len(self.alignment_tracker.points) else None\
-                for _v in _pi_range]
+        _pi_points = [self.alignment_tracker.points[_v]
+                        if 0 <= _v < _pi_max else None
+                            for _v in _pi_range]
 
         _pi_points[2] = _pi.cur
+
+        print('\n\tPI DATA\n\t', _pi_range, _pi_points)
 
         _tan_len = []
         _pprev = None
@@ -237,6 +269,13 @@ class AlignmentTracker(ContextTracker):
         #iterate the curves to be changed by the change in PI and update their bearings
 
         _i = 0
+
+        #advance to the first non-negative index
+        for _j in _pi_range:
+            if _j < 0:
+                _i += 1
+            else:
+                break
 
         for _c in self.curve_trackers[
             max(0, _pi_num-2):min(_pi_num + 1, len(self.curve_trackers))]:
@@ -466,7 +505,6 @@ class AlignmentTracker(ContextTracker):
 
         for _i in range(0, len(self.trackers['Tangents']) - 1):
 
-            print(type(_curves[_i]))
             _ct = CurveTracker(
                 name='test' + str(_i),
                 curve=_curves[_i],
