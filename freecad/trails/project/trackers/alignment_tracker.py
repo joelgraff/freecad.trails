@@ -70,6 +70,7 @@ class AlignmentTracker(ContextTracker):
 
         _i = 0
 
+        #build list of PI nodes from marker trackers
         for _l in self.alignment_tracker.lines:
 
             _j = 0
@@ -83,7 +84,6 @@ class AlignmentTracker(ContextTracker):
                     self.pi_nodes.append(_m)
                     j = +1
 
-        #keep a local list of each marker / pi node
         self.pi_nodes.append(self.alignment_tracker.lines[-1].markers[-1])
 
         _curves = [Arc(_v) for _v in self.alignment.get_curves()]
@@ -94,49 +94,27 @@ class AlignmentTracker(ContextTracker):
 
         _lines = self.alignment_tracker.lines
 
-        #iterate the curves, then the alignment lines, adding the
-        #starting marker on each line to the full drag callbacks
+        #Add dragging callbacks to the markers and lines
         for _i, _c in enumerate(self.curve_trackers):
 
+            #before drag for markes
             for _j in range(_i,_i+3):
                 self.pi_nodes[_j].before_drag_callbacks.append(_c.before_drag)
+
+            #before drag for lines
+            for _j in range(max(0, _i - 1), min((_i + 2), len(_lines))):
+                _lines[_j].before_drag_callbacks.append(_c.before_drag)
+
+        #line and node on_drag/after_drag callbacks
+        for _l in _lines:
+
+            _l.on_drag_callbacks.append(self.on_drag_tracker)
+            _l.after_drag_callbacks.append(self.after_drag_tracker)
 
         for _m in self.pi_nodes:
 
             _m.on_drag_callbacks.append(self.on_drag_tracker)
             _m.after_drag_callbacks.append(self.after_drag_tracker)
-
-        self.set_visibility()
-
-        return
-
-        if False:
-            _p = None
-            _n = None
-
-            if _i > 0:
-                _p = self.curve_trackers[_i - 1]
-
-            if _i < _max - 1:
-                _n = self.curve_trackers[_i + 1]
-
-            for _j in range(_i, min(_i+3, _max)):
-
-                for _m in _lines[_j].markers:
-
-                    for _v in [_p, _c, _n]:
-
-                        if _v:
-                            _m.before_drag_callbacks.append(_v.before_drag)
-
-                    _m.on_drag_callbacks.append(self.on_drag_tracker)
-                    _m.after_drag_callbacks.append(self.after_drag_tracker)
-
-        #add the end marker on the last line
-        _lines[-1].markers[-1].on_drag_callbacks.append(self.on_drag_tracker)
-
-        _lines[-1].markers[-1].after_drag_callbacks.append(
-            self.after_drag_tracker)
 
         self.set_visibility()
 
@@ -183,8 +161,12 @@ class AlignmentTracker(ContextTracker):
         _names = ['PI', 'start', 'center', 'end']
         _has_name = [_v in user_data.obj.name for _v in _names]
         _pi_nums = [int(s) for s in user_data.obj.name if s.isdigit()]
-        _matrix = Drag.drag_tracker.get_matrix()
 
+        if 'segment' in user_data.obj.name:
+            _pi_nums.append(_pi_nums[0] + 1)
+
+        _matrix = Drag.drag_tracker.get_matrix()
+        print('\n\tON DRAG TRACKER:', user_data.obj.name,_pi_nums, _matrix.getValue())
         #pi change requires bearing update
         if _has_name[0]:
             self.rebuild_bearings(_matrix, _pi_nums)
@@ -217,10 +199,94 @@ class AlignmentTracker(ContextTracker):
         if  not pi_nums:
             return
 
+        _bearing = SimpleNamespace(prev=None, next=None)
+        _pi = SimpleNamespace(
+            start=0, end=0, points=self.alignment_tracker.points.copy(),
+            bearings=[], count=len(self.alignment_tracker.points))
+
+        _tan = SimpleNamespace(prev=None, next=None)
+
+        _curve = SimpleNamespace(start=0, end=0)
+
+        _pi.start = min(pi_nums)
+        _pi.end = max(pi_nums) + 1
+
+        #apply translation to selected PI's
+        for _i in range(_pi.start, _pi.end):
+            _pi.points[_i] = TupleMath.add(_pi.points[_i], _xlate)
+
+        _curve.start = _pi.start
+        _curve.end = min(_pi.end, len(self.curve_trackers))
+
+        #get range of PI's for bearing calcs
+        _pi.start = max(_pi.start - 2, 0)
+        _pi.end = min(_pi.end + 2, _pi.count)
+        _pi.points = _pi.points[_pi.start:_pi.end]
+        _pi.count = len(_pi.points)
+
+        _tan_len = []
+
+        for _i, _p in enumerate(_pi.points):
+
+            #temporary bearing object
+            _b = SimpleNamespace(inb = None, outb = None)
+
+            #case 1:  Undefined point
+            if _p is None:
+
+                _pi.bearings.append(_b)
+                continue
+
+            #get ahead / back PI's and inbound / outbound bearings
+            if _i < _pi.count - 1:
+
+                _ahead = _pi.points[_i + 1]
+                _b.outb = TupleMath.bearing(TupleMath.subtract(_ahead, _p))
+
+            if _i > 0:
+
+                _back = _pi.points[_i - 1]
+                _b.inb = TupleMath.bearing(TupleMath.subtract(_p, _back))
+
+            _pi.bearings.append(_b)
+
+        print('\n\tPI DATA\n\t', _pi)
+
+        _curve.start = _pi.start
+        _curve.end = _curve.start + _pi.count - 1
+
+        print('curve range = ', _curve)
+        for _i, _c in enumerate(self.curve_trackers[_curve.start:_curve.end]):
+
+            _pos = _i + 1
+
+            print('point / bearing / position = ', _pi.points[_pos], _pi.bearings[_pos], _pos)
+            _b = _pi.bearings[_pos]
+
+            _c.set_pi(_pi.points[_pos])
+            _c.set_bearings(_b.inb, _b.outb)
+
+            _c.update()
+
+    def _rebuild_bearings(self, matrix, pi_nums):
+        """
+        Recaluclate bearings and update curves accordingly
+        """
+
+        _xlate = matrix.getValue()[3]
+
+        if _xlate == self.last_update:
+            return
+
+        self.last_update=_xlate
+
+        if  not pi_nums:
+            return
+
         _pi_num = pi_nums[0]
 
         _bearing = SimpleNamespace(prev=None, next=None)
-        _pi = SimpleNamespace(prev=None, cur=None, next=None)
+        _pi = SimpleNamespace(prev=None, cur=None, next=None, range=None)
         _tan = SimpleNamespace(prev=None, next=None)
 
         _pi.cur = TupleMath.add(self.alignment_tracker.points[_pi_num], _xlate)
