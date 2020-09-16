@@ -92,6 +92,7 @@ class CurveTracker(ContextTracker, Style, Drag):
         self.c_tracker.set_visibility()
 
         _n = ['start', 'center', 'end']
+        _f = [self.on_endpoint_drag, self.on_centerpoint_drag]
         _i = 0
 
         for _l in self.param_tracker.lines:
@@ -102,6 +103,16 @@ class CurveTracker(ContextTracker, Style, Drag):
                 _i += 1
 
         self.param_tracker.set_visibility()
+
+    def on_endpoint_drag(self, user_data):
+        """
+        Update the curve and marker position when an endpoint is dragged
+        """
+
+    def on_centerpoint_drag(self, user_data):
+        """
+        Update the curve and marker position when the centerpoint is dragged
+        """
 
     def find_geometry(self, name):
         """
@@ -197,6 +208,7 @@ class CurveTracker(ContextTracker, Style, Drag):
 
         _points = arc.get_points(self.arc, _dtype=tuple)
 
+        #update the drag copy if in the middle of drag ops
         if self.drag_copy:
             _coordinate = self.drag_copy.getChild(0).getChild(2).getChild(1)
             _coordinate.point.setValues(_points)
@@ -244,6 +256,8 @@ class CurveTracker(ContextTracker, Style, Drag):
 
         self.drag_copy = self.base.copy().getChild(0).getChild(5)
         Drag.drag_tracker.insert_no_drag(self.drag_copy)
+
+        Drag.drag_tracker.set_constraint_geometry(axis=(0.0, 1.0, 0.0))
 
         draw = self.drag_copy.getChild(0).getChild(1).getChild(0)
         color = self.drag_copy.getChild(0).getChild(1).getChild(1)
