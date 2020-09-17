@@ -23,6 +23,8 @@
 Curve tracker class for tracker objects
 """
 
+import math
+
 from pivy_trackers.pivy_trackers.tracker.line_tracker import LineTracker
 from pivy_trackers.pivy_trackers.tracker.polyline_tracker import PolyLineTracker
 
@@ -61,6 +63,7 @@ class CurveTracker(ContextTracker, Style, Drag):
         self.curve_tracker = None
         self.param_tracker = None
         self.arc = None
+        self.axes = [(), (), ()]
 
         self.build_trackers(parent, curve)
 
@@ -89,20 +92,54 @@ class CurveTracker(ContextTracker, Style, Drag):
         self.c_tracker =\
             LineTracker(_name + '_CURVE ', curve.points, self.base)
 
-        self.c_tracker.set_visibility()
-
         _n = ['start', 'center', 'end']
-        _f = [self.on_endpoint_drag, self.on_centerpoint_drag]
+        _f = (
+            self.before_start_drag,
+            self.before_center_drag,
+            self.before_end_drag)
+
         _i = 0
 
         for _l in self.param_tracker.lines:
 
             for _m in _l.markers:
 
-                _m.name = _m.name + '_' + '_n[_i]'
+                _m.before_drag_callbacks.append(_f[_i])
+                _m.name = _m.name + '_' + str(_i)
                 _i += 1
 
         self.param_tracker.set_visibility()
+
+    def before_start_drag(self, user_data):
+        """
+        """
+
+        self.set_axis(self.arc.bearing_in)
+
+    def before_center_drag(self, user_data):
+        """
+        """
+
+        _center_vec = TupleMath.subtract(tuple(self.arc.pi), tuple(self.arc.center))
+
+        self.set_axis(TupleMath.bearing(_center_vec))
+
+    def before_end_drag(self, user_data):
+        """
+        """
+
+        self.set_axis(self.arc.bearing_out)
+
+    def set_axis(self, bearing):
+        """
+        Update the cure points
+        """
+
+        while bearing > math.pi:
+            bearing -= math.pi
+
+        Drag.drag_tracker.set_constraint_geometry(
+            (1.0, 1.0 / math.tan(bearing), 0.0))
 
     def on_endpoint_drag(self, user_data):
         """
@@ -256,8 +293,6 @@ class CurveTracker(ContextTracker, Style, Drag):
 
         self.drag_copy = self.base.copy().getChild(0).getChild(5)
         Drag.drag_tracker.insert_no_drag(self.drag_copy)
-
-        Drag.drag_tracker.set_constraint_geometry(axis=(0.0, 1.0, 0.0))
 
         draw = self.drag_copy.getChild(0).getChild(1).getChild(0)
         color = self.drag_copy.getChild(0).getChild(1).getChild(1)

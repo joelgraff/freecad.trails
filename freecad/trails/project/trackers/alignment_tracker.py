@@ -59,6 +59,9 @@ class AlignmentTracker(ContextTracker):
         self.last_update = None
         self.pi_nodes = []
 
+        self.curve_group = self.base.add_group('Curve_Group')
+        self.alignment_group = self.base.add_group('Alignment_Group')
+
         #build a list of coordinates from curves in the geometry
         _nodes = [tuple(self.datum)]
         _nodes += [tuple(_v.get('PI'))\
@@ -66,7 +69,8 @@ class AlignmentTracker(ContextTracker):
 
         _nodes += [tuple(self.model.get('meta').get('End'))]
 
-        self.alignment_tracker = PolyLineTracker('alignment', _nodes, self.base)
+        self.alignment_tracker =\
+            PolyLineTracker('alignment', _nodes, self.alignment_group)
 
         _i = 0
 
@@ -90,14 +94,14 @@ class AlignmentTracker(ContextTracker):
 
         for _i, _curve in enumerate(_curves):
             self.curve_trackers.append(
-                CurveTracker('curve_' + str(_i), _curve, self.base))
+                CurveTracker('curve_' + str(_i), _curve, self.curve_group))
 
         _lines = self.alignment_tracker.lines
 
         #Add dragging callbacks to the markers and lines
         for _i, _c in enumerate(self.curve_trackers):
 
-            #before drag for markes
+            #before drag for markers
             for _j in range(_i,_i+3):
                 self.pi_nodes[_j].before_drag_callbacks.append(_c.before_drag)
 
