@@ -30,6 +30,8 @@ import math
 from FreeCAD import Vector, Console
 from . import support
 
+from freecad_python_support.tuple_math import TupleMath
+
 class Line():
     """
     Line class object
@@ -112,7 +114,12 @@ class Line():
             Console.PrintError('\nLine.get(): Bad key: ' + key)
             return None
 
-        return getattr(self, self._key_pairs[key])
+        _value = getattr(self, key)
+
+        if _value and key.lower() in ('start', 'end', 'pi', 'center'):
+            _value = tuple(_value)
+
+        return _value
 
     def set(self, key, value):
         """
@@ -123,6 +130,9 @@ class Line():
 
             Console.PrintError('\nLine.set(): Bad key' + key)
             return
+
+        if value and key.lower() in ('start', 'end', 'pi', 'center'):
+            value = tuple(value)
 
         setattr(self, self._key_pairs[key], value)
 
@@ -154,9 +164,9 @@ def get_parameters(line):
 
     if _case_one:
 
-        line_vec = _result.end.sub(_result.start)
+        line_vec = TupleMath.subtract(_result.end, _result.start)
 
-        _length = line_vec.Length
+        _length = TupleMath.length(line_vec)
 
         if _result.length:
             if support.within_tolerance(_result.length, _length):
@@ -170,9 +180,9 @@ def get_parameters(line):
             support.vector_from_angle(_result.bearing).multiply(_result.length)
 
         if _result.start:
-            _result.end = _result.start.add(_vec)
+            _result.end = TupleMath.add(_result.start, _vec)
         else:
-            _result.start = _result.end.add(_vec)
+            _result.start = TupleMath.add(_result.end, _vec)
 
     else:
         print('Unable to calculate parameters for line', _result)
@@ -189,9 +199,11 @@ def get_coordinate(start, bearing, distance):
     Return the x/y coordinate of the line at the specified distance along it
     """
 
-    _vec = support.vector_from_angle(bearing)
+    _vec = TupleMath.bearing_vector(bearing)
 
-    return start.add(_vec.multiply(distance))
+    print('\n\tLINE GET COORDINATE',start, TupleMath.multiply(_vec, distance), _vec, distance)
+
+    return TupleMath.add(start, TupleMath.multiply(_vec, distance))
 
 def get_tangent_vector(line, distance):
     """

@@ -135,7 +135,12 @@ class Arc():
 
             key = self._key_pairs[key]
 
-        return getattr(self, key)
+        _value = getattr(self, key)
+
+        if _value and key in ('start', 'end', 'pi', 'center'):
+            _value = tuple(_value)
+
+        return _value
 
     def set(self, key, value):
         """
@@ -149,6 +154,9 @@ class Arc():
                 """
 
             key = self._key_pairs[key]
+
+            if value and key in ('start', 'end', 'pi', 'center'):
+                value = tuple(value)
 
         setattr(self, key, value)
 
@@ -855,13 +863,14 @@ def get_segments(bearing, deltas, direction, start, radius, _dtype=Vector):
     _right = Vector(_forward.y, -_forward.x, 0.0)
 
     _points = [_dtype(start)]
+    _start = Vector(start)
 
     for delta in deltas:
 
         _dfw = Vector(_forward).multiply(math.sin(delta))
         _drt = Vector(_right).multiply(direction * (1.0 - math.cos(delta)))
 
-        _vec = start.add(_dfw.add(_drt).multiply(radius))
+        _vec = _start.add(_dfw.add(_drt).multiply(radius))
 
         if _dtype is not Vector:
             _vec = _dtype(_vec)

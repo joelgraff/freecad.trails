@@ -96,7 +96,10 @@ class CurveTracker(ContextTracker, Style, Drag):
         _f = (
             self.before_start_drag,
             self.before_center_drag,
-            self.before_end_drag)
+            self.before_end_drag,
+            self.on_start_drag,
+            self.on_center_drag,
+            self.on_end_drag)
 
         _i = 0
 
@@ -105,6 +108,7 @@ class CurveTracker(ContextTracker, Style, Drag):
             for _m in _l.markers:
 
                 _m.before_drag_callbacks.append(_f[_i])
+                _m.on_drag_callbacks.append(_f[_i  + 3])
                 _m.name = _m.name + '_' + str(_i)
                 _i += 1
 
@@ -141,15 +145,35 @@ class CurveTracker(ContextTracker, Style, Drag):
         Drag.drag_tracker.set_constraint_geometry(
             (1.0, 1.0 / math.tan(bearing), 0.0))
 
-    def on_endpoint_drag(self, user_data):
+    def on_start_drag(self, user_data):
+        """
+        Update the curve and marker positoin when the start point is dragged
+        """
+
+        _xlate = user_data.matrix.getValue()[3]
+
+        self.arc.start = TupleMath.add(self.arc.start, _xlate)
+        self.update()
+
+    def on_end_drag(self, user_data):
         """
         Update the curve and marker position when an endpoint is dragged
         """
 
-    def on_centerpoint_drag(self, user_data):
+        _xlate = user_data.matrix.getValue()[3]
+
+        self.arc.end = TupleMath.add(self.arc.end, _xlate)
+        self.update()
+
+    def on_center_drag(self, user_data):
         """
         Update the curve and marker position when the centerpoint is dragged
         """
+
+        _xlate = user_data.matrix.getValue()[3]
+
+        self.arc.center = TupleMath.add(self.arc.center, _xlate)
+        self.update()
 
     def find_geometry(self, name):
         """

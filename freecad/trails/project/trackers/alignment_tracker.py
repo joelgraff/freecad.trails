@@ -169,11 +169,9 @@ class AlignmentTracker(ContextTracker):
         if 'segment' in user_data.obj.name:
             _pi_nums.append(_pi_nums[0] + 1)
 
-        _matrix = Drag.drag_tracker.get_matrix()
-
         #pi change requires bearing update
         if _has_name[0]:
-            self.rebuild_bearings(_matrix, _pi_nums)
+            self.rebuild_bearings(user_data.matrix, _pi_nums)
 
     def after_drag_tracker(self, user_data):
         """

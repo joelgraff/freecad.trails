@@ -29,6 +29,7 @@ from FreeCAD import Vector
 
 from ..project.support import units
 from ..geometry import arc, line, spiral, support
+from freecad_python_support.tuple_math import TupleMath
 
 _CLASS_NAME = 'AlignmentModel'
 _TYPE = 'AlignmentModel'
@@ -114,26 +115,37 @@ class AlignmentModel:
 
         self.data['geometry'] = _geometry
 
+        print('\n\t-=-=-=-= GEO 1 -=-=-=-=-=',_geometry)
         self.validate_datum()
 
+        print('\n\t-=-=-=-= GEO 2 -=-=-=-=-=',_geometry)
         self.validate_stationing()
 
+        print('\n\t-=-=-=-= GEO 3 -=-=-=-=-=',_geometry)
         if not self.validate_bearings():
             return False
 
+        print('\n\t-=-=-=-= GEO 4 -=-=-=-=-=',_geometry)
         self.validate_coordinates(zero_reference)
 
+        print('\n\t-=-=-=-= GEO 5 -=-=-=-=-=',_geometry)
         if not self.validate_alignment():
             return False
 
+        print('\n\t-=-=-=-= GEO 6 -=-=-=-=-=',_geometry)
         #call once more to catch geometry added by validate_alignment()
         self.validate_stationing()
 
+        print('\n\t-=-=-=-= GEO 7 -=-=-=-=-=',_geometry)
         if zero_reference:
             self.zero_reference_coordinates()
 
+        print('\n\t-=-=-=-= GEO 8 -=-=-=-=-=',_geometry)
         #run discretization to force coordinate transformation updates
-        self.discretize_geometry()
+        print(self.discretize_geometry())
+
+
+        print('\n\t-=-=-=-= GEO 10 -=-=-=-=-=',_geometry)
 
         return True
 
@@ -152,11 +164,11 @@ class AlignmentModel:
                 if _geo.get(_key) is None:
                     continue
 
-                _geo[_key] = _geo[_key].sub(datum)
+                _geo[_key] = TupleMath.subtract(_geo[_key], datum)
 
         if self.data.get('meta').get('End'):
             self.data.get('meta')['End'] = \
-                self.data.get('meta').get('End').sub(datum)
+                TupleMath.subtract(self.data.get('meta').get('End'), datum)
 
     def validate_alignment(self):
         """
@@ -169,6 +181,8 @@ class AlignmentModel:
         _prev_coord = self.data['meta']['Start']
         _geo_list = []
 
+        print(_prev_coord)
+
         #iterate through all geometry, looking for coordiante gaps
         #and filling them with line segments.
         for _geo in self.data.get('geometry'):
@@ -177,7 +191,8 @@ class AlignmentModel:
                 continue
 
             _coord = _geo.get('Start')
-            _d = abs(_coord.Length - _prev_coord.Length)
+            print('LINE COND #1', _coord, _prev_coord)
+            _d = abs(TupleMath.length(TupleMath.subtract(_coord, _prev_coord)))
 
             if not support.within_tolerance(_d, tolerance=0.01):
 
@@ -190,6 +205,8 @@ class AlignmentModel:
                         'Bearing': _geo.get('BearingIn'),
                     }).to_dict()
                 )
+
+                print('added line Condition #1:',_geo_list[-1])
 
             _geo_list.append(_geo)
             _prev_coord = _geo.get('End')
@@ -220,6 +237,8 @@ class AlignmentModel:
                     }).to_dict()
                 )
 
+                print('added line Condition #2:',_geo_list[-1])
+
             self.data.get('meta')['Length'] = 0.0
 
         for _geo in _geo_list:
@@ -249,6 +268,8 @@ class AlignmentModel:
                         'BearingOut': bearing
                     }).to_dict()
                 )
+
+                print('added line Condition #3:',_geo_list[-1])
 
         self.data['geometry'] = _geo_list
 
@@ -288,9 +309,11 @@ class AlignmentModel:
 
         if _geo_truth[0]:
             _geo_station = _geo.get('StartStation')
+            print('truth 0', _geo_station)
 
         if _geo_truth[1]:
             _geo_start = _geo.get('Start')
+            print('truth 1', _geo_start)
 
         #---------------------
         #CASE 1
@@ -298,6 +321,7 @@ class AlignmentModel:
         #no datum defined?  use initial geometry or zero defaults
         if not any(_datum_truth):
 
+            print('CASE 1', _geo_station, _geo_start)
             _datum['StartStation'] = _geo_station
             _datum['Start'] = _geo_start
             return
@@ -311,6 +335,7 @@ class AlignmentModel:
 
         if _datum_truth[0]:
 
+            print('CASE 2 \n\t{},\n\t{},\n\t{}'.format(str(_geo_start), str(_datum),str(_geo)))
             _datum['Start'] = _geo_start
 
             #assume geometry start if no geometry station
@@ -329,11 +354,20 @@ class AlignmentModel:
             #assume geometry start if station delta is zero
             if delta:
 
+                _bv = TupleMath.bearing_vector(_geo.get('BearingIn'))
+                _sbv = TupleMath.scale(_bv, delta)
+                _as = TupleMath.subtract(_datum.get('Start'), _sbv)
+
+                print('DELTA DETECTED!\n\tdelta:{}\n\tdatum start:{}\n\tgeo bearing in:{}\n\tbearing vector:{}\n\tscaled vector:{}\n\tactual start:{}'.format(str(delta), str(_datum.get('Start')), str(_geo.get('BearingIn')), str(_bv), str(_sbv), str(_as)))
+
                 #calculate the start based on station delta
-                _datum['Start'] = _datum.get('Start').sub(
-                    support.vector_from_angle(
-                        _geo.get('BearingIn')).multiply(delta)
-                )
+                _datum['Start'] =\
+                    TupleMath.subtract(_datum.get('Start'),
+                    TupleMath.scale(
+                        TupleMath.bearing_vector(_geo.get('BearingIn')),
+                        delta)
+                        #_geo.get('BearingIn')).multiply(delta)
+                    )
 
             return
 
@@ -345,12 +379,14 @@ class AlignmentModel:
         #project the start station
         _datum['StartStation'] = _geo_station
 
+        print('CASE 3', _geo_station, _datum)
         #assume geometry station if no geometry start
         if _geo_truth[1]:
 
             #scale the length to the document units
-            delta = \
-                _geo_start.sub(_datum.get('Start')).Length/units.scale_factor()
+            delta = TupleMath.length(
+                TupleMath.subtract(_geo_start, _datum.get('Start'))
+            ) / units.scale_factor()
 
             _datum['StartStation'] -= delta
 
@@ -373,53 +409,65 @@ class AlignmentModel:
         if zero_reference:
             _prev_geo['End'] = Vector()
 
+        print('\n\t-=-=-=-=-= VALIDATE_COORDINATES -=-=-=-=-=-')
+        print('\tdatum:{}, _prev_geo: {}'.format(str(_datum), str(_prev_geo)))
+
         for _geo in _geo_data:
 
             if not _geo:
                 continue
 
+            print('\n\tPARSING\n\t',_geo)
             #get the vector between the two geometries
             #and the station distance
-            _vector = _geo.get('Start').sub(_prev_geo.get('End'))
+            _vector = TupleMath.subtract(
+                _geo.get('Start'), _prev_geo.get('End'))
+
             _sta_len = abs(
                 _geo.get('InternalStation')[0] \
                     - _prev_geo.get('InternalStation')[1]
             )
 
+            print('\tvector: {}, sta_len: {}'.format(str(_vector), str(_sta_len)))
             #calculate the difference between the vector length
             #and station distance in document units
-            _delta = (_vector.Length - _sta_len) / units.scale_factor()
+            _delta = \
+                (TupleMath.length(_vector) - _sta_len) / units.scale_factor()
 
+            print('\t_delta:', _delta)
             #if the stationing / coordinates are out of tolerance,
             #the error is with the coordinate vector or station
             if not support.within_tolerance(_delta):
-                bearing_angle = support.get_bearing(_vector)
+                bearing_angle = TupleMath.bearing(_vector)
 
                 #fix station if coordinate vector bearings match
                 if support.within_tolerance(
                         bearing_angle, _geo.get('BearingIn')):
 
+
                     _int_sta = (
                         _prev_geo.get('InternalStation')[1] \
-                        + _vector.Length, _geo.get('InternalStation')[0]
+                            + TupleMath.length(_vector),
+                        _geo.get('InternalStation')[0]
                         )
 
                     _start_sta = _prev_geo.get('StartStation') + \
-                                           _prev_geo.get('Length') / \
-                                           units.scale_factor() + \
-                                           _vector.Length/units.scale_factor()
+                                    _prev_geo.get('Length') / \
+                                        units.scale_factor() + \
+                                           TupleMath.length(_vector) / \
+                                               units.scale_factor()
 
                     _geo['InternalStation'] = _int_sta
                     _geo['StartStation'] = _start_sta
 
                 #otherwise, fix the coordinate
                 else:
-                    _bearing_vector = support.vector_from_angle(
-                        _geo.get('BearingIn')
-                    ).multiply(_sta_len)
+                    _bearing_vector = TupleMath.multiply(
+                        TupleMath.bearing_vector(_geo.get('BearingIn')),
+                        _sta_len)
 
                     print('New Start', _prev_geo.get('End'), _bearing_vector)
-                    _start_pt = _prev_geo.get('End').add(_bearing_vector)
+                    _start_pt = TupleMath.add(_prev_geo.get('End'),_bearing_vector)
                     _geo['Start'] = _start_pt
 
             _prev_geo = _geo
@@ -508,7 +556,8 @@ class AlignmentModel:
                 if not geo_coord:
                     geo_coord = prev_coord
 
-                delta = geo_coord.sub(prev_coord).Length
+                delta = TupleMath.length(
+                    TupleMath.subtract(geo_coord, prev_coord))
 
                 if not support.within_tolerance(delta):
                     geo_station += delta / units.scale_factor()
@@ -738,7 +787,7 @@ class AlignmentModel:
 
             _start = _sta[0]
 
-            #if curve starts bfore interval, use start of interval
+            #if curve starts before interval, use start of interval
             if _sta[0] < interval[0]:
                 _start = interval[0]
 
@@ -772,6 +821,7 @@ class AlignmentModel:
                     points.append(_pts)
 
             else:
+                print('\n\t---------------------CALCULATING NON CURVE-----------\n',curve, _arc_int)
                 _start_coord = line.get_coordinate(
                     curve.get('Start'), curve.get('BearingIn'), _arc_int[0]
                 )
@@ -784,6 +834,7 @@ class AlignmentModel:
                     ]
                 )
 
+                print('\n\tADDED POINTS', points[-1])
             last_curve = curve
 
         #store the last point of the first geometry for the next iteration
@@ -800,7 +851,9 @@ class AlignmentModel:
             _v = item
 
             #duplicate points are within a hundredth of a foot of each other
-            if _prev.sub(item[0]).Length < 0.01:
+            if TupleMath.length(
+                TupleMath.subtract(tuple(_prev), tuple(item[0]))) < 0.01:
+
                 _v = item[1:]
 
             result.extend(_v)
@@ -813,12 +866,15 @@ class AlignmentModel:
         )
 
         if not support.within_tolerance(last_tangent):
-            _vec = support.vector_from_angle(last_curve.get('BearingOut'))\
-                .multiply(last_tangent)
+            _vec = TupleMath.bearing_vector(
+                last_curve.get('BearingOut') * last_tangent)
 
-            last_point = result[-1]
+#            _vec = support.vector_from_angle(last_curve.get('BearingOut'))\
+#                .multiply(last_tangent)
 
-            result.append(last_point.add(_vec))
+            last_point = tuple(result[-1])
+
+            result.append(TupleMath.add(last_point, _vec))
 
         #set the end point
         if not self.data.get('meta').get('End'):
