@@ -182,10 +182,6 @@ class AlignmentTracker(ContextTracker):
         self.drag_copy = None
         self.alignment_tracker.points = None
 
-        for _c in self.curve_trackers:
-            _c.drag_copy = None
-            _c.update()
-
     def rebuild_bearings(self, matrix, pi_nums):
         """
         Recaluclate bearings and update curves accordingly

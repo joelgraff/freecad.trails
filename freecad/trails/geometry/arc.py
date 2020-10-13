@@ -410,7 +410,7 @@ def get_bearings(arc, mat, delta, rot):
 def get_lengths(arc, mat):
     """
     Get needed parameters for arc calculation
-    from the user-defined arc and the calculated vector matrix
+    from the user-defined arc or the calculated vector matrix
     """
 
     #[0,1] = Radius; [2, 3] = Tangent, [4] = Middle, [5] = Chord
@@ -425,7 +425,7 @@ def get_lengths(arc, mat):
         _s = [_v for _v in lengths[_i*2:(_i+1)*2] if _v]
 
         #skip the rest if not defined, we'll use the user values
-        if not _s:
+        if not any(_s):
             continue
 
         #duplicate the only calculated length
@@ -546,8 +546,14 @@ def get_missing_parameters(arc, new_arc, points):
 
     _half_delta = new_arc.delta / 2.0
     _cos_half_delta = math.cos(_half_delta)
+    _tan_half_delta = math.tan(_half_delta)
 
     #missing radius requires middle ordinate (or PI / Center coords)
+    if not new_arc.get('Radius'):
+
+        if new_arc.get('Tangent'):
+            new_arc.set('Radius', new_arc.get('Tangent') / _tan_half_delta)
+
     if not new_arc.get('Radius'):
 
         #attempt to assign middle length of curve
@@ -555,9 +561,6 @@ def get_missing_parameters(arc, new_arc, points):
 
             if points[2] and points[3]:
                 new_arc.middle = points[3].sub(points[2]).Length
-
-            elif arc.tangent:
-                new_arc.middle = arc.tangent / math.sin(arc.delta / 2.0)
 
         #build radius from external, middle ordinate or middle length
         if new_arc.middle:
@@ -569,13 +572,13 @@ def get_missing_parameters(arc, new_arc, points):
         elif new_arc.external:
             new_arc.radius = new_arc.external / ((1/_cos_half_delta) - 1)
 
-        #abort if unable to determine radius
-        if not new_arc.radius:
-            return None
+    #abort if unable to determine radius
+    if not new_arc.radius:
+        return None
 
-        if not new_arc.middle:
-            new_arc.middle = \
-                new_arc.radius * (_cos_half_delta + (1/_cos_half_delta))
+    if not new_arc.middle:
+        new_arc.middle = \
+            new_arc.radius * (_cos_half_delta + (1/_cos_half_delta))
 
     #pre-calculate values and fill in remaining parameters
     #radius = new_arc.get('Radius')
@@ -591,7 +594,7 @@ def get_missing_parameters(arc, new_arc, points):
         new_arc.middle_ordinate = new_arc.radius * (1.0 - _cos_half_delta)
 
     if not new_arc.tangent:
-        new_arc.tangent = new_arc.radius * math.tan(_half_delta)
+        new_arc.tangent = new_arc.radius * _tan_half_delta
 
     if not new_arc.chord:
         new_arc.chord = 2.0 * new_arc.radius * math.sin(_half_delta)
@@ -693,7 +696,6 @@ def get_parameters(source_arc, as_dict=True):
 
     mat = get_scalar_matrix(_vecs)
     _p = get_lengths(_result, mat)
-
     assert(_p), """
         Invalid curve: cannot determine radius / tangent lengths.\nArc:\n{}
         """.format(str(_result))

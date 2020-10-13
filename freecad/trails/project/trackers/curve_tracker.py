@@ -24,6 +24,7 @@ Curve tracker class for tracker objects
 """
 
 import math
+from types import SimpleNamespace
 
 from pivy_trackers.pivy_trackers.tracker.line_tracker import LineTracker
 from pivy_trackers.pivy_trackers.tracker.polyline_tracker import PolyLineTracker
@@ -65,6 +66,8 @@ class CurveTracker(ContextTracker, Style, Drag):
         self.arc = None
         self.axes = [(), (), ()]
 
+        self.drag_start_point = None
+
         self.build_trackers(parent, curve)
 
         self.set_visibility()
@@ -77,103 +80,196 @@ class CurveTracker(ContextTracker, Style, Drag):
         """
         _name = self.name
 
-        if not curve.curve_type:
-            _name += curve.type
-
         self.arc = curve
         self.arc.points = arc.get_points(self.arc, _dtype=tuple)
 
         self.param_tracker = PolyLineTracker(
             _name + '_radius',
             [tuple(curve.start), tuple(curve.center), tuple(curve.end)],
-            self.base
-            )
+            self.base, is_adjustable=False)
 
-        self.c_tracker =\
-            LineTracker(_name + '_CURVE ', curve.points, self.base)
+        _line_names = ['start_radius', 'end_radius']
+        _point_names = ['start', 'center', 'end']
 
-        _n = ['start', 'center', 'end']
-        _f = (
-            self.before_start_drag,
-            self.before_center_drag,
-            self.before_end_drag,
-            self.on_start_drag,
-            self.on_center_drag,
-            self.on_end_drag)
+        _j = 0
 
-        _i = 0
+        for _i, _l in enumerate(self.param_tracker.lines):
 
-        for _l in self.param_tracker.lines:
+            _l.update_after_drag = False
+            _l.name = self.name + "_" + _line_names[_i]
 
             for _m in _l.markers:
 
-                _m.before_drag_callbacks.append(_f[_i])
-                _m.on_drag_callbacks.append(_f[_i  + 3])
-                _m.name = _m.name + '_' + str(_i)
-                _i += 1
+                _m.update_after_drag = False
+                _m.name = self.name + "_" + _point_names[_j]
+                _j += 1
+
+        self.c_tracker =\
+            LineTracker(_name + '_arc ', curve.points, self.base)
+
+        self.c_tracker.update_after_drag = False
+        self.c_tracker.is_draggable = False
+
+        #build list of all trackers and append curve callbacks to them
+        _t = [self.c_tracker]
+
+        for _l in self.param_tracker.lines:
+            _t.append(_l)
+
+            for _m in _l.markers:
+                _t.append(_m)
+
+        for _v in _t:
+
+            _v.before_drag_callbacks.append(self.before_drag)
+            _v.on_drag_callbacks.append(self.on_drag)
+            _v.after_drag_callbacks.append(self.after_drag)
 
         self.param_tracker.set_visibility()
 
-    def before_start_drag(self, user_data):
+    def after_drag(self, user_data):
         """
-        """
-
-        self.set_axis(self.arc.bearing_in)
-
-    def before_center_drag(self, user_data):
-        """
+        End-of-drag operations
         """
 
-        _center_vec = TupleMath.subtract(tuple(self.arc.pi), tuple(self.arc.center))
+        self.text_copies = []
+        self.drag_copy = None
+        self.drag_start_point = None
 
-        self.set_axis(TupleMath.bearing(_center_vec))
+        self.update()
 
-    def before_end_drag(self, user_data):
+    def on_drag(self, user_data):
+
+        _xlate = user_data.matrix.getValue()[3]
+        _point = Drag.drag_tracker.drag_position
+
+        for _v in ['start', 'center', 'end']:
+
+            if _v in user_data.obj.name:
+                self.arc.set(_v, _point)
+
+            elif _v == 'center' and 'arc' in user_data.obj.name:
+                self.arc.set(
+                    'center', TupleMath.add(self.drag_start_point, _xlate))
+
+            else:
+                self.arc.set(_v, None)
+
+        self.arc.radius = None
+        self.arc.tangent = None
+
+        self.update()
+
+    def before_drag(self, user_data):
         """
+        Start of drag operations
         """
 
-        self.set_axis(self.arc.bearing_out)
+        #abort as the drag has alredy been set up.
+        if self.drag_copy:
+            return
 
-    def set_axis(self, bearing):
+        self.setup_drag_tracker_geometry()
+        self.setup_drag_references(user_data.obj.name)
+
+        user_data.obj.drag_center = self.drag_center
+
+    def setup_drag_references(self, nam):
         """
-        Update the cure points
+        Set parameters to be referenced during on_drag operations
         """
 
-        while bearing > math.pi:
-            bearing -= math.pi
+        _point = self.arc.start
+        _bearing = self.arc.bearing_in
+
+        if 'center' in nam or 'arc' in nam:
+
+            _point = self.arc.center
+            _bearing = TupleMath.bearing(
+                TupleMath.subtract(tuple(self.arc.pi), tuple(self.arc.center))
+            )
+
+            if 'arc' in nam:
+
+                _l = len(self.arc.points)
+                _l_2 = int(_l / 2)
+                _point = self.arc.points[_l_2 - 1]
+
+                if (_l % 2):
+                    _point = TupleMath.mean(_point, self.arc.points[_l_2])
+
+                self.drag_start_point = self.arc.center
+
+        elif 'end' in nam:
+
+            _point = self.arc.end
+            _bearing = self.arc.bearing_out
+
+        self.drag_center = _point
+
+        #generate constraint geometry along an axis defined by the bearing
+        while _bearing > math.pi:
+            _bearing -= math.pi
 
         Drag.drag_tracker.set_constraint_geometry(
-            (1.0, 1.0 / math.tan(bearing), 0.0))
+            (1.0, 1.0 / math.tan(_bearing), 0.0))
 
-    def on_start_drag(self, user_data):
+    def setup_drag_tracker_geometry(self):
         """
-        Update the curve and marker positoin when the start point is dragged
-        """
-
-        _xlate = user_data.matrix.getValue()[3]
-
-        self.arc.start = TupleMath.add(self.arc.start, _xlate)
-        self.update()
-
-    def on_end_drag(self, user_data):
-        """
-        Update the curve and marker position when an endpoint is dragged
+        Set up the geometry to be represented in the dragging operation
         """
 
-        _xlate = user_data.matrix.getValue()[3]
+        #build the drag copy data structure
+        self.drag_copy = SimpleNamespace(
+            draw_list=[], color_list=[],
+            marker_coords=[], line_coords=[], curve_coord=None)
 
-        self.arc.end = TupleMath.add(self.arc.end, _xlate)
-        self.update()
+        #get the key graph nodes
+        _start = self.base.copy().getChild(0)
+        _curve = _start.getChild(5)
+        _polyline = _start.getChild(4)
 
-    def on_center_drag(self, user_data):
-        """
-        Update the curve and marker position when the centerpoint is dragged
-        """
+        #add the root node to the drag tracker for representation only
+        Drag.drag_tracker.insert_no_drag(_start)
 
-        _xlate = user_data.matrix.getValue()[3]
+        #append the styling nodes
+        self.drag_copy.draw_list.append(
+            _curve.getChild(0).getChild(1).getChild(0))
 
-        self.arc.center = TupleMath.add(self.arc.center, _xlate)
-        self.update()
+        self.drag_copy.color_list.append(
+            _curve.getChild(0).getChild(1).getChild(1))
+
+        #get the curve coordinate node
+        self.drag_copy.curve_coord = _curve.getChild(0).getChild(2).getChild(1)
+
+        #get style and coordinate nodes for the markers and lines
+        for _i in (0, 1, 2, 9, 10):
+
+            _base = _polyline.getChild(0).getChild(_i).getChild(0)
+
+            self.drag_copy.draw_list.append(_base.getChild(1).getChild(0))
+            self.drag_copy.color_list.append(_base.getChild(1).getChild(1))
+
+            _node = _base.getChild(2).getChild(1)
+
+            if _i < 9:
+                self.drag_copy.marker_coords.append(_node)
+
+            else:
+                self.drag_copy.line_coords.append(_node)
+
+        #set the default styles
+        style = CoinStyles.DASHED
+        style.color = CoinStyles.Color.BLUE
+
+        for _d in self.drag_copy.draw_list:
+
+            _d.lineWidth = style.line_width
+            _d.style = style.style
+            _d.linePattern = style.line_pattern
+
+        for _c in self.drag_copy.color_list:
+            _c.rgb = style.color
 
     def find_geometry(self, name):
         """
@@ -254,13 +350,14 @@ class CurveTracker(ContextTracker, Style, Drag):
 
         self.line.numVertices.setValues(0, len(groups), groups)
 
-    def update(self, arc_obj=None):
+    def update(self, arc_obj=None, notify=True):
         """
         Override of Geometry method
         """
 
         if not arc_obj:
             arc_obj = self.arc
+
         else:
             self.arc = arc.Arc(arc.get_parameters(arc_obj))
 
@@ -271,17 +368,32 @@ class CurveTracker(ContextTracker, Style, Drag):
 
         #update the drag copy if in the middle of drag ops
         if self.drag_copy:
-            _coordinate = self.drag_copy.getChild(0).getChild(2).getChild(1)
+
+            _coordinate = self.drag_copy.curve_coord
             _coordinate.point.setValues(_points)
+
+            _pts = (    tuple(self.arc.start),
+                        tuple(self.arc.center),
+                        tuple(self.arc.end)
+                    )
+
+            for _i, _c in enumerate(self.drag_copy.line_coords):
+                _c.point.setValues((_pts[_i], _pts[_i + 1]))
 
         else:
 
-            self.c_tracker.update(_points)
+            self.c_tracker.update(arc_obj.points, notify='10')
 
             _pts = [
                 tuple(self.arc.start), tuple(self.arc.center), tuple(self.arc.end)]
 
             self.param_tracker.update(_pts)
+
+            _geo = self.top.getChild(5).getChild(0).getChild(2)
+            todo.delay(self.base.dump, _geo)
+
+            _fn = lambda x: print(self.view_state.get_matrix(x).getValue())
+            todo.delay(_fn, _geo.getChild(1))
 
     def _update_text(self):
         """
@@ -306,47 +418,6 @@ class CurveTracker(ContextTracker, Style, Drag):
         for _v in self.text_copies:
             self.set_text(text, _v)
 
-    def before_drag(self, user_data):
-        """
-        Start of drag operations
-        """
-
-        #abort as the drag has alredy been set up.
-        if self.drag_copy:
-            return
-
-        self.drag_copy = self.base.copy().getChild(0).getChild(5)
-        Drag.drag_tracker.insert_no_drag(self.drag_copy)
-
-        draw = self.drag_copy.getChild(0).getChild(1).getChild(0)
-        color = self.drag_copy.getChild(0).getChild(1).getChild(1)
-
-        style = CoinStyles.DASHED
-        style.color = CoinStyles.Color.BLUE
-
-        draw.lineWidth = style.line_width
-        draw.style = style.style
-        draw.linePattern = style.line_pattern
-
-        color.rgb = style.color
-
-    def on_drag(self, user_data):
-        """
-        During drag operations
-        """
-
-        #super().on_drag(user_data)
-
-    def after_drag(self, user_data):
-        """
-        End-of-drag operations
-        """
-
-        self.text_copies = []
-        self.drag_copy = None
-        print(self.name, 'after_drag')
-        #super().after_drag(user_data)
-
     def drag_mouse_event(self, user_data, event_cb):
         """
         Override of Drag.drag_mouse_event()
@@ -361,49 +432,6 @@ class CurveTracker(ContextTracker, Style, Drag):
         """
 
         self.link_geometry(marker, index, 0)
-
-    def update_drag_center(self):
-        """
-        Override of Drag method
-        """
-
-        #default to the current cursor position
-        _pt = self.mouse_state.world_position
-
-        #average the coordinates to calculate the centerpoint
-        if self.drag_style == self.DragStyle.AVERAGE:
-
-            _pt = (0.0, 0.0, 0.0)
-
-            for _p in self.coordinates:
-                _pt = TupleMath.add(_pt, _p)
-
-            _pt = TupleMath.multiply(_pt, 0.5)
-
-        #use Manhattan distance to find nearest endpoint
-        elif self.drag_style == self.DragStyle.ENDPOINT:
-
-            _dist = -1
-            _cursor = self.mouse_state.world_position
-            _pt = _cursor
-
-            _fn = lambda p1, p2: abs(_pt[0] - _p[0])\
-                        + abs(_pt[1] - _p[1])\
-                        + abs(_pt[2 - _p[2]])
-
-            for _p in self.coordinates:
-
-                if _dist == -1:
-                    _dist = _fn(_cursor, _p)
-                    continue
-
-                _new_dist = _fn(_cursor, _p)
-
-                if _new_dist < _dist:
-                    _dist = _new_dist
-                    _pt = _p
-
-        return _pt
 
     def reset(self):
         """
