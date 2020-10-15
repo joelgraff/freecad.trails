@@ -37,7 +37,7 @@ from collections.abc import Iterable
 from freecad_python_support.tuple_math import TupleMath
 
 from pivy_trackers.pivy_trackers.coin.coin_enums import NodeTypes as Nodes
-from pivy_trackers.pivy_trackers.coin.coin_styles import CoinStyles
+from pivy_trackers.pivy_trackers.coin.coin_styles import CoinStyles as Styles
 from pivy_trackers.pivy_trackers.coin.todo import todo
 
 from pivy_trackers.pivy_trackers.tracker.marker_tracker import MarkerTracker
@@ -68,6 +68,7 @@ class CurveTracker(ContextTracker, Style, Drag):
 
         self.drag_start_point = None
         self.drag_axis = None
+        self.is_invalid = False
 
         self.build_trackers(parent, curve)
 
@@ -136,6 +137,7 @@ class CurveTracker(ContextTracker, Style, Drag):
         self.text_copies = []
         self.drag_copy = None
         self.drag_start_point = None
+        self.is_inavlid = False
 
         self.update()
 
@@ -164,6 +166,9 @@ class CurveTracker(ContextTracker, Style, Drag):
         self.arc.tangent = None
 
         self.update()
+
+        for _cb in self.on_drag_callbacks:
+            _cb(user_data)
 
     def before_drag(self, user_data):
         """
@@ -271,8 +276,8 @@ class CurveTracker(ContextTracker, Style, Drag):
                 self.drag_copy.line_coords.append(_node)
 
         #set the default styles
-        style = CoinStyles.DASHED
-        style.color = CoinStyles.Color.BLUE
+        style = Styles.DASHED
+        style.color = Styles.Color.BLUE
 
         for _d in self.drag_copy.draw_list:
 
@@ -392,6 +397,14 @@ class CurveTracker(ContextTracker, Style, Drag):
             for _i, _c in enumerate(self.drag_copy.line_coords):
                 _c.point.setValues((_pts[_i], _pts[_i + 1]))
 
+            _color = Styles.Color.BLUE
+
+            if self.is_invalid:
+                _color = Styles.Color.RED
+
+            for _s in self.drag_copy.color_list:
+                _s.rgb = _color
+
         else:
 
             self.c_tracker.update(arc_obj.points, notify='10')
@@ -401,11 +414,11 @@ class CurveTracker(ContextTracker, Style, Drag):
 
             self.param_tracker.update(_pts)
 
-            _geo = self.top.getChild(5).getChild(0).getChild(2)
-            todo.delay(self.base.dump, _geo)
+            #_geo = self.top.getChild(5).getChild(0).getChild(2)
+            #todo.delay(self.base.dump, _geo)
 
-            _fn = lambda x: print(self.view_state.get_matrix(x).getValue())
-            todo.delay(_fn, _geo.getChild(1))
+            #_fn = lambda x: print(self.view_state.get_matrix(x).getValue())
+            #todo.delay(_fn, _geo.getChild(1))
 
     def _update_text(self):
         """
@@ -462,5 +475,6 @@ class CurveTracker(ContextTracker, Style, Drag):
         self.line = None
         self.drag_style = None
         self.linked_geometry = None
+        self.is_invalid = False
 
         super().finish()

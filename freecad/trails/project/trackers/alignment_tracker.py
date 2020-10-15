@@ -58,7 +58,7 @@ class AlignmentTracker(ContextTracker):
         self.datum = self.model.get('meta').get('Start')
         self.last_update = None
         self.pi_nodes = []
-
+        self.drag_points = None
         self.curve_group = self.base.add_group('Curve_Group')
         self.alignment_group = self.base.add_group('Alignment_Group')
 
@@ -113,6 +113,9 @@ class AlignmentTracker(ContextTracker):
                 _lines[_j].before_drag_callbacks.append(_c.before_drag)
                 _lines[_j].after_drag_callbacks.append(_c.after_drag)
 
+            #append curve validation during drag ops against alignment tangents
+            _c.on_drag_callbacks.append(self.validate_curve_drag)
+
         #line and node on_drag/after_drag callbacks
         for _l in _lines:
 
@@ -127,6 +130,58 @@ class AlignmentTracker(ContextTracker):
             _m.after_drag_callbacks.append(self.after_drag_tracker)
 
         self.set_visibility()
+
+    def validate_curve_drag(self, user_data):
+        """
+        Validates the changes to the curves, noting errors when
+        curves overlap or exceed tangent lengths
+        """
+
+        _prev_tan = 0.0
+        _prev_curve = None
+        _curve = None
+        _max = len(self.curve_trackers)
+
+        _pp = self.drag_points[0]
+        _lines = []
+
+        for _p in self.drag_points[1:]:
+            _lines.append(TupleMath.length(_p, _pp))
+            _pp = _p
+
+        for _i, _l in enumerate(_lines):
+
+            _is_invalid = False
+
+            #the last segment doesn't need _prev_curve
+            if _i < _max:
+                _curve = self.curve_trackers[_i]
+
+            else:
+
+                #abort if last curve has already been marked invalid
+                if _curve.is_invalid:
+                    return
+
+                _prev_curve = None
+
+            #calculate sum of tangnets
+            _tan = _curve.arc.tangent
+
+            if _prev_curve:
+                _tan += _prev_curve.arc.tangent
+
+            #curve tangents must not exceed segment length
+            _is_invalid = _tan > _l
+
+            #invalidate accordingly.
+            _curve.is_invalid = _is_invalid
+
+            if _prev_curve and not _prev_curve.is_invalid:
+                _prev_curve.is_invalid = _is_invalid
+
+            _prev_curve = _curve
+
 
     def before_drag_tracker(self, user_data):
         """
@@ -157,6 +212,7 @@ class AlignmentTracker(ContextTracker):
 
         #pi change requires bearing update
         self.rebuild_bearings(user_data.matrix, _pi_nums)
+        self.validate_curve_drag(None)
 
     def after_drag_tracker(self, user_data):
         """
@@ -243,6 +299,8 @@ class AlignmentTracker(ContextTracker):
 
             _c.update()
 
+        self.drag_points = _pi.points
+
     #------------
     # LEGACY
     #------------
@@ -255,81 +313,6 @@ class AlignmentTracker(ContextTracker):
         self.status_bar.showMessage(
             MouseState().component + ' ' + str(tuple(MouseState().coordinates))
         )
-
-    def validate_curves(self, curves):
-        """
-        Valuidate the list of curves against each other and their PI's
-        """
-
-        _last_tan = 0.0
-        _max = len(curves) - 1
-
-        for _i, _v in enumerate(curves):
-
-            _next_tan = 0.0
-
-            if _i < _max:
-
-                _dc = curves[_i + 1]
-
-                if _dc.drag_curve:
-                    _next_tan = _dc.drag_curve.get('Tangent')
-
-            _v.validate(_last_tan, _next_tan)
-            _last_tan = _v.drag_curve.get('Tangent')
-
-    def end_drag(self):
-        """
-        Override base fucntion
-        """
-
-        super().end_drag()
-
-        self.drag_curves = []
-
-    def post_select_event(self, arg):
-        """
-        Event to force wires to re-test selection state on button down
-        """
-
-        if MouseState().button1.state == 'UP':
-            return
-
-        for _v in self.trackers['Tangents']:
-            _v.validate_selection()
-
-    def button_event(self, arg):
-        """
-        Override base button actions
-        """
-
-        # dispatch an empty message if nothing is selected
-        # abort if not multi-selecting or button up
-        if MouseState().button1.state == 'UP':
-
-            _sel = [_v.is_selected() for _v in self.trackers['Curves']]
-
-            if not any(_sel):
-                self.notify(Events.ALIGNMENT.EVENTS, [None, None])
-
-            super().button_event(arg)
-            return
-
-        _pick = MouseState().component
-
-        for _v in self.trackers['Nodes']:
-
-            if not _v.is_visible():
-                _v.set_visibility(True)
-
-        #node selection is multi-select only
-        if 'NODE' in _pick and MouseState().ctrlDown:
-
-            #get the nodes we need to select, and select them
-            _idx = int(_pick.split('-')[1]) + 1
-
-            for _v in self.trackers['Nodes'][_idx:]:
-                SelectState().select(_v, force=True)
 
     def build_trackers(self):
         """
@@ -354,83 +337,6 @@ class AlignmentTracker(ContextTracker):
         self.trackers['Curves'] = self._build_curve_trackers(_names)
 
         #self._signalize_trackers()
-
-    def _signalize_trackers(self):
-        """
-        Regsiter trackers appropriately as subscribers to one another
-        """
-
-        #subscribe node trackers to alignment and vice-versa
-        for _v in self.trackers['Nodes']:
-            self.register(_v, Events.NODE.UPDATE)
-
-        #subscribe curves
-        for _v in self.trackers['Curves']:
-
-            _v.register(self, [Events.CURVE.UPDATED, Events.CURVE.SELECTED])
-            self.register(_v, Events.CURVE.UPDATE)
-
-    def _build_node_trackers(self, nodes, names):
-        """
-        Generate the node trackers for the alignment
-        """
-
-        _result = []
-
-        #node trackers
-        for _i, _pt in enumerate(nodes):
-
-            _tr = NodeTracker(names=names + ['NODE-' + str(_i)], point=_pt)
-            _result.append(_tr)
-
-        _result[0].is_end_node = True
-        _result[-1].is_end_node = True
-
-        return _result
-
-    def _build_wire_trackers(self, names):
-        """
-        Generate the tangent trackers for the alignment
-        """
-
-        _result = []
-
-        #wire trackers - Tangents
-        for _i in range(0, len(self.trackers['Nodes']) - 1):
-
-            _nodes = self.trackers['Nodes'][_i:_i + 2]
-
-            _wt = WireTracker(names=names + ['WIRE-' + str(_i)])
-
-            _wt.set_selectability(False)
-            _wt.set_points(nodes=_nodes)
-            _wt.update()
-
-            _result.append(_wt)
-
-        return _result
-
-    def _build_curve_trackers(self, names):
-        """
-        Generate the curve trackers for the alignment
-        """
-
-        _curves = [Arc(_v) for _v in self.alignment.get_curves()]
-        _result = []
-
-        for _i in range(0, len(self.trackers['Tangents']) - 1):
-
-            _ct = CurveTracker(
-                name='test' + str(_i),
-                curve=_curves[_i],
-                pi_list=self.trackers['Nodes'][_i:_i+3],
-                parent=self.node,
-                view = Gui.ActiveDocument.ActiveView
-            )
-
-            _result.append(_ct)
-
-        return _result
 
     def finalize(self):
         """
