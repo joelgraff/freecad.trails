@@ -99,58 +99,41 @@ class AlignmentTracker(ContextTracker):
         _lines = self.alignment_tracker.lines
 
         #Add dragging callbacks to the markers and lines
+        #on_drag callbacks omitted as the alignment tracker needs to run first
+        #and call curve updates driectly.
         for _i, _c in enumerate(self.curve_trackers):
 
-            #before drag for markers
+            #before/after drag for markers
             for _j in range(_i,_i+3):
                 self.pi_nodes[_j].before_drag_callbacks.append(_c.before_drag)
+                self.pi_nodes[_j].after_drag_callbacks.append(_c.after_drag)
 
-            #before drag for lines
-            for _j in range(max(0, _i - 1), min((_i + 2), len(_lines))):
+            #before/after drag for lines
+            for _j in range(max(0, _i - 1), min((_i + 3), len(_lines))):
                 _lines[_j].before_drag_callbacks.append(_c.before_drag)
+                _lines[_j].after_drag_callbacks.append(_c.after_drag)
 
         #line and node on_drag/after_drag callbacks
         for _l in _lines:
 
+            _l.before_drag_callbacks.append(self.before_drag_tracker)
             _l.on_drag_callbacks.append(self.on_drag_tracker)
             _l.after_drag_callbacks.append(self.after_drag_tracker)
 
         for _m in self.pi_nodes:
 
+            _m.before_drag_callbacks.append(self.before_drag_tracker)
             _m.on_drag_callbacks.append(self.on_drag_tracker)
             _m.after_drag_callbacks.append(self.after_drag_tracker)
 
         self.set_visibility()
 
-    def notify(self, event_type, message):
+    def before_drag_tracker(self, user_data):
         """
-        Override subscriber base implementation
+        Callback to set alignment behaviors for the DragTracker
         """
 
-        #during dragging operations, sink all notifications here.
-        #at the end of drag ops, pass on update to panel
-        #if multiple nodes were selected, compute transformation
-        #and pass on to panel
-
-        super().notify(event_type, message, False)
-
-        if event_type & Events.CURVE.UPDATED == event_type:
-
-            if not self.drag_curves:
-
-                _idx = int(message[0].split('-')[1])
-                _first = max(0, _idx - 1)
-                _last = min(len(self.trackers['Curves']), _idx + 2)
-
-                for _v in self.trackers['Curves'][_first:_last]:
-                    self.drag_curves.append(_v)
-
-            self.validate_curves(self.drag_curves)
-
-            self.dispatch(Events.ALIGNMENT.UPDATED, message, False)
-
-        if event_type == Events.ALIGNMENT.UPDATE:
-            self.dispatch(Events.NODE.UPDATE, message, False)
+        Drag.drag_tracker.set_constraint_geometry()
 
     def on_drag_tracker(self, user_data):
         """
@@ -162,16 +145,18 @@ class AlignmentTracker(ContextTracker):
 
             self.alignment_tracker.points = self.alignment_tracker.get_coordinates()
 
-        _names = ['PI', 'start', 'center', 'end']
-        _has_name = [_v in user_data.obj.name for _v in _names]
-        _pi_nums = [int(s) for s in user_data.obj.name if s.isdigit()]
+        _names = ['PI', 'segment']
+
+        if not any(_v in user_data.obj.name for _v in _names):
+            return
+
+        _pi_nums = [int(''.join(filter(str.isdigit, user_data.obj.name)))]
 
         if 'segment' in user_data.obj.name:
-            _pi_nums.append(_pi_nums[0] + 1)
+            _pi_nums.append(_pi_nums[0] - 1)
 
         #pi change requires bearing update
-        if _has_name[0]:
-            self.rebuild_bearings(user_data.matrix, _pi_nums)
+        self.rebuild_bearings(user_data.matrix, _pi_nums)
 
     def after_drag_tracker(self, user_data):
         """
@@ -181,6 +166,9 @@ class AlignmentTracker(ContextTracker):
 
         self.drag_copy = None
         self.alignment_tracker.points = None
+
+        for _l in self.alignment_tracker.lines:
+            _l.update()
 
     def rebuild_bearings(self, matrix, pi_nums):
         """
@@ -192,7 +180,7 @@ class AlignmentTracker(ContextTracker):
         if _xlate == self.last_update:
             return
 
-        if  not pi_nums:
+        if not pi_nums:
             return
 
         self.last_update=_xlate
@@ -204,9 +192,14 @@ class AlignmentTracker(ContextTracker):
         _pi.start = min(pi_nums)
         _pi.end = max(pi_nums) + 1
 
+        _p = self.view_state.transform_points(
+            _pi.points[_pi.start:_pi.end], matrix)
+
         #apply translation to selected PI's
-        for _i in range(_pi.start, _pi.end):
-            _pi.points[_i] = TupleMath.add(_pi.points[_i], _xlate)
+        #for _i in range(_pi.start, _pi.end):
+        #    _pi.points[_i] = TupleMath.add(_pi.points[_i], _xlate)
+
+        _pi.points[_pi.start:_pi.end] = _p
 
         #define data structures
         _bearing = SimpleNamespace(prev=None, next=None)
@@ -240,7 +233,7 @@ class AlignmentTracker(ContextTracker):
             _pi.bearings.append(_b)
 
         _curve = SimpleNamespace(
-            start=_pi.start, end = _pi.start + _pi.count - 1)
+            start=max(_pi.start, 0), end=_pi.end - 1)
 
         for _i, _c in enumerate(self.curve_trackers[_curve.start:_curve.end]):
 

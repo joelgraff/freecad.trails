@@ -67,6 +67,7 @@ class CurveTracker(ContextTracker, Style, Drag):
         self.axes = [(), (), ()]
 
         self.drag_start_point = None
+        self.drag_axis = None
 
         self.build_trackers(parent, curve)
 
@@ -146,11 +147,15 @@ class CurveTracker(ContextTracker, Style, Drag):
         for _v in ['start', 'center', 'end']:
 
             if _v in user_data.obj.name:
+
                 self.arc.set(_v, _point)
 
             elif _v == 'center' and 'arc' in user_data.obj.name:
-                self.arc.set(
-                    'center', TupleMath.add(self.drag_start_point, _xlate))
+
+                if self.drag_axis:
+                    _xlate = TupleMath.project(_xlate[0:3], self.drag_axis)
+
+                self.arc.set(_v, TupleMath.add(self.drag_start_point, _xlate))
 
             else:
                 self.arc.set(_v, None)
@@ -172,19 +177,22 @@ class CurveTracker(ContextTracker, Style, Drag):
         self.setup_drag_tracker_geometry()
         self.setup_drag_references(user_data.obj.name)
 
-        user_data.obj.drag_center = self.drag_center
+        #if this object is the object directly picked, set the drag center
+        #if self.name == user_data.obj.name:
+        #    user_data.obj.drag_center = self.drag_center
 
     def setup_drag_references(self, nam):
         """
         Set parameters to be referenced during on_drag operations
         """
 
-        _point = self.arc.start
+        _drag_ctr = self.arc.start
         _bearing = self.arc.bearing_in
+        _origin = None
 
         if 'center' in nam or 'arc' in nam:
 
-            _point = self.arc.center
+            _drag_ctr = self.arc.center
             _bearing = TupleMath.bearing(
                 TupleMath.subtract(tuple(self.arc.pi), tuple(self.arc.center))
             )
@@ -193,26 +201,30 @@ class CurveTracker(ContextTracker, Style, Drag):
 
                 _l = len(self.arc.points)
                 _l_2 = int(_l / 2)
-                _point = self.arc.points[_l_2 - 1]
+                _drag_ctr = self.arc.points[_l_2 - 1]
 
                 if (_l % 2):
-                    _point = TupleMath.mean(_point, self.arc.points[_l_2])
-
+                    _drag_ctr = TupleMath.mean(_drag_ctr, self.arc.points[_l_2])
+                _drag_ctr = self.arc.center
                 self.drag_start_point = self.arc.center
+                _origin = self.arc.center
 
         elif 'end' in nam:
 
-            _point = self.arc.end
+            _drag_ctr = self.arc.end
             _bearing = self.arc.bearing_out
 
-        self.drag_center = _point
+        self.drag_center = _drag_ctr
+
+        if not _origin:
+            _origin = _drag_ctr
 
         #generate constraint geometry along an axis defined by the bearing
         while _bearing > math.pi:
             _bearing -= math.pi
 
-        Drag.drag_tracker.set_constraint_geometry(
-            (1.0, 1.0 / math.tan(_bearing), 0.0))
+        self.drag_axis = (1.0, 1.0 /    math.tan(_bearing), 0.0)
+        Drag.drag_tracker.set_constraint_geometry(self.drag_axis,_origin)
 
     def setup_drag_tracker_geometry(self):
         """
