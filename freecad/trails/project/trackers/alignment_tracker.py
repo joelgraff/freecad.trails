@@ -131,6 +131,8 @@ class AlignmentTracker(ContextTracker):
 
         self.set_visibility()
 
+        self.drag_points = self.alignment_tracker.points
+
     def validate_curve_drag(self, user_data):
         """
         Validates the changes to the curves, noting errors when
