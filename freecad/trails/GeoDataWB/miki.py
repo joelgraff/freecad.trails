@@ -25,7 +25,6 @@ import FreeCADGui
 from .say import sayexc, say, sayW
 
 from PySide import QtGui, QtCore
-import PySide
 
 import re
 
@@ -262,7 +261,7 @@ def VerticalGroup(title=''):
 	w.setTitle("vertical layout group")
 	layout = QtGui.QVBoxLayout()
 	layout.setAlignment(QtCore.Qt.AlignLeft)
-#	label = QtGui.QLabel("HUWAS2")   
+#	label = QtGui.QLabel("HUWAS2")
 #	layout.addWidget(label)
 #	verticalSpacer = QtGui.QSpacerItem(10, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
 #	layout.addItem(verticalSpacer)
@@ -332,12 +331,12 @@ class Miki(object):
 
 	def __init__(self):
 		## objects of huhu
-		self.objects = [] 
+		self.objects = []
 		## the widget of the generated Qt sctructure
 		self.widget = None
-		## the ids of the input/output sub-widgets 
+		## the ids of the input/output sub-widgets
 		self.ids = {}
-		
+
 		##\cond
 		self.anchors = {}
 		self.indents = []
@@ -559,7 +558,7 @@ class Miki(object):
 							sayW("nicht implementierter typ  Ayy")
 							sayW([v,cn])
 							sayW(l)
-							ex='' 
+							ex=''
 
 						exec(ex)
 						continue
@@ -844,7 +843,7 @@ class MikiDockWidget(QtGui.QDockWidget):
 		self.setTitleBarWidget(self.title_widget)
 
 def getMainWindowByName(name):
-	'''returns a main window of a given Title, 
+	'''returns a main window of a given Title,
 	if there is no such main window an new main window is created'''
 
 	if name == 'FreeCAD':
@@ -885,7 +884,7 @@ class MyWidget(QtGui.QLabel):
 		self.tabname=nae
 
 def MyTabWidget(title=''):
-	
+
 	'''create the dialog as a main window (not a dock widget)'''
 
 	w = _MyTabWidget()
@@ -1008,13 +1007,13 @@ class PicWidget(QtGui.QLabel):
 		image_profile = QtGui.QImage(im.data, im.shape[1], im.shape[0], cc, QtGui.QImage.Format_RGB888)
 	#	image_profile = QtGui.QImage(image_path) #QImage object
 		if frame.sizeX!=0 and frame.sizeY!=0:
-			image_profile = image_profile.scaled(frame.sizeX,frame.sizeY, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation) # To scale image for example and keep its Aspect Ration    
+			image_profile = image_profile.scaled(frame.sizeX,frame.sizeY, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation) # To scale image for example and keep its Aspect Ration
 		label_Image.setPixmap(QtGui.QPixmap.fromImage(image_profile))
 		frame.setMinimumSize(QtCore.QSize( im.shape[1], im.shape[0]))
 		if frame.sizeX!=0 and frame.sizeY!=0:
 			frame.setMinimumSize(QtCore.QSize(frame.sizeX,frame.sizeY))
 		label_Image.setAlignment(QtCore.Qt.AlignCenter)
-		
+
 		return frame
 
 ##use case
@@ -1041,7 +1040,7 @@ def createMikiGui(layout, app):
 	appi.root = miki
 
 	rca = miki.run(layout)
-	
+
 	return rca
 
 
@@ -1186,7 +1185,7 @@ VerticalLayoutTab:
 			QtGui.QPushButton:
 		QtGui.QPushButton:
 	VerticalGroup:
-	setSpacer: 
+	setSpacer:
 	'''
 
 

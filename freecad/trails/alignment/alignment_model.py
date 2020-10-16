@@ -332,10 +332,6 @@ class AlignmentModel:
             #assume geometry start if station delta is zero
             if delta:
 
-                _bv = TupleMath.bearing_vector(_geo.get('BearingIn'))
-                _sbv = TupleMath.scale(_bv, delta)
-                _as = TupleMath.subtract(_datum.get('Start'), _sbv)
-
                 #calculate the start based on station delta
                 _datum['Start'] =\
                     TupleMath.subtract(_datum.get('Start'),

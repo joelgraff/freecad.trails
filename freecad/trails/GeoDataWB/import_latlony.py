@@ -7,7 +7,7 @@
 #-- GNU Lesser General Public License (LGPL)
 #-------------------------------------------------
 
-import FreeCAD, FreeCADGui
+import FreeCAD
 from .transversmercator import TransverseMercator
 from .say import say, sayexc
 from PySide import QtGui
@@ -91,7 +91,7 @@ trackstring='''
 
 def import_latlon(filename,orig,hi,op):
 	# content=trackstring
-	
+
 #	fn='/home/microelly2/FCB/b202_gmx_tracks/im_haus.gpx'
 #	filename='/home/microelly2/FCB/b202_gmx_tracks/neufang.gpx'
 
@@ -102,7 +102,7 @@ def import_latlon(filename,orig,hi,op):
 
 	# outdoor inn ...
 	tm.lat,tm.lon = 50.3736049,11.191643
-	
+
 	if orig != 'auto':
 		yy=orig.split(' ')
 		say(yy)

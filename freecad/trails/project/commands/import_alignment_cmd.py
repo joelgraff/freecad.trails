@@ -23,7 +23,7 @@
 """
 Command to being alignment importing
 """
-import os
+
 import FreeCADGui as Gui
 
 from ..tasks.alignment.import_alignment_task import ImportAlignmentTask

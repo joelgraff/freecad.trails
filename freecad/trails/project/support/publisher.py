@@ -30,7 +30,6 @@ from collections.abc import Iterable
 from inspect import getmro
 
 from ..support.const import Const
-from ..support.singleton import Singleton
 
 class _EVT(Const):
 
@@ -105,7 +104,7 @@ class PublisherEvents(Const):
     #   SELECT / SELECTED - Object to be / has been selected
     #   UPDATE / UPDATED - Object to be / has been updated
     #
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     enum = _EVT.get_enum()
 

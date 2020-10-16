@@ -28,7 +28,6 @@ import math
 import numpy
 
 from FreeCAD import Vector, Console
-from freecad_python_support.tuple_math import TupleMath
 from freecad_python_support.const import Const
 
 from ..project.support import units, utils

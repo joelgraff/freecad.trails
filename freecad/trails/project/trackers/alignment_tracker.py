@@ -29,12 +29,11 @@ import FreeCADGui as Gui
 
 from types import SimpleNamespace
 
-from freecad.trails import ContextTracker, PolyLineTracker, LineTracker, Drag
+from freecad.trails import ContextTracker, PolyLineTracker, Drag
 from .curve_tracker import CurveTracker
 
 from freecad_python_support.tuple_math import TupleMath
 
-from ...geometry import arc
 from ...geometry.arc import Arc
 
 class AlignmentTracker(ContextTracker):
@@ -86,7 +85,7 @@ class AlignmentTracker(ContextTracker):
 
                 if not _j:
                     self.pi_nodes.append(_m)
-                    j = +1
+                    _j = +1
 
         self.pi_nodes.append(self.alignment_tracker.lines[-1].markers[-1])
 
@@ -139,7 +138,6 @@ class AlignmentTracker(ContextTracker):
         curves overlap or exceed tangent lengths
         """
 
-        _prev_tan = 0.0
         _prev_curve = None
         _curve = None
         _max = len(self.curve_trackers)
@@ -258,10 +256,6 @@ class AlignmentTracker(ContextTracker):
         #    _pi.points[_i] = TupleMath.add(_pi.points[_i], _xlate)
 
         _pi.points[_pi.start:_pi.end] = _p
-
-        #define data structures
-        _bearing = SimpleNamespace(prev=None, next=None)
-        _tan = SimpleNamespace(prev=None, next=None)
 
         #get range of PI's for bearing calcs
         _pi.start = max(_pi.start - 2, 0)

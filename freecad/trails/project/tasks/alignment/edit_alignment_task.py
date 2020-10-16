@@ -31,7 +31,6 @@ from FreeCAD import Vector
 import FreeCADGui as Gui
 
 import DraftTools
-from DraftGui import todo
 
 from .... import resources
 

@@ -29,19 +29,12 @@ from types import SimpleNamespace
 from pivy_trackers.pivy_trackers.tracker.line_tracker import LineTracker
 from pivy_trackers.pivy_trackers.tracker.polyline_tracker import PolyLineTracker
 
-from ...geometry import arc, spiral, support
+from ...geometry import arc
 
-from pivy_trackers.pivy_trackers.coin import coin_utils
-
-from collections.abc import Iterable
 from freecad_python_support.tuple_math import TupleMath
 
-from pivy_trackers.pivy_trackers.coin.coin_enums import NodeTypes as Nodes
 from pivy_trackers.pivy_trackers.coin.coin_styles import CoinStyles as Styles
-from pivy_trackers.pivy_trackers.coin.todo import todo
 
-from pivy_trackers.pivy_trackers.tracker.marker_tracker import MarkerTracker
-from pivy_trackers.pivy_trackers.tracker.geometry_tracker import GeometryTracker
 from pivy_trackers.pivy_trackers.tracker.context_tracker import ContextTracker
 
 from pivy_trackers.pivy_trackers.trait.drag import Drag

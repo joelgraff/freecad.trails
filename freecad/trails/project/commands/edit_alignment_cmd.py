@@ -29,12 +29,10 @@ import FreeCADGui as Gui
 
 from ... import resources
 
-from PySide import QtCore
 from ..tasks.alignment import edit_alignment_task
 
 from ..support.view_state import ViewState
 from DraftTools import Modifier
-from . import camera_zoom as cz
 
 class EditAlignmentCmd(Modifier):
     """
