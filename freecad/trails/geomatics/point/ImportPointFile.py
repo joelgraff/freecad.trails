@@ -25,7 +25,7 @@ import FreeCAD
 import FreeCADGui
 from PySide import QtCore, QtGui
 from freecad.trails import ICONPATH
-from ..project.support import utils
+from ...project.support import utils
 import csv
 import os
 

@@ -25,7 +25,7 @@ import FreeCADGui
 from FreeCAD import Base
 from PySide import QtCore, QtGui
 from freecad.trails import ICONPATH
-from ..project.support import utils
+from ...project.support import utils
 import Mesh
 import os
 
@@ -184,7 +184,7 @@ class CreateSurface:
         data = []
         for i in test:
             data.append([i[0] - nbase.x, i[1] - nbase.y, i[2] - nbase.z])
-        Data = np.array(data) 
+        Data = np.array(data)
 
         # Create delaunay triangulation
         tri = scipy.spatial.Delaunay(Data[:, :2])
