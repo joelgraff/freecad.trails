@@ -208,7 +208,7 @@ class TrailsWorkbench(Gui.Workbench):
         from .geomatics.point import ImportPointFile, ExportPoints
         from .geomatics.surface import CreateSurface, EditSurface, Contours
         from .geomatics.section import CreateGuideLines
-        from .geomatics import GeoData
+        from .geomatics import GeoDataWB
         from .design.project.commands \
             import import_alignment_cmd, edit_alignment_cmd,\
                 trails_guide_cmd

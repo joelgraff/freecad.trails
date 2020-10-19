@@ -35,7 +35,7 @@ from ..project.support import properties, units
 from ..project.project_observer import ProjectObserver
 from ..project.xml.alignment_exporter import AlignmentExporter
 from ..project.xml.alignment_importer import AlignmentImporter
-from .. import resources
+from freecad.trails import resources
 
 def get():
     """

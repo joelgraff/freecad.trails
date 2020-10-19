@@ -45,7 +45,7 @@ import FreeCAD as App
 import FreeCADGui as Gui
 
 from ...project.support import document_properties
-from ... import resources
+from .... import resources
 
 #encoding error trap
 ENCODING = None

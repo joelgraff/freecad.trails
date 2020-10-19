@@ -32,7 +32,7 @@ import FreeCADGui as Gui
 
 import DraftTools
 
-from .... import resources
+from freecad.trails import resources
 
 from ....alignment import alignment
 

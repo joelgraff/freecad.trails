@@ -35,7 +35,7 @@ import FreeCADGui as Gui
 from . import import_xml_subtask #, ImportCsvSubtask
 
 from ...support import utils
-from .... import resources
+from freecad.trails import resources
 from ....alignment import alignment_group, alignment
 
 class ImportAlignmentTask:
