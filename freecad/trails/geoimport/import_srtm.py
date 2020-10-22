@@ -357,7 +357,7 @@ class MyApp(object):
 		say([l,b,s])
 		import WebGui
 #		WebGui.openBrowser( "http://www.openstreetmap.org/#map=19/"+str(b)+'/'+str(l))
-		import GeoDataWB.import_osm
+		from . import import_osm
 		geodat.import_osm.import_osm(float(b),float(l),float(s)/10,self.root.ids['progb'],self.root.ids['status'])
 
 

@@ -80,7 +80,7 @@ class TrailsWorkbench(Gui.Workbench):
                 'cmd': [
                     'Import Point File',
                     'Export Points',
-                    'Geodata Tools'
+                    'Geo Import Tools'
                     ]
             },
 
@@ -140,7 +140,7 @@ class TrailsWorkbench(Gui.Workbench):
                 'type_id': 'Mesh::Feature'
             },
 
-            'Geodata Tools': {
+            'Geo Import Tools': {
                 'gui': self.group,
                 'cmd': [
                     'Import OSM Map',
@@ -158,7 +158,7 @@ class TrailsWorkbench(Gui.Workbench):
                     'ElevationGrid',
                     'Import EMIR',
                ],
-               'tooltip': 'Geodata Tools'
+               'tooltip': 'Geo Import Tools'
             },
 
             'Drawing Tools': {
@@ -208,7 +208,7 @@ class TrailsWorkbench(Gui.Workbench):
         from .point import ImportPointFile, ExportPoints
         from .surface import CreateSurface, EditSurface, Contours
         from .section import CreateGuideLines
-        from . import GeoData
+        from . import geoimport_gui
         from .project.commands \
             import import_alignment_cmd, edit_alignment_cmd,\
                 trails_guide_cmd
