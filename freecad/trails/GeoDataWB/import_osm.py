@@ -439,7 +439,7 @@ MainWindow:
 		setFixedHeight: 600
 		setFixedWidth: 730
 		setFixedWidth: 654
-		move:  PySide.QtCore.QPoint(3000,100)
+		move:  QtCore.QPoint(3000,100)
 
 
 		HorizontalLayout:
@@ -528,7 +528,7 @@ MainWindow:
 		QtGui.QSlider:
 			id:'s'
 			setFixedHeight: 20
-			setOrientation: PySide.QtCore.Qt.Orientation.Horizontal
+			setOrientation: QtCore.Qt.Orientation.Horizontal
 			setMinimum: 0
 			setMaximum: 40
 			setTickInterval: 1
@@ -595,7 +595,7 @@ class MyApp(object):
 		import_osm2(b, l, float(s)/10, self.root.ids['progb'], self.root.ids['status'], False)
 
 	def showHelpBox(self):
-		msg = PySide.QtGui.QMessageBox()
+		msg = QtGui.QMessageBox()
 		msg.setText("<b>Help</b>")
 		msg.setInformativeText(
 			"Import_osm map dialogue box can also accept links from following "

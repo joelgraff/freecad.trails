@@ -109,7 +109,7 @@ MainWindow:
 		id:'main'
 #		setFixedHeight: 600
 		setFixedWidth: 300
-#		move:  PySide.QtCore.QPoint(3000,100)
+#		move:  QtCore.QPoint(3000,100)
 
 		QtGui.QLabel:
 			setText:"C O N F I G U R A T I O N"
