@@ -99,7 +99,7 @@ MainWindow:
 		id:'main'
 		setFixedHeight: 800
 		setFixedWidth: 600
-		move:  PySide.QtCore.QPoint(3000,100)
+		move:  QtCore.QPoint(3000,100)
 
 		QtGui.QLabel:
 			setText:"B U I L D I N G LoD2 -- C O N F I G U R A T I O N"
@@ -152,7 +152,7 @@ MainWindow:
 			setText:"midx"
 		QtGui.QSlider:
 			id:'midx'
-			setOrientation: PySide.QtCore.Qt.Orientation.Horizontal
+			setOrientation: QtCore.Qt.Orientation.Horizontal
 			setMinimum: 0
 			setMaximum: 100
 			setTickInterval: 10
@@ -163,7 +163,7 @@ MainWindow:
 			setText:"wx"
 		QtGui.QSlider:
 			id:'wx'
-			setOrientation: PySide.QtCore.Qt.Orientation.Horizontal
+			setOrientation: QtCore.Qt.Orientation.Horizontal
 			setMinimum: 0
 			setMaximum: 100
 			setTickInterval: 10
@@ -174,7 +174,7 @@ MainWindow:
 			setText:"midy"
 		QtGui.QSlider:
 			id:'midy'
-			setOrientation: PySide.QtCore.Qt.Orientation.Horizontal
+			setOrientation: QtCore.Qt.Orientation.Horizontal
 			setMinimum: 0
 			setMaximum: 100
 			setTickInterval: 10
@@ -185,7 +185,7 @@ MainWindow:
 			setText:"wy"
 		QtGui.QSlider:
 			id:'wy'
-			setOrientation: PySide.QtCore.Qt.Orientation.Horizontal
+			setOrientation: QtCore.Qt.Orientation.Horizontal
 			setMinimum: 0
 			setMaximum: 100
 			setTickInterval: 10

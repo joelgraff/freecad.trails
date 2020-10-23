@@ -211,7 +211,7 @@ MainWindow:
 		id:'main'
 #		setFixedHeight: 600
 		setFixedWidth: 250
-		move:  PySide.QtCore.QPoint(100,100)
+		move:  QtCore.QPoint(100,100)
 
 		QtGui.QLabel:
 			setText:"I m p o r t    S R T M   Elevations"
@@ -357,7 +357,7 @@ class MyApp(object):
 		say([l,b,s])
 		import WebGui
 #		WebGui.openBrowser( "http://www.openstreetmap.org/#map=19/"+str(b)+'/'+str(l))
-		import GeoDataWB.import_osm
+		from . import import_osm
 		geodat.import_osm.import_osm(float(b),float(l),float(s)/10,self.root.ids['progb'],self.root.ids['status'])
 
 
