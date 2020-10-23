@@ -156,8 +156,8 @@ class navigator:
 class import_osm:
 
     def Activated(self):
-        from .geoimport import import_osm
-        import_osm.mydialog()
+        from .guigeoimport import gui_import_osm
+        gui_import_osm.mydialog()
 
     def GetResources(self):
         return {
