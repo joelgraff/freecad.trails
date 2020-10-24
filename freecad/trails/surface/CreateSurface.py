@@ -180,10 +180,9 @@ class CreateSurface:
         # Normalize points
         fpoint = test[0]
         base = FreeCAD.Vector(fpoint[0], fpoint[1], fpoint[2])
-        nbase = utils.rendering_fix(base)
         data = []
         for i in test:
-            data.append([i[0] - nbase.x, i[1] - nbase.y, i[2] - nbase.z])
+            data.append([i[0] - base.x, i[1] - base.y, i[2] - base.z])
         Data = np.array(data) 
 
         # Create delaunay triangulation
@@ -204,7 +203,7 @@ class CreateSurface:
                 MeshList.append(Data[third])
 
         MeshObject = Mesh.Mesh(MeshList)
-        MeshObject.Placement.move(nbase)
+        MeshObject.Placement.move(base)
         SurfaceNameLE = self.IPFui.SurfaceNameLE.text()
         Surface = FreeCAD.ActiveDocument.addObject(
             "Mesh::Feature", SurfaceNameLE)
