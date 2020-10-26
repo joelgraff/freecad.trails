@@ -15,7 +15,6 @@ from PySide import QtGui
 # import FreeCAD
 # import FreeCADGui
 
-from freecad.trails.geoimport import import_osm
 from freecad.trails.geoimport import miki
 from freecad.trails.geoimport.say import say
 
@@ -23,6 +22,22 @@ from freecad.trails.geoimport.say import say
 # the gui backend
 class MyApp(object):
     """execution layer of the Gui"""
+
+    def import_osm(self, lat, lon, bk, progressbar, status, elevation):
+        """
+        import the osm data by the use of import_osm module
+        """
+
+        from freecad.trails.geoimport.import_osm import import_osm2
+        has_finished = import_osm2(
+            lat,
+            lon,
+            bk,
+            progressbar,
+            status,
+            elevation
+        )
+        return has_finished
 
     def run(self, lat, lon):
         """
@@ -32,7 +47,7 @@ class MyApp(object):
         s = self.root.ids["s"].value()
         key = "%0.7f" % (lat) + "," + "%0.7f" % (lon)
         self.root.ids["bl"].setText(key)
-        import_osm.import_osm2(
+        self.import_osm(
             lat,
             lon,
             float(s)/10,
@@ -145,7 +160,7 @@ class MyApp(object):
         s = self.root.ids["s"].value()
         elevation = self.root.ids["elevation"].isChecked()
 
-        rc = import_osm.import_osm2(
+        rc = self.import_osm(
             float(lat),
             float(lon),
             float(s)/10,
@@ -176,7 +191,7 @@ class MyApp(object):
         s = self.root.ids["s"].value()
         elevation = self.root.ids["elevation"].isChecked()
 
-        import_osm.import_osm2(
+        self.import_osm(
             float(lat),
             float(lon),
             float(s)/10,
