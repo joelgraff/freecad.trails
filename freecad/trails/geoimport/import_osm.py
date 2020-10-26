@@ -1,15 +1,49 @@
+# **************************************************************************
+# *                                                                        *
+# *  Copyright (c) 2016 microelly <>                                       *
+# *  Copyright (c) 2020 Bernd Hahnebach <bernd@bimstatik.org               *
+# *                                                                        *
+# *  This program is free software; you can redistribute it and/or modify  *
+# *  it under the terms of the GNU Lesser General Public License (LGPL)    *
+# *  as published by the Free Software Foundation; either version 2 of     *
+# *  the License, or (at your option) any later version.                   *
+# *  for detail see the LICENCE text file.                                 *
+# *                                                                        *
+# *  This program is distributed in the hope that it will be useful,       *
+# *  but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+# *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+# *  GNU Library General Public License for more details.                  *
+# *                                                                        *
+# *  You should have received a copy of the GNU Library General Public     *
+# *  License along with this program; if not, write to the Free Software   *
+# *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
+# *  USA                                                                   *
+# *                                                                        *
+# **************************************************************************
 """
 Import data from OpenStreetMap
 """
 
-import FreeCAD, FreeCADGui, Part
+import json
+import os
+import time
+import urllib.request
 from pivy import coin
+
+import FreeCAD
+import FreeCADGui
+import Part
+
+from . import inventortools
 from . import my_xmlparser
-from .transversmercator import TransverseMercator
-from . import inventortools as inventortools
-from .say import say,sayErr,sayexc,sayW
-import json, urllib.request, time
-from .get_elevation import getHeight, getHeights
+from . import transversmercator
+
+from .get_elevation import getHeight
+from .get_elevation import getHeights
+from .say import say
+from .say import sayErr
+from .say import sayexc
+from .say import sayW
 
 debug = False
 
@@ -55,7 +89,6 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
     bk = 0.5*bk
     dn = FreeCAD.ConfigGet("UserAppData") + "geodat3/"
     fn = dn+str(b)+'-'+str(l)+'-'+str(bk)
-    import os
 
     if not os.path.isdir(dn):
         os.makedirs(dn)
@@ -119,7 +152,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
     maxlat = float(bounds.params['maxlat'])
     maxlon = float(bounds.params['maxlon'])
 
-    tm = TransverseMercator()
+    tm = transversmercator.TransverseMercator()
     tm.lat = 0.5*(minlat+maxlat)
     tm.lon = 0.5*(minlon+maxlon)
 
