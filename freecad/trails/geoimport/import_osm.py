@@ -72,18 +72,18 @@ def organize():
     )
 
     for oj in FreeCAD.activeDocument().Objects:
-        if oj.Label.startswith('building'):
+        if oj.Label.startswith("building"):
             buildings.addObject(oj)
 
-        if oj.Label.startswith('highway') or oj.Label.startswith('way'):
+        if oj.Label.startswith("highway") or oj.Label.startswith("way"):
             highways.addObject(oj)
             oj.ViewObject.Visibility = False
 
-        if oj.Label.startswith('landuse'):
+        if oj.Label.startswith("landuse"):
             landuse.addObject(oj)
             oj.ViewObject.Visibility = False
 
-        if oj.Label.startswith('w_'):
+        if oj.Label.startswith("w_"):
             pathes.addObject(oj)
             oj.ViewObject.Visibility = False
 
@@ -96,11 +96,11 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
         status.setText("get data from openstreetmap.org ...")
         FreeCADGui.updateGui()
 
-    content = ''
+    content = ""
 
     bk = 0.5*bk
     dn = FreeCAD.ConfigGet("UserAppData") + "geodat3/"
-    fn = dn+str(b)+'-'+str(l)+'-'+str(bk)
+    fn = dn+str(b)+"-"+str(l)+"-"+str(bk)
 
     if not os.path.isdir(dn):
         os.makedirs(dn)
@@ -126,7 +126,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
         FreeCAD.t = response
 
         f = open(fn, "w")
-        f.write(response.read().decode('utf8'))
+        f.write(response.read().decode("utf8"))
         f.close()
 
     if elevation:
@@ -155,15 +155,15 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
         status.setText("transform data ...")
         FreeCADGui.updateGui()
 
-    nodes = tree.getiterator('node')
-    ways = tree.getiterator('way')
-    bounds = tree.getiterator('bounds')[0]
+    nodes = tree.getiterator("node")
+    ways = tree.getiterator("way")
+    bounds = tree.getiterator("bounds")[0]
 
     # center of the scene
-    minlat = float(bounds.params['minlat'])
-    minlon = float(bounds.params['minlon'])
-    maxlat = float(bounds.params['maxlat'])
-    maxlon = float(bounds.params['maxlon'])
+    minlat = float(bounds.params["minlat"])
+    minlon = float(bounds.params["minlon"])
+    maxlat = float(bounds.params["maxlat"])
+    maxlon = float(bounds.params["maxlon"])
 
     tm = transversmercator.TransverseMercator()
     tm.lat = 0.5*(minlat+maxlat)
@@ -178,12 +178,12 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
     nodesbyid = {}
 
     for n in nodes:
-        nodesbyid[n.params['id']] = n
+        nodesbyid[n.params["id"]] = n
         ll = tm.fromGeographic(
-            float(n.params['lat']),
-            float(n.params['lon'])
+            float(n.params["lat"]),
+            float(n.params["lon"])
         )
-        points[str(n.params['id'])] = FreeCAD.Vector(
+        points[str(n.params["id"])] = FreeCAD.Vector(
             ll[0]-center[0],
             ll[1]-center[1],
             0.0
@@ -210,7 +210,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
     except Exception:
         sayexc("Beleuchtung 272")
 
-    cam = '''#Inventor V2.1 ascii
+    cam = """#Inventor V2.1 ascii
     OrthographicCamera {
     viewportMapping ADJUST_CAMERA
     orientation 0 0 -1.0001  0.001
@@ -218,12 +218,12 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
     farDistance 10000000000
     aspectRatio 100
     focalDistance 1
-    '''
+    """
     x = 0
     y = 0
     height = 200*bk*10000/0.6
-    cam += '\nposition ' + str(x) + ' ' + str(y) + ' 999\n '
-    cam += '\nheight ' + str(height) + '\n}\n\n'
+    cam += "\nposition " + str(x) + " " + str(y) + " 999\n "
+    cam += "\nheight " + str(height) + "\n}\n\n"
     FreeCADGui.activeDocument().activeView().setCamera(cam)
     FreeCADGui.activeDocument().activeView().viewAxonometric()
     say("Kamera gesetzt")
@@ -241,7 +241,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
     refresh = 1000
 
     for w in ways:
-        wid = w.params['id']
+        wid = w.params["id"]
         building = False
         landuse = False
         highway = False
@@ -265,54 +265,54 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
         # ci is never used
         # ci = ""
 
-        for t in w.getiterator('tag'):
+        for t in w.getiterator("tag"):
             try:
-                if str(t.params['k']) == 'building':
+                if str(t.params["k"]) == "building":
                     building = True
 
-                    if st == '':
-                        st = 'building'
+                    if st == "":
+                        st = "building"
 
-                if str(t.params['k']) == 'landuse':
+                if str(t.params["k"]) == "landuse":
                     landuse = True
-                    st = t.params['k']
-                    nr = t.params['v']
+                    st = t.params["k"]
+                    nr = t.params["v"]
 
-                if str(t.params['k']) == 'highway':
+                if str(t.params["k"]) == "highway":
                     highway = True
-                    st = t.params['k']
+                    st = t.params["k"]
 
-                if str(t.params['k']) == 'addr:city':
+                if str(t.params["k"]) == "addr:city":
                     pass
                     # ci is never used
-                    # ci = t.params['v']
+                    # ci = t.params["v"]
 
-                if str(t.params['k']) == 'name':
-                    nr = t.params['v']
+                if str(t.params["k"]) == "name":
+                    nr = t.params["v"]
 
-                if str(t.params['k']) == 'ref':
-                    nr = t.params['v']+" /"
+                if str(t.params["k"]) == "ref":
+                    nr = t.params["v"]+" /"
 
-                if str(t.params['k']) == 'addr:street':
-                    st2 = " "+t.params['v']
+                if str(t.params["k"]) == "addr:street":
+                    st2 = " "+t.params["v"]
 
-                if str(t.params['k']) == 'addr:housenumber':
-                    nr = str(t.params['v'])
+                if str(t.params["k"]) == "addr:housenumber":
+                    nr = str(t.params["v"])
 
-                if str(t.params['k']) == 'building:levels':
+                if str(t.params["k"]) == "building:levels":
                     if h == 0:
-                        h = int(str(t.params['v']))*1000*3
+                        h = int(str(t.params["v"]))*1000*3
 
-                if str(t.params['k']) == 'building:height':
-                    h = int(str(t.params['v']))*1000
+                if str(t.params["k"]) == "building:height":
+                    h = int(str(t.params["v"]))*1000
 
             except Exception:
                 sayErr("unexpected error")
 
         name = str(st) + st2 + " " + str(nr)
 
-        if name == ' ':
-            name = 'landuse xyz'
+        if name == " ":
+            name = "landuse xyz"
 
         if debug:
             say(("name ", name))
@@ -322,31 +322,31 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
         height = None
         llpoints = []
 
-        for n in w.getiterator('nd'):
-            m = nodesbyid[n.params['ref']]
+        for n in w.getiterator("nd"):
+            m = nodesbyid[n.params["ref"]]
             llpoints.append(
-                [n.params['ref'],
-                 m.params['lat'],
-                 m.params['lon']]
+                [n.params["ref"],
+                 m.params["lat"],
+                 m.params["lon"]]
             )
 
         if elevation:
             say("get heights for " + str(len(llpoints)))
             heights = getHeights(llpoints)
 
-        for n in w.getiterator('nd'):
-            p = points[str(n.params['ref'])]
+        for n in w.getiterator("nd"):
+            p = points[str(n.params["ref"])]
 
             if building and elevation:
                 if not height:
                     try:
-                        key_for_height = m.params['lat']+' '+m.params['lon']
+                        key_for_height = m.params["lat"]+" "+m.params["lon"]
                         height = heights[key_for_height] * 1000 - baseheight
 
                     except Exception:
                         sayErr(
                             "---no height available for {} {}"
-                            .format(m.params['lat'], m.params['lon'])
+                            .format(m.params["lat"], m.params["lon"])
                         )
                         height = 0
 
@@ -360,16 +360,20 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
         z = FreeCAD.ActiveDocument.ActiveObject
         z.Label = "w_"+wid
 
-        if name == ' ':
-            g = FreeCAD.ActiveDocument.addObject("Part::Extrusion", name)
+        if name == " ":
+            g = FreeCAD.ActiveDocument.addObject(
+                "Part::Extrusion", name
+            )
             g.Base = z
             g.ViewObject.ShapeColor = (1.00, 1.00, 0.00)
             g.Dir = (0, 0, 10)
             g.Solid = True
-            g.Label = 'way ex '
+            g.Label = "way ex "
 
         if building:
-            g = FreeCAD.ActiveDocument.addObject("Part::Extrusion", name)
+            g = FreeCAD.ActiveDocument.addObject(
+                "Part::Extrusion", name
+            )
             g.Base = z
             g.ViewObject.ShapeColor = (1.00, 1.00, 1.00)
 
@@ -383,19 +387,21 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
             inventortools.setcolors2(obj)
 
         if landuse:
-            g = FreeCAD.ActiveDocument.addObject("Part::Extrusion", name)
+            g = FreeCAD.ActiveDocument.addObject(
+                "Part::Extrusion", name
+            )
             g.Base = z
 
-            if nr == 'residential':
+            if nr == "residential":
                 g.ViewObject.ShapeColor = (1.00, 0.60, 0.60)
 
-            elif nr == 'meadow':
+            elif nr == "meadow":
                 g.ViewObject.ShapeColor = (0.00, 1.00, 0.00)
 
-            elif nr == 'farmland':
+            elif nr == "farmland":
                 g.ViewObject.ShapeColor = (0.80, 0.80, 0.00)
 
-            elif nr == 'forest':
+            elif nr == "forest":
                 g.ViewObject.ShapeColor = (1.0, 0.40, 0.40)
 
             g.Dir = (0, 0, 0.1)
@@ -403,7 +409,9 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
             g.Solid = True
 
         if highway:
-            g = FreeCAD.ActiveDocument.addObject("Part::Extrusion", "highway")
+            g = FreeCAD.ActiveDocument.addObject(
+                "Part::Extrusion", "highway"
+            )
             g.Base = z
             g.ViewObject.LineColor = (0.00, 0.00, 1.00)
             g.ViewObject.LineWidth = 10
