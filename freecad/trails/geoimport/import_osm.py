@@ -149,7 +149,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
     tree = my_xmlparser.getData(fn)
 
     if debug:
-        say(json.dumps(sd, indent=4))
+        say(json.dumps(tree, indent=4))
 
     if status:
         status.setText("transform data ...")
@@ -262,7 +262,8 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
         st2 = ""
         nr = ""
         h = 0
-        ci = ""
+        # ci is never used
+        # ci = ""
 
         for t in w.getiterator('tag'):
             try:
@@ -282,7 +283,9 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
                     st = t.params['k']
 
                 if str(t.params['k']) == 'addr:city':
-                    ci = t.params['v']
+                    pass
+                    # ci is never used
+                    # ci = t.params['v']
 
                 if str(t.params['k']) == 'name':
                     nr = t.params['v']
