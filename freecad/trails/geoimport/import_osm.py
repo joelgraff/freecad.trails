@@ -183,7 +183,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
         viewprovider = obj.ViewObject
         root = viewprovider.RootNode
         myLight = coin.SoDirectionalLight()
-        myLight.color.setValue(coin.SbColor(0,1,0))
+        myLight.color.setValue(coin.SbColor(0, 1, 0))
         root.insertChild(myLight, 0)
         say("beleuchtung auf grundobjekt eingeschaltet")
 
