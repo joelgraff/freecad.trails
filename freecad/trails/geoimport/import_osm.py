@@ -65,7 +65,7 @@ def organize():
 
         if oj.Label.startswith('highway') or oj.Label.startswith('way'):
             highways.addObject(oj)
-            oj.ViewObject.Visibility=False
+            oj.ViewObject.Visibility = False
 
         if oj.Label.startswith('landuse'):
             landuse.addObject(oj)
@@ -202,7 +202,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
     x = 0
     y = 0
     height = 200*bk*10000/0.6
-    cam += '\nposition ' +str(x) + ' ' + str(y) + ' 999\n '
+    cam += '\nposition ' + str(x) + ' ' + str(y) + ' 999\n '
     cam += '\nheight ' + str(height) + '\n}\n\n'
     FreeCADGui.activeDocument().activeView().setCamera(cam)
     FreeCADGui.activeDocument().activeView().viewAxonometric()
