@@ -54,10 +54,22 @@ def organize():
     GRP_highways, GRP_building, GRP_landuse
     """
 
-    highways = FreeCAD.activeDocument().addObject("App::DocumentObjectGroup", "GRP_highways")
-    landuse = FreeCAD.activeDocument().addObject("App::DocumentObjectGroup", "GRP_landuse")
-    buildings = FreeCAD.activeDocument().addObject("App::DocumentObjectGroup", "GRP_building")
-    pathes = FreeCAD.activeDocument().addObject("App::DocumentObjectGroup", "GRP_pathes")
+    highways = FreeCAD.activeDocument().addObject(
+        "App::DocumentObjectGroup",
+        "GRP_highways"
+    )
+    landuse = FreeCAD.activeDocument().addObject(
+        "App::DocumentObjectGroup",
+        "GRP_landuse"
+    )
+    buildings = FreeCAD.activeDocument().addObject(
+        "App::DocumentObjectGroup",
+        "GRP_building"
+    )
+    pathes = FreeCAD.activeDocument().addObject(
+        "App::DocumentObjectGroup",
+        "GRP_pathes"
+    )
 
     for oj in FreeCAD.activeDocument().Objects:
         if oj.Label.startswith('building'):
@@ -106,7 +118,8 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
         l1 = l-lk/713*10
         b2 = b+bk/1113*10
         l2 = l+lk/713*10
-        source = 'http://api.openstreetmap.org/api/0.6/map?bbox='+str(l1)+','+str(b1)+','+str(l2)+','+str(b2)
+        koord_str = "{},{},{},{}".format(l1, b1, l2, b2)
+        source = "http://api.openstreetmap.org/api/0.6/map?bbox="+koord_str
         say(source)
 
         response = urllib.request.urlopen(source)
@@ -166,8 +179,15 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
 
     for n in nodes:
         nodesbyid[n.params['id']] = n
-        ll = tm.fromGeographic(float(n.params['lat']), float(n.params['lon']))
-        points[str(n.params['id'])] = FreeCAD.Vector(ll[0]-center[0], ll[1]-center[1], 0.0)
+        ll = tm.fromGeographic(
+            float(n.params['lat']),
+            float(n.params['lon'])
+        )
+        points[str(n.params['id'])] = FreeCAD.Vector(
+            ll[0]-center[0],
+            ll[1]-center[1],
+            0.0
+        )
 
     if status:
         status.setText("create visualizations  ...")
@@ -210,7 +230,10 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
 
     area.Length = size[0]*2
     area.Width = size[1]*2
-    area.Placement = FreeCAD.Placement(FreeCAD.Vector(-size[0], -size[1], 0.00), FreeCAD.Rotation(0.00, 0.00, 0.00, 1.00))
+    area.Placement = FreeCAD.Placement(
+        FreeCAD.Vector(-size[0], -size[1], 0.00),
+        FreeCAD.Rotation(0.00, 0.00, 0.00, 1.00)
+    )
     say("Area skaliert")
     wn = -1
     coways = len(ways)
@@ -227,7 +250,10 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
         nowtime = time.time()
 
         if wn != 0 and (nowtime-starttime)/wn > 0.5:
-            say(("way ---- # " + str(wn) + "/" + str(coways) + " time per house: " + str(round((nowtime-starttime)/wn, 2))))
+            say(
+                "way ---- # {}/{} time per house: {}"
+                .format(wn, coways, round((nowtime-starttime)/wn, 2))
+            )
 
         if progressbar:
             progressbar.setValue(int(0+100.0*wn/coways))
@@ -278,7 +304,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
                     h = int(str(t.params['v']))*1000
 
             except Exception:
-                sayErr("unexpected error ######################################################")
+                sayErr("unexpected error")
 
         name = str(st) + st2 + " " + str(nr)
 
@@ -295,7 +321,11 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
 
         for n in w.getiterator('nd'):
             m = nodesbyid[n.params['ref']]
-            llpoints.append([n.params['ref'], m.params['lat'], m.params['lon']])
+            llpoints.append(
+                [n.params['ref'],
+                 m.params['lat'],
+                 m.params['lon']]
+            )
 
         if elevation:
             say("get heights for " + str(len(llpoints)))
@@ -307,10 +337,14 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
             if building and elevation:
                 if not height:
                     try:
-                        height = heights[m.params['lat']+' '+m.params['lon']]*1000 - baseheight
+                        key_for_height = m.params['lat']+' '+m.params['lon']
+                        height = heights[key_for_height] * 1000 - baseheight
 
                     except Exception:
-                        sayErr("---no height available for " + m.params['lat']+' '+m.params['lon'])
+                        sayErr(
+                            "---no height available for {} {}"
+                            .format(m.params['lat'], m.params['lon'])
+                        )
                         height = 0
 
                 p.z = height
