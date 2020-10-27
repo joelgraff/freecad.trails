@@ -26,7 +26,7 @@ GUI Initialization module
 import os
 import FreeCADGui as Gui
 
-from .corridor.template import ViewTemplateLibrary
+from .design.corridor.template import ViewTemplateLibrary
 from . import resources
 
 from draftutils import init_tools as draft_tools
@@ -205,11 +205,11 @@ class TrailsWorkbench(Gui.Workbench):
         Called when the workbench is first activated.
         """
 
-        from .point import ImportPointFile, ExportPoints
-        from .surface import CreateSurface, EditSurface, Contours
-        from .section import CreateGuideLines
-        from . import geoimport_gui
-        from .project.commands \
+        from .geomatics.point import ImportPointFile, ExportPoints
+        from .geomatics.surface import CreateSurface, EditSurface, Contours
+        from .geomatics.section import CreateGuideLines
+        from .geomatics import geoimport_gui
+        from .design.project.commands \
             import import_alignment_cmd, edit_alignment_cmd,\
                 trails_guide_cmd
 

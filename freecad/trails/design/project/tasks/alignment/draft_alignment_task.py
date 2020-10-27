@@ -1,4 +1,5 @@
-#/**********************************************************************
+# -*- coding: utf-8 -*-
+#***********************************************************************
 #*                                                                     *
 #* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
 #*                                                                     *
@@ -21,42 +22,39 @@
 #***********************************************************************
 
 """
-Trails - The FreeCAD Transportation Engineering Workbench
+Task to draft an alignment
 """
 
-import os
+from freecad.trails import resources
 
-__path__ = __import__('pkgutil').extend_path(__path__, __name__)
+__title__ = "draft_alignment_task.py"
+__author__ = "Joel Graff"
+__url__ = "https://www.freecadweb.org"
 
-ICONPATH = os.path.join(os.path.dirname(__file__), "resources")
-
-def import_module(path, name=None):
+class DraftAlignmentTask:
     """
-    Return an import of a module specified by path and module name
+    Task to manage drafting horizontal alignments
     """
+    def __init__(self, cb):
+        """
+        Constructor
+        """
 
-    _name_list = []
+        self.ui_path = resources.__path__[0] + '/ui/'
+        self.ui = self.ui_path + 'import_alignment_task_panel.ui'
 
-    if name:
-        _name_list = [name]
+        self.form = None
+        self.subtask = None
+        self.cb = cb
 
-    return __import__(path, globals(), locals(), _name_list)
+    def accept(self):
+        """
+        Accept the task parameters
+        """
+        return self.cb()
 
-def import_class(path, name):
-    """
-    Return a refence to the class specified by path and module name
-    """
-
-    return getattr(import_module(path, name), name)
-
-ContextTracker = import_class(
-    'pivy_trackers.tracker.context_tracker', 'ContextTracker')
-
-LineTracker= import_class(
-    'pivy_trackers.tracker.line_tracker', 'LineTracker')
-
-PolyLineTracker = import_class(
-    'pivy_trackers.tracker.polyline_tracker', 'PolyLineTracker')
-
-Drag = import_class(
-    'pivy_trackers.trait.drag', 'Drag')
+    def reject(self):
+        """
+        Reject the task
+        """
+        return self.cb()
