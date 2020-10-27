@@ -11,3 +11,6 @@ def process(response: bytes) -> str:
     ...
 def process(response):
     print(response)
+
+def nothing(nothing):
+    pass
