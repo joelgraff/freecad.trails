@@ -48,15 +48,3 @@ def import_class(path, name):
     """
 
     return getattr(import_module(path, name), name)
-
-ContextTracker = import_class(
-    'pivy_trackers.tracker.context_tracker', 'ContextTracker')
-
-LineTracker= import_class(
-    'pivy_trackers.tracker.line_tracker', 'LineTracker')
-
-PolyLineTracker = import_class(
-    'pivy_trackers.tracker.polyline_tracker', 'PolyLineTracker')
-
-Drag = import_class(
-    'pivy_trackers.trait.drag', 'Drag')
