@@ -136,7 +136,7 @@ class MyApp(object):
                     elif flag == "1":
                         self.root.ids["long"].setText(x)
                         flag = "2"
-            except:
+            except Exception:
                 flag = flag
 
     def swap(self):
