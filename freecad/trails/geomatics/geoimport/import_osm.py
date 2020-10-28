@@ -49,65 +49,25 @@ from .say import sayW
 debug = False
 
 
-def import_osm2(b, l, bk, progressbar, status, elevation):
+def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
 
+    bk = 0.5 * bk
+    baseheight = 0.0
+
+    # *************************************************************************
+    # get and parse osm data
     if progressbar:
         progressbar.setValue(0)
-
     if status:
-        status.setText("get data from openstreetmap.org ...")
+        status.setText("get data from openstreetmap.org and parse it for later usage ...")
         FreeCADGui.updateGui()
+    tree = get_osmdata(b, l, bk)
+    if tree is None:
+        sayErr("Something went wrong on retrieving OSM data.")
+        return False
 
-    content = ""
-    bk = 0.5 * bk
-    dn = os.path.join(FreeCAD.ConfigGet("UserAppData"), "geoimport_data/")
-    fn = dn+str(b)+"-"+str(l)+"-"+str(bk)
-    if not os.path.isdir(dn):
-        os.makedirs(dn)
 
-    try:
-        say("I try to read data from cache file ... ")
-        say(fn)
-        f = open(fn, "r")
-        content = f.read()
-    except Exception:
-        sayW("no cache file, so I connect to  openstreetmap.org...")
-        lk = bk
-        b1 = b - bk / 1113 * 10
-        l1 = l - lk / 713 * 10
-        b2 = b + bk / 1113 * 10
-        l2 = l + lk / 713 * 10
-        koord_str = "{},{},{},{}".format(l1, b1, l2, b2)
-        source = "http://api.openstreetmap.org/api/0.6/map?bbox="+koord_str
-        say(source)
-
-        response = urllib.request.urlopen(source)
-        FreeCAD.t = response
-
-        f = open(fn, "w")
-        f.write(response.read().decode("utf8"))
-        f.close()
-
-    if elevation:
-        say("get height for {}, {}".format(b, l))
-        baseheight = getHeight(b, l)
-        say("baseheight = {} mm".format(baseheight))
-    else:
-        baseheight = 0
-
-    if debug:
-        say("-------Data---------")
-        say(content)
-
-    if status:
-        status.setText("parse data ...")
-        FreeCADGui.updateGui()
-
-    say("------------------------------")
-    say(fn)
-
-    tree = my_xmlparser.getData(fn)
-
+    # *************************************************************************
     if status:
         status.setText("transform data ...")
         FreeCADGui.updateGui()
@@ -119,6 +79,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
     # get base area size and map nodes data to the area on coordinate origin
     size, points, nodesbyid = map_data(nodes, bounds)
 
+    # *************************************************************************
     if status:
         status.setText("create visualizations  ...")
         FreeCADGui.updateGui()
@@ -169,6 +130,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
     area.Placement = placement_for_area
     say("Base area scaled.")
 
+    # *************************************************************************
     # ways
     say("Ways")
     wn = -1
@@ -363,6 +325,7 @@ def import_osm2(b, l, bk, progressbar, status, elevation):
             # FreeCADGui.SendMsgToActiveView("ViewFit")
             refresh = 0
 
+    # *************************************************************************
     doc.recompute()
     FreeCADGui.updateGui()
     doc.recompute()
@@ -471,3 +434,51 @@ def map_data(nodes, bounds):
         )
 
     return (size, points, nodesbyid)
+
+
+def get_osmdata(b, l, bk):
+
+    dn = os.path.join(FreeCAD.ConfigGet("UserAppData"), "geodat_osm")
+    if not os.path.isdir(dn):
+        os.makedirs(dn)
+    fn = os.path.join(dn, "{}-{}-{}".format(b, l, bk))
+    say("Local osm data file:")
+    say("{}".format(fn))
+
+    # TODO: do much less in try/except
+    # use os for file existense etc.
+    tree = None
+    try:
+        say("Try to read data from a former existing osm data file ... ")
+        f = open(fn, "r")
+        content = f.read()  # try to read it
+        False if content else True  # get pylint and LGTM silent
+        # really read fn before skipping new internet upload
+        # because fn might be empty or does have wrong encoding
+        tree = my_xmlparser.getData(fn)
+    except Exception:
+        say("No former existing osm data file, connecting to openstreetmap.org ...")
+        lk = bk
+        b1 = b - bk / 1113 * 10
+        l1 = l - lk / 713 * 10
+        b2 = b + bk / 1113 * 10
+        l2 = l + lk / 713 * 10
+        koord_str = "{},{},{},{}".format(l1, b1, l2, b2)
+        source = "http://api.openstreetmap.org/api/0.6/map?bbox=" + koord_str
+        say(source)
+
+        response = urllib.request.urlopen(source)
+
+        # the file we write into needs uft8 encoding
+        f = open(fn, "w", encoding="utf-8")
+        # decode makes a string out of the bytestring
+        f.write(response.read().decode("utf8"))
+        f.close()
+
+        # writing the file is only for later usage, thus may be first parse the data and afterwards write it ... ?
+        tree = my_xmlparser.getData(fn)
+
+    if tree is not None:
+        return tree
+    else:
+        return None
