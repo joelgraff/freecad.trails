@@ -353,8 +353,8 @@ class Miki(object):
 		# print(configurationString)
 		ls = configurationString.splitlines()
 
-		# pylint: disable=unused-variable
 		app = self.app
+		False if app else True  # get pylint and LGTM silent
 		line = 0
 		depth = 0
 		d = [0]*30

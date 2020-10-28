@@ -16,6 +16,7 @@ from PySide import QtGui
 # import FreeCADGui
 
 from freecad.trails.geomatics.geoimport import miki
+from freecad.trails.geomatics.geoimport.import_osm import import_osm2
 from freecad.trails.geomatics.geoimport.say import say
 
 
@@ -27,8 +28,6 @@ class MyApp(object):
         """
         import the osm data by the use of import_osm module
         """
-
-        from freecad.trails.geoimport.import_osm import import_osm2
         has_finished = import_osm2(
             lat,
             lon,
@@ -125,7 +124,8 @@ class MyApp(object):
         bl = self.root.ids["bl"].text()
         import re
         spli = re.split(sep, bl)
-        flag = "0"
+        init_flag = "0"
+        flag = init_flag
         for x in spli:
             try:
                 float(x)
@@ -136,8 +136,8 @@ class MyApp(object):
                     elif flag == "1":
                         self.root.ids["long"].setText(x)
                         flag = "2"
-            except:
-                flag = flag
+            except Exception:
+                flag = init_flag
 
     def swap(self):
         tmp1 = self.root.ids["lat"].text()
