@@ -16,6 +16,7 @@ from PySide import QtGui
 # import FreeCADGui
 
 from freecad.trails.geomatics.geoimport import miki
+from freecad.trails.geomatics.geoimport.import_osm import import_osm2
 from freecad.trails.geomatics.geoimport.say import say
 
 
@@ -27,8 +28,6 @@ class MyApp(object):
         """
         import the osm data by the use of import_osm module
         """
-
-        from freecad.trails.geoimport.import_osm import import_osm2
         has_finished = import_osm2(
             lat,
             lon,
