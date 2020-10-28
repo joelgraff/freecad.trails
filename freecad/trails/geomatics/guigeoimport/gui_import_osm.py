@@ -125,7 +125,8 @@ class MyApp(object):
         bl = self.root.ids["bl"].text()
         import re
         spli = re.split(sep, bl)
-        flag = "0"
+        init_flag = "0"
+        flag = init_flag
         for x in spli:
             try:
                 float(x)
@@ -137,7 +138,7 @@ class MyApp(object):
                         self.root.ids["long"].setText(x)
                         flag = "2"
             except Exception:
-                flag = flag
+                flag = init_flag
 
     def swap(self):
         tmp1 = self.root.ids["lat"].text()
