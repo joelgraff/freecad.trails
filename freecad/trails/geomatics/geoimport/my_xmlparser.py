@@ -80,7 +80,7 @@ def getData(fn,pb=None):
 
 	objs=[]
 
-	say("Read data from cache file ...")
+	say("Parse xml data from lokal cached file ...")
 	say(fn)
 	f=open(fn,"r", encoding="utf8")
 	content=f.readlines()
