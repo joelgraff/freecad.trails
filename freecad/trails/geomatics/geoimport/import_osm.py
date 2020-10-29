@@ -36,8 +36,11 @@ from . import inventortools
 from . import my_xmlparser
 from . import transversmercator
 
-from .get_elevation import get_height_srtm4 as get_height_single
-from .get_elevation import get_heights_srtm4 as get_height_list
+from .get_elevation_srtm4 import get_height_single
+from .get_elevation_srtm4 import get_height_list
+# from .get_elevation_openelevation import get_height_single
+# from .get_elevation_openelevation import get_height_list
+
 from .say import say
 from .say import sayErr
 from .say import sayexc
