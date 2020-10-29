@@ -58,15 +58,15 @@ def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
     else:
         baseheight = 0.0
 
-    print("The importer of trails is used to import osm data.")
-    print("This one does support elevations.")
-    print(b, l, bk, progressbar, status, elevation)
+    say("The importer of trails is used to import osm data.")
+    say("This one does support elevations.")
+    say(b, l, bk, progressbar, status, elevation)
 
     # *************************************************************************
     # get and parse osm data
-    if progressbar:
+    if progressbar and FreeCAD.GuiUp:
         progressbar.setValue(0)
-    if status:
+    if status and FreeCAD.GuiUp:
         status.setText(
             "get data from openstreetmap.org and parse it for later usage ..."
         )
@@ -87,7 +87,7 @@ def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
     #     say(element.params)
 
     # *************************************************************************
-    if status:
+    if status and FreeCAD.GuiUp:
         status.setText("transform data ...")
         FreeCADGui.updateGui()
 
@@ -98,14 +98,14 @@ def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
 
     # get base area size and map nodes data to the area on coordinate origin
     tm, size, corner_min, points, nodesbyid = map_data(nodes, bounds)
-    # print(tm)
-    # print(size)
-    # print(corner_min)
-    # print(len(points))
-    # print(len(nodesbyid))
+    # say(tm)
+    # say(size)
+    # say(corner_min)
+    # say(len(points))
+    # say(len(nodesbyid))
 
     # *************************************************************************
-    if status:
+    if status and FreeCAD.GuiUp:
         status.setText("create visualizations  ...")
         FreeCADGui.updateGui()
 
@@ -139,28 +139,23 @@ def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
     starttime = time.time()
     refresh = 1000
 
-    for w in ways:
-        wid = w.params["id"]
-
-        # say(w.params)
-        # say("way content")
-        # for c in w.content:
-        #     say(c)
-
-        building = False
-        landuse = False
-        highway = False
+    for way in ways:
+        wid = way.params["id"]
         wn += 1
 
+        # say(way.params)
+        # say("way content")
+        # for c in way.content:
+        #     say(c)
         # for debugging, break after some of the ways have been processed
         # if wn == 6:
-        #     print("Waycount restricted to {} by dev".format(wn - 1))
+        #     say("Waycount restricted to {} by dev".format(wn - 1))
         #     break
 
         nowtime = time.time()
         # if wn != 0 and (nowtime - starttime) / wn > 0.5:  # had problems
         if wn != 0:
-            print(
+            say(
                 "way ---- # {}/{} time per house: {}"
                 .format(wn, count_ways, round((nowtime-starttime)/wn, 2))
             )
@@ -168,175 +163,107 @@ def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
         if progressbar:
             progressbar.setValue(int(0 + 100.0 * wn / count_ways))
 
-        st = ""
-        st2 = ""
-        nr = ""
-        h = 0
-        # ci is never used
-        # ci = ""
+        # get a name for the way
+        name, way_type, nr, building_height = get_way_information(way)
 
-        for t in w.getiterator("tag"):
-            try:
-                if debug:
-                    say(t)
-                    # say(t.params["k"])
-                    # say(t.params["v"])
-
-                if str(t.params["k"]) == "building":
-                    building = True
-                    if st == "":
-                        st = "building"
-
-                if str(t.params["k"]) == "landuse":
-                    landuse = True
-                    st = t.params["k"]
-                    nr = t.params["v"]
-
-                if str(t.params["k"]) == "highway":
-                    highway = True
-                    st = t.params["k"]
-
-                if str(t.params["k"]) == "addr:city":
-                    pass
-                    # ci is never used
-                    # ci = t.params["v"]
-
-                if str(t.params["k"]) == "name":
-                    nr = t.params["v"]
-
-                if str(t.params["k"]) == "ref":
-                    nr = t.params["v"]+" /"
-
-                if str(t.params["k"]) == "addr:street":
-                    st2 = " "+t.params["v"]
-
-                if str(t.params["k"]) == "addr:housenumber":
-                    nr = str(t.params["v"])
-
-                if str(t.params["k"]) == "building:levels":
-                    if h == 0:
-                        h = int(str(t.params["v"]))*1000*3
-
-                if str(t.params["k"]) == "building:height":
-                    h = int(str(t.params["v"]))*1000
-
-            except Exception:
-                sayErr("unexpected error {}".format(50*"#"))
-
-        name = str(st) + st2 + " " + str(nr)
-        if name == " ":
-            name = "landuse xyz"
-        if debug:
-            say(("name ", name))
-
-        # generate pointlist for polygon of the way
+        # generate way polygon points
+        # say("get nodes", way)
         polygon_points = []
-        height = None
-        llpoints = []
-        # say("get nodes", w)
-        for n in w.getiterator("nd"):
-            # say(n.params)
-            m = nodesbyid[n.params["ref"]]
-            llpoints.append([
-                n.params["ref"],
-                m.params["lat"],
-                m.params["lon"]
-            ])
 
-        # elevations
-        if elevation:
+        if not elevation:
+            for n in way.getiterator("nd"):
+                wpt = points[str(n.params["ref"])]
+                # say(wpt)
+                polygon_points.append(wpt)
+        else:
+            # get heights for lat lon way polygon points
             say("get heights for " + str(len(llpoints)))
             heights = getHeights(llpoints)
+            for n in w.getiterator("nd"):
+                wpt = points[str(n.params["ref"])]
+                if building and elevation:
+                    if not height:
+                        try:
+                            key_for_height = m.params["lat"]+" "+m.params["lon"]
+                            height = heights[key_for_height] * 1000 - baseheight
+                        except Exception:
+                            sayErr(
+                                "---no height available for {} {}"
+                                .format(m.params["lat"], m.params["lon"])
+                            )
+                            height = 0
+                    wpt.z = height
+                polygon_points.append(wpt)
 
-        for n in w.getiterator("nd"):
-            p = points[str(n.params["ref"])]
-            if building and elevation:
-                if not height:
-                    try:
-                        key_for_height = m.params["lat"]+" "+m.params["lon"]
-                        height = heights[key_for_height] * 1000 - baseheight
-                    except Exception:
-                        sayErr(
-                            "---no height available for {} {}"
-                            .format(m.params["lat"], m.params["lon"])
-                        )
-                        height = 0
-                p.z = height
-            polygon_points.append(p)
-
-        # create 2D map
+        # create document object out of the way polygon points
         # for p in polygon_points:
-        #    print(p)
-        pp_shape = Part.makePolygon(polygon_points)
-        pp_obj = doc.addObject("Part::Feature", "w_" + wid)
-        pp_obj.Shape = pp_shape
-        # pp_obj.Label = "w_" + wid
+        #    say(p)
+
+        # a wire for each way polygon
+        polygon_shape = Part.makePolygon(polygon_points)
+        polygon_obj = doc.addObject("Part::Feature", "w_" + wid)
+        polygon_obj.Shape = polygon_shape
+        # polygon_obj.Label = "w_" + wid
 
         if name == " ":
             g = doc.addObject("Part::Extrusion", name)
-            g.Base = pp_obj
-            g.ViewObject.ShapeColor = (1.00, 1.00, 0.00)
+            g.Base = polygon_obj
+            g.ViewObject.ShapeColor = (1.0, 1.0, 0.0)
             g.Dir = (0, 0, 10)
             g.Solid = True
             g.Label = "way ex "
 
-        if building:
+        if way_type == "building":
             g = doc.addObject("Part::Extrusion", name)
-            g.Base = pp_obj
-            g.ViewObject.ShapeColor = (1.00, 1.00, 1.00)
-
-            if h == 0:
-                h = 10000
-            g.Dir = (0, 0, h)
+            g.Base = polygon_obj
+            g.ViewObject.ShapeColor = (1.0, 1.0, 1.0)
+            if building_height == 0:
+                building_height = 10000
+            g.Dir = (0, 0, building_height)
             g.Solid = True
             g.Label = name
-            inventortools.setcolors2(g)
+            inventortools.setcolors2(g)  # what does this do?
 
-        if landuse:
+        if way_type == "highway":
+            g = doc.addObject("Part::Extrusion", "highway")
+            g.Base = polygon_obj
+            g.ViewObject.LineColor = (0.0, 0.0, 1.0)
+            g.ViewObject.LineWidth = 10
+            g.Dir = (0, 0, 0.2)
+            g.Label = name
+
+        if way_type == "landuse":
             g = doc.addObject("Part::Extrusion", name)
-            g.Base = pp_obj
+            g.Base = polygon_obj
             if nr == "residential":
-                g.ViewObject.ShapeColor = (1.00, 0.60, 0.60)
+                g.ViewObject.ShapeColor = (1.0, 0.6, 0.6)
             elif nr == "meadow":
-                g.ViewObject.ShapeColor = (0.00, 1.00, 0.00)
+                g.ViewObject.ShapeColor = (0.0, 1.0, 0.0)
             elif nr == "farmland":
-                g.ViewObject.ShapeColor = (0.80, 0.80, 0.00)
+                g.ViewObject.ShapeColor = (0.8, 0.8, 0.0)
             elif nr == "forest":
-                g.ViewObject.ShapeColor = (1.0, 0.40, 0.40)
+                g.ViewObject.ShapeColor = (1.0, 0.4, 0.4)
             g.Dir = (0, 0, 0.1)
             g.Label = name
             g.Solid = True
 
-        if highway:
-            g = doc.addObject("Part::Extrusion", "highway")
-            g.Base = pp_obj
-            g.ViewObject.LineColor = (0.00, 0.00, 1.00)
-            g.ViewObject.LineWidth = 10
-            g.Dir = (0, 0, 0.2)
-            g.Label = name
+
         refresh += 1
-
-        if os.path.exists("/tmp/stop"):
-            sayErr("notbremse gezogen")
-            FreeCAD.w = w
-            raise Exception("Notbremse Manager main loop")
-
-        if refresh > 3:
+        if refresh > 3 and FreeCAD.GuiUp:
             FreeCADGui.updateGui()
             # FreeCADGui.SendMsgToActiveView("ViewFit")
             refresh = 0
 
     # *************************************************************************
     doc.recompute()
-    FreeCADGui.updateGui()
-    doc.recompute()
-
-    if status:
-        status.setText("import finished.")
-    if progressbar:
+    if progressbar and FreeCAD.GuiUp:
         progressbar.setValue(100)
+    if status and FreeCAD.GuiUp:
+        status.setText("import finished.")
+        FreeCADGui.updateGui()
 
     organize_doc(doc)
+    doc.recompute()
 
     endtime = time.time()
     say(("running time ", int(endtime-starttime),  " count ways ", count_ways))
@@ -520,3 +447,69 @@ def set_cam(area, bk):
 
     area.ViewObject.Document.activeView().setCamera(mycam)
     say("Camera was set.")
+
+
+def get_way_information(w):
+    st = ""
+    st2 = ""
+    nr = ""
+    building_height = 0
+    # ci is never used
+    # ci = ""
+    way_type = ""
+
+    for t in w.getiterator("tag"):
+        try:
+            if debug:
+                say(t)
+                # say(t.params["k"])
+                # say(t.params["v"])
+
+            if str(t.params["k"]) == "building":
+                way_type = "building"
+                if st == "":
+                    st = "building"
+
+            if str(t.params["k"]) == "landuse":
+                way_type = "landuse"
+                st = t.params["k"]
+                nr = t.params["v"]
+
+            if str(t.params["k"]) == "highway":
+                way_type = "highway"
+                st = t.params["k"]
+
+            if str(t.params["k"]) == "addr:city":
+                pass
+                # ci is never used
+                # ci = t.params["v"]
+
+            if str(t.params["k"]) == "name":
+                nr = t.params["v"]
+
+            if str(t.params["k"]) == "ref":
+                nr = t.params["v"]+" /"
+
+            if str(t.params["k"]) == "addr:street":
+                st2 = " "+t.params["v"]
+
+            if str(t.params["k"]) == "addr:housenumber":
+                nr = str(t.params["v"])
+
+            if str(t.params["k"]) == "building:levels":
+                if building_height == 0:
+                    building_height = int(str(t.params["v"]))*1000*3
+
+            if str(t.params["k"]) == "building:height":
+                building_height = int(str(t.params["v"]))*1000
+
+        except Exception:
+            sayErr("unexpected error {}".format(50*"#"))
+
+    name = "{}{} {}".format(st, st2, nr)
+    if name == " ":
+        name = "landuse xyz"
+    if debug:
+        say("name {}".format(name))
+
+    return (name, way_type, nr, building_height)
