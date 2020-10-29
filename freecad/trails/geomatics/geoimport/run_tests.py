@@ -92,6 +92,7 @@ def test_import_srtm():
     print("\nSRTM test passed, but SRTM is not working at all, see comment in module.\n")
     return
 
+    """
     from . import import_srtm
     reload(import_srtm) 
 
@@ -101,6 +102,7 @@ def test_import_srtm():
     mx=10.9678556
     pts=import_srtm.run(mx,my,dx,dy)
     assert len(pts)==2386
+    """
 
 
 def test_import_xyz():
@@ -108,6 +110,7 @@ def test_import_xyz():
     print("\n XYZ import test passed, but test did not run because of missing test data.\n")
     return
 
+    """
     from . import import_xyz
     reload(import_xyz) 
     fn = join(path_to_testdata, "xyz.txt")
@@ -121,6 +124,7 @@ def test_import_xyz():
     d=1
     import_xyz.suv(pts,u,v,d+1,lu,lv)
     import_xyz.muv(pts,u,v,d+1,lu,lv)
+    """
 
 
 def test_dummy():
