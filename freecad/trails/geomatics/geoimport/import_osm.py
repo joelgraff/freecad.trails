@@ -36,15 +36,15 @@ from . import inventortools
 from . import my_xmlparser
 from . import transversmercator
 
-from .get_elevation import getHeight
-from .get_elevation import getHeights
+from .get_elevation import get_height_srtm4 as get_height_single
+from .get_elevation import get_heights_srtm4 as get_height_list
 from .say import say
 from .say import sayErr
 from .say import sayexc
 # from .say import sayW
 
 
-# TODO: make run osm import method in on non gui too
+# TODO: test run osm import method in on non gui
 debug = False
 
 
@@ -53,7 +53,7 @@ def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
     bk = 0.5 * bk
     if elevation:
         say("get height for {}, {}".format(b, l))
-        baseheight = getHeight(b, l)
+        baseheight = get_height_single(b, l)
         say("baseheight: {}".format(baseheight))
     else:
         baseheight = 0.0
@@ -131,6 +131,18 @@ def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
         FreeCADGui.updateGui()
     say("Base area created.")
 
+    if elevation:
+        elearea = doc.addObject("Part::Feature","Elevation_Area")
+        elearea.Shape = get_elebase_sh(corner_min, size, baseheight, tm)
+        doc.recompute()
+        if FreeCAD.GuiUp:
+            area.ViewObject.hide()
+            elearea.ViewObject.Transparency = 75       
+            elearea.ViewObject.Document.activeView().viewAxonometric()
+            # elearea.ViewObject.Document.activeView().fitAll()  # the cam was set
+            FreeCADGui.updateGui()
+        say("Area with Hights done")
+
     # *************************************************************************
     # ways
     say("Ways")
@@ -167,33 +179,16 @@ def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
         name, way_type, nr, building_height = get_way_information(way)
 
         # generate way polygon points
-        # say("get nodes", way)
-        polygon_points = []
-
+        say("get nodes", way)
         if not elevation:
+            polygon_points = []
             for n in way.getiterator("nd"):
                 wpt = points[str(n.params["ref"])]
                 # say(wpt)
                 polygon_points.append(wpt)
         else:
             # get heights for lat lon way polygon points
-            say("get heights for " + str(len(llpoints)))
-            heights = getHeights(llpoints)
-            for n in w.getiterator("nd"):
-                wpt = points[str(n.params["ref"])]
-                if building and elevation:
-                    if not height:
-                        try:
-                            key_for_height = m.params["lat"]+" "+m.params["lon"]
-                            height = heights[key_for_height] * 1000 - baseheight
-                        except Exception:
-                            sayErr(
-                                "---no height available for {} {}"
-                                .format(m.params["lat"], m.params["lon"])
-                            )
-                            height = 0
-                    wpt.z = height
-                polygon_points.append(wpt)
+            polygon_points = get_ppts_with_heights(way, way_type, points, nodesbyid, baseheight)
 
         # create document object out of the way polygon points
         # for p in polygon_points:
@@ -267,7 +262,6 @@ def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
 
     endtime = time.time()
     say(("running time ", int(endtime-starttime),  " count ways ", count_ways))
-    doc.recompute()
 
     return True
 
@@ -513,3 +507,158 @@ def get_way_information(w):
         say("name {}".format(name))
 
     return (name, way_type, nr, building_height)
+
+
+def get_elebase_sh(corner_min, size, baseheight, tm):
+
+    from FreeCAD import Vector as vec
+    from MeshPart import meshFromShape
+    from Part import makeLine
+
+    # scaled place on orgin
+    place_for_mesh = FreeCAD.Vector(
+        -corner_min.x - size[0],
+        -corner_min.y - size[1],
+        0.00)
+    
+    # SRTM data resolution is 30 m = 30'000 mm in the usa
+    # rest of the world is 90 m = 90'000 mm
+    # it makes no sense to use values smaller than 90'000 mm
+    pt_distance = 100000
+    
+    say(corner_min)
+    # y is huge!, but this is ok!
+    say(size)
+    
+    # base area surface mesh with heights
+    # Version new
+    pn1 = vec(
+        0,
+        0,
+        0
+    )
+    pn2 = vec(
+        pn1.x + size[0] * 2,
+        pn1.y,
+        0
+    )
+    pn3 = vec(
+        pn1.x + size[0] * 2,
+        pn1.y + size[1] * 2,
+        0
+    )
+    pn4 = vec(
+        pn1.x,
+        pn1.y + size[1] * 2,
+        0
+    )
+    ln1 = makeLine(pn1, pn2)
+    ln2 = makeLine(pn2, pn3)
+    ln3 = makeLine(pn3, pn4)
+    ln4 = makeLine(pn4, pn1)
+    wi = Part.Wire([ln1, ln2, ln3, ln4])
+    fa = Part.makeFace([wi], "Part::FaceMakerSimple")
+    msh = meshFromShape(fa, LocalLength=pt_distance)
+    # move to corner_min to retrieve the heights
+    msh.translate(
+        corner_min.x,
+        corner_min.y,
+        0,
+    )
+    # move mesh points z-koord
+    for pt_msh in msh.Points:
+        # say(pt_msh.Index)
+        # say(pt_msh.Vector)
+        pt_tm = tm.toGeographic(pt_msh.Vector.x, pt_msh.Vector.y)
+        height = get_height_single(pt_tm[0], pt_tm[1])  # mm
+        # say(height)
+        pt_msh.move(FreeCAD.Vector(0, 0, height))
+    # move mesh back centered on origin
+    msh.translate(
+        -corner_min.x - size[0],
+        -corner_min.y - size[1],
+        -baseheight,
+    )
+
+    # create Shape from Mesh
+    sh = Part.Shape()
+    sh.makeShapeFromMesh(msh.Topology, 0.1)
+
+    return sh
+
+
+def get_ppts_with_heights(way, way_type, points, nodesbyid, baseheight):
+
+    plg_pts_latlon = []
+    for n in way.getiterator("nd"):
+        # say(n.params)
+        m = nodesbyid[n.params["ref"]]
+        plg_pts_latlon.append([
+            n.params["ref"],
+            m.params["lat"],
+            m.params["lon"]
+        ])
+    say("    baseheight: {}".format(baseheight))
+    say("    get heights for " + str(len(plg_pts_latlon)))
+    heights = get_height_list(plg_pts_latlon)
+    # say(heights)
+    
+    # set the scaled height for each way polygon point
+    height = None
+    polygon_points = []
+    for n in way.getiterator("nd"):
+        wpt = points[str(n.params["ref"])]
+        # say(wpt)
+        m = nodesbyid[n.params["ref"]]
+        # say(m.params)
+        hkey = "{:.7f} {:.7f}".format(
+            float(m.params["lat"]),
+            float(m.params["lon"])
+        )
+        # say(hkey)
+        if way_type == "building":
+            # for buildings use the height of the first point for all
+            # thus code a bit different from the others
+            # TODO use 10 cm below the lowest not the first
+            # Why do we get all heights if only use one
+            # but we need them all to get the lowest
+            if height is None:
+                say("    Building")
+                if hkey in heights:
+                    say("    height abs: {}".format(heights[hkey]))
+                    height = heights[hkey]
+                    say(heights[hkey])
+                    say("    height rel: {}".format(height))
+                else:
+                    sayErr("   ---no height in heights for " + hkey)
+                    height = baseheight
+        elif way_type == "highway":
+            # use the hight for all points
+            if height is None:
+                say("    Highway")
+            if hkey in heights:
+                height = heights[hkey]
+            else:
+                sayErr("   ---no height in heights for " + hkey)
+                height = baseheight
+        elif way_type == "landuse":
+            # use 1 mm above base height
+            if height is None:
+                sayErr("    ---no height used for landuse ATM")
+                height = baseheight + 1
+        else:
+            # use the hight for all points
+            if height is None:
+                say("    Other")
+            if hkey in heights:
+                height = heights[hkey]
+            else:
+                sayErr("   ---no height in heights for " + hkey)
+                height = baseheight
+        if height is None:
+            height = baseheight
+        wpt.z = height - baseheight
+        # say("    with base: {}".format(wpt.z))
+        polygon_points.append(wpt)
+    
+    return polygon_points
