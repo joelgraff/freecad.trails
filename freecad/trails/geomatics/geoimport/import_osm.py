@@ -27,7 +27,6 @@ Import data from OpenStreetMap
 import os
 import time
 import urllib.request
-from pivy import coin
 
 import FreeCAD
 import FreeCADGui
@@ -42,7 +41,7 @@ from .get_elevation import getHeights
 from .say import say
 from .say import sayErr
 from .say import sayexc
-from .say import sayW
+# from .say import sayW
 
 
 # TODO: make run osm import method in on non gui too
@@ -52,32 +51,58 @@ debug = False
 def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
 
     bk = 0.5 * bk
-    baseheight = 0.0
+    if elevation:
+        say("get height for {}, {}".format(b, l))
+        baseheight = getHeight(b, l)
+        say("baseheight: {}".format(baseheight))
+    else:
+        baseheight = 0.0
+
+    print("The importer of trails is used to import osm data.")
+    print("This one does support elevations.")
+    print(b, l, bk, progressbar, status, elevation)
 
     # *************************************************************************
     # get and parse osm data
     if progressbar:
         progressbar.setValue(0)
     if status:
-        status.setText("get data from openstreetmap.org and parse it for later usage ...")
+        status.setText(
+            "get data from openstreetmap.org and parse it for later usage ..."
+        )
         FreeCADGui.updateGui()
     tree = get_osmdata(b, l, bk)
     if tree is None:
         sayErr("Something went wrong on retrieving OSM data.")
         return False
 
+    # say("nodes")
+    # for element in tree.getiterator("node"):
+    #     say(element.params)
+    # say("ways")
+    # for element in tree.getiterator("way"):
+    #     say(element.params)
+    # say("relations")
+    # for element in tree.getiterator("relation"):
+    #     say(element.params)
 
     # *************************************************************************
     if status:
         status.setText("transform data ...")
         FreeCADGui.updateGui()
 
+    # relations = tree.getiterator("relation")
     nodes = tree.getiterator("node")
     ways = tree.getiterator("way")
     bounds = tree.getiterator("bounds")[0]
 
     # get base area size and map nodes data to the area on coordinate origin
-    size, points, nodesbyid = map_data(nodes, bounds)
+    tm, size, corner_min, points, nodesbyid = map_data(nodes, bounds)
+    # print(tm)
+    # print(size)
+    # print(corner_min)
+    # print(len(points))
+    # print(len(nodesbyid))
 
     # *************************************************************************
     if status:
@@ -92,35 +117,6 @@ def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
 
     # base area
     area = doc.addObject("Part::Plane", "area")
-    say("Base area created.")
-    try:
-        viewprovider = area.ViewObject
-        root = viewprovider.RootNode
-        myLight = coin.SoDirectionalLight()
-        myLight.color.setValue(coin.SbColor(0, 1, 0))
-        root.insertChild(myLight, 0)
-        say("Lighting on base area activated.")
-    except Exception:
-        sayexc("Lighting 272")
-
-    cam = """#Inventor V2.1 ascii
-    OrthographicCamera {
-      viewportMapping ADJUST_CAMERA
-      orientation 0 0 -1.0001  0.001
-      nearDistance 0
-      farDistance 10000000000
-      aspectRatio 100
-      focalDistance 1
-    """
-    x = 0
-    y = 0
-    height = 200 * bk * 10000 / 0.6
-    cam += "\nposition " + str(x) + " " + str(y) + " 999\n "
-    cam += "\nheight " + str(height) + "\n}\n\n"
-    FreeCADGui.activeDocument().activeView().setCamera(cam)
-    FreeCADGui.activeDocument().activeView().viewAxonometric()
-    say("Camera was set.")
-
     area.Length = size[0] * 2
     area.Width = size[1] * 2
     placement_for_area = FreeCAD.Placement(
@@ -128,7 +124,12 @@ def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
         FreeCAD.Rotation(0.00, 0.00, 0.00, 1.00)
     )
     area.Placement = placement_for_area
-    say("Base area scaled.")
+    if FreeCAD.GuiUp:
+        # set camera
+        set_cam(area, bk)
+        area.ViewObject.Document.activeView().viewAxonometric()
+        FreeCADGui.updateGui()
+    say("Base area created.")
 
     # *************************************************************************
     # ways
@@ -400,22 +401,22 @@ def map_data(nodes, bounds):
     # print("Center nach: {}".format(center))
 
     center = tm.fromGeographic(tm.lat, tm.lon)
-    corner_min = tm.fromGeographic(minlat, minlon)
-    corner_max = tm.fromGeographic(maxlat, maxlon)
-    # print("Corner lu: {}".format(corner_min))
-    # print("Corner ro: {}".format(corner_max))
-    vec_corner_min = FreeCAD.Vector(
-        corner_min[0],
-        corner_min[1],
+    coord_corner_min = tm.fromGeographic(minlat, minlon)
+    coord_corner_max = tm.fromGeographic(maxlat, maxlon)
+    # print("Corner lu: {}".format(coord_corner_min))
+    # print("Corner ro: {}".format(coord_corner_max))
+    corner_min = FreeCAD.Vector(
+        coord_corner_min[0],
+        coord_corner_min[1],
         0
     )
-    vec_corner_max = FreeCAD.Vector(
-        corner_max[0],
-        corner_max[1],
+    corner_max = FreeCAD.Vector(
+        coord_corner_max[0],
+        coord_corner_max[1],
         0
     )
-    print("Corner lu: {}".format(vec_corner_min))
-    print("Corner ro: {}".format(vec_corner_max))
+    print("Corner lu: {}".format(corner_min))
+    print("Corner ro: {}".format(corner_max))
     size = [center[0] - corner_min[0], center[1] - corner_min[1]]
 
     # map all points to xy-plane
@@ -433,7 +434,7 @@ def map_data(nodes, bounds):
             0.0
         )
 
-    return (size, points, nodesbyid)
+    return (tm, size, corner_min, points, nodesbyid)
 
 
 def get_osmdata(b, l, bk):
@@ -457,7 +458,10 @@ def get_osmdata(b, l, bk):
         # because fn might be empty or does have wrong encoding
         tree = my_xmlparser.getData(fn)
     except Exception:
-        say("No former existing osm data file, connecting to openstreetmap.org ...")
+        say(
+            "No former existing osm data file, "
+            "connecting to openstreetmap.org ..."
+        )
         lk = bk
         b1 = b - bk / 1113 * 10
         l1 = l - lk / 713 * 10
@@ -471,14 +475,48 @@ def get_osmdata(b, l, bk):
 
         # the file we write into needs uft8 encoding
         f = open(fn, "w", encoding="utf-8")
-        # decode makes a string out of the bytestring
+        # decode makes a string out of the bytesstring
         f.write(response.read().decode("utf8"))
         f.close()
 
-        # writing the file is only for later usage, thus may be first parse the data and afterwards write it ... ?
+        # writing the file is only for later usage
+        # thus may be first parse the data and afterwards write it ... ?
         tree = my_xmlparser.getData(fn)
 
     if tree is not None:
         return tree
     else:
         return None
+
+
+def set_cam(area, bk):
+
+    # does this makes a difference ?
+
+    from pivy import coin
+    try:
+        root = area.ViewObject.RootNode
+        myLight = coin.SoDirectionalLight()
+        myLight.color.setValue(coin.SbColor(0, 1, 0))
+        root.insertChild(myLight, 0)
+        say("Lighting on base area activated.")
+    except Exception:
+        sayexc("Lighting 272")
+
+    mycam = """#Inventor V2.1 ascii
+    OrthographicCamera {
+      viewportMapping ADJUST_CAMERA
+      orientation 0 0 -1.0001  0.001
+      nearDistance 0
+      farDistance 10000000000
+      aspectRatio 100
+      focalDistance 1
+    """
+    x = 0
+    y = 0
+    cam_height = 200 * bk * 10000 / 0.6
+    mycam += "\nposition " + str(x) + " " + str(y) + " 999\n "
+    mycam += "\nheight " + str(cam_height) + "\n}\n\n"
+
+    area.ViewObject.Document.activeView().setCamera(mycam)
+    say("Camera was set.")
