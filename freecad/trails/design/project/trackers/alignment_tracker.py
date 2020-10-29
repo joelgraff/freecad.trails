@@ -29,7 +29,7 @@ import FreeCADGui as Gui
 
 from types import SimpleNamespace
 
-from freecad.trails import ContextTracker, PolyLineTracker, Drag
+from freecad.trails.design import ContextTracker, PolyLineTracker, Drag
 from .curve_tracker import CurveTracker
 
 from freecad_python_support.tuple_math import TupleMath
