@@ -300,7 +300,7 @@ def organize_doc(doc):
             # obj.ViewObject.Visibility = False
         if obj.Label.startswith("landuse"):
             landuse.addObject(obj)
-            # obj.ViewObject.Visibility = False
+            obj.ViewObject.Visibility = False
         if obj.Label.startswith("w_"):
             pathes.addObject(obj)
             obj.ViewObject.Visibility = False
