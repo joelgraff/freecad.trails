@@ -18,71 +18,70 @@
 # *   USA                                                                   *
 # *                                                                         *
 # ***************************************************************************
-"""get elevation data"""
+"""get elevation data by srtm4 module"""
 
 
 """
+SRTM data - some information
 https://en.wikipedia.org/wiki/SRTM
-resolution is 30 m
-in english it says 30 m for United States and 90 m outside United States
-downloaded tiffs from area locally
-download von ca 35 MB, aber halbe Schweiz dann lokal gespeichert
+according to englis wikipedia the resolution is
+30 m for United States and 90 m outside United States
+
 https://pypi.org/project/elevation/
+another project I did not test so far
+
 https://pypi.org/project/srtm4/
+downloaded tiffs from area will be saved locally
+download ca 35 MB, the half of switzerland
+height not abov sea level
 https://github.com/cmla/srtm4/issues/10
-
-the longitude as first argument, and the latitude as second argument
-thus method parameters are swaped
-
+important note ... method parameters are swaped
+the longitude as first argument, the latitude as second argument
 
 import srtm4
 srtm4.srtm4(8.035, 46.503)  # Konkordiaplatz
 
-
-from freecad.trails.geomatics.geoimport import get_elevation
+from freecad.trails.geomatics.geoimport import get_elevation_srtm4
 import importlib
-importlib.reload(get_elevation)
+importlib.reload(get_elevation_srtm4)
 pts = [["620877237", "46.8076263", "8.0596176"], ["5067330264", "46.8010987", "8.0548266"]]
-get_elevation.get_heights_srtm4(pts)
+get_elevation_srtm4.get_height_list(pts)
 
 
 {'46.8076263 8.0596176': 1300240.0, '46.8010987 8.0548266': 1727440.0}
 
 """
 
-def get_height_srtm4(b, l):
+try:
+    from srtm4 import srtm4
+    nosrtm4 = False
+except Exception:
+    print("Module srtm4 not found. Install it to get heights.")
+    nosrtm4 = True
+
+
+def get_height_single(b, l):
     """
     get height of a single point with latitude b, longitude l
     """
-
-    try:
-        from srtm4 import srtm4
-        nosrtm4 = False
-    except:
-        print("Module srtm4 not found")
-        nosrtm4 = True
-
     if nosrtm4 is True:
         return(0.0)
-
 
     elevation = srtm4(float(l), float(b))
     # print("lat: {}, long: {}, ele: {}".format(b, l, elevation))
     return round(elevation * 1000, 2)
 
 
-
-def get_heights_srtm4(points):
+def get_height_list(points):
     """
-    uses get_height_srtm4 to get the height of each point
+    uses get_height_single to get the height of each point
     """
-
     heights = {}
     for pt in points:
         # print(pt)
         key = "{:.7f} {:.7f}".format(float(pt[1]), float(pt[2]))
         # print(key)
         # swap will happen in other method
-        heights[key] = get_height_srtm4(pt[1], pt[2])
+        heights[key] = get_height_single(pt[1], pt[2])
         # print(heights[key])
     return heights
