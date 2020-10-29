@@ -36,15 +36,15 @@ from . import inventortools
 from . import my_xmlparser
 from . import transversmercator
 
-from .get_elevation import getHeight
-from .get_elevation import getHeights
+from .get_elevation import getHeight as get_height_single
+from .get_elevation import getHeights as get_height_list
 from .say import say
 from .say import sayErr
 from .say import sayexc
 # from .say import sayW
 
 
-# TODO: make run osm import method in on non gui too
+# TODO: test run osm import method in on non gui
 debug = False
 
 
@@ -53,7 +53,7 @@ def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
     bk = 0.5 * bk
     if elevation:
         say("get height for {}, {}".format(b, l))
-        baseheight = getHeight(b, l)
+        baseheight = get_height_single(b, l)
         say("baseheight: {}".format(baseheight))
     else:
         baseheight = 0.0
@@ -167,9 +167,8 @@ def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
         name, way_type, nr, building_height = get_way_information(way)
 
         # generate way polygon points
-        # say("get nodes", way)
+        say("get nodes", way)
         polygon_points = []
-
         if not elevation:
             for n in way.getiterator("nd"):
                 wpt = points[str(n.params["ref"])]
@@ -178,7 +177,7 @@ def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
         else:
             # get heights for lat lon way polygon points
             say("get heights for " + str(len(llpoints)))
-            heights = getHeights(llpoints)
+            heights = get_height_list(llpoints)
             for n in w.getiterator("nd"):
                 wpt = points[str(n.params["ref"])]
                 if building and elevation:
@@ -267,7 +266,6 @@ def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
 
     endtime = time.time()
     say(("running time ", int(endtime-starttime),  " count ways ", count_ways))
-    doc.recompute()
 
     return True
 
