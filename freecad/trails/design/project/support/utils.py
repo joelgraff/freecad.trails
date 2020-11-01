@@ -281,7 +281,7 @@ def scrub_stationing(station):
 
     return float(scrub)
 
-def get_geo(system, coords):
+def get_geo(system=["UTM", "Z1", "FLAT"], coords=[0.0, 0.0, 0.0]):
     """
     Example
     system = ["UTM", "Z35", "FLAT"]
@@ -298,8 +298,8 @@ def get_geo(system, coords):
         node = coin.SoGeoOrigin()
         sg.insertChild(node,0)
 
-    node.geoSystem.setValues(system)
-    node.geoCoords.setValue(coords[0], coords[1], coords[2])
+        node.geoSystem.setValues(system)
+        node.geoCoords.setValue(coords[0], coords[1], coords[2])
 
     geo_system =  node.geoSystem.getValues()
     geo_coord =  node.geoCoords.getValue().getValue()

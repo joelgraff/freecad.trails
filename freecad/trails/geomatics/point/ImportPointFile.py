@@ -24,8 +24,7 @@
 import FreeCAD
 import FreeCADGui
 from PySide import QtCore, QtGui
-from freecad.trails import ICONPATH
-from ...design.project.support import utils
+from freecad.trails import ICONPATH,geo_test
 import csv
 import os
 
@@ -316,6 +315,11 @@ class ImportPointFile:
         for FilePath in Labels:
             File = open(FilePath, 'r')
             self.FileReader(File, "Import")
+
+        if geo_test:
+            from . import point_group
+
+            point_group.create(tuple(self.PointList),'test')
 
         List = []
         fpoint = self.PointList[0]

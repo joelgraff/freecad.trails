@@ -24,8 +24,7 @@ import FreeCAD
 import FreeCADGui
 from FreeCAD import Base
 from PySide import QtCore, QtGui
-from freecad.trails import ICONPATH
-from ...design.project.support import utils
+from freecad.trails import ICONPATH, geo_test
 import Mesh
 import os
 
@@ -171,11 +170,18 @@ class CreateSurface:
             Index = self.GroupList[SelectedIndex.row()]
             PointGroup = FreeCAD.ActiveDocument.getObject(Index)
 
-            for Point in PointGroup.Points.Points:
-                xx = float(Point.x)
-                yy = float(Point.y)
-                zz = float(Point.z)
-                test.append([xx, yy, zz])
+            if geo_test:
+                for Point in PointGroup.Points:
+                    xx = float(Point.x)
+                    yy = float(Point.y)
+                    zz = float(Point.z)
+                    test.append([xx, yy, zz])
+            else:
+                for Point in PointGroup.Points.Points:
+                    xx = float(Point.x)
+                    yy = float(Point.y)
+                    zz = float(Point.z)
+                    test.append([xx, yy, zz])
 
         # Normalize points
         fpoint = test[0]
