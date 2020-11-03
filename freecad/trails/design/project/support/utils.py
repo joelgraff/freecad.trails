@@ -302,6 +302,6 @@ def get_geo(system=["UTM", "Z1", "FLAT"], coords=[0.0, 0.0, 0.0]):
         node.geoCoords.setValue(coords[0], coords[1], coords[2])
 
     geo_system =  node.geoSystem.getValues()
-    geo_coord =  node.geoCoords.getValue().getValue()
+    geo_origin =  node.geoCoords.getValue().getValue()
 
-    return geo_system, geo_coord
+    return geo_system, geo_origin

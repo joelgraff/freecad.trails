@@ -319,7 +319,7 @@ class ImportPointFile:
         if geo_test:
             from . import point_group
 
-            point_group.create(tuple(self.PointList),'test')
+            point_group.create(self.PointList,'test')
 
         List = []
         fpoint = self.PointList[0]
