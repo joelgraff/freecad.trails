@@ -26,7 +26,7 @@ Create a Point Group Object from FPO.
 
 import FreeCAD, FreeCADGui
 from pivy import coin
-from ...design.project.support import utils
+from ..utils import GeoNodes
 from freecad.trails import ICONPATH
 import random
 
@@ -109,7 +109,7 @@ class ViewProviderPointGroup:
         '''
 
         # Get geo system and geo origin.
-        geo_system, geo_origin = utils.get_geo(coords=obj.Object.Points[0])
+        geo_system, geo_origin = GeoNodes.create_origin(coords=obj.Object.Points[0])
 
         # Geo coordinates.
         self.geo_coords = coin.SoGeoCoordinate()
@@ -130,6 +130,9 @@ class ViewProviderPointGroup:
 
         # Highlight for selection.
         highlight = coin.SoType.fromName('SoFCSelection').createInstance()
+        #highlight.documentName.setValue(FreeCAD.ActiveDocument.Name)
+        #highlight.objectName.setValue(obj.Object.Name)
+        #highlight.subElementName.setValue("Main")
         highlight.addChild(self.geo_coords)
         highlight.addChild(points)
 
