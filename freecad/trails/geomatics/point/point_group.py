@@ -49,7 +49,6 @@ class PointGroup:
         '''
         Set data properties.
         '''
-
         obj.addProperty(
             "App::PropertyVectorList",
             "Points",
@@ -63,14 +62,12 @@ class PointGroup:
         '''
         Do something when a data property has changed.
         '''
-
         return
 
     def execute(self, fp):
         '''
         Do something when doing a recomputation. 
         '''
-
         return
 
 
@@ -83,7 +80,6 @@ class ViewProviderPointGroup:
         '''
         Set view properties.
         '''
-
         (r, g, b) = (random.random(),
                      random.random(),
                      random.random())
@@ -107,7 +103,6 @@ class ViewProviderPointGroup:
         '''
         Create Object visuals in 3D view.
         '''
-
         # Get geo system and geo origin.
         geo_system, geo_origin = GeoNodes.create_origin(coords=obj.Object.Points[0])
 
@@ -152,7 +147,6 @@ class ViewProviderPointGroup:
         '''
         Update Object visuals when a view property changed.
         '''
-
         # vp is view provider.
         if prop == "PointSize":
             size = vp.getPropertyByName("PointSize")
@@ -166,7 +160,6 @@ class ViewProviderPointGroup:
         '''
         Update Object visuals when a data property changed.
         '''
-
         # fp is feature python.
         if prop == "Points":
             points = fp.getPropertyByName("Points")
@@ -176,7 +169,6 @@ class ViewProviderPointGroup:
         '''
         Return a list of display modes.
         '''
-
         modes=[]
         modes.append("Point")
 
@@ -186,33 +178,28 @@ class ViewProviderPointGroup:
         '''
         Return the name of the default display mode.
         '''
-
         return "Point"
 
     def setDisplayMode(self,mode):
         '''
         Map the display mode defined in attach with those defined in getDisplayModes.
         '''
-
         return mode
 
     def getIcon(self):
         '''
         Return object treeview icon.
         '''
-
         return ICONPATH + '/icons/PointGroup.svg'
 
     def __getstate__(self):
         '''
         When saving the document this object gets stored using Python's json module.
         '''
-
         return None
  
     def __setstate__(self,state):
         '''
         When restoring the serialized object from document we have the chance to set some internals here.
         '''
-
         return None

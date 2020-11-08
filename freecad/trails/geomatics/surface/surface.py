@@ -35,13 +35,13 @@ import random
 def create(points, index, name='Surface'):
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", name)
     obj.Label = name
-    PointGroup(obj)
+    Surface(obj)
     obj.Points = points
     obj.Index = index
-    ViewProviderPointGroup(obj.ViewObject)
+    ViewProviderSurface(obj.ViewObject)
 
 
-class PointGroup:
+class Surface:
     """
     This class is about Surface Object data features.
     """
@@ -79,7 +79,7 @@ class PointGroup:
         return
 
 
-class ViewProviderPointGroup:
+class ViewProviderSurface:
     """
     This class is about Point Group Object view features.
     """
@@ -95,8 +95,8 @@ class ViewProviderPointGroup:
         obj.addProperty(
             "App::PropertyColor",
             "TriangleColor",
-            "Point Style",
-            "Color of the point group").PointColor = (r, g, b)
+            "Surface Style",
+            "Color of the point group").TriangleColor = (r, g, b)
 
         obj.Proxy = self
 
@@ -119,13 +119,15 @@ class ViewProviderPointGroup:
 
         # Point group features.
         self.triangles = coin.SoIndexedFaceSet()
-        self.triangles.coordIndex.values = obj.Object.Index
+        index = obj.Object.Index
+        for i in range(0, len(index)):
+            self.triangles.coordIndex.set1Value(i,index[i])
 
         shape_hints = coin.SoShapeHints()
         shape_hints.vertex_ordering = coin.SoShapeHints.COUNTERCLOCKWISE
-        self.color_mat = coin.SoMaterial()
-        MatBinding = coin.SoMaterialBinding
-        MatBinding.value = coin.SoMaterialBinding.OVERALL
+        self.mat_color = coin.SoMaterial()
+        mat_binding = coin.SoMaterialBinding
+        mat_binding.value = coin.SoMaterialBinding.OVERALL
 
         # Highlight for selection.
         highlight = coin.SoType.fromName('SoFCSelection').createInstance()
@@ -136,12 +138,12 @@ class ViewProviderPointGroup:
         highlight.addChild(self.triangles)
 
         # Point group root.
-        point_root = geo_seperator
-        point_root.addChild(shape_hints)
-        point_root.addChild(self.color_mat)
-        point_root.addChild(MatBinding)
-        point_root.addChild(highlight)
-        obj.addDisplayMode(point_root,"Point")
+        surface_root = geo_seperator
+        surface_root.addChild(shape_hints)
+        surface_root.addChild(self.mat_color)
+        #surface_root.addChild(mat_binding)
+        surface_root.addChild(highlight)
+        obj.addDisplayMode(surface_root,"Surface")
 
         # Take features from properties.
         self.onChanged(obj,"TriangleColor")
@@ -153,7 +155,7 @@ class ViewProviderPointGroup:
         # vp is view provider.
         if prop == "TriangleColor":
             color = vp.getPropertyByName("TriangleColor")
-            self.color_mat.diffuseColor = (color[0],color[1],color[2])
+            self.mat_color.diffuseColor = (color[0],color[1],color[2])
 
     def updateData(self, fp, prop):
         '''
@@ -166,15 +168,15 @@ class ViewProviderPointGroup:
 
         if prop == "Index":
             index = fp.getPropertyByName("Index")
-            self.triangles.coordIndex.values = index
-
+            for i in range(0, len(index)):
+                self.triangles.coordIndex.set1Value(i,index[i])
 
     def getDisplayModes(self,obj):
         '''
         Return a list of display modes.
         '''
         modes=[]
-        modes.append("Point")
+        modes.append("Surface")
 
         return modes
 
@@ -182,33 +184,28 @@ class ViewProviderPointGroup:
         '''
         Return the name of the default display mode.
         '''
-
-        return "Point"
+        return "Surface"
 
     def setDisplayMode(self,mode):
         '''
         Map the display mode defined in attach with those defined in getDisplayModes.
         '''
-
         return mode
 
     def getIcon(self):
         '''
         Return object treeview icon.
         '''
-
-        return ICONPATH + '/icons/PointGroup.svg'
+        return ICONPATH + '/icons/Surface.svg'
 
     def __getstate__(self):
         '''
         When saving the document this object gets stored using Python's json module.
         '''
-
         return None
  
     def __setstate__(self,state):
         '''
         When restoring the serialized object from document we have the chance to set some internals here.
         '''
-
         return None
