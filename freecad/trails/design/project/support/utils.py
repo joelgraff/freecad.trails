@@ -280,28 +280,3 @@ def scrub_stationing(station):
         return -1
 
     return float(scrub)
-
-def get_geo(system, coords):
-    """
-    Example
-    system = ["UTM", "Z35", "FLAT"]
-    coords = [4275011518.128912, 507510589.4751387, 0.0]
-    get_geo(system, coords)
-    """
-    import FreeCADGui
-    from pivy import coin
-
-    sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
-    node = sg.getChild(0)
-
-    if not isinstance(node, coin.SoGeoOrigin):
-        node = coin.SoGeoOrigin()
-        sg.insertChild(node,0)
-
-    node.geoSystem.setValues(system)
-    node.geoCoords.setValue(coords[0], coords[1], coords[2])
-
-    geo_system =  node.geoSystem.getValues()
-    geo_coord =  node.geoCoords.getValue().getValue()
-
-    return geo_system, geo_coord

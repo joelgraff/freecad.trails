@@ -24,8 +24,7 @@ import FreeCAD
 import FreeCADGui
 from FreeCAD import Base
 from PySide import QtCore, QtGui
-from freecad.trails import ICONPATH
-from ...design.project.support import utils
+from freecad.trails import ICONPATH, geo_test
 import Mesh
 import os
 
@@ -171,11 +170,18 @@ class CreateSurface:
             Index = self.GroupList[SelectedIndex.row()]
             PointGroup = FreeCAD.ActiveDocument.getObject(Index)
 
-            for Point in PointGroup.Points.Points:
-                xx = float(Point.x)
-                yy = float(Point.y)
-                zz = float(Point.z)
-                test.append([xx, yy, zz])
+            if geo_test:
+                for Point in PointGroup.Points:
+                    xx = float(Point.x)
+                    yy = float(Point.y)
+                    zz = float(Point.z)
+                    test.append((xx, yy, zz))
+            else:
+                for Point in PointGroup.Points.Points:
+                    xx = float(Point.x)
+                    yy = float(Point.y)
+                    zz = float(Point.z)
+                    test.append([xx, yy, zz])
 
         # Normalize points
         fpoint = test[0]
@@ -189,6 +195,7 @@ class CreateSurface:
         tri = scipy.spatial.Delaunay(Data[:, :2])
 
         MeshList = []
+        index = []
 
         for i in tri.vertices:
             first = int(i[0])
@@ -201,7 +208,13 @@ class CreateSurface:
                 MeshList.append(Data[first])
                 MeshList.append(Data[second])
                 MeshList.append(Data[third])
-
+                index.extend([first, second, third, -1])
+        #FreeCAD.Console.PrintMessage(vertex_list)
+        
+        if geo_test:
+            from . import surface
+            surface.create(test, index, 'SurfaceTest')
+        
         MeshObject = Mesh.Mesh(MeshList)
         MeshObject.Placement.move(base)
         SurfaceNameLE = self.IPFui.SurfaceNameLE.text()
