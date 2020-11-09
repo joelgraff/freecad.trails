@@ -28,6 +28,7 @@ import FreeCAD, FreeCADGui
 from pivy import coin
 from ..utils import GeoNodes
 from freecad.trails import ICONPATH
+from . import marker_dict
 import random
 
 
@@ -54,6 +55,12 @@ class PointGroup:
             "Points",
             "Base",
             "List of group points").Points = ()
+
+        obj.addProperty(
+            "App::PropertyEnumeration",
+            "Marker",
+            "Base",
+            "List of point markers").Marker = [*marker_dict]
 
         obj.Proxy = self
         self.Points = None
@@ -118,10 +125,13 @@ class ViewProviderPointGroup:
 
         # Point group features.
         points = coin.SoPointSet()
+        self.markers = coin.SoMarkerSet()
+        self.markers.markerIndex = marker_dict[obj.Object.Marker]
         self.color_mat = coin.SoMaterial()
         self.point_normal = coin.SoNormal()
         self.point_style = coin.SoDrawStyle()
         self.point_style.style = coin.SoDrawStyle.POINTS
+
 
         # Highlight for selection.
         highlight = coin.SoType.fromName('SoFCSelection').createInstance()
@@ -130,6 +140,7 @@ class ViewProviderPointGroup:
         #highlight.subElementName.setValue("Main")
         highlight.addChild(self.geo_coords)
         highlight.addChild(points)
+        highlight.addChild(self.markers)
 
         # Point group root.
         point_root = geo_seperator
@@ -164,6 +175,10 @@ class ViewProviderPointGroup:
         if prop == "Points":
             points = fp.getPropertyByName("Points")
             self.geo_coords.point.values = points
+
+        if prop == "Marker":
+            marker = fp.getPropertyByName("Marker")
+            self.markers.markerIndex = marker_dict[marker]
 
     def getDisplayModes(self,obj):
         '''
