@@ -27,6 +27,7 @@ Create a Surface Object from FPO.
 import FreeCAD, FreeCADGui
 from pivy import coin
 from ..utils import GeoNodes
+from .surface_func import SurfaceFunc
 from freecad.trails import ICONPATH
 import random
 
@@ -39,6 +40,7 @@ def create(points, index, name='Surface'):
     obj.Points = points
     obj.Index = index
     ViewProviderSurface(obj.ViewObject)
+    SurfaceFunc(obj)
 
 
 class Surface:
@@ -50,6 +52,8 @@ class Surface:
         '''
         Set data properties.
         '''
+        obj.Proxy = self
+
         obj.addProperty(
             "App::PropertyVectorList",
             "Points",
@@ -62,7 +66,6 @@ class Surface:
             "Base",
             "Index of points").Index = ()
 
-        obj.Proxy = self
         self.Points = None
         self.Index = None
 
