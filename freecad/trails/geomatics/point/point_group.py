@@ -50,6 +50,9 @@ class PointGroup:
         '''
         Set data properties.
         '''
+        obj.Proxy = self
+        self.Type = 'Trails::PointGroup'
+
         obj.addProperty(
             "App::PropertyVectorList",
             "Points",
@@ -62,7 +65,6 @@ class PointGroup:
             "Base",
             "List of point markers").Marker = [*marker_dict]
 
-        obj.Proxy = self
         self.Points = None
 
     def onChanged(self, fp, prop):

@@ -24,14 +24,60 @@
 Define Surface Object functions.
 '''
 
+import FreeCAD
+import Mesh
+
 class SurfaceFunc:
     """
     This class is contain Surface Object functions.
     """
 
-    def __init__(self, obj):
-        obj.Proxy = self
+    def __init__(self):
+        print("test")
 
-    def project_GL(GL, obj, vector):
+    def create_mesh(points, index):
+        """
+        Create a mesh for unwrited functions.
+        """
+
+        MeshList = []
+        for i in index:
+            if i == -1: continue
+            MeshList.append(points[i])
+
+        mesh = Mesh.Mesh(MeshList)
+
+        return mesh
+
+    def contour_points(mesh, deltaH):
+        """
+        Create contour lines for selected surface
+        """
+        # Find max and min elevation of mesh
+        zmax = mesh.BoundBox.ZMax/1000
+        zmin = mesh.BoundBox.ZMin/1000
+
+        # Get point list and create contour points
+        cont_points = []
+        coords = []
+        num_vert = []
+        for H in range(int(round(zmin)), int(round(zmax))):
+            if deltaH == 0: break
+            if H % deltaH == 0:
+                cont_points = mesh.crossSections(
+                    [((0, 0, H*1000), (0, 0, 1))], 0.000001)
+
+            try:
+                for cont in cont_points[0]:
+                    coords.extend(cont)
+                    num_vert.append(len(cont))
+
+            except Exception: pass
+        
+        #FreeCAD.Console.PrintMessage(str(coords))
+
+        return coords, num_vert
+
+    def project_GL(self, GL, vector):
         pass
     
