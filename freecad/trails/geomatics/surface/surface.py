@@ -104,13 +104,15 @@ class Surface:
             index = fp.getPropertyByName("Index")
             deltaH = fp.getPropertyByName("ContourInterval")
 
-            mesh = SurfaceFunc.create_mesh(points, index)
-            coords, num_vert = SurfaceFunc.contour_points(mesh, deltaH)
-            #FreeCAD.Console.PrintMessage(num_vert)
+            try:
+                mesh = SurfaceFunc.create_mesh(points, index)
+                coords, num_vert = SurfaceFunc.contour_points(points[0], mesh, deltaH)
+                #FreeCAD.Console.PrintMessage(num_vert)
 
-            fp.ContourPoints = coords
-            fp.ContourVertices = num_vert
-
+                fp.ContourPoints = coords
+                fp.ContourVertices = num_vert
+            
+            except Exception: pass
 
     def execute(self, fp):
         '''
@@ -183,7 +185,7 @@ class ViewProviderSurface:
         self.cont_coords.geoSystem.setValues(geo_system)
         self.cont_coords.point.values = obj.Object.ContourPoints
         self.cont_lines = coin.SoLineSet()
-        self.cont_lines.numVertices.value = obj.Object.ContourVertices
+        self.cont_lines.numVertices.values = obj.Object.ContourVertices
 
         contours.addChild(self.cont_coords)
         contours.addChild(self.cont_lines)
@@ -226,7 +228,7 @@ class ViewProviderSurface:
             cont_points = fp.getPropertyByName("ContourPoints")
             cont_vert = fp.getPropertyByName("ContourVertices")
             self.cont_coords.point.values = cont_points
-            self.cont_lines.numVertices.value = cont_vert
+            self.cont_lines.numVertices.values = cont_vert
             #FreeCAD.Console.PrintMessage(cont_points + cont_vert)
 
     def getDisplayModes(self,obj):

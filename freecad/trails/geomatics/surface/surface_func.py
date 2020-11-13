@@ -41,15 +41,16 @@ class SurfaceFunc:
         """
 
         MeshList = []
+        base = FreeCAD.Vector(points[0][0], points[0][1], 0.0)
         for i in index:
             if i == -1: continue
-            MeshList.append(points[i])
+            MeshList.append(points[i].sub(base))
 
         mesh = Mesh.Mesh(MeshList)
 
         return mesh
 
-    def contour_points(mesh, deltaH):
+    def contour_points(point, mesh, deltaH):
         """
         Create contour lines for selected surface
         """
@@ -61,6 +62,7 @@ class SurfaceFunc:
         cont_points = []
         coords = []
         num_vert = []
+        base = FreeCAD.Vector(point[0], point[1], 0.0)
         for H in range(int(round(zmin)), int(round(zmax))):
             if deltaH == 0: break
             if H % deltaH == 0:
@@ -69,12 +71,13 @@ class SurfaceFunc:
 
             try:
                 for cont in cont_points[0]:
-                    coords.extend(cont)
-                    num_vert.append(len(cont))
+                    cont_up = []
+                    for i in cont:
+                        cont_up.append(i.add(base))
+                    coords.extend(cont_up)
+                    num_vert.append(len(cont_up))
 
             except Exception: pass
-        
-        #FreeCAD.Console.PrintMessage(str(coords))
 
         return coords, num_vert
 
