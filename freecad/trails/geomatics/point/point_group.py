@@ -50,7 +50,7 @@ class PointGroup:
         '''
         Set data properties.
         '''
-        obj.Proxy = self
+
         self.Type = 'Trails::PointGroup'
 
         obj.addProperty(
@@ -65,6 +65,9 @@ class PointGroup:
             "Base",
             "List of point markers").Marker = [*marker_dict]
 
+        obj.Proxy = self
+
+        self.Base = None
         self.Points = None
 
     def onChanged(self, fp, prop):
@@ -113,7 +116,8 @@ class ViewProviderPointGroup:
         Create Object visuals in 3D view.
         '''
         # Get geo system and geo origin.
-        geo_system, geo_origin = GeoNodes.create_origin(coords=obj.Object.Points[0])
+        base = obj.Object.Points[0]
+        geo_system, geo_origin = GeoNodes.create_origin(coords=base)
 
         # Geo coordinates.
         self.geo_coords = coin.SoGeoCoordinate()
@@ -123,7 +127,7 @@ class ViewProviderPointGroup:
         # Geo Seperator.
         geo_seperator = coin.SoGeoSeparator()
         geo_seperator.geoSystem.setValues(geo_system)
-        geo_seperator.geoCoords.setValue(geo_origin[0], geo_origin[1], geo_origin[2])
+        geo_seperator.geoCoords.setValue(base[0], base[1], base[2])
 
         # Point group features.
         points = coin.SoPointSet()

@@ -32,9 +32,6 @@ class SurfaceFunc:
     This class is contain Surface Object functions.
     """
 
-    def __init__(self):
-        print("test")
-
     def create_mesh(points, index):
         """
         Create a mesh for unwrited functions.
@@ -68,6 +65,7 @@ class SurfaceFunc:
             if H % deltaH == 0:
                 cont_points = mesh.crossSections(
                     [((0, 0, H*1000), (0, 0, 1))], 0.000001)
+                FreeCAD.Console.PrintMessage(str(H)+" ")
 
             try:
                 for cont in cont_points[0]:

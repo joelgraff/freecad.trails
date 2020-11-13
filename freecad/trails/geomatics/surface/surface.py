@@ -87,6 +87,7 @@ class Surface:
 
         obj.Proxy = self
 
+        self.Mesh = None
         self.Points = None
         self.Index = None
         obj.ContourInterval = (1.0, 0.0, 100.0, 1.0)
@@ -105,9 +106,9 @@ class Surface:
             deltaH = fp.getPropertyByName("ContourInterval")
 
             try:
-                mesh = SurfaceFunc.create_mesh(points, index)
-                coords, num_vert = SurfaceFunc.contour_points(points[0], mesh, deltaH)
-                #FreeCAD.Console.PrintMessage(num_vert)
+                self.Mesh = SurfaceFunc.create_mesh(points, index)
+                coords, num_vert = SurfaceFunc.contour_points(
+                    points[0], self.Mesh, deltaH)
 
                 fp.ContourPoints = coords
                 fp.ContourVertices = num_vert
@@ -146,7 +147,8 @@ class ViewProviderSurface:
         Create Object visuals in 3D view.
         '''
         # Get geo system and geo origin.
-        geo_system, geo_origin = GeoNodes.create_origin(coords=obj.Object.Points[0])
+        base = obj.Object.Points[0]
+        geo_system, geo_origin = GeoNodes.create_origin(coords=base)
 
         # Geo coordinates.
         self.geo_coords = coin.SoGeoCoordinate()
@@ -156,7 +158,8 @@ class ViewProviderSurface:
         # Geo Seperator.
         geo_separator = coin.SoGeoSeparator()
         geo_separator.geoSystem.setValues(geo_system)
-        geo_separator.geoCoords.setValue(geo_origin[0], geo_origin[1], geo_origin[2])
+        geo_separator.geoCoords.setValue(
+            base[0], base[1], base[2])
 
         # Point group features.
         self.triangles = coin.SoIndexedFaceSet()
@@ -229,7 +232,6 @@ class ViewProviderSurface:
             cont_vert = fp.getPropertyByName("ContourVertices")
             self.cont_coords.point.values = cont_points
             self.cont_lines.numVertices.values = cont_vert
-            #FreeCAD.Console.PrintMessage(cont_points + cont_vert)
 
     def getDisplayModes(self,obj):
         '''
