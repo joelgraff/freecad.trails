@@ -184,12 +184,19 @@ class ViewProviderSurface:
 
         # Contour nodes.
         contours = coin.SoSeparator()
+        cont_color = coin.SoBaseColor()
+        cont_color.rgb = (60, 255, 255)
         self.cont_coords = coin.SoGeoCoordinate()
         self.cont_coords.geoSystem.setValues(geo_system)
         self.cont_coords.point.values = obj.Object.ContourPoints
         self.cont_lines = coin.SoLineSet()
         self.cont_lines.numVertices.values = obj.Object.ContourVertices
+        cont_style = coin.SoDrawStyle()
+        cont_style.style = coin.SoDrawStyle.LINES
+        cont_style.lineWidth = 2
 
+        contours.addChild(cont_color)
+        contours.addChild(cont_style)
         contours.addChild(self.cont_coords)
         contours.addChild(self.cont_lines)
 
