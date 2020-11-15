@@ -33,12 +33,28 @@ import random
 
 
 
-def create(points, name='PointGroup'):
-    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", name)
+def get_points(points):
+    """
+    Find the existing Point Groups object
+    """
+    # Return an existing instance of the same name, if found.
+    obj = FreeCAD.ActiveDocument.getObject('Points')
+
+    if obj:
+        return obj
+
+    obj = create(points, "Points")
+
+    return obj
+
+def create(points, name='Point Group'):
+    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "PointGroup")
     obj.Label = name
     PointGroup(obj)
     obj.Points = points
     ViewProviderPointGroup(obj.ViewObject)
+
+    return obj
 
 
 class PointGroup:

@@ -34,12 +34,14 @@ import random
 
 
 def create(points, index, name='Surface'):
-    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", name)
+    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "Surface")
     obj.Label = name
     Surface(obj)
     obj.Points = points
     obj.Index = index
     ViewProviderSurface(obj.ViewObject)
+
+    return obj
 
 
 class Surface:
