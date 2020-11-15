@@ -77,13 +77,13 @@ class Surface:
             "App::PropertyVectorList",
             "ContourPoints",
             "Surface Style",
-            "Points of contours").ContourPoints = ()
+            "Points of contours", 4).ContourPoints = ()
 
         obj.addProperty(
             "App::PropertyIntegerList",
             "ContourVertices",
             "Surface Style",
-            "Vertices of contours.").ContourVertices = ()
+            "Vertices of contours.", 4).ContourVertices = ()
 
         obj.Proxy = self
 

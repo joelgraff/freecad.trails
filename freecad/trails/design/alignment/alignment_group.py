@@ -35,7 +35,7 @@ from ..project.support import properties, units
 from ..project.project_observer import ProjectObserver
 from ..project.xml.alignment_exporter import AlignmentExporter
 from ..project.xml.alignment_importer import AlignmentImporter
-from freecad.trails import resources
+from freecad.trails import ICONPATH, resources
 
 def get():
     """
@@ -174,7 +174,7 @@ class _ViewProviderAlignmentGroup(object):
         """
         Return the class icon
         """
-        return ''
+        return ICONPATH + '/icons/Alignment.svg'
 
     def __init__(self, vobj):
         """
