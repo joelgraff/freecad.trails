@@ -104,7 +104,7 @@ class EventFilter(QtCore.QObject):
 	#\cond
 	def __init__(self):
 		QtCore.QObject.__init__(self)
-		self.lastpos=None
+		self.lastpos=QtCore.QPoint(0,0)
 		self.on_key_press=on_key_press
 		self.on_key_release=on_key_release
 		self.on_move=on_move
@@ -230,7 +230,7 @@ class EventFilter(QtCore.QObject):
 				self.output.vmap['dxw'].setText(str(o.width()))
 				self.output.vmap['dyw'].setText(str(o.height()))
 
-				widget = QtGui.qApp.widgetAt(self.lastpos)
+				widget = QtGui.QApplication.widgetAt(self.lastpos)
 				if widget:
 					while widget:
 						try:
@@ -322,11 +322,11 @@ class EventFilter(QtCore.QObject):
 #
 
 def stop():
-	mw=QtGui.QApplication
+	mw=QtGui.qApp
 	ef=FreeCAD.eventfilter
 	mw.removeEventFilter(ef)
 	#mw.setOverrideCursor(QtCore.Qt.SizeAllCursor)
-	mw.setOverrideCursor(QtCore.Qt.ArrowCursor)
+	#mw.setOverrideCursor(QtCore.Qt.ArrowCursor)
 #	FreeCADGui.activateWorkbench("Geodat")
 	sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
 	
@@ -982,13 +982,13 @@ def navi():
 	'''navigator startup'''
 
 
-	mw=QtGui.QApplication
+	mw=QtGui.qApp
 	#widget.setCursor(QtCore.Qt.SizeAllCursor)
 	#cursor ausblenden
 	#mw.setOverrideCursor(QtCore.Qt.BlankCursor)
 
 # 	FreeCADGui.activateWorkbench("NoneWorkbench")
-	mw.setOverrideCursor(QtCore.Qt.PointingHandCursor)
+	#mw.setOverrideCursor(QtCore.Qt.PointingHandCursor)
 	ef=EventFilter()
 
 	ef.laenge=0.0
