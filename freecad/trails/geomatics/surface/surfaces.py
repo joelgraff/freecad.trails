@@ -25,7 +25,7 @@ Create a Point Group Object from FPO.
 '''
 
 import FreeCAD, FreeCADGui
-from freecad.trails import ICONPATH
+from freecad.trails import ICONPATH, geo_origin
 
 
 
@@ -47,11 +47,13 @@ def create():
     """
     Factory method for Point Groups.
     """
+    main = geo_origin.get()
     obj = FreeCAD.ActiveDocument.addObject(
         "App::DocumentObjectGroupPython", 'Surfaces')
     obj.Label = "Surfaces"
     Surfaces(obj)
     ViewProviderSurfaces(obj.ViewObject)
+    main.addObject(obj)
 
     return obj
 

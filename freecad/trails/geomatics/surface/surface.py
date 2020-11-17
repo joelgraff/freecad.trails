@@ -28,7 +28,7 @@ import FreeCAD, FreeCADGui
 from pivy import coin
 from ..utils import GeoNodes
 from .surface_func import SurfaceFunc
-from freecad.trails import ICONPATH
+from freecad.trails import ICONPATH, geo_origin
 import random
 
 
@@ -150,7 +150,8 @@ class ViewProviderSurface:
         '''
         # Get geo system and geo origin.
         base = obj.Object.Points[0]
-        geo_system, geo_origin = GeoNodes.create_origin(coords=base)
+        origin = geo_origin.get(base)
+        geo_system = ["UTM", origin.UtmZone, "FLAT"]
 
         # Geo coordinates.
         self.geo_coords = coin.SoGeoCoordinate()

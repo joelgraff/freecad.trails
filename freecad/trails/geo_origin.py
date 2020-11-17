@@ -25,40 +25,38 @@ Create a Point Group Object from FPO.
 '''
 
 import FreeCAD, FreeCADGui
-from freecad.trails import ICONPATH, geo_origin
+from pivy import coin
+from freecad.trails import ICONPATH, zone_list
 
 
 
-def get():
+def get(origin=(0, 0, 0)):
     """
     Find the existing Point Groups object
     """
     # Return an existing instance of the same name, if found.
-    obj = FreeCAD.ActiveDocument.getObject('PointGroups')
+    obj = FreeCAD.ActiveDocument.getObject('GeoOrigin')
 
     if obj:
+        if obj.Origin == FreeCAD.Vector(0, 0, 0):
+            obj.Origin = origin
         return obj
 
-    obj = create()
-
+    obj = create(origin)
     return obj
 
-def create():
-    """
-    Factory method for Point Groups.
-    """
-    main = geo_origin.get()
-    obj = FreeCAD.ActiveDocument.addObject(
-        "App::DocumentObjectGroupPython", 'PointGroups')
-    obj.Label = "Point Groups"
-    PointGroups(obj)
-    ViewProviderPointGroups(obj.ViewObject)
-    main.addObject(obj)
+def create(origin):
+    obj=FreeCAD.ActiveDocument.addObject(
+        "App::DocumentObjectGroupPython", "GeoOrigin")
+    GeoOrigin(obj)
+    obj.UtmZone = "Z1"
+    obj.Origin = origin
+    ViewProviderGeoOrigin(obj.ViewObject)
 
     return obj
 
 
-class PointGroups:
+class GeoOrigin:
     """
     This class is about Point Group Object data features.
     """
@@ -67,15 +65,46 @@ class PointGroups:
         '''
         Set data properties.
         '''
-        self.Type = 'Trails::PointGroups'
+        self.Type = 'Trails::GeoOrigin'
 
+        obj.addProperty(
+            "App::PropertyEnumeration",
+            "UtmZone",
+            "Base",
+            "UTM zone").UtmZone = zone_list
+        
+        obj.addProperty(
+            "App::PropertyVector",
+            "Origin",
+            "Base",
+            "Origin point.").Origin = (0, 0, 0)
+        
         obj.Proxy = self
+
+        self.UtmZone = None
+        self.Origin = None
 
     def onChanged(self, fp, prop):
         '''
         Do something when a data property has changed.
         '''
-        return
+        # Set geo origin.
+        sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
+        node = sg.getChild(0)
+
+        if not isinstance(node, coin.SoGeoOrigin):
+            node = coin.SoGeoOrigin()
+            sg.insertChild(node,0)
+
+        if prop == "UtmZone":
+            zone = fp.getPropertyByName("UtmZone")
+            geo_system = ["UTM", zone, "FLAT"]
+            node.geoSystem.setValues(geo_system)
+
+        if prop == "Origin":
+            origin = fp.getPropertyByName("Origin")
+            node.geoCoords.setValue(
+                origin.x, origin.y, 0)
 
     def execute(self, fp):
         '''
@@ -84,7 +113,8 @@ class PointGroups:
         return
 
 
-class ViewProviderPointGroups:
+
+class ViewProviderGeoOrigin:
     """
     This class is about Point Group Object view features.
     """
@@ -107,7 +137,7 @@ class ViewProviderPointGroups:
         '''
         Return object treeview icon.
         '''
-        return ICONPATH + '/icons/PointGroup.svg'
+        return ICONPATH + '/icons/GeoOrigin.svg'
 
     def claimChildren(self):
         """
