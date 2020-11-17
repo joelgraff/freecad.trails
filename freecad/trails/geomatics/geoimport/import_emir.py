@@ -91,38 +91,6 @@ def	import_emir(
 	lines=f.readlines()
 	parsedata(lines)
 
-s6='''
-MainWindow:
-	VerticalLayout:
-		id:'main'
-
-		QtGui.QLabel:
-			setText:"***   I M P O R T  EMIR   GEODATA   ***"
-		QtGui.QLabel:
-
-		QtGui.QLabel:
-			setText:"Data input filename"
-
-		QtGui.QLineEdit:
-			setText:"UserAppData/Mod/geodat/testdata/emir.dat"
-			id: 'bl'
-
-		QtGui.QPushButton:
-			setText: "Get File Name"
-			clicked.connect: app.getfn
-
-#		QtGui.QLabel:
-#			setText:"direct Data input  "
-
-#		QtGui.QTextEdit:
-#			setText:""
-#			id: 'data'
-
-		QtGui.QPushButton:
-			setText: "Run values"
-			clicked.connect: app.run
-
-'''
 
 from PySide import QtGui
 
@@ -147,16 +115,17 @@ class MyApp(object):
 
 
 def mydialog():
-	app=MyApp()
 
 	from freecad.trails.geomatics.guigeoimport import miki
+	from freecad.trails.geomatics.guigeoimport.miki_import_emir import sdialog
 
+	app=MyApp()
 	miki=miki.Miki()
 	miki.app=app
 	app.root=miki
 
-	miki.parse2(s6)
-	miki.run(s6)
+	miki.parse2(sdialog)
+	miki.run(sdialog)
 	return miki
 
 
