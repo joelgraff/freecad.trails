@@ -224,7 +224,7 @@ def mydialog():
 
 	app = MyApp()
 
-	from . import miki
+	from freecad.trails.geomatics.guigeoimport import miki
 
 	miki = miki.Miki()
 	miki.app = app

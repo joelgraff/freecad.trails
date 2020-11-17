@@ -414,7 +414,7 @@ class MyApp(object):
 def mydialog(run=True):
 	'''the gui startup'''
 
-	from . import miki
+	from freecad.trails.geomatics.guigeoimport import miki
 
 	app=MyApp()
 
