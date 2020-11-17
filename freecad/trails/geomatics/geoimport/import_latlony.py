@@ -182,60 +182,6 @@ def import_latlon(filename,orig,hi,op):
 	FreeCAD.ActiveDocument.recompute()
 	return
 
-inn=FreeCAD.ConfigGet("UserAppData")
-
-
-
-s6='''
-MainWindow:
-	VerticalLayout:
-		id:'main'
-
-		QtGui.QLabel:
-			setText:"***   I M P O R T    LAT LON Height     ***"
-		QtGui.QLabel:
-
-		QtGui.QLabel:
-			setText:"Track input filename"
-
-		QtGui.QLineEdit:
-			setText:"UserAppData/Mod/geodat/testdata/latlonh.txt"
-			id: 'bl'
-
-		QtGui.QPushButton:
-			setText: "Get LatLon Height File Name"
-			clicked.connect: app.getfn
-
-		QtGui.QLabel:
-			setText:"Origin (lat,lon) "
-
-		QtGui.QLineEdit:
-			setText:"50.3736049 11.191643"
-#			setText:"auto"
-			id: 'orig'
-
-		QtGui.QLabel:
-			setText:"relative Height of the Startpoint"
-
-		QtGui.QLineEdit:
-#			setText:"-197.55"
-			setText:"0"
-			id: 'h'
-
-		QtGui.QRadioButton:
-			setText: "Generate Data Nodes "
-#			clicked.connect: app.run_co2
-
-		QtGui.QRadioButton:
-			setText: "Only points"
-			id: 'op'
-
-
-		QtGui.QPushButton:
-			setText: "Run values"
-			clicked.connect: app.run
-
-'''.format(inn)
 
 class MyApp(object):
 
@@ -259,16 +205,17 @@ class MyApp(object):
 
 
 def mydialog():
-	app=MyApp()
 
 	from freecad.trails.geomatics.guigeoimport import miki
+	from freecad.trails.geomatics.guigeoimport.miki_import_latlony import sdialog
 
+	app=MyApp()
 	miki=miki.Miki()
 	miki.app=app
 	app.root=miki
 
-	miki.parse2(s6)
-	miki.run(s6)
+	miki.parse2(sdialog)
+	miki.run(sdialog)
 
 def importLatLonZ():
 	mydialog()
