@@ -324,41 +324,6 @@ def createLIDAR():
 
 
 
-sdialog='''
-MainWindow:
-	VerticalLayout:
-		id:'main'
-
-
-		QtGui.QLabel:
-			setText:"***   I M P O R T    L I D A R   ***"
-
-		QtGui.QCheckBox:
-			id: 'createPCL' 
-			setText: 'create Point Cloud'
-#			stateChanged.connect: app.pclMode
-			setChecked: True
-
-		QtGui.QCheckBox:
-			id: 'useOrigin' 
-			setText: 'use Origin of Data'
-#			stateChanged.connect: app.pclMode
-#			setChecked: True
-
-		QtGui.QPushButton:
-			setText: "Browse for input data filename."
-			clicked.connect: app.getfn
-
-		QtGui.QLineEdit:
-			setText:"/media/thomas/b08575a9-0252-47ca-971e-f94c20b33801/geodat_DATEN/las_lee_county/24561900.las"
-			id: 'bl'
-
-	QtGui.QPushButton:
-		setText: "initialize values"
-		id:'run'
-		clicked.connect: app.run
-
-'''
 
 
 
@@ -415,9 +380,9 @@ def mydialog(run=True):
 	'''the gui startup'''
 
 	from freecad.trails.geomatics.guigeoimport import miki
+	from freecad.trails.geomatics.guigeoimport.miki_import_lidar import sdialog
 
 	app=MyApp()
-
 	miki=miki.Miki()
 	miki.app=app
 	app.root=miki
