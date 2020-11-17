@@ -9,7 +9,7 @@
 """the dialog layout as miki string"""
 
  
-s6 = '''
+sdialog = '''
 #VerticalLayoutTab:
 MainWindow:
 #DockWidget:
