@@ -15,7 +15,7 @@ from PySide import QtGui
 # import FreeCAD
 # import FreeCADGui
 
-from freecad.trails.geomatics.geoimport import miki
+from . import miki
 from freecad.trails.geomatics.geoimport.import_osm import import_osm2
 from freecad.trails.geomatics.geoimport.say import say
 

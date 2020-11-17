@@ -183,7 +183,7 @@ def mydialog():
 	'''the dialog to import a gdal file'''
 
 	app=MyApp()
-	from . import miki
+	from freecad.trails.geomatics.guigeoimport import miki
 	miki = miki.Miki()
 
 	miki.app=app
