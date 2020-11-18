@@ -25,6 +25,7 @@ import FreeCAD
 import FreeCADGui
 from PySide import QtCore, QtGui
 from freecad.trails import ICONPATH,geo_test
+from . import point_groups
 import csv
 import os
 
@@ -86,13 +87,7 @@ class ImportPointFile:
         Command activation method
         """
         # Get or create 'Point_Groups' group
-        try:
-            PointGroups = FreeCAD.ActiveDocument.Point_Groups
-        except Exception:
-            FreeCAD.ActiveDocument.addObject(
-                "App::DocumentObjectGroup", 'Point_Groups')
-            PointGroups = FreeCAD.ActiveDocument.Point_Groups
-            PointGroups.Label = "Point Groups"
+        PointGroups = point_groups.get()
 
         # Get or create 'Points'
         try:
@@ -117,9 +112,8 @@ class ImportPointFile:
         UI.PointGroupChB.setChecked(False)
 
         # Add point groups to QComboBox
-        PointGroups = FreeCAD.ActiveDocument.Point_Groups.Group
         self.GroupList = []
-        for Item in PointGroups:
+        for Item in PointGroups.Group:
             if Item.TypeId == 'Points::Feature':
                 self.GroupList.append(Item.Name)
                 UI.SubGroupListCB.addItem(Item.Label)

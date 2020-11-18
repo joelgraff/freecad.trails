@@ -35,7 +35,7 @@ from ..project.support import properties, units
 from ..project.project_observer import ProjectObserver
 from ..project.xml.alignment_exporter import AlignmentExporter
 from ..project.xml.alignment_importer import AlignmentImporter
-from freecad.trails import resources
+from freecad.trails import ICONPATH, geo_origin, resources
 
 def get():
     """
@@ -55,12 +55,15 @@ def create():
     if obj:
         return obj.Proxy
 
+    main = geo_origin.get()
     obj = App.ActiveDocument.addObject(
         "App::DocumentObjectGroupPython", 'Alignments'
         )
 
     fpo = _AlignmentGroup(obj)
     _ViewProviderAlignmentGroup(obj.ViewObject)
+
+    main.addObject(obj)
 
     return fpo
 
@@ -174,7 +177,7 @@ class _ViewProviderAlignmentGroup(object):
         """
         Return the class icon
         """
-        return ''
+        return ICONPATH + '/icons/Alignment.svg'
 
     def __init__(self, vobj):
         """

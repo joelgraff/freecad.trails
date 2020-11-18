@@ -15,7 +15,7 @@ from PySide import QtGui
 # import FreeCAD
 # import FreeCADGui
 
-from freecad.trails.geomatics.geoimport import miki
+from . import miki
 from freecad.trails.geomatics.geoimport.import_osm import import_osm2
 from freecad.trails.geomatics.geoimport.say import say
 
@@ -230,6 +230,9 @@ class MyApp(object):
 # the gui startup
 def mydialog():
     """ starts the gui dialog """
+
+    from .miki_import_osm import sdialog
+
     print("OSM gui startup")
     app = MyApp()
 
@@ -237,9 +240,8 @@ def mydialog():
     my_miki.app = app
     app.root = my_miki
 
-    from .miki_import_osm import s6
-    my_miki.parse2(s6)
-    my_miki.run(s6)
+    my_miki.parse2(sdialog)
+    my_miki.run(sdialog)
     return my_miki
 
 

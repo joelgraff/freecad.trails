@@ -27,18 +27,21 @@ Create a Surface Object from FPO.
 import FreeCAD, FreeCADGui
 from pivy import coin
 from ..utils import GeoNodes
-from freecad.trails import ICONPATH
+from .surface_func import SurfaceFunc
+from freecad.trails import ICONPATH, geo_origin
 import random
 
 
 
 def create(points, index, name='Surface'):
-    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", name)
+    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "Surface")
     obj.Label = name
     Surface(obj)
     obj.Points = points
     obj.Index = index
     ViewProviderSurface(obj.ViewObject)
+
+    return obj
 
 
 class Surface:
@@ -50,6 +53,9 @@ class Surface:
         '''
         Set data properties.
         '''
+        self.Type = 'Trails::Surface'
+
+        # Triangulation properties.
         obj.addProperty(
             "App::PropertyVectorList",
             "Points",
@@ -62,22 +68,60 @@ class Surface:
             "Base",
             "Index of points").Index = ()
 
+        # Contour properties.
+        obj.addProperty(
+            "App::PropertyFloatConstraint",
+            "ContourInterval",
+            "Point Style",
+            "Size of the point group").ContourInterval = (1.0)
+
+        obj.addProperty(
+            "App::PropertyVectorList",
+            "ContourPoints",
+            "Surface Style",
+            "Points of contours", 4).ContourPoints = ()
+
+        obj.addProperty(
+            "App::PropertyIntegerList",
+            "ContourVertices",
+            "Surface Style",
+            "Vertices of contours.", 4).ContourVertices = ()
+
         obj.Proxy = self
+
+        self.Mesh = None
         self.Points = None
         self.Index = None
+        obj.ContourInterval = (1.0, 0.0, 100.0, 1.0)
+        self.ContourPoints = None
+        self.ContourVertices = None
 
     def onChanged(self, fp, prop):
         '''
         Do something when a data property has changed.
         '''
-        return
+        # fp is feature python.
+        if prop == "Points" or prop == "Index" or prop == "ContourInterval":
+            # Get Surface properties.
+            points = fp.getPropertyByName("Points")
+            index = fp.getPropertyByName("Index")
+            deltaH = fp.getPropertyByName("ContourInterval")
+
+            try:
+                self.Mesh = SurfaceFunc.create_mesh(points, index)
+                coords, num_vert = SurfaceFunc.contour_points(
+                    points[0], self.Mesh, deltaH)
+
+                fp.ContourPoints = coords
+                fp.ContourVertices = num_vert
+            
+            except Exception: pass
 
     def execute(self, fp):
         '''
         Do something when doing a recomputation. 
         '''
         return
-
 
 class ViewProviderSurface:
     """
@@ -105,7 +149,9 @@ class ViewProviderSurface:
         Create Object visuals in 3D view.
         '''
         # Get geo system and geo origin.
-        geo_system, geo_origin = GeoNodes.create_origin(coords=obj.Object.Points[0])
+        base = obj.Object.Points[0]
+        origin = geo_origin.get(base)
+        geo_system = ["UTM", origin.UtmZone, "FLAT"]
 
         # Geo coordinates.
         self.geo_coords = coin.SoGeoCoordinate()
@@ -113,9 +159,10 @@ class ViewProviderSurface:
         self.geo_coords.point.values = obj.Object.Points
 
         # Geo Seperator.
-        geo_seperator = coin.SoGeoSeparator()
-        geo_seperator.geoSystem.setValues(geo_system)
-        geo_seperator.geoCoords.setValue(geo_origin[0], geo_origin[1], geo_origin[2])
+        geo_separator = coin.SoGeoSeparator()
+        geo_separator.geoSystem.setValues(geo_system)
+        geo_separator.geoCoords.setValue(
+            base[0], base[1], base[2])
 
         # Point group features.
         self.triangles = coin.SoIndexedFaceSet()
@@ -134,14 +181,33 @@ class ViewProviderSurface:
         #highlight.documentName.setValue(FreeCAD.ActiveDocument.Name)
         #highlight.objectName.setValue(obj.Object.Name)
         #highlight.subElementName.setValue("Main")
+        highlight.addChild(self.mat_color)
         highlight.addChild(self.geo_coords)
         highlight.addChild(self.triangles)
 
+        # Contour nodes.
+        contours = coin.SoSeparator()
+        cont_color = coin.SoBaseColor()
+        cont_color.rgb = (60, 255, 255)
+        self.cont_coords = coin.SoGeoCoordinate()
+        self.cont_coords.geoSystem.setValues(geo_system)
+        self.cont_coords.point.values = obj.Object.ContourPoints
+        self.cont_lines = coin.SoLineSet()
+        self.cont_lines.numVertices.values = obj.Object.ContourVertices
+        cont_style = coin.SoDrawStyle()
+        cont_style.style = coin.SoDrawStyle.LINES
+        cont_style.lineWidth = 2
+
+        contours.addChild(cont_color)
+        contours.addChild(cont_style)
+        contours.addChild(self.cont_coords)
+        contours.addChild(self.cont_lines)
+
         # Point group root.
-        surface_root = geo_seperator
+        surface_root = geo_separator
         surface_root.addChild(shape_hints)
-        surface_root.addChild(self.mat_color)
         #surface_root.addChild(mat_binding)
+        surface_root.addChild(contours)
         surface_root.addChild(highlight)
         obj.addDisplayMode(surface_root,"Surface")
 
@@ -170,6 +236,12 @@ class ViewProviderSurface:
             index = fp.getPropertyByName("Index")
             for i in range(0, len(index)):
                 self.triangles.coordIndex.set1Value(i,index[i])
+
+        if prop == "Points" or prop == "Index" or prop == "ContourInterval":
+            cont_points = fp.getPropertyByName("ContourPoints")
+            cont_vert = fp.getPropertyByName("ContourVertices")
+            self.cont_coords.point.values = cont_points
+            self.cont_lines.numVertices.values = cont_vert
 
     def getDisplayModes(self,obj):
         '''

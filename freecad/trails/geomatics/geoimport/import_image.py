@@ -221,92 +221,6 @@ def import_image(filename=None,n=10,c=2,inverse=False,kx=10,ky=10,kz=60,gengrid=
 #bs=createNurbsblock('/home/microelly2/Schreibtisch/normanc.jpg',10,0,True,100,100,4)
 
 
-
-sdialog='''
-#VerticalLayoutTab:
-MainWindow:
-	VerticalLayout:
-		id:'main'
-
-		QtGui.QLabel:
-			setText:"***   I M A G E   T O    N U R B S    ***"
-
-	VerticalLayout:
-		id:'img1'
-#		setVisible:False
-
-		QtGui.QPushButton:
-			setText: "Browse for input data filename"
-			clicked.connect: app.getfn
-
-		QtGui.QLineEdit:
-			setText:"UserAppData/Mod/geodat/testdata/freeka.png"
-			id: 'bl'
-
-		HorizontalLayout:
-			QtGui.QLabel:
-				setText:"Scale  "
-
-			QtGui.QLineEdit:
-				setText:"10"
-				id: 'kx'
-
-			QtGui.QLineEdit:
-				setText:"10"
-				id: 'ky'
-
-			QtGui.QLineEdit:
-				setText:"60"
-				id: 'kz'
-
-		QtGui.QCheckBox:
-			id: 'inverse' 
-			setText: 'Invert Height'
-			setChecked: False
-
-		QtGui.QLabel:
-			setText:"Border Size "
-
-		QtGui.QLineEdit:
-			setText:"5"
-			id: 'border'
-
-		QtGui.QLabel:
-			setText:"Color Channel RGB 012 3-grey noimp "
-
-		QtGui.QLineEdit:
-			setText:"2"
-			id: 'color'
-
-		QtGui.QCheckBox:
-			id: 'pointsonly' 
-			setText: 'create only a Pointcloud'
-			setChecked: True
-
-
-		QtGui.QCheckBox:
-			id: 'gengrid' 
-			setText: 'create Nurbs Grid'
-			setChecked: True
-
-		QtGui.QCheckBox:
-			id: 'genblock' 
-			setText: 'create Nurbsblock Solid'
-			setChecked: False
-
-		QtGui.QCheckBox:
-			id: 'genpoles' 
-			setText: 'create Pole Cloud'
-			setChecked: False
-
-
-	QtGui.QPushButton:
-		setText: "import image"
-		id:'run'
-		clicked.connect: app.run
-
-'''
-
 ## the gui backend
 
 
@@ -352,10 +266,11 @@ class MyApp(object):
 
 def mydialog(run=True):
 
+	from freecad.trails.geomatics.guigeoimport import miki
+	from freecad.trails.geomatics.guigeoimport.miki_import_image import sdialog
+
+
 	app=MyApp()
-
-	from . import miki
-
 	miki=miki.Miki()
 	miki.app=app
 	app.root=miki

@@ -27,18 +27,34 @@ Create a Point Group Object from FPO.
 import FreeCAD, FreeCADGui
 from pivy import coin
 from ..utils import GeoNodes
-from freecad.trails import ICONPATH
+from freecad.trails import ICONPATH, geo_origin
 from . import marker_dict
 import random
 
 
 
-def create(points, name='PointGroup'):
-    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", name)
+def get_points(points):
+    """
+    Find the existing Point Groups object
+    """
+    # Return an existing instance of the same name, if found.
+    obj = FreeCAD.ActiveDocument.getObject('Points')
+
+    if obj:
+        return obj
+
+    obj = create(points, "Points")
+
+    return obj
+
+def create(points, name='Point Group'):
+    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "PointGroup")
     obj.Label = name
     PointGroup(obj)
     obj.Points = points
     ViewProviderPointGroup(obj.ViewObject)
+
+    return obj
 
 
 class PointGroup:
@@ -50,6 +66,9 @@ class PointGroup:
         '''
         Set data properties.
         '''
+
+        self.Type = 'Trails::PointGroup'
+
         obj.addProperty(
             "App::PropertyVectorList",
             "Points",
@@ -63,6 +82,8 @@ class PointGroup:
             "List of point markers").Marker = [*marker_dict]
 
         obj.Proxy = self
+
+        self.Base = None
         self.Points = None
 
     def onChanged(self, fp, prop):
@@ -104,6 +125,7 @@ class ViewProviderPointGroup:
             "Size of the point group").PointSize = (3.0)
 
         obj.Proxy = self
+
         obj.PointSize = (3.0, 1.0, 20.0, 1.0)
 
     def attach(self, obj):
@@ -111,7 +133,9 @@ class ViewProviderPointGroup:
         Create Object visuals in 3D view.
         '''
         # Get geo system and geo origin.
-        geo_system, geo_origin = GeoNodes.create_origin(coords=obj.Object.Points[0])
+        base = obj.Object.Points[0]
+        origin = geo_origin.get(base)
+        geo_system = ["UTM", origin.UtmZone, "FLAT"]
 
         # Geo coordinates.
         self.geo_coords = coin.SoGeoCoordinate()
@@ -121,7 +145,7 @@ class ViewProviderPointGroup:
         # Geo Seperator.
         geo_seperator = coin.SoGeoSeparator()
         geo_seperator.geoSystem.setValues(geo_system)
-        geo_seperator.geoCoords.setValue(geo_origin[0], geo_origin[1], geo_origin[2])
+        geo_seperator.geoCoords.setValue(base[0], base[1], base[2])
 
         # Point group features.
         points = coin.SoPointSet()
@@ -131,7 +155,6 @@ class ViewProviderPointGroup:
         self.point_normal = coin.SoNormal()
         self.point_style = coin.SoDrawStyle()
         self.point_style.style = coin.SoDrawStyle.POINTS
-
 
         # Highlight for selection.
         highlight = coin.SoType.fromName('SoFCSelection').createInstance()

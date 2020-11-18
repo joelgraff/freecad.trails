@@ -104,7 +104,7 @@ class EventFilter(QtCore.QObject):
 	#\cond
 	def __init__(self):
 		QtCore.QObject.__init__(self)
-		self.lastpos=None
+		self.lastpos=QtCore.QPoint(0,0)
 		self.on_key_press=on_key_press
 		self.on_key_release=on_key_release
 		self.on_move=on_move
@@ -230,7 +230,7 @@ class EventFilter(QtCore.QObject):
 				self.output.vmap['dxw'].setText(str(o.width()))
 				self.output.vmap['dyw'].setText(str(o.height()))
 
-				widget = QtGui.qApp.widgetAt(self.lastpos)
+				widget = QtGui.QApplication.widgetAt(self.lastpos)
 				if widget:
 					while widget:
 						try:
@@ -238,6 +238,7 @@ class EventFilter(QtCore.QObject):
 #							Msg("widget "+ p.objectName()+"!\n")
 							if p.__class__.__name__ =='QMdiSubWindow':
 								widget=None
+								break
 								# gefunden
 #							Msg('\n')
 							label='???'
@@ -261,6 +262,7 @@ class EventFilter(QtCore.QObject):
 							widget=p
 						except Exception:
 							widget=None
+							break
 				stack=''
 				for t in windowlist:
 					stack += str(t)+"\n"
@@ -318,15 +320,14 @@ class EventFilter(QtCore.QObject):
 		return False
 
 
-## stop and delete the EventFilter
-#
+# stop and delete the EventFilter
 
 def stop():
-	mw=QtGui.QApplication
+	mw=QtGui.qApp
 	ef=FreeCAD.eventfilter
 	mw.removeEventFilter(ef)
 	#mw.setOverrideCursor(QtCore.Qt.SizeAllCursor)
-	mw.setOverrideCursor(QtCore.Qt.ArrowCursor)
+	#mw.setOverrideCursor(QtCore.Qt.ArrowCursor)
 #	FreeCADGui.activateWorkbench("Geodat")
 	sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
 	
@@ -334,46 +335,7 @@ def stop():
 	ef.navi.deleteLater()
 	sg.removeChild(ef.background)
 
-
-
-
-def keypress(ef,keystring):
-
-	camera=FreeCAD.ActiveDocument.Wedge
-
-	if keystring=='X':
-		camera.Placement.Base.x += 10
-	if keystring=='Y':
-		camera.Placement.Base.y += 10
-	if keystring=='Z':
-		camera.Placement.Base.z += 10
-
-	[y,p,r]=camera.Placement.Rotation.toEuler()
-
-	if keystring=='G':
-		y += 0.1
-		camera.Placement.Rotation=FreeCAD.Rotation(y,p,r)
-	if keystring=='H':
-		p += 0.1
-		camera.Placement.Rotation=FreeCAD.Rotation(y,p,r)
-	if keystring=='F':
-		r += 0.1
-		camera.Placement.Rotation=FreeCAD.Rotation(y,p,r)
-	
-	if keystring=='C':
-		camera.Placement=FreeCAD.Placement()
-	FreeCAD.activeDocument().recompute()
-
-	if keystring=='Escape':
-		print("stoppe eventserver ...")
-		ef.output.hide()
-		stop()
-	return True
-
-
-
-
-def on_keypress2(ef,keystring):
+def on_key_press(ef,keystring):
 
 	try:
 		camera=FreeCADGui.activeDocument().activeView().getCameraNode()
@@ -426,8 +388,6 @@ def on_keypress2(ef,keystring):
 		if  keystring=='Control-Down':
 					ef.roll =  0
 
-
-
 		if ef.mode=='turn':
 			if keystring=='Up':
 				ef.breite += 1.0
@@ -449,12 +409,6 @@ def on_keypress2(ef,keystring):
 						ef.laenge +=  180
 					else:
 						ef.laenge -=  180
-
-
-
-			
-
-
 
 		elif ef.mode=='walk':
 			Msg('walk mode')
@@ -573,15 +527,15 @@ def on_keypress2(ef,keystring):
 				camera.nearDistance.setValue(nD)
 
 		if keystring=='F2':
-			fn='/home/microelly2/FCB/b175_camera_controller/P1170438.JPG'
+			fn=os.path.dirname(__file__) +"/pics//P1170437.JPG"
 			ef.tex.filename = fn
 
 		if keystring=='F3':
-			fn='/home/microelly2/FCB/b175_camera_controller/P1170039.JPG'
+			fn=os.path.dirname(__file__) +"/pics/P1170039.JPG"
 			ef.tex.filename = fn
 
 		if keystring=='F4':
-			fn='/home/microelly2/FCB/b175_camera_controller/winter.jpg'
+			fn=os.path.dirname(__file__) +"/pics/winter.jpg"
 			ef.tex.filename = fn
 
 
@@ -654,27 +608,9 @@ def on_move2(ef,globalVector,localVector):
 
 	return True
 
-def on_move3(ef,globalVector,localVector):
-	return True
-
-## the old click callback
-
-def on_clicks(ef,button,count):
-	print("on_mouse:", button, str(count))
-	return True
-
-def on_clicks2(ef,button,count):
-	print("on_clicks2:", button, str(count))
-	if button=='Release':
-			ef.mouseMode=False
-	if button=='Left':
-			ef.mouseMode=True
-			ef.v=None
-	return True
-
 ## click callback for debug 
 
-def on_clicks3(ef,button,count):
+def on_clicks(ef,button,count):
 	print("on clicks 3",button)
 	print(ef.windowlist)
 	try: 
@@ -932,30 +868,27 @@ def myNavigatorWidget(ef):
 
 ## background image winter
 def background1(ef):
-	fn=os.path.dirname(__file__) +"/../pics/winter.jpg"
+	fn=os.path.dirname(__file__) +"/pics/winter.jpg"
 	ef.tex.filename = fn
 
 ## background image dune
 def background2(ef):
-	fn=os.path.dirname(__file__) +"/../pics//P1170437.JPG"
+	fn=os.path.dirname(__file__) +"/pics//P1170437.JPG"
 	ef.tex.filename = fn
 
 ## background image city
 def background3(ef):
-	fn=os.path.dirname(__file__) +"/../pics/P1170039.JPG"
+	fn=os.path.dirname(__file__) +"/pics/P1170039.JPG"
 	ef.tex.filename = fn
 
 
 ## background partially transparent
 def background4(ef):
-	fn=os.path.dirname(__file__) +"/../pics/transpa.png"
+	fn=os.path.dirname(__file__) +"/pics/transpa.png"
 	ef.tex.filename = fn
 
-def on_windowslist(ef,windowslist):
-	return True
-
 ## callback to set the mode or to do some other useful things
-def on_windowslist2(ef,windowslist):
+def on_windowslist(ef,windowslist):
 	for t in windowslist:
 		if  t==['QPushButton','Stop Navigation']:
 			stop()
@@ -982,13 +915,13 @@ def navi():
 	'''navigator startup'''
 
 
-	mw=QtGui.QApplication
+	mw=QtGui.qApp
 	#widget.setCursor(QtCore.Qt.SizeAllCursor)
 	#cursor ausblenden
 	#mw.setOverrideCursor(QtCore.Qt.BlankCursor)
 
 # 	FreeCADGui.activateWorkbench("NoneWorkbench")
-	mw.setOverrideCursor(QtCore.Qt.PointingHandCursor)
+	#mw.setOverrideCursor(QtCore.Qt.PointingHandCursor)
 	ef=EventFilter()
 
 	ef.laenge=0.0
@@ -1012,7 +945,7 @@ def navi():
 
 	 
 	# get a jpg filename
-	fn=os.path.dirname(__file__) +"/../pics/winter.jpg"
+	fn=os.path.dirname(__file__) +"/pics/transpa.jpg"
 
 	sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
 
@@ -1053,12 +986,12 @@ def navi():
 	FreeCAD.eventfilter=ef
 	mw.installEventFilter(ef)
 
-	FreeCAD.eventfilter.on_key_press=on_keypress2
-	FreeCAD.eventfilter.on_move=on_move3
-	FreeCAD.eventfilter.on_clicks=on_clicks3
-	FreeCAD.eventfilter.on_windowslist=on_windowslist2
+	FreeCAD.eventfilter.on_key_press=on_key_press
+	FreeCAD.eventfilter.on_move=on_move
+	FreeCAD.eventfilter.on_clicks=on_clicks
+	FreeCAD.eventfilter.on_windowslist=on_windowslist
 
-	on_keypress2(FreeCAD.eventfilter,'O')
+	on_key_press(FreeCAD.eventfilter,'O')
 
 	view=FreeCADGui.activeDocument().activeView()
 

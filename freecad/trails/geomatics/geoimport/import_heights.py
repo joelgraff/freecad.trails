@@ -103,29 +103,7 @@ def import_heights(b,le,size):
 	FreeCAD.activeDocument().recompute()
 
 
-s6='''
-MainWindow:
-	VerticalLayout:
-		id:'main'
-#		setFixedHeight: 600
-		setFixedWidth: 300
-#		move:  QtCore.QPoint(3000,100)
 
-		QtGui.QLabel:
-			setText:"C O N F I G U R A T I O N"
-		QtGui.QLabel:
-
-		QtGui.QLineEdit:
-			setText:"50.3377879,11.2104096"
-#			setText:"50.3736049,11.191643"
-			id: 'bl'
-
-		QtGui.QPushButton:
-			setText: "Run values"
-			clicked.connect: app.runbl
-
-#
-'''
 
 
 ## the gui backend
@@ -147,19 +125,17 @@ class MyApp(object):
 
 ## the gui startup
 def mydialog():
+
+	from freecad.trails.geomatics.guigeoimport import miki
+	from freecad.trails.geomatics.guigeoimport.miki_import_heights import sdialog
+
 	app=MyApp()
-
-	from . import miki
-
-
 	miki=miki.Miki()
 	miki.app=app
 	app.root=miki
 
-
-	miki.parse2(s6)
-
-	miki.run(s6)
+	miki.parse2(sdialog)
+	miki.run(sdialog)
 	return miki
 
 def importHeights():

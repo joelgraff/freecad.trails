@@ -131,54 +131,6 @@ def import_gpx(filename, orig, hi):
 	return str(tm.lat)+','+str(tm.lon)
 
 
-s6 = '''
-MainWindow:
-	VerticalLayout:
-		id:'main'
-
-		QtGui.QLabel:
-			setText:"***   I M P O R T    GPX  T R A C K    ***"
-		QtGui.QLabel:
-
-		QtGui.QLabel:
-			setText:"Track input filename"
-
-		QtGui.QLineEdit:
-			setText:"UserAppData/Mod/geodat/testdata/neufang.gpx"
-			id: 'bl'
-
-		QtGui.QPushButton:
-			setText: "Get GPX File Name"
-			clicked.connect: app.getfn
-
-		QtGui.QLabel:
-			setText:"Origin (lat,lon) "
-
-		QtGui.QLineEdit:
-#			setText:"50.3736049,11.191643"
-			setText:"auto"
-			id: 'orig'
-
-		QtGui.QLabel:
-			setText:"relative Height of the Startpoint"
-
-		QtGui.QLineEdit:
-#			setText:"-197.55"
-			setText:"0"
-			id: 'h'
-
-		QtGui.QRadioButton:
-			setText: "Generate Data Nodes "
-#			clicked.connect: app.run_co2
-
-
-		QtGui.QPushButton:
-			setText: "Run values"
-			clicked.connect: app.run
-
-'''
-
-
 # Gui backend
 class MyApp(object):
 	"""
@@ -222,17 +174,17 @@ def mydialog():
 	The dialog to import the file
 	"""
 
+	from freecad.trails.geomatics.guigeoimport import miki
+	from freecad.trails.geomatics.guigeoimport.miki_import_gpx import sdialog
+
 	app = MyApp()
+	amiki = miki.Miki()
+	amiki.app = app
+	app.root = amiki
 
-	from . import miki
-
-	miki = miki.Miki()
-	miki.app = app
-	app.root = miki
-
-	miki.parse2(s6)
-	miki.run(s6)
-	return miki
+	amiki.parse2(sdialog)
+	amiki.run(sdialog)
+	return amiki
 
 
 # tst open and hide dialog

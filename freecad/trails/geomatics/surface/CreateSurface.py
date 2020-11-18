@@ -25,6 +25,8 @@ import FreeCADGui
 from FreeCAD import Base
 from PySide import QtCore, QtGui
 from freecad.trails import ICONPATH, geo_test
+from . import surfaces
+from ..point import point_groups
 import Mesh
 import os
 
@@ -78,20 +80,8 @@ class CreateSurface:
         Command activation method
         """
         # Create 'Surfaces' and 'Point_Groups' groups
-        try:
-            self.Surfaces = FreeCAD.ActiveDocument.Surfaces
-        except Exception:
-            FreeCAD.ActiveDocument.addObject(
-                "App::DocumentObjectGroup", 'Surfaces')
-            self.Surfaces = FreeCAD.ActiveDocument.Surfaces
-
-        try:
-            PointGroups = FreeCAD.ActiveDocument.Point_Groups.Group
-        except Exception:
-            FreeCAD.ActiveDocument.addObject(
-                "App::DocumentObjectGroup", 'Point_Groups')
-            PointGroups = FreeCAD.ActiveDocument.Point_Groups.Group
-            PointGroups.Label = "Point Groups"
+        self.Surfaces = surfaces.get()
+        PointGroups = point_groups.get()
 
         # Set and show UI
         self.IPFui.setParent(FreeCADGui.getMainWindow())
@@ -104,7 +94,7 @@ class CreateSurface:
 
         # Create QStandardItem for every point group
         self.GroupList = []
-        for PointGroup in PointGroups:
+        for PointGroup in PointGroups.Group:
             self.GroupList.append(PointGroup.Name)
             SubGroupName = PointGroup.Label
             item = QtGui.QStandardItem(SubGroupName)
