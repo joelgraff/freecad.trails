@@ -26,7 +26,6 @@ Create a Surface Object from FPO.
 
 import FreeCAD, FreeCADGui
 from pivy import coin
-from ..utils import GeoNodes
 from .surface_func import SurfaceFunc
 from freecad.trails import ICONPATH, geo_origin
 import random
