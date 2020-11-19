@@ -1,6 +1,6 @@
 # /**********************************************************************
 # *                                                                     *
-# * Copyright (c) 2019 Hakan Seven <hakanseven12@gmail.com>             *
+# * Copyright (c) 2020 Hakan Seven <hakanseven12@gmail.com>             *
 # *                                                                     *
 # * This program is free software; you can redistribute it and/or modify*
 # * it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -21,7 +21,7 @@
 # ***********************************************************************
 
 '''
-Create a Point Group Object from FPO.
+Create a Surfaces Object from FPO.
 '''
 
 import FreeCAD, FreeCADGui
@@ -31,7 +31,7 @@ from freecad.trails import ICONPATH, geo_origin
 
 def get():
     """
-    Find the existing Point Groups object
+    Find the existing Surfaces object
     """
     # Return an existing instance of the same name, if found.
     obj = FreeCAD.ActiveDocument.getObject('Surfaces')
@@ -45,7 +45,7 @@ def get():
 
 def create():
     """
-    Factory method for Point Groups.
+    Factory method for Surfaces.
     """
     main = geo_origin.get()
     obj = FreeCAD.ActiveDocument.addObject(
@@ -54,13 +54,14 @@ def create():
     Surfaces(obj)
     ViewProviderSurfaces(obj.ViewObject)
     main.addObject(obj)
+    FreeCAD.ActiveDocument.recompute()
 
     return obj
 
 
 class Surfaces:
     """
-    This class is about Point Group Object data features.
+    This class is about Surfaces Object data features.
     """
 
     def __init__(self, obj):
@@ -86,7 +87,7 @@ class Surfaces:
 
 class ViewProviderSurfaces:
     """
-    This class is about Point Group Object view features.
+    This class is about Surfaces Object view features.
     """
 
     def __init__(self, vobj):
@@ -146,15 +147,13 @@ class ViewProviderSurfaces:
         pass
 
     def __getstate__(self):
-        '''
-        When saving the document this object gets
-        stored using Python's json module.
-        '''
+        """
+        Save variables to file.
+        """
         return None
  
     def __setstate__(self,state):
-        '''
-        When restoring the serialized object from document
-        we have the chance to set some internals here.
-        '''
+        """
+        Get variables from file.
+        """
         return None

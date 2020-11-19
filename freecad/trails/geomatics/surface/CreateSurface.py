@@ -24,8 +24,8 @@ import FreeCAD
 import FreeCADGui
 from FreeCAD import Base
 from PySide import QtCore, QtGui
-from freecad.trails import ICONPATH, geo_test
-from . import surfaces
+from freecad.trails import ICONPATH
+from . import surface
 from ..point import point_groups
 import Mesh
 import os
@@ -79,8 +79,7 @@ class CreateSurface:
         """
         Command activation method
         """
-        # Create 'Surfaces' and 'Point_Groups' groups
-        self.Surfaces = surfaces.get()
+        # Create Point_Groups' groups
         PointGroups = point_groups.get()
 
         # Set and show UI
@@ -160,18 +159,11 @@ class CreateSurface:
             Index = self.GroupList[SelectedIndex.row()]
             PointGroup = FreeCAD.ActiveDocument.getObject(Index)
 
-            if geo_test:
-                for Point in PointGroup.Points:
-                    xx = float(Point.x)
-                    yy = float(Point.y)
-                    zz = float(Point.z)
-                    test.append((xx, yy, zz))
-            else:
-                for Point in PointGroup.Points.Points:
-                    xx = float(Point.x)
-                    yy = float(Point.y)
-                    zz = float(Point.z)
-                    test.append([xx, yy, zz])
+            for Point in PointGroup.Points:
+                xx = float(Point.x)
+                yy = float(Point.y)
+                zz = float(Point.z)
+                test.append((xx, yy, zz))
 
         # Normalize points
         fpoint = test[0]
@@ -183,8 +175,6 @@ class CreateSurface:
 
         # Create delaunay triangulation
         tri = scipy.spatial.Delaunay(Data[:, :2])
-
-        MeshList = []
         index = []
 
         for i in tri.vertices:
@@ -195,24 +185,10 @@ class CreateSurface:
             #Test triangle
             if self.MaxLength(Data[first], Data[second], Data[third])\
                     and self.MaxAngle(Data[first], Data[second], Data[third]):
-                MeshList.append(Data[first])
-                MeshList.append(Data[second])
-                MeshList.append(Data[third])
                 index.extend([first, second, third, -1])
-        #FreeCAD.Console.PrintMessage(vertex_list)
-        
-        if geo_test:
-            from . import surface
-            surface.create(test, index, 'SurfaceTest')
-        
-        MeshObject = Mesh.Mesh(MeshList)
-        MeshObject.Placement.move(base)
+
         SurfaceNameLE = self.IPFui.SurfaceNameLE.text()
-        Surface = FreeCAD.ActiveDocument.addObject(
-            "Mesh::Feature", SurfaceNameLE)
-        Surface.Mesh = MeshObject
-        Surface.Label = SurfaceNameLE
-        self.Surfaces.addObject(Surface)
+        surface.create(test, index, SurfaceNameLE)
         FreeCAD.ActiveDocument.recompute()
 
 FreeCADGui.addCommand('Create Surface', CreateSurface())

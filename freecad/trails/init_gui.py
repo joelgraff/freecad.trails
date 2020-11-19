@@ -88,8 +88,7 @@ class TrailsWorkbench(Gui.Workbench):
                 'gui': self.menu + self.toolbar + self.context,
                 'cmd': [
                     'Create Surface',
-                    'Surface Editor',
-                    'Create Contour'
+                    'Surface Editor'
                     ]
             },
 
@@ -206,7 +205,7 @@ class TrailsWorkbench(Gui.Workbench):
         """
 
         from .geomatics.point import ImportPointFile, ExportPoints
-        from .geomatics.surface import CreateSurface, EditSurface, Contours
+        from .geomatics.surface import CreateSurface, EditSurface
         from .geomatics.section import CreateGuideLines
         from .geomatics import geoimport_gui
         from .design.project.commands \

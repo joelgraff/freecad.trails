@@ -1,6 +1,6 @@
 # /**********************************************************************
 # *                                                                     *
-# * Copyright (c) 2019 Hakan Seven <hakanseven12@gmail.com>             *
+# * Copyright (c) 2020 Hakan Seven <hakanseven12@gmail.com>             *
 # *                                                                     *
 # * This program is free software; you can redistribute it and/or modify*
 # * it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -28,17 +28,21 @@ import FreeCAD, FreeCADGui
 from pivy import coin
 from .surface_func import SurfaceFunc
 from freecad.trails import ICONPATH, geo_origin
+from . import surfaces
 import random
 
 
 
 def create(points, index, name='Surface'):
+    group = surfaces.get()
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "Surface")
     obj.Label = name
     Surface(obj)
     obj.Points = points
     obj.Index = index
     ViewProviderSurface(obj.ViewObject)
+    group.addObject(obj)
+    FreeCAD.ActiveDocument.recompute()
 
     return obj
 
@@ -88,7 +92,6 @@ class Surface:
 
         obj.Proxy = self
 
-        self.Mesh = None
         self.Points = None
         self.Index = None
         obj.ContourInterval = (1.0, 0.0, 100.0, 1.0)
@@ -106,15 +109,15 @@ class Surface:
             index = fp.getPropertyByName("Index")
             deltaH = fp.getPropertyByName("ContourInterval")
 
-            try:
-                self.Mesh = SurfaceFunc.create_mesh(points, index)
+            if points:
+                origin = geo_origin.get(points[0])
+
+                mesh = SurfaceFunc.create_mesh(points, index)
                 coords, num_vert = SurfaceFunc.contour_points(
-                    points[0], self.Mesh, deltaH)
+                    points[0], mesh, deltaH)
 
                 fp.ContourPoints = coords
                 fp.ContourVertices = num_vert
-            
-            except Exception: pass
 
     def execute(self, fp):
         '''
@@ -124,7 +127,7 @@ class Surface:
 
 class ViewProviderSurface:
     """
-    This class is about Point Group Object view features.
+    This class is about Surface Object view features.
     """
 
     def __init__(self, obj):
@@ -147,28 +150,12 @@ class ViewProviderSurface:
         '''
         Create Object visuals in 3D view.
         '''
-        # Get geo system and geo origin.
-        base = obj.Object.Points[0]
-        origin = geo_origin.get(base)
-        geo_system = ["UTM", origin.UtmZone, "FLAT"]
-
-        # Geo coordinates.
+        # Geo Nodes.
         self.geo_coords = coin.SoGeoCoordinate()
-        self.geo_coords.geoSystem.setValues(geo_system)
-        self.geo_coords.point.values = obj.Object.Points
+        self.geo_separator = coin.SoGeoSeparator()
 
-        # Geo Seperator.
-        geo_separator = coin.SoGeoSeparator()
-        geo_separator.geoSystem.setValues(geo_system)
-        geo_separator.geoCoords.setValue(
-            base[0], base[1], base[2])
-
-        # Point group features.
+        # Surface features.
         self.triangles = coin.SoIndexedFaceSet()
-        index = obj.Object.Index
-        for i in range(0, len(index)):
-            self.triangles.coordIndex.set1Value(i,index[i])
-
         shape_hints = coin.SoShapeHints()
         shape_hints.vertex_ordering = coin.SoShapeHints.COUNTERCLOCKWISE
         self.mat_color = coin.SoMaterial()
@@ -184,26 +171,24 @@ class ViewProviderSurface:
         highlight.addChild(self.geo_coords)
         highlight.addChild(self.triangles)
 
-        # Contour nodes.
-        contours = coin.SoSeparator()
+        # Contour features.
         cont_color = coin.SoBaseColor()
         cont_color.rgb = (60, 255, 255)
         self.cont_coords = coin.SoGeoCoordinate()
-        self.cont_coords.geoSystem.setValues(geo_system)
-        self.cont_coords.point.values = obj.Object.ContourPoints
         self.cont_lines = coin.SoLineSet()
-        self.cont_lines.numVertices.values = obj.Object.ContourVertices
         cont_style = coin.SoDrawStyle()
         cont_style.style = coin.SoDrawStyle.LINES
         cont_style.lineWidth = 2
 
+        # Contour root.
+        contours = coin.SoSeparator()
         contours.addChild(cont_color)
         contours.addChild(cont_style)
         contours.addChild(self.cont_coords)
         contours.addChild(self.cont_lines)
 
-        # Point group root.
-        surface_root = geo_separator
+        # Surface root.
+        surface_root = self.geo_separator
         surface_root.addChild(shape_hints)
         #surface_root.addChild(mat_binding)
         surface_root.addChild(contours)
@@ -229,7 +214,18 @@ class ViewProviderSurface:
         # fp is feature python.
         if prop == "Points":
             points = fp.getPropertyByName("Points")
-            self.geo_coords.point.values = points
+            if points:
+                origin = geo_origin.get(points[0])
+
+                geo_system = ["UTM", origin.UtmZone, "FLAT"]
+                self.geo_coords.geoSystem.setValues(geo_system)
+                self.geo_coords.point.values = points
+
+                self.geo_separator.geoSystem.setValues(geo_system)
+                self.geo_separator.geoCoords.setValue(
+                    points[0].x, points[0].y, points[0].z)
+
+                self.cont_coords.geoSystem.setValues(geo_system)
 
         if prop == "Index":
             index = fp.getPropertyByName("Index")
@@ -259,7 +255,8 @@ class ViewProviderSurface:
 
     def setDisplayMode(self,mode):
         '''
-        Map the display mode defined in attach with those defined in getDisplayModes.
+        Map the display mode defined in attach with 
+        those defined in getDisplayModes.
         '''
         return mode
 
@@ -270,13 +267,13 @@ class ViewProviderSurface:
         return ICONPATH + '/icons/Surface.svg'
 
     def __getstate__(self):
-        '''
-        When saving the document this object gets stored using Python's json module.
-        '''
+        """
+        Save variables to file.
+        """
         return None
  
     def __setstate__(self,state):
-        '''
-        When restoring the serialized object from document we have the chance to set some internals here.
-        '''
+        """
+        Get variables from file.
+        """
         return None

@@ -1,6 +1,6 @@
 # /**********************************************************************
 # *                                                                     *
-# * Copyright (c) 2019 Hakan Seven <hakanseven12@gmail.com>             *
+# * Copyright (c) 2020 Hakan Seven <hakanseven12@gmail.com>             *
 # *                                                                     *
 # * This program is free software; you can redistribute it and/or modify*
 # * it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -103,7 +103,7 @@ class PointGroup:
         '''
         Do something when doing a recomputation. 
         '''
-        self.onChanged(fp, "Points")
+        return
 
 
 class ViewProviderPointGroup:
@@ -141,7 +141,7 @@ class ViewProviderPointGroup:
         '''
         # Geo Nodes.
         self.geo_coords = coin.SoGeoCoordinate()
-        self.geo_seperator = coin.SoGeoSeparator()
+        self.geo_separator = coin.SoGeoSeparator()
 
         # Point group features.
         points = coin.SoPointSet()
@@ -161,7 +161,7 @@ class ViewProviderPointGroup:
         highlight.addChild(self.markers)
 
         # Point group root.
-        point_root = self.geo_seperator
+        point_root = self.geo_separator
         point_root.addChild(self.point_style)
         point_root.addChild(self.point_normal)
         point_root.addChild(self.color_mat)
@@ -171,8 +171,6 @@ class ViewProviderPointGroup:
         # Take features from properties.
         self.onChanged(obj,"PointSize")
         self.onChanged(obj,"PointColor")
-        self.onChanged(obj.Object,"Points")
-        self.onChanged(obj.Object,"Marker")
 
     def onChanged(self, vp, prop):
         '''
@@ -201,8 +199,8 @@ class ViewProviderPointGroup:
                 self.geo_coords.geoSystem.setValues(geo_system)
                 self.geo_coords.point.values = points
 
-                self.geo_seperator.geoSystem.setValues(geo_system)
-                self.geo_seperator.geoCoords.setValue(
+                self.geo_separator.geoSystem.setValues(geo_system)
+                self.geo_separator.geoCoords.setValue(
                     points[0].x, points[0].y, points[0].z)
 
         if prop == "Marker":
