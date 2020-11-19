@@ -52,6 +52,7 @@ def create(origin):
     obj.UtmZone = "Z1"
     obj.Origin = origin
     ViewProviderGeoOrigin(obj.ViewObject)
+    FreeCAD.ActiveDocument.recompute()
 
     return obj
 
@@ -89,12 +90,7 @@ class GeoOrigin:
         Do something when a data property has changed.
         '''
         # Set geo origin.
-        sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
-        node = sg.getChild(0)
-
-        if not isinstance(node, coin.SoGeoOrigin):
-            node = coin.SoGeoOrigin()
-            sg.insertChild(node,0)
+        node = self.get_geoorigin()
 
         if prop == "UtmZone":
             zone = fp.getPropertyByName("UtmZone")
@@ -111,6 +107,38 @@ class GeoOrigin:
         Do something when doing a recomputation. 
         '''
         return
+
+    def __getstate__(self):
+        """
+        Save variables to file.
+        """
+        node = self.get_geoorigin()
+        system = node.geoSystem.getValues()
+        x,y,z = node.geoCoords.getValue().getValue()
+        return system, [x, y, z]
+
+    def __setstate__(self, state):
+        """
+        Get variables from file.
+        """
+        if state:
+            system = state[0]
+            origin = state[1]
+            node = self.get_geoorigin()
+
+            node.geoSystem.setValues(system)
+            node.geoCoords.setValue(
+                origin[0], origin[1], 0)
+
+    def get_geoorigin(self):
+        sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
+        node = sg.getChild(0)
+
+        if not isinstance(node, coin.SoGeoOrigin):
+            node = coin.SoGeoOrigin()
+            sg.insertChild(node,0)
+        
+        return node
 
 
 
@@ -176,15 +204,13 @@ class ViewProviderGeoOrigin:
         pass
 
     def __getstate__(self):
-        '''
-        When saving the document this object gets
-        stored using Python's json module.
-        '''
+        """
+        Save variables to file.
+        """
         return None
  
     def __setstate__(self,state):
-        '''
-        When restoring the serialized object from document
-        we have the chance to set some internals here.
-        '''
+        """
+        Get variables from file.
+        """
         return None
