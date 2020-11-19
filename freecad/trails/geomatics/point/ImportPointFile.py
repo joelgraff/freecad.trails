@@ -24,8 +24,8 @@
 import FreeCAD
 import FreeCADGui
 from PySide import QtCore, QtGui
-from freecad.trails import ICONPATH,geo_test
-from . import point_groups
+from freecad.trails import ICONPATH
+from . import point_group, point_groups
 import csv
 import os
 
@@ -86,17 +86,11 @@ class ImportPointFile:
         """
         Command activation method
         """
-        # Get or create 'Point_Groups' group
-        PointGroups = point_groups.get()
+        # Get or create 'Point Groups'.
+        self.PointGroups = point_groups.get()
 
-        # Get or create 'Points'
-        try:
-            Points = FreeCAD.ActiveDocument.Points
-        except Exception:
-            FreeCAD.ActiveDocument.addObject(
-                'Points::Feature', "Points")
-            Points = FreeCAD.ActiveDocument.Points
-            PointGroups.addObject(Points)
+        # Get or create 'Points'.
+        self.Points = point_group.get_points()
 
         # Set and show UI
         UI = self.IPFui
@@ -113,8 +107,8 @@ class ImportPointFile:
 
         # Add point groups to QComboBox
         self.GroupList = []
-        for Item in PointGroups.Group:
-            if Item.TypeId == 'Points::Feature':
+        for Item in self.PointGroups.Group:
+            if Item.Proxy.Type == 'Trails::PointGroup':
                 self.GroupList.append(Item.Name)
                 UI.SubGroupListCB.addItem(Item.Label)
 
@@ -174,12 +168,9 @@ class ImportPointFile:
         UI = self.IPFui
         CPG = self.CPGui
         NewGroupName = CPG.PointGroupNameLE.text()
-        NewGroup = FreeCAD.ActiveDocument.addObject(
-            'Points::Feature', "Point_Group")
-        FreeCAD.ActiveDocument.Point_Groups.addObject(NewGroup)
+        NewGroup = point_group.create(name=NewGroupName)
         UI.SubGroupListCB.addItem(NewGroupName)
         self.GroupList.append(NewGroup.Name)
-        NewGroup.Label = NewGroupName
         CPG.close()
 
     def FileReader(self, File, Operation):
@@ -263,6 +254,7 @@ class ImportPointFile:
                                            float(row[Z]) * 1000))
                 except Exception:
                     pass
+        return self.PointList
 
     def Preview(self):
         """
@@ -295,7 +287,7 @@ class ImportPointFile:
             SPG = self.GroupList[Index]
             PointGroup = FreeCAD.ActiveDocument.getObject(SPG)
         else:
-            PointGroup = FreeCAD.ActiveDocument.Points
+            PointGroup = self.Points
 
         # Read Points from file
         if UI.SelectedFilesLW.count() < 1:
@@ -306,27 +298,14 @@ class ImportPointFile:
         for i in range(UI.SelectedFilesLW.count()):
             Items.append(UI.SelectedFilesLW.item(i))
         Labels = [i.text() for i in Items]
+        points = PointGroup.Points.copy()
+
         for FilePath in Labels:
             File = open(FilePath, 'r')
-            self.FileReader(File, "Import")
+            point_list =self.FileReader(File, "Import")
+            points.extend(point_list)
 
-        if geo_test:
-            from . import point_group
-
-            point_group.create(self.PointList,'test')
-
-        List = []
-        fpoint = self.PointList[0]
-        nbase = FreeCAD.Vector(fpoint[0], fpoint[1], fpoint[2])
-
-        for Point in self.PointList:
-            Point = (Point[0]-nbase.x, Point[1]-nbase.y, Point[2]-nbase.z)
-            List.append(Point)
-
-        PointObject = PointGroup.Points.copy()
-        PointObject.addPoints(List)
-        PointGroup.Points = PointObject
-        PointGroup.Placement.move(nbase)
+        PointGroup.Points = points
         FreeCAD.ActiveDocument.recompute()
         FreeCADGui.SendMsgToActiveView("ViewFit")
         UI.close()

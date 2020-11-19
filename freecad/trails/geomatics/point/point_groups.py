@@ -54,6 +54,7 @@ def create():
     PointGroups(obj)
     ViewProviderPointGroups(obj.ViewObject)
     main.addObject(obj)
+    FreeCAD.ActiveDocument.recompute()
 
     return obj
 
@@ -146,15 +147,13 @@ class ViewProviderPointGroups:
         pass
 
     def __getstate__(self):
-        '''
-        When saving the document this object gets
-        stored using Python's json module.
-        '''
+        """
+        Save variables to file.
+        """
         return None
  
     def __setstate__(self,state):
-        '''
-        When restoring the serialized object from document
-        we have the chance to set some internals here.
-        '''
+        """
+        Get variables from file.
+        """
         return None

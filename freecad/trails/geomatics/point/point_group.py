@@ -26,33 +26,35 @@ Create a Point Group Object from FPO.
 
 import FreeCAD, FreeCADGui
 from pivy import coin
-from ..utils import GeoNodes
 from freecad.trails import ICONPATH, geo_origin
-from . import marker_dict
+from . import marker_dict, point_groups
 import random
 
 
 
-def get_points(points):
+def get_points():
     """
     Find the existing Point Groups object
     """
     # Return an existing instance of the same name, if found.
-    obj = FreeCAD.ActiveDocument.getObject('Points')
+    obj = FreeCAD.ActiveDocument.getObject('PointGroup')
 
     if obj:
         return obj
 
-    obj = create(points, "Points")
+    obj = create(name="Points")
 
     return obj
 
-def create(points, name='Point Group'):
+def create(points=[], name='Point Group'):
+    group = point_groups.get()
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "PointGroup")
     obj.Label = name
     PointGroup(obj)
     obj.Points = points
     ViewProviderPointGroup(obj.ViewObject)
+    group.addObject(obj)
+    FreeCAD.ActiveDocument.recompute()
 
     return obj
 
@@ -90,13 +92,18 @@ class PointGroup:
         '''
         Do something when a data property has changed.
         '''
-        return
+        # fp is feature python.
+        if prop == "Points":
+            points = fp.getPropertyByName("Points")
+            if points:
+                origin = geo_origin.get(points[0])
+
 
     def execute(self, fp):
         '''
         Do something when doing a recomputation. 
         '''
-        return
+        self.onChanged(fp, "Points")
 
 
 class ViewProviderPointGroup:
@@ -132,25 +139,13 @@ class ViewProviderPointGroup:
         '''
         Create Object visuals in 3D view.
         '''
-        # Get geo system and geo origin.
-        base = obj.Object.Points[0]
-        origin = geo_origin.get(base)
-        geo_system = ["UTM", origin.UtmZone, "FLAT"]
-
-        # Geo coordinates.
+        # Geo Nodes.
         self.geo_coords = coin.SoGeoCoordinate()
-        self.geo_coords.geoSystem.setValues(geo_system)
-        self.geo_coords.point.values = obj.Object.Points
-
-        # Geo Seperator.
-        geo_seperator = coin.SoGeoSeparator()
-        geo_seperator.geoSystem.setValues(geo_system)
-        geo_seperator.geoCoords.setValue(base[0], base[1], base[2])
+        self.geo_seperator = coin.SoGeoSeparator()
 
         # Point group features.
         points = coin.SoPointSet()
         self.markers = coin.SoMarkerSet()
-        self.markers.markerIndex = marker_dict[obj.Object.Marker]
         self.color_mat = coin.SoMaterial()
         self.point_normal = coin.SoNormal()
         self.point_style = coin.SoDrawStyle()
@@ -166,7 +161,7 @@ class ViewProviderPointGroup:
         highlight.addChild(self.markers)
 
         # Point group root.
-        point_root = geo_seperator
+        point_root = self.geo_seperator
         point_root.addChild(self.point_style)
         point_root.addChild(self.point_normal)
         point_root.addChild(self.color_mat)
@@ -176,6 +171,8 @@ class ViewProviderPointGroup:
         # Take features from properties.
         self.onChanged(obj,"PointSize")
         self.onChanged(obj,"PointColor")
+        self.onChanged(obj.Object,"Points")
+        self.onChanged(obj.Object,"Marker")
 
     def onChanged(self, vp, prop):
         '''
@@ -197,7 +194,16 @@ class ViewProviderPointGroup:
         # fp is feature python.
         if prop == "Points":
             points = fp.getPropertyByName("Points")
-            self.geo_coords.point.values = points
+            if points:
+                origin = geo_origin.get(points[0])
+
+                geo_system = ["UTM", origin.UtmZone, "FLAT"]
+                self.geo_coords.geoSystem.setValues(geo_system)
+                self.geo_coords.point.values = points
+
+                self.geo_seperator.geoSystem.setValues(geo_system)
+                self.geo_seperator.geoCoords.setValue(
+                    points[0].x, points[0].y, points[0].z)
 
         if prop == "Marker":
             marker = fp.getPropertyByName("Marker")
@@ -220,7 +226,8 @@ class ViewProviderPointGroup:
 
     def setDisplayMode(self,mode):
         '''
-        Map the display mode defined in attach with those defined in getDisplayModes.
+        Map the display mode defined in attach with 
+        those defined in getDisplayModes.
         '''
         return mode
 
@@ -231,13 +238,13 @@ class ViewProviderPointGroup:
         return ICONPATH + '/icons/PointGroup.svg'
 
     def __getstate__(self):
-        '''
-        When saving the document this object gets stored using Python's json module.
-        '''
+        """
+        Save variables to file.
+        """
         return None
  
     def __setstate__(self,state):
-        '''
-        When restoring the serialized object from document we have the chance to set some internals here.
-        '''
+        """
+        Get variables from file.
+        """
         return None

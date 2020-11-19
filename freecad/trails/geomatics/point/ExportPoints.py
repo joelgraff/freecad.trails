@@ -24,6 +24,7 @@ import FreeCAD
 import FreeCADGui
 from PySide import QtCore, QtGui
 from freecad.trails import ICONPATH
+from . import point_groups
 import os
 
 class ExportPoints:
@@ -76,13 +77,7 @@ class ExportPoints:
         Command activation method
         """
         # Create 'Point_Groups' group
-        try:
-            PointGroups = FreeCAD.ActiveDocument.Point_Groups.Group
-        except Exception:
-            FreeCAD.ActiveDocument.addObject(
-                "App::DocumentObjectGroup", 'Point_Groups')
-            PointGroups = FreeCAD.ActiveDocument.Point_Groups.Group
-            PointGroups.Label = "Point Groups"
+        PointGroups = point_groups.get()
 
         # Set and show UI
         UI = self.EP
@@ -96,7 +91,7 @@ class ExportPoints:
 
         # Add point groups to QListWidget
         self.GroupList = []
-        for PointGroup in PointGroups:
+        for PointGroup in PointGroups.Group:
             self.GroupList.append(PointGroup.Name)
             SubGroupName = PointGroup.Label
             UI.PointGroupsLW.addItem(SubGroupName)
@@ -154,7 +149,7 @@ class ExportPoints:
             PointGroup = FreeCAD.ActiveDocument.getObject(Index)
 
             # Print points to the file
-            for Point in PointGroup.Points.Points:
+            for Point in PointGroup.Points:
                 pn = str(Counter)
                 xx = str(round(float(Point.x) / 1000, 3))
                 yy = str(round(float(Point.y) / 1000, 3))

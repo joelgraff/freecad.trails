@@ -1,5 +1,5 @@
 from . import ExportPoints
-from . import ImportPointFile
+#from . import ImportPointFile
 
 marker_dict = {'NONE': -1, 'BACKSLASH_5_5': 4, 'BACKSLASH_7_7': 34, 
     'BACKSLASH_9_9': 64, 'BAR_5_5': 5, 'BAR_7_7': 35, 'BAR_9_9': 65, 
