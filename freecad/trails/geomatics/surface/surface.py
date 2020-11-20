@@ -33,7 +33,7 @@ import random
 
 
 
-def create(points, index, name='Surface'):
+def create(points=[], index=[], name='Surface'):
     group = surfaces.get()
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "Surface")
     obj.Label = name

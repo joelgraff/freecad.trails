@@ -26,8 +26,8 @@ Create a Point Group Object from FPO.
 
 import FreeCAD, FreeCADGui
 from pivy import coin
-from freecad.trails import ICONPATH, geo_origin
-from . import marker_dict, point_groups
+from freecad.trails import ICONPATH, geo_origin, marker_dict
+from . import  point_groups
 import random
 
 
