@@ -22,12 +22,10 @@
 
 import FreeCAD
 import FreeCADGui
-from FreeCAD import Base
 from PySide import QtCore, QtGui
 from freecad.trails import ICONPATH
 from . import surface
 from ..point import point_groups
-import Mesh
 import os
 
 
@@ -99,96 +97,24 @@ class CreateSurface:
             item = QtGui.QStandardItem(SubGroupName)
             model.appendRow(item)
 
-    def MaxLength(self, P1, P2, P3):
-        """
-        Calculation of the 2D length between triangle edges
-        """
-        p1 = FreeCAD.Vector(P1[0], P1[1], 0)
-        p2 = FreeCAD.Vector(P2[0], P2[1], 0)
-        p3 = FreeCAD.Vector(P3[0], P3[1], 0)
-        # Get user input
-        MaxlengthLE = self.IPFui.MaxlengthLE.text()
-
-        # Calculate length between triangle vertices
-        List = [[p1, p2], [p2, p3], [p3, p1]]
-        for i, j in List:
-            D1 = i.sub(j)
-
-            # Compare with input
-            if D1.Length > int(MaxlengthLE)*1000:
-                return False
-        return True
-
-    def MaxAngle(self, P1, P2, P3):
-        """
-        Calculation of the 2D angle between triangle edges
-        """
-        import math
-        p1 = FreeCAD.Vector(P1[0], P1[1], 0)
-        p2 = FreeCAD.Vector(P2[0], P2[1], 0)
-        p3 = FreeCAD.Vector(P3[0], P3[1], 0)
-
-        # Get user input
-        MaxAngleLE = self.IPFui.MaxAngleLE.text()
-
-        # Calculate angle between triangle vertices
-        List = [[p1, p2, p3], [p2, p3, p1], [p3, p1, p2]]
-        for j, k, l in List:
-            D1 = j.sub(k)
-            D2 = l.sub(k)
-            Radian = D1.getAngle(D2)
-            Degree = math.degrees(Radian)
-
-            # Compare with input
-            if Degree > int(MaxAngleLE):
-                return False
-        return True
-
     def CreateSurface(self):
-        import numpy as np
-        import scipy.spatial
-
+        """
+        Create Surface by using point groups.
+        """
         # Print warning if there isn't selected group
         if len(self.IPFui.PointGroupsLV.selectedIndexes()) < 1:
             FreeCAD.Console.PrintMessage("No Points object selected")
             return
 
         # Get selected group(s) points
-        test = []
+        points = []
         for SelectedIndex in self.IPFui.PointGroupsLV.selectedIndexes():
             Index = self.GroupList[SelectedIndex.row()]
             PointGroup = FreeCAD.ActiveDocument.getObject(Index)
-
-            for Point in PointGroup.Points:
-                xx = float(Point.x)
-                yy = float(Point.y)
-                zz = float(Point.z)
-                test.append((xx, yy, zz))
-
-        # Normalize points
-        fpoint = test[0]
-        base = FreeCAD.Vector(fpoint[0], fpoint[1], fpoint[2])
-        data = []
-        for i in test:
-            data.append([i[0] - base.x, i[1] - base.y, i[2] - base.z])
-        Data = np.array(data) 
-
-        # Create delaunay triangulation
-        tri = scipy.spatial.Delaunay(Data[:, :2])
-        index = []
-
-        for i in tri.vertices:
-            first = int(i[0])
-            second = int(i[1])
-            third = int(i[2])
-
-            #Test triangle
-            if self.MaxLength(Data[first], Data[second], Data[third])\
-                    and self.MaxAngle(Data[first], Data[second], Data[third]):
-                index.extend([first, second, third, -1])
+            points.extend(PointGroup.Points)
 
         SurfaceNameLE = self.IPFui.SurfaceNameLE.text()
-        surface.create(test, index, SurfaceNameLE)
+        surface.create(points, SurfaceNameLE)
         FreeCAD.ActiveDocument.recompute()
 
 FreeCADGui.addCommand('Create Surface', CreateSurface())

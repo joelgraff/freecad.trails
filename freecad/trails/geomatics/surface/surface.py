@@ -33,13 +33,12 @@ import random
 
 
 
-def create(points=[], index=[], name='Surface'):
+def create(points=[], name='Surface'):
     group = surfaces.get()
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "Surface")
     obj.Label = name
     Surface(obj)
     obj.Points = points
-    obj.Index = index
     ViewProviderSurface(obj.ViewObject)
     group.addObject(obj)
     FreeCAD.ActiveDocument.recompute()
@@ -47,7 +46,7 @@ def create(points=[], index=[], name='Surface'):
     return obj
 
 
-class Surface:
+class Surface(SurfaceFunc):
     """
     This class is about Surface Object data features.
     """
@@ -70,6 +69,18 @@ class Surface:
             "Index",
             "Base",
             "Index of points").Index = ()
+
+        obj.addProperty(
+            "App::PropertyLength",
+            "MaxLength",
+            "Base",
+            "Maximum length of triangle edge").MaxLength = 50000
+
+        obj.addProperty(
+            "App::PropertyAngle",
+            "MaxAngle",
+            "Base",
+            "Maximum angle of triangle edge").MaxAngle = 170
 
         # Contour properties.
         obj.addProperty(
@@ -94,6 +105,8 @@ class Surface:
 
         self.Points = None
         self.Index = None
+        self.MaxLength = 50000
+        self.MaxAngle = 170
         obj.ContourInterval = (1.0, 0.0, 100.0, 1.0)
         self.ContourPoints = None
         self.ContourVertices = None
@@ -103,6 +116,13 @@ class Surface:
         Do something when a data property has changed.
         '''
         # fp is feature python.
+        if prop == "Points" or prop == "MaxLength" or prop == "MaxAngle":
+            points = fp.getPropertyByName("Points")
+            lmax = fp.getPropertyByName("MaxLength")
+            amax = fp.getPropertyByName("MaxAngle")
+            if points and lmax and amax:
+                fp.Index = SurfaceFunc.triangulate(points, lmax, amax)
+
         if prop == "Points" or prop == "Index" or prop == "ContourInterval":
             # Get Surface properties.
             points = fp.getPropertyByName("Points")
@@ -159,7 +179,7 @@ class ViewProviderSurface:
         shape_hints = coin.SoShapeHints()
         shape_hints.vertex_ordering = coin.SoShapeHints.COUNTERCLOCKWISE
         self.mat_color = coin.SoMaterial()
-        mat_binding = coin.SoMaterialBinding
+        mat_binding = coin.SoMaterialBinding()
         mat_binding.value = coin.SoMaterialBinding.OVERALL
 
         # Highlight for selection.
@@ -168,6 +188,7 @@ class ViewProviderSurface:
         #highlight.objectName.setValue(obj.Object.Name)
         #highlight.subElementName.setValue("Main")
         highlight.addChild(self.mat_color)
+        highlight.addChild(mat_binding)
         highlight.addChild(self.geo_coords)
         highlight.addChild(self.triangles)
 
@@ -190,7 +211,6 @@ class ViewProviderSurface:
         # Surface root.
         surface_root = self.geo_separator
         surface_root.addChild(shape_hints)
-        #surface_root.addChild(mat_binding)
         surface_root.addChild(contours)
         surface_root.addChild(highlight)
         obj.addDisplayMode(surface_root,"Surface")
@@ -203,9 +223,11 @@ class ViewProviderSurface:
         Update Object visuals when a view property changed.
         '''
         # vp is view provider.
-        if prop == "TriangleColor":
-            color = vp.getPropertyByName("TriangleColor")
-            self.mat_color.diffuseColor = (color[0],color[1],color[2])
+        try:
+            if prop == "TriangleColor":
+                color = vp.getPropertyByName("TriangleColor")
+                self.mat_color.diffuseColor = (color[0],color[1],color[2])
+        except Exception: pass
 
     def updateData(self, fp, prop):
         '''
@@ -215,16 +237,20 @@ class ViewProviderSurface:
         if prop == "Points":
             points = fp.getPropertyByName("Points")
             if points:
+                # Get GeoOrigin.
                 origin = geo_origin.get(points[0])
 
+                # Set GeoCoords.
                 geo_system = ["UTM", origin.UtmZone, "FLAT"]
                 self.geo_coords.geoSystem.setValues(geo_system)
                 self.geo_coords.point.values = points
 
+                # Set GeoSeparator.
                 self.geo_separator.geoSystem.setValues(geo_system)
                 self.geo_separator.geoCoords.setValue(
                     points[0].x, points[0].y, points[0].z)
 
+                #Set contour system.
                 self.cont_coords.geoSystem.setValues(geo_system)
 
         if prop == "Index":
@@ -234,6 +260,7 @@ class ViewProviderSurface:
         if prop == "Points" or prop == "Index" or prop == "ContourInterval":
             cont_points = fp.getPropertyByName("ContourPoints")
             cont_vert = fp.getPropertyByName("ContourVertices")
+
             self.cont_coords.point.values = cont_points
             self.cont_lines.numVertices.values = cont_vert
 
