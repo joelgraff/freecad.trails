@@ -229,8 +229,7 @@ class ViewProviderSurface:
 
         if prop == "Index":
             index = fp.getPropertyByName("Index")
-            for i in range(0, len(index)):
-                self.triangles.coordIndex.set1Value(i,index[i])
+            self.triangles.coordIndex.values = index
 
         if prop == "Points" or prop == "Index" or prop == "ContourInterval":
             cont_points = fp.getPropertyByName("ContourPoints")
