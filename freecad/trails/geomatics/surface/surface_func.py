@@ -27,54 +27,51 @@ Define Surface Object functions.
 import FreeCAD
 import Mesh
 import numpy as np
+import copy, math
 import scipy.spatial
-
-def max_length(lmax, P1, P2, P3):
-    """
-    Calculation of the 2D length between triangle edges
-    """
-    p1 = FreeCAD.Vector(P1[0], P1[1], 0)
-    p2 = FreeCAD.Vector(P2[0], P2[1], 0)
-    p3 = FreeCAD.Vector(P3[0], P3[1], 0)
-
-    # Calculate length between triangle vertices
-    List = [[p1, p2], [p2, p3], [p3, p1]]
-    for i, j in List:
-        D1 = i.sub(j)
-
-        # Compare with input
-        if D1.Length > lmax:
-            return False
-    return True
-
-def max_angle(amax, P1, P2, P3):
-    """
-    Calculation of the 2D angle between triangle edges
-    """
-    import math
-    p1 = FreeCAD.Vector(P1[0], P1[1], 0)
-    p2 = FreeCAD.Vector(P2[0], P2[1], 0)
-    p3 = FreeCAD.Vector(P3[0], P3[1], 0)
-
-    # Calculate angle between triangle vertices
-    List = [[p1, p2, p3], [p2, p3, p1], [p3, p1, p2]]
-    for j, k, l in List:
-        D1 = j.sub(k)
-        D2 = l.sub(k)
-        Radian = D1.getAngle(D2)
-        Degree = math.degrees(Radian)
-
-        # Compare with input
-        if Degree > amax:
-            return False
-    return True
 
 class SurfaceFunc:
     """
     This class is contain Surface Object functions.
     """
+    def __init__(self):
+        pass
 
-    def triangulate(points, lmax, amax):
+    @staticmethod
+    def max_length(lmax, p1, p2, p3):
+        """
+        Calculation of the 2D length between triangle edges
+        """
+        # Calculate length between triangle vertices
+        tri = [[p1, p2], [p2, p3], [p3, p1]]
+        for i, j in tri:
+            vec = i.sub(j)
+
+            # Compare with input
+            if vec.Length > lmax:
+                return False
+        return True
+
+    @staticmethod
+    def max_angle(amax, p1, p2, p3):
+        """
+        Calculation of the 2D angle between triangle edges
+        """
+        # Calculate angle between triangle vertices
+        tri = [[p1, p2, p3], [p2, p3, p1], [p3, p1, p2]]
+        for j, k, l in tri:
+            vec1 = j.sub(k)
+            vec2 = l.sub(k)
+            radian = vec1.getAngle(vec2)
+            degree = math.degrees(radian)
+
+            # Compare with input
+            if degree > amax:
+                return False
+        return True
+
+    @staticmethod
+    def triangulate(points):
         """
         Create 2D Delaunay triangulation.
         """
@@ -84,50 +81,41 @@ class SurfaceFunc:
         for point in points:
             nor_points.append(point.sub(base))
 
-        test = []
-        for point in nor_points:
-            x = point.x
-            y = point.y
-            z = point.z
-            test.append((x, y, z))
-
         data = np.array(nor_points) 
 
         # Create delaunay triangulation
         tri = scipy.spatial.Delaunay(data[:, :2])
-        index = []
+        vertices = []
 
-        for i in tri.vertices:
-            first = int(i[0])
-            second = int(i[1])
-            third = int(i[2])
+        for i in tri.vertices.tolist():
+            vertices.extend(i)
 
-            #Test triangle
-            if max_length(lmax, data[first], data[second], data[third])\
-                    and max_angle(amax, data[first], data[second], data[third]):
-                index.extend([first, second, third, -1])
+        return vertices
 
-        return index
-
+    @staticmethod
     def create_mesh(points, index):
         """
         Create a mesh for unwrited functions.
         """
 
-        MeshList = []
-        base = FreeCAD.Vector(points[0][0], points[0][1], 0.0)
+        indexed_points = []
+        base = copy.deepcopy(points[0])
+        base.z = 0
         for i in index:
             if i == -1: continue
-            MeshList.append(points[i].sub(base))
+            indexed_points.append(points[i].sub(base))
 
-        mesh = Mesh.Mesh(MeshList)
+        mesh = Mesh.Mesh(indexed_points)
 
         return mesh
 
-    def contour_points(point, mesh, deltaH):
+    def contour_points(self, points, index, deltaH):
         """
         Create contour lines for selected surface
         """
+
+        mesh = self.create_mesh(points, index)
+
         # Find max and min elevation of mesh
         zmax = mesh.BoundBox.ZMax/1000
         zmin = mesh.BoundBox.ZMin/1000
@@ -136,7 +124,8 @@ class SurfaceFunc:
         cont_points = []
         coords = []
         num_vert = []
-        base = FreeCAD.Vector(point[0], point[1], 0.0)
+        base = copy.deepcopy(points[0])
+        base.z = 0
         for H in range(int(round(zmin)), int(round(zmax))):
             if deltaH == 0: break
             if H % deltaH == 0:

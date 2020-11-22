@@ -29,7 +29,7 @@ from pivy import coin
 from .surface_func import SurfaceFunc
 from freecad.trails import ICONPATH, geo_origin
 from . import surfaces
-import random
+import random, copy
 
 
 
@@ -62,13 +62,19 @@ class Surface(SurfaceFunc):
             "App::PropertyVectorList",
             "Points",
             "Base",
-            "List of group points").Points = ()
+            "List of group points").Points = []
+
+        obj.addProperty(
+            "App::PropertyIntegerList",
+            "Vertices",
+            "Base",
+            "Vertices of Delaunay").Vertices = []
 
         obj.addProperty(
             "App::PropertyIntegerList",
             "Index",
             "Base",
-            "Index of points").Index = ()
+            "Index of points").Index = []
 
         obj.addProperty(
             "App::PropertyLength",
@@ -87,54 +93,64 @@ class Surface(SurfaceFunc):
             "App::PropertyFloatConstraint",
             "ContourInterval",
             "Point Style",
-            "Size of the point group").ContourInterval = (1.0)
+            "Size of the point group").ContourInterval = (1.0, 0.0, 100.0, 1.0)
 
         obj.addProperty(
             "App::PropertyVectorList",
             "ContourPoints",
             "Surface Style",
-            "Points of contours", 4).ContourPoints = ()
+            "Points of contours", 4).ContourPoints = []
 
         obj.addProperty(
             "App::PropertyIntegerList",
             "ContourVertices",
             "Surface Style",
-            "Vertices of contours.", 4).ContourVertices = ()
+            "Vertices of contours.", 4).ContourVertices = []
 
         obj.Proxy = self
-
-        self.Points = None
-        self.Index = None
-        self.MaxLength = 50000
-        self.MaxAngle = 170
-        obj.ContourInterval = (1.0, 0.0, 100.0, 1.0)
-        self.ContourPoints = None
-        self.ContourVertices = None
 
     def onChanged(self, fp, prop):
         '''
         Do something when a data property has changed.
         '''
         # fp is feature python.
-        if prop == "Points" or prop == "MaxLength" or prop == "MaxAngle":
-            points = fp.getPropertyByName("Points")
-            lmax = fp.getPropertyByName("MaxLength")
-            amax = fp.getPropertyByName("MaxAngle")
-            if points and lmax and amax:
-                fp.Index = SurfaceFunc.triangulate(points, lmax, amax)
+        points = fp.getPropertyByName("Points")
+        lmax = fp.getPropertyByName("MaxLength")
+        amax = fp.getPropertyByName("MaxAngle")
+        deltaH = fp.getPropertyByName("ContourInterval")
+
+        if prop =="Points":
+            if points:
+                fp.Vertices = self.triangulate(points)
+
+        if prop == "Vertices" or prop == "MaxLength" or prop == "MaxAngle":
+            vertices = fp.getPropertyByName("Vertices")
+
+            if points and vertices:
+                index = []
+                for i in range(0, len(vertices), 3):
+                    first, second,third = vertices[i:i+3]
+
+                    p1 = copy.deepcopy(points[first])
+                    p2 = copy.deepcopy(points[second])
+                    p3 = copy.deepcopy(points[third])
+                    p1.z = p2.z = p3.z = 0
+
+                    #Test triangle
+                    if self.max_length(lmax, p1, p2, p3)\
+                        and self.max_angle(amax,  p1, p2, p3):
+                        index.extend([first, second, third, -1])
+
+                fp.Index = index
 
         if prop == "Points" or prop == "Index" or prop == "ContourInterval":
-            # Get Surface properties.
-            points = fp.getPropertyByName("Points")
             index = fp.getPropertyByName("Index")
-            deltaH = fp.getPropertyByName("ContourInterval")
 
             if points:
                 origin = geo_origin.get(points[0])
 
-                mesh = SurfaceFunc.create_mesh(points, index)
-                coords, num_vert = SurfaceFunc.contour_points(
-                    points[0], mesh, deltaH)
+                coords, num_vert = self.contour_points(
+                    points, index, deltaH)
 
                 fp.ContourPoints = coords
                 fp.ContourVertices = num_vert
