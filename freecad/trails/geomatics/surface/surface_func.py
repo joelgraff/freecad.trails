@@ -52,34 +52,32 @@ class SurfaceFunc:
 
         # Create delaunay triangulation
         tri = scipy.spatial.Delaunay(data[:, :2])
-        vertices = []
+        delaunay = []
 
         for i in tri.vertices.tolist():
-            vertices.extend(i)
+            delaunay.extend(i)
 
-        return vertices
+        return delaunay
 
-    def test_triangles(self, vertices, triangles, lmax, amax):
+    def test_delaunay(self, points, delaunay, lmax, amax):
         """
-        Test triangles for max length and max angle.
+        Test delaunay for max length and max angle.
         """
-        tested_triangles = []
-        lmax_failed = []
-        amax_failed = []
-        for i in range(0, len(triangles), 3):
-            first, second,third = triangles[i:i+3]
+        triangles = []
+        for i in range(0, len(delaunay), 3):
+            first, second,third = delaunay[i:i+3]
 
-            p1 = copy.deepcopy(vertices[first])
-            p2 = copy.deepcopy(vertices[second])
-            p3 = copy.deepcopy(vertices[third])
+            p1 = copy.deepcopy(points[first])
+            p2 = copy.deepcopy(points[second])
+            p3 = copy.deepcopy(points[third])
             p1.z = p2.z = p3.z = 0
 
             #Test triangle
             if self.max_length(lmax, p1, p2, p3)\
                 and self.max_angle(amax,  p1, p2, p3):
-                tested_triangles.extend([first, second, third, -1])
+                triangles.extend([first, second, third, -1])
 
-        return tested_triangles
+        return triangles
 
 
     @staticmethod

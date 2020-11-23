@@ -75,7 +75,7 @@ class PointGroup:
             "App::PropertyVectorList",
             "Points",
             "Base",
-            "List of group points").Points = ()
+            "List of group points").Points = []
 
         obj.addProperty(
             "App::PropertyEnumeration",
@@ -85,21 +85,16 @@ class PointGroup:
 
         obj.Proxy = self
 
-        self.Base = None
-        self.Points = None
-
-    def onChanged(self, fp, prop):
+    def onChanged(self, obj, prop):
         '''
         Do something when a data property has changed.
         '''
-        # fp is feature python.
         if prop == "Points":
-            points = fp.getPropertyByName("Points")
+            points = obj.getPropertyByName("Points")
             if points:
                 origin = geo_origin.get(points[0])
 
-
-    def execute(self, fp):
+    def execute(self, obj):
         '''
         Do something when doing a recomputation. 
         '''
@@ -111,7 +106,7 @@ class ViewProviderPointGroup:
     This class is about Point Group Object view features.
     """
 
-    def __init__(self, obj):
+    def __init__(self, vobj):
         '''
         Set view properties.
         '''
@@ -119,23 +114,21 @@ class ViewProviderPointGroup:
                      random.random(),
                      random.random())
 
-        obj.addProperty(
+        vobj.addProperty(
             "App::PropertyColor",
             "PointColor",
             "Point Style",
             "Color of the point group").PointColor = (r, g, b)
 
-        obj.addProperty(
+        vobj.addProperty(
             "App::PropertyFloatConstraint",
             "PointSize",
             "Point Style",
-            "Size of the point group").PointSize = (3.0)
+            "Size of the point group").PointSize = (3.0, 1.0, 20.0, 1.0)
 
-        obj.Proxy = self
+        vobj.Proxy = self
 
-        obj.PointSize = (3.0, 1.0, 20.0, 1.0)
-
-    def attach(self, obj):
+    def attach(self, vobj):
         '''
         Create Object visuals in 3D view.
         '''
@@ -153,7 +146,7 @@ class ViewProviderPointGroup:
         # Highlight for selection.
         highlight = coin.SoType.fromName('SoFCSelection').createInstance()
         #highlight.documentName.setValue(FreeCAD.ActiveDocument.Name)
-        #highlight.objectName.setValue(obj.Object.Name)
+        #highlight.objectName.setValue(vobj.Object.Name)
         #highlight.subElementName.setValue("Main")
         highlight.addChild(self.geo_coords)
         highlight.addChild(points)
@@ -165,32 +158,30 @@ class ViewProviderPointGroup:
         point_root.addChild(self.point_normal)
         point_root.addChild(self.color_mat)
         point_root.addChild(highlight)
-        obj.addDisplayMode(point_root,"Point")
+        vobj.addDisplayMode(point_root,"Point")
 
         # Take features from properties.
-        self.onChanged(obj,"PointSize")
-        self.onChanged(obj,"PointColor")
+        self.onChanged(vobj,"PointSize")
+        self.onChanged(vobj,"PointColor")
 
-    def onChanged(self, vp, prop):
+    def onChanged(self, vobj, prop):
         '''
         Update Object visuals when a view property changed.
         '''
-        # vp is view provider.
         if prop == "PointSize":
-            size = vp.getPropertyByName("PointSize")
+            size = vobj.getPropertyByName("PointSize")
             self.point_style.pointSize = size
 
         if prop == "PointColor":
-            color = vp.getPropertyByName("PointColor")
+            color = vobj.getPropertyByName("PointColor")
             self.color_mat.diffuseColor = (color[0],color[1],color[2])
 
-    def updateData(self, fp, prop):
+    def updateData(self, obj, prop):
         '''
         Update Object visuals when a data property changed.
         '''
-        # fp is feature python.
         if prop == "Points":
-            points = fp.getPropertyByName("Points")
+            points = obj.getPropertyByName("Points")
             if points:
                 origin = geo_origin.get(points[0])
 
@@ -199,10 +190,10 @@ class ViewProviderPointGroup:
                 self.geo_coords.point.values = points
 
         if prop == "Marker":
-            marker = fp.getPropertyByName("Marker")
+            marker = obj.getPropertyByName("Marker")
             self.markers.markerIndex = marker_dict[marker]
 
-    def getDisplayModes(self,obj):
+    def getDisplayModes(self, vobj):
         '''
         Return a list of display modes.
         '''

@@ -66,15 +66,15 @@ class Surface(SurfaceFunc):
 
         obj.addProperty(
             "App::PropertyIntegerList",
-            "Vertices",
+            "Delaunay",
             "Base",
-            "Vertices of Delaunay").Vertices = []
+            "Index of Delaunay vertices").Delaunay = []
 
         obj.addProperty(
             "App::PropertyIntegerList",
-            "Index",
+            "Triangles",
             "Base",
-            "Index of points").Index = []
+            "Index of triangles vertices").Triangles = []
 
         obj.addProperty(
             "App::PropertyLength",
@@ -109,42 +109,41 @@ class Surface(SurfaceFunc):
 
         obj.Proxy = self
 
-    def onChanged(self, fp, prop):
+    def onChanged(self, obj, prop):
         '''
         Do something when a data property has changed.
         '''
-        # fp is feature python.
-        points = fp.getPropertyByName("Points")
-        lmax = fp.getPropertyByName("MaxLength")
-        amax = fp.getPropertyByName("MaxAngle")
-        deltaH = fp.getPropertyByName("ContourInterval")
+        points = obj.getPropertyByName("Points")
+        lmax = obj.getPropertyByName("MaxLength")
+        amax = obj.getPropertyByName("MaxAngle")
+        deltaH = obj.getPropertyByName("ContourInterval")
 
         if prop =="Points":
             if points:
-                fp.Vertices = self.triangulate(points)
+                obj.Delaunay = self.triangulate(points)
 
-        if prop == "Vertices" or prop == "MaxLength" or prop == "MaxAngle":
-            vertices = fp.getPropertyByName("Vertices")
+        if prop == "Delaunay" or prop == "MaxLength" or prop == "MaxAngle":
+            delaunay = obj.getPropertyByName("Delaunay")
 
-            if points and vertices:
-                tested_triangles = self.test_triangles(
-                    points, vertices, lmax, amax)
+            if points and delaunay:
+                triangles = self.test_delaunay(
+                    points, delaunay, lmax, amax)
 
-                fp.Index = tested_triangles
+                obj.Triangles = triangles
 
-        if prop == "Points" or prop == "Index" or prop == "ContourInterval":
-            index = fp.getPropertyByName("Index")
+        if prop == "Points" or prop == "Triangles" or prop == "ContourInterval":
+            triangles = obj.getPropertyByName("Triangles")
 
             if points:
                 origin = geo_origin.get(points[0])
 
                 coords, num_vert = self.contour_points(
-                    points, index, deltaH)
+                    points, triangles, deltaH)
 
-                fp.ContourPoints = coords
-                fp.ContourVertices = num_vert
+                obj.ContourPoints = coords
+                obj.ContourVertices = num_vert
 
-    def execute(self, fp):
+    def execute(self, obj):
         '''
         Do something when doing a recomputation. 
         '''
@@ -155,7 +154,7 @@ class ViewProviderSurface:
     This class is about Surface Object view features.
     """
 
-    def __init__(self, obj):
+    def __init__(self, vobj):
         '''
         Set view properties.
         '''
@@ -163,15 +162,15 @@ class ViewProviderSurface:
                      random.random(),
                      random.random())
 
-        obj.addProperty(
+        vobj.addProperty(
             "App::PropertyColor",
             "TriangleColor",
             "Surface Style",
             "Color of the point group").TriangleColor = (r, g, b)
 
-        obj.Proxy = self
+        vobj.Proxy = self
 
-    def attach(self, obj):
+    def attach(self, vobj):
         '''
         Create Object visuals in 3D view.
         '''
@@ -189,7 +188,7 @@ class ViewProviderSurface:
         # Highlight for selection.
         highlight = coin.SoType.fromName('SoFCSelection').createInstance()
         #highlight.documentName.setValue(FreeCAD.ActiveDocument.Name)
-        #highlight.objectName.setValue(obj.Object.Name)
+        #highlight.objectName.setValue(vobj.Object.Name)
         #highlight.subElementName.setValue("Main")
         highlight.addChild(self.mat_color)
         highlight.addChild(mat_binding)
@@ -217,29 +216,27 @@ class ViewProviderSurface:
         surface_root.addChild(shape_hints)
         surface_root.addChild(contours)
         surface_root.addChild(highlight)
-        obj.addDisplayMode(surface_root,"Surface")
+        vobj.addDisplayMode(surface_root,"Surface")
 
         # Take features from properties.
-        self.onChanged(obj,"TriangleColor")
+        self.onChanged(vobj,"TriangleColor")
 
-    def onChanged(self, vp, prop):
+    def onChanged(self, vobj, prop):
         '''
         Update Object visuals when a view property changed.
         '''
-        # vp is view provider.
         try:
             if prop == "TriangleColor":
-                color = vp.getPropertyByName("TriangleColor")
+                color = vobj.getPropertyByName("TriangleColor")
                 self.mat_color.diffuseColor = (color[0],color[1],color[2])
         except Exception: pass
 
-    def updateData(self, fp, prop):
+    def updateData(self, obj, prop):
         '''
         Update Object visuals when a data property changed.
         '''
-        # fp is feature python.
         if prop == "Points":
-            points = fp.getPropertyByName("Points")
+            points = obj.getPropertyByName("Points")
             if points:
                 # Get GeoOrigin.
                 origin = geo_origin.get(points[0])
@@ -252,18 +249,18 @@ class ViewProviderSurface:
                 #Set contour system.
                 self.cont_coords.geoSystem.setValues(geo_system)
 
-        if prop == "Index":
-            index = fp.getPropertyByName("Index")
-            self.triangles.coordIndex.values = index
+        if prop == "Triangles":
+            triangles = obj.getPropertyByName("Triangles")
+            self.triangles.coordIndex.values = triangles
 
-        if prop == "Points" or prop == "Index" or prop == "ContourInterval":
-            cont_points = fp.getPropertyByName("ContourPoints")
-            cont_vert = fp.getPropertyByName("ContourVertices")
+        if prop == "Points" or prop == "Triangles" or prop == "ContourInterval":
+            cont_points = obj.getPropertyByName("ContourPoints")
+            cont_vert = obj.getPropertyByName("ContourVertices")
 
             self.cont_coords.point.values = cont_points
             self.cont_lines.numVertices.values = cont_vert
 
-    def getDisplayModes(self,obj):
+    def getDisplayModes(self,vobj):
         '''
         Return a list of display modes.
         '''
