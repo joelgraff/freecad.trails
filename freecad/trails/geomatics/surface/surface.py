@@ -127,21 +127,10 @@ class Surface(SurfaceFunc):
             vertices = fp.getPropertyByName("Vertices")
 
             if points and vertices:
-                index = []
-                for i in range(0, len(vertices), 3):
-                    first, second,third = vertices[i:i+3]
+                tested_triangles = self.test_triangles(
+                    points, vertices, lmax, amax)
 
-                    p1 = copy.deepcopy(points[first])
-                    p2 = copy.deepcopy(points[second])
-                    p3 = copy.deepcopy(points[third])
-                    p1.z = p2.z = p3.z = 0
-
-                    #Test triangle
-                    if self.max_length(lmax, p1, p2, p3)\
-                        and self.max_angle(amax,  p1, p2, p3):
-                        index.extend([first, second, third, -1])
-
-                fp.Index = index
+                fp.Index = tested_triangles
 
         if prop == "Points" or prop == "Index" or prop == "ContourInterval":
             index = fp.getPropertyByName("Index")
@@ -186,9 +175,8 @@ class ViewProviderSurface:
         '''
         Create Object visuals in 3D view.
         '''
-        # Geo Nodes.
+        # GeoCoords Node.
         self.geo_coords = coin.SoGeoCoordinate()
-        self.geo_separator = coin.SoGeoSeparator()
 
         # Surface features.
         self.triangles = coin.SoIndexedFaceSet()
@@ -225,7 +213,7 @@ class ViewProviderSurface:
         contours.addChild(self.cont_lines)
 
         # Surface root.
-        surface_root = self.geo_separator
+        surface_root = coin.SoSeparator()
         surface_root.addChild(shape_hints)
         surface_root.addChild(contours)
         surface_root.addChild(highlight)
@@ -260,11 +248,6 @@ class ViewProviderSurface:
                 geo_system = ["UTM", origin.UtmZone, "FLAT"]
                 self.geo_coords.geoSystem.setValues(geo_system)
                 self.geo_coords.point.values = points
-
-                # Set GeoSeparator.
-                self.geo_separator.geoSystem.setValues(geo_system)
-                self.geo_separator.geoCoords.setValue(
-                    points[0].x, points[0].y, points[0].z)
 
                 #Set contour system.
                 self.cont_coords.geoSystem.setValues(geo_system)

@@ -38,6 +38,51 @@ class SurfaceFunc:
         pass
 
     @staticmethod
+    def triangulate(points):
+        """
+        Create 2D Delaunay triangulation.
+        """
+        # Normalize points
+        base = points[0]
+        nor_points = []
+        for point in points:
+            nor_points.append(point.sub(base))
+
+        data = np.array(nor_points) 
+
+        # Create delaunay triangulation
+        tri = scipy.spatial.Delaunay(data[:, :2])
+        vertices = []
+
+        for i in tri.vertices.tolist():
+            vertices.extend(i)
+
+        return vertices
+
+    def test_triangles(self, vertices, triangles, lmax, amax):
+        """
+        Test triangles for max length and max angle.
+        """
+        tested_triangles = []
+        lmax_failed = []
+        amax_failed = []
+        for i in range(0, len(triangles), 3):
+            first, second,third = triangles[i:i+3]
+
+            p1 = copy.deepcopy(vertices[first])
+            p2 = copy.deepcopy(vertices[second])
+            p3 = copy.deepcopy(vertices[third])
+            p1.z = p2.z = p3.z = 0
+
+            #Test triangle
+            if self.max_length(lmax, p1, p2, p3)\
+                and self.max_angle(amax,  p1, p2, p3):
+                tested_triangles.extend([first, second, third, -1])
+
+        return tested_triangles
+
+
+    @staticmethod
     def max_length(lmax, p1, p2, p3):
         """
         Calculation of the 2D length between triangle edges
@@ -69,45 +114,6 @@ class SurfaceFunc:
             if degree > amax:
                 return False
         return True
-
-    @staticmethod
-    def triangulate(points):
-        """
-        Create 2D Delaunay triangulation.
-        """
-        # Normalize points
-        base = points[0]
-        nor_points = []
-        for point in points:
-            nor_points.append(point.sub(base))
-
-        data = np.array(nor_points) 
-
-        # Create delaunay triangulation
-        tri = scipy.spatial.Delaunay(data[:, :2])
-        vertices = []
-
-        for i in tri.vertices.tolist():
-            vertices.extend(i)
-
-        return vertices
-
-    @staticmethod
-    def create_mesh(points, index):
-        """
-        Create a mesh for unwrited functions.
-        """
-
-        indexed_points = []
-        base = copy.deepcopy(points[0])
-        base.z = 0
-        for i in index:
-            if i == -1: continue
-            indexed_points.append(points[i].sub(base))
-
-        mesh = Mesh.Mesh(indexed_points)
-
-        return mesh
 
     def contour_points(self, points, index, deltaH):
         """
@@ -141,3 +147,20 @@ class SurfaceFunc:
                     num_vert.append(len(cont_up))
 
         return coords, num_vert
+
+    @staticmethod
+    def create_mesh(points, index):
+        """
+        Create a mesh for unwrited functions.
+        """
+
+        indexed_points = []
+        base = copy.deepcopy(points[0])
+        base.z = 0
+        for i in index:
+            if i == -1: continue
+            indexed_points.append(points[i].sub(base))
+
+        mesh = Mesh.Mesh(indexed_points)
+
+        return mesh

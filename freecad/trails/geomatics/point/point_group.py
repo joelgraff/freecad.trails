@@ -139,9 +139,8 @@ class ViewProviderPointGroup:
         '''
         Create Object visuals in 3D view.
         '''
-        # Geo Nodes.
+        # GeoCoord Node.
         self.geo_coords = coin.SoGeoCoordinate()
-        self.geo_separator = coin.SoGeoSeparator()
 
         # Point group features.
         points = coin.SoPointSet()
@@ -161,7 +160,7 @@ class ViewProviderPointGroup:
         highlight.addChild(self.markers)
 
         # Point group root.
-        point_root = self.geo_separator
+        point_root = coin.SoSeparator()
         point_root.addChild(self.point_style)
         point_root.addChild(self.point_normal)
         point_root.addChild(self.color_mat)
@@ -198,10 +197,6 @@ class ViewProviderPointGroup:
                 geo_system = ["UTM", origin.UtmZone, "FLAT"]
                 self.geo_coords.geoSystem.setValues(geo_system)
                 self.geo_coords.point.values = points
-
-                self.geo_separator.geoSystem.setValues(geo_system)
-                self.geo_separator.geoCoords.setValue(
-                    points[0].x, points[0].y, points[0].z)
 
         if prop == "Marker":
             marker = fp.getPropertyByName("Marker")
