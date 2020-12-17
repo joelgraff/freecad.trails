@@ -203,6 +203,7 @@ class ViewProviderPointGroup:
         vobj.addDisplayMode(point_root,"Point")
 
         # Take features from properties.
+        self.onChanged(vobj,"Elevation")
         self.onChanged(vobj,"PointSize")
         self.onChanged(vobj,"PointColor")
 
@@ -211,6 +212,7 @@ class ViewProviderPointGroup:
         Update Object visuals when a view property changed.
         '''
         if prop == "Name" or prop == "NortingEasting" or prop == "Elevation" or prop == "Description":
+            self.point_labels.removeAllChildren()
             origin = geo_origin.get(vobj.Object.Points[0])
 
             show_name = vobj.getPropertyByName("Name")
