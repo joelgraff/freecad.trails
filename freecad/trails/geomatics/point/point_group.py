@@ -72,10 +72,22 @@ class PointGroup:
         self.Type = 'Trails::PointGroup'
 
         obj.addProperty(
+            "App::PropertyStringList",
+            "PointNames",
+            "Base",
+            "List of group points").PointNames = []
+
+        obj.addProperty(
             "App::PropertyVectorList",
             "Points",
             "Base",
             "List of group points").Points = []
+
+        obj.addProperty(
+            "App::PropertyStringList",
+            "Descriptions",
+            "Base",
+            "List of group points").Descriptions = []
 
         obj.addProperty(
             "App::PropertyEnumeration",

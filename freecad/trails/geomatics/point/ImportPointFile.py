@@ -179,7 +179,10 @@ class ImportPointFile:
         """
         # Get user inputs
         UI = self.IPFui
-        self.PointList = []
+        names = []
+        vectors = []
+        descriptions = []
+
         Counter = 1
         PointName = UI.PointNameLE.text()
         Northing = UI.NorthingLE.text()
@@ -249,12 +252,14 @@ class ImportPointFile:
             # Add points to point group
             elif Operation == "Import":
                 try:
-                    self.PointList.append((float(row[E]) * 1000,
-                                           float(row[N]) * 1000,
-                                           float(row[Z]) * 1000))
+                    names.append(row[PN])
+                    vectors.append((float(row[E]) * 1000,
+                                    float(row[N]) * 1000,
+                                    float(row[Z]) * 1000))
+                    descriptions.append(row[D])
                 except Exception:
                     pass
-        return self.PointList
+        return names, vectors, descriptions
 
     def Preview(self):
         """
@@ -298,14 +303,20 @@ class ImportPointFile:
         for i in range(UI.SelectedFilesLW.count()):
             Items.append(UI.SelectedFilesLW.item(i))
         Labels = [i.text() for i in Items]
+        names = PointGroup.PointNames.copy()
         points = PointGroup.Points.copy()
+        descriptions = PointGroup.Descriptions.copy()
 
         for FilePath in Labels:
             File = open(FilePath, 'r')
-            point_list =self.FileReader(File, "Import")
-            points.extend(point_list)
+            names, vectors, descriptions =self.FileReader(File, "Import")
+            names.extend(names)
+            points.extend(vectors)
+            descriptions.extend(descriptions)
 
+        PointGroup.PointNames = names
         PointGroup.Points = points
+        PointGroup.Descriptions = descriptions
         FreeCAD.ActiveDocument.recompute()
         FreeCADGui.SendMsgToActiveView("ViewFit")
         UI.close()
