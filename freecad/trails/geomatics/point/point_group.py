@@ -203,7 +203,7 @@ class ViewProviderPointGroup:
         vobj.addDisplayMode(point_root,"Point")
 
         # Take features from properties.
-        self.onChanged(vobj,"Elevation")
+        if vobj.Object.Points: self.onChanged(vobj,"Elevation")
         self.onChanged(vobj,"PointSize")
         self.onChanged(vobj,"PointColor")
 
