@@ -234,7 +234,7 @@ class ViewProviderPointGroup:
                 if show_z: labels.append(str(vector.z/1000))
                 if show_des and vobj.Object.Descriptions: labels.append(vobj.Object.Descriptions[index])
 
-                location.translation = vector.sub(origin.Origin)
+                location.translation = vector.sub(FreeCAD.Vector(origin.Origin.x, origin.Origin.y, 0))
                 text.string.setValues(labels)
                 point_label.addChild(font)
                 point_label.addChild(location)
