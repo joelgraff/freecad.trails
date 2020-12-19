@@ -63,7 +63,12 @@ class SurfaceFunc:
         """
         Test delaunay for max length and max angle.
         """
+        base = copy.deepcopy(points[0])
+        base.z = 0
+        index = []
         triangles = []
+        mesh_index = []
+
         for i in range(0, len(delaunay), 3):
             first, second,third = delaunay[i:i+3]
 
@@ -75,9 +80,13 @@ class SurfaceFunc:
             #Test triangle
             if self.max_length(lmax, p1, p2, p3)\
                 and self.max_angle(amax,  p1, p2, p3):
+                index.extend([first, second, third])
                 triangles.extend([first, second, third, -1])
 
-        return triangles
+        for i in index:
+            mesh_index.append(points[i].sub(base))
+
+        return Mesh.Mesh(mesh_index), triangles
 
 
     @staticmethod
@@ -113,12 +122,10 @@ class SurfaceFunc:
                 return False
         return True
 
-    def contour_points(self, points, index, deltaH):
+    def contour_points(self, fpoint, mesh, deltaH):
         """
         Create contour lines for selected surface
         """
-
-        mesh = self.create_mesh(points, index)
 
         # Find max and min elevation of mesh
         zmax = mesh.BoundBox.ZMax/1000
@@ -128,7 +135,7 @@ class SurfaceFunc:
         cont_points = []
         coords = []
         num_vert = []
-        base = copy.deepcopy(points[0])
+        base = copy.deepcopy(fpoint)
         base.z = 0
         for H in range(int(round(zmin)), int(round(zmax))):
             if deltaH == 0: break
@@ -145,20 +152,3 @@ class SurfaceFunc:
                     num_vert.append(len(cont_up))
 
         return coords, num_vert
-
-    @staticmethod
-    def create_mesh(points, index):
-        """
-        Create a mesh for unwrited functions.
-        """
-
-        indexed_points = []
-        base = copy.deepcopy(points[0])
-        base.z = 0
-        for i in index:
-            if i == -1: continue
-            indexed_points.append(points[i].sub(base))
-
-        mesh = Mesh.Mesh(indexed_points)
-
-        return mesh

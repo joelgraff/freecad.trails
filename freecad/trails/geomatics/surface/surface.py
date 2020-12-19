@@ -25,6 +25,7 @@ Create a Surface Object from FPO.
 '''
 
 import FreeCAD, FreeCADGui
+import Mesh
 from pivy import coin
 from .surface_func import SurfaceFunc
 from freecad.trails import ICONPATH, geo_origin
@@ -62,19 +63,25 @@ class Surface(SurfaceFunc):
             "App::PropertyVectorList",
             "Points",
             "Base",
-            "List of group points").Points = []
+            "List of group points", 4).Points = []
 
         obj.addProperty(
             "App::PropertyIntegerList",
             "Delaunay",
             "Base",
-            "Index of Delaunay vertices").Delaunay = []
+            "Index of Delaunay vertices", 4).Delaunay = []
 
         obj.addProperty(
             "App::PropertyIntegerList",
             "Triangles",
             "Base",
-            "Index of triangles vertices").Triangles = []
+            "Index of triangles vertices", 4).Triangles = []
+
+        obj.addProperty(
+            "Mesh::PropertyMeshKernel",
+            "DMesh",
+            "Base",
+            "Mesh").DMesh = Mesh.Mesh()
 
         obj.addProperty(
             "App::PropertyLength",
@@ -92,7 +99,7 @@ class Surface(SurfaceFunc):
         obj.addProperty(
             "App::PropertyFloatConstraint",
             "ContourInterval",
-            "Point Style",
+            "Contour",
             "Size of the point group").ContourInterval = (1.0, 0.0, 100.0, 1.0)
 
         obj.addProperty(
@@ -114,31 +121,26 @@ class Surface(SurfaceFunc):
         Do something when a data property has changed.
         '''
         points = obj.getPropertyByName("Points")
-        lmax = obj.getPropertyByName("MaxLength")
-        amax = obj.getPropertyByName("MaxAngle")
-        deltaH = obj.getPropertyByName("ContourInterval")
 
         if prop =="Points":
-            if points:
+            if len(points) > 2:
                 obj.Delaunay = self.triangulate(points)
 
         if prop == "Delaunay" or prop == "MaxLength" or prop == "MaxAngle":
             delaunay = obj.getPropertyByName("Delaunay")
+            lmax = obj.getPropertyByName("MaxLength")
+            amax = obj.getPropertyByName("MaxAngle")
 
-            if points and delaunay:
-                triangles = self.test_delaunay(
+            if delaunay:
+                obj.DMesh, obj.Triangles = self.test_delaunay(
                     points, delaunay, lmax, amax)
 
-                obj.Triangles = triangles
-
-        if prop == "Points" or prop == "Triangles" or prop == "ContourInterval":
-            triangles = obj.getPropertyByName("Triangles")
-
+        if prop == "DMesh" or prop == "ContourInterval":
+            deltaH = obj.getPropertyByName("ContourInterval")
+            mesh = obj.getPropertyByName("DMesh")
             if points:
                 origin = geo_origin.get(points[0])
-
-                coords, num_vert = self.contour_points(
-                    points, triangles, deltaH)
+                coords, num_vert = self.contour_points(points[0], mesh, deltaH)
 
                 obj.ContourPoints = coords
                 obj.ContourVertices = num_vert
