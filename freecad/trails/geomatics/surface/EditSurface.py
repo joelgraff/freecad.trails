@@ -57,13 +57,7 @@ class AddTriangle:
         # Check for document
         if FreeCAD.ActiveDocument is None:
             return False
-
-        # Check for selected object
-        if FreeCADGui.Selection.getSelection() is not None:
-            selection = FreeCADGui.Selection.getSelection()[-1]
-            if selection.TypeId == 'Mesh::Feature':
-                return True
-        return False
+        return True
 
     def Activated(self):
         """
@@ -105,13 +99,7 @@ class DeleteTriangle:
         # Check for document
         if FreeCAD.ActiveDocument is None:
             return False
-
-        # Check for selected object
-        if FreeCADGui.Selection.getSelection() is not None:
-            selection = FreeCADGui.Selection.getSelection()[-1]
-            if selection.TypeId == 'Mesh::Feature':
-                return True
-        return False
+        return True
 
     @staticmethod
     def Activated():
@@ -155,13 +143,7 @@ class SwapEdge:
         # Check for document
         if FreeCAD.ActiveDocument is None:
             return False
-
-        # Check for selected object
-        if FreeCADGui.Selection.getSelection() is not None:
-            selection = FreeCADGui.Selection.getSelection()[-1]
-            if selection.TypeId == 'Mesh::Feature':
-                return True
-        return False
+        return True
 
     def Activated(self):
         """
@@ -248,13 +230,7 @@ class SmoothSurface:
         # Check for document
         if FreeCAD.ActiveDocument is None:
             return False
-
-        # Check for selected object
-        if FreeCADGui.Selection.getSelection() is not None:
-            selection = FreeCADGui.Selection.getSelection()[-1]
-            if selection.TypeId == 'Mesh::Feature':
-                return True
-        return False
+        return True
 
     @staticmethod
     def Activated():

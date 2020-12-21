@@ -79,9 +79,9 @@ class Surface(SurfaceFunc):
 
         obj.addProperty(
             "Mesh::PropertyMeshKernel",
-            "DMesh",
+            "Mesh",
             "Base",
-            "Mesh").DMesh = Mesh.Mesh()
+            "Mesh").Mesh = Mesh.Mesh()
 
         obj.addProperty(
             "App::PropertyLength",
@@ -132,12 +132,12 @@ class Surface(SurfaceFunc):
             amax = obj.getPropertyByName("MaxAngle")
 
             if delaunay:
-                obj.DMesh, obj.Triangles = self.test_delaunay(
+                obj.Mesh, obj.Triangles = self.test_delaunay(
                     points, delaunay, lmax, amax)
 
-        if prop == "DMesh" or prop == "ContourInterval":
+        if prop == "Mesh" or prop == "ContourInterval":
             deltaH = obj.getPropertyByName("ContourInterval")
-            mesh = obj.getPropertyByName("DMesh")
+            mesh = obj.getPropertyByName("Mesh")
             if points:
                 origin = geo_origin.get(points[0])
                 coords, num_vert = self.contour_points(points[0], mesh, deltaH)
@@ -250,11 +250,26 @@ class ViewProviderSurface:
         '''
         Update Object visuals when a data property changed.
         '''
-        if prop == "Points":
-            points = obj.getPropertyByName("Points")
-            if points:
+        if prop == "Mesh":
+            mesh = obj.getPropertyByName("Mesh")
+            topo_points = mesh.Topology[0]
+            topo_tri = mesh.Topology[1]
+
+            if topo_tri:
                 # Get GeoOrigin.
-                origin = geo_origin.get(points[0])
+                points = []
+                triangles = []
+                origin = geo_origin.get()
+                base = copy.deepcopy(origin.Origin)
+                base.z = 0
+
+                for i in topo_points:
+                    point = copy.deepcopy(i)
+                    points.append(point.add(base))
+
+                for i in topo_tri:
+                    triangles.extend(list(i))
+                    triangles.append(-1)
 
                 # Set GeoCoords.
                 geo_system = ["UTM", origin.UtmZone, "FLAT"]
@@ -263,12 +278,9 @@ class ViewProviderSurface:
 
                 #Set contour system.
                 self.cont_coords.geoSystem.setValues(geo_system)
+                self.triangles.coordIndex.values = triangles
 
-        if prop == "Triangles":
-            triangles = obj.getPropertyByName("Triangles")
-            self.triangles.coordIndex.values = triangles
-
-        if prop == "Points" or prop == "Triangles" or prop == "ContourInterval":
+        if prop == "Mesh" or prop == "ContourInterval":
             cont_points = obj.getPropertyByName("ContourPoints")
             cont_vert = obj.getPropertyByName("ContourVertices")
 
