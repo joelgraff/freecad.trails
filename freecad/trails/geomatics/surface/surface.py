@@ -72,12 +72,6 @@ class Surface(SurfaceFunc):
             "Index of Delaunay vertices", 4).Delaunay = []
 
         obj.addProperty(
-            "App::PropertyIntegerList",
-            "Triangles",
-            "Base",
-            "Index of triangles vertices", 4).Triangles = []
-
-        obj.addProperty(
             "Mesh::PropertyMeshKernel",
             "Mesh",
             "Base",
@@ -132,7 +126,7 @@ class Surface(SurfaceFunc):
             amax = obj.getPropertyByName("MaxAngle")
 
             if delaunay:
-                obj.Mesh, obj.Triangles = self.test_delaunay(
+                obj.Mesh = self.test_delaunay(
                     points, delaunay, lmax, amax)
 
         if prop == "Mesh" or prop == "ContourInterval":

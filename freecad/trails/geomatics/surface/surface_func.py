@@ -66,7 +66,6 @@ class SurfaceFunc:
         base = copy.deepcopy(points[0])
         base.z = 0
         index = []
-        triangles = []
         mesh_index = []
 
         for i in range(0, len(delaunay), 3):
@@ -81,12 +80,11 @@ class SurfaceFunc:
             if self.max_length(lmax, p1, p2, p3)\
                 and self.max_angle(amax,  p1, p2, p3):
                 index.extend([first, second, third])
-                triangles.extend([first, second, third, -1])
 
         for i in index:
             mesh_index.append(points[i].sub(base))
 
-        return Mesh.Mesh(mesh_index), triangles
+        return Mesh.Mesh(mesh_index)
 
 
     @staticmethod
