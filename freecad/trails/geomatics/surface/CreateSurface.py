@@ -22,7 +22,6 @@
 
 import FreeCAD
 import FreeCADGui
-from PySide import QtCore, QtGui
 from freecad.trails import ICONPATH
 from . import surface
 from ..point import point_groups
@@ -46,18 +45,6 @@ class CreateSurface:
             'ToolTip': "Create surface from selected point group(s)."
             }
 
-        # Get file path
-        self.Path = os.path.dirname(__file__)
-
-        # Get *.ui file(s)
-        self.IPFui = FreeCADGui.PySideUic.loadUi(
-            self.Path + "/CreateSurface.ui")
-
-        # UI connections
-        UI = self.IPFui
-        UI.CreateB.clicked.connect(self.CreateSurface)
-        UI.CancelB.clicked.connect(UI.close)
-
     def GetResources(self):
         """
         Return the command resources dictionary
@@ -79,42 +66,6 @@ class CreateSurface:
         """
         # Create Point_Groups' groups
         PointGroups = point_groups.get()
-
-        # Set and show UI
-        self.IPFui.setParent(FreeCADGui.getMainWindow())
-        self.IPFui.setWindowFlags(QtCore.Qt.Window)
-        self.IPFui.show()
-
-        # Create QStandardItemModel to list point groups on QListView
-        model = QtGui.QStandardItemModel()
-        self.IPFui.PointGroupsLV.setModel(model)
-
-        # Create QStandardItem for every point group
-        self.GroupList = []
-        for PointGroup in PointGroups.Group:
-            self.GroupList.append(PointGroup.Name)
-            SubGroupName = PointGroup.Label
-            item = QtGui.QStandardItem(SubGroupName)
-            model.appendRow(item)
-
-    def CreateSurface(self):
-        """
-        Create Surface by using point groups.
-        """
-        # Print warning if there isn't selected group
-        if len(self.IPFui.PointGroupsLV.selectedIndexes()) < 1:
-            FreeCAD.Console.PrintMessage("No Points object selected")
-            return
-
-        # Get selected group(s) points
-        points = []
-        for SelectedIndex in self.IPFui.PointGroupsLV.selectedIndexes():
-            Index = self.GroupList[SelectedIndex.row()]
-            PointGroup = FreeCAD.ActiveDocument.getObject(Index)
-            points.extend(PointGroup.Points)
-
-        SurfaceNameLE = self.IPFui.SurfaceNameLE.text()
-        surface.create(points, SurfaceNameLE)
-        FreeCAD.ActiveDocument.recompute()
+        surface.create()
 
 FreeCADGui.addCommand('Create Surface', CreateSurface())
