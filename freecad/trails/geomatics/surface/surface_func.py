@@ -59,11 +59,11 @@ class SurfaceFunc:
 
         return delaunay
 
-    def test_delaunay(self, points, delaunay, lmax, amax):
+    def test_delaunay(self, origin, points, delaunay, lmax, amax):
         """
         Test delaunay for max length and max angle.
         """
-        base = copy.deepcopy(points[0])
+        base = copy.deepcopy(origin)
         base.z = 0
         index = []
         mesh_index = []

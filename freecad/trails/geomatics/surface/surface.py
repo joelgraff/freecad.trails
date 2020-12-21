@@ -101,10 +101,16 @@ class Surface(SurfaceFunc):
         pgs = obj.getPropertyByName("PointGroups")
         for pg in pgs:
             points.extend(pg.Points)
+        if points:
+            origin = geo_origin.get(points[0])
+        else:
+            origin = geo_origin.get()
 
         if prop =="PointGroups":
             if len(points) > 2:
                 obj.Delaunay = self.triangulate(points)
+            else:
+                obj.Mesh = Mesh.Mesh()
 
         if prop == "Delaunay" or prop == "MaxLength" or prop == "MaxAngle":
             delaunay = obj.getPropertyByName("Delaunay")
@@ -113,17 +119,16 @@ class Surface(SurfaceFunc):
 
             if delaunay:
                 obj.Mesh = self.test_delaunay(
-                    points, delaunay, lmax, amax)
+                    origin.Origin, points, delaunay, lmax, amax)
 
         if prop == "Mesh" or prop == "ContourInterval":
             deltaH = obj.getPropertyByName("ContourInterval")
             mesh = obj.getPropertyByName("Mesh")
-            if points:
-                origin = geo_origin.get(points[0])
-                coords, num_vert = self.contour_points(points[0], mesh, deltaH)
 
-                obj.ContourPoints = coords
-                obj.ContourVertices = num_vert
+            coords, num_vert = self.contour_points(origin.Origin, mesh, deltaH)
+
+            obj.ContourPoints = coords
+            obj.ContourVertices = num_vert
 
     def execute(self, obj):
         '''
@@ -231,30 +236,29 @@ class ViewProviderSurface:
             topo_points = mesh.Topology[0]
             topo_tri = mesh.Topology[1]
 
-            if topo_tri:
-                # Get GeoOrigin.
-                points = []
-                triangles = []
-                origin = geo_origin.get()
-                base = copy.deepcopy(origin.Origin)
-                base.z = 0
+            # Get GeoOrigin.
+            points = []
+            triangles = []
+            origin = geo_origin.get()
+            base = copy.deepcopy(origin.Origin)
+            base.z = 0
 
-                for i in topo_points:
-                    point = copy.deepcopy(i)
-                    points.append(point.add(base))
+            for i in topo_points:
+                point = copy.deepcopy(i)
+                points.append(point.add(base))
 
-                for i in topo_tri:
-                    triangles.extend(list(i))
-                    triangles.append(-1)
+            for i in topo_tri:
+                triangles.extend(list(i))
+                triangles.append(-1)
 
-                # Set GeoCoords.
-                geo_system = ["UTM", origin.UtmZone, "FLAT"]
-                self.geo_coords.geoSystem.setValues(geo_system)
-                self.geo_coords.point.values = points
+            # Set GeoCoords.
+            geo_system = ["UTM", origin.UtmZone, "FLAT"]
+            self.geo_coords.geoSystem.setValues(geo_system)
+            self.geo_coords.point.values = points
 
-                #Set contour system.
-                self.cont_coords.geoSystem.setValues(geo_system)
-                self.triangles.coordIndex.values = triangles
+            #Set contour system.
+            self.cont_coords.geoSystem.setValues(geo_system)
+            self.triangles.coordIndex.values = triangles
 
         if prop == "Mesh" or prop == "ContourInterval":
             cont_points = obj.getPropertyByName("ContourPoints")
