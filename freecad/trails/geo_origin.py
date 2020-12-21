@@ -69,15 +69,11 @@ class GeoOrigin:
         self.Type = 'Trails::GeoOrigin'
 
         obj.addProperty(
-            "App::PropertyEnumeration",
-            "UtmZone",
-            "Base",
+            "App::PropertyEnumeration", "UtmZone", "Base",
             "UTM zone").UtmZone = zone_list
         
         obj.addProperty(
-            "App::PropertyVector",
-            "Origin",
-            "Base",
+            "App::PropertyVector", "Origin", "Base",
             "Origin point.").Origin = (0, 0, 0)
         
         obj.Proxy = self

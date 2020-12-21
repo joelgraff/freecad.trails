@@ -72,27 +72,19 @@ class PointGroup:
         self.Type = 'Trails::PointGroup'
 
         obj.addProperty(
-            "App::PropertyStringList",
-            "PointNames",
-            "Base",
+            "App::PropertyStringList", "PointNames", "Base",
             "List of group points").PointNames = []
 
         obj.addProperty(
-            "App::PropertyVectorList",
-            "Points",
-            "Base",
+            "App::PropertyVectorList", "Points", "Base",
             "List of group points").Points = []
 
         obj.addProperty(
-            "App::PropertyStringList",
-            "Descriptions",
-            "Base",
+            "App::PropertyStringList", "Descriptions", "Base",
             "List of group points").Descriptions = []
 
         obj.addProperty(
-            "App::PropertyEnumeration",
-            "Marker",
-            "Base",
+            "App::PropertyEnumeration", "Marker", "Base",
             "List of point markers").Marker = [*marker_dict]
 
         obj.Proxy = self
@@ -122,44 +114,30 @@ class ViewProviderPointGroup:
         '''
         Set view properties.
         '''
-        (r, g, b) = (random.random(),
-                     random.random(),
-                     random.random())
+        (r, g, b) = (random.random(), random.random(), random.random())
 
         vobj.addProperty(
-            "App::PropertyBool",
-            "Name",
-            "Labels",
+            "App::PropertyBool", "Name", "Labels",
             "Show point name labels").Name = False
 
         vobj.addProperty(
-            "App::PropertyBool",
-            "NortingEasting",
-            "Labels",
+            "App::PropertyBool", "NortingEasting", "Labels",
             "Show norting easting labels").NortingEasting = False
 
         vobj.addProperty(
-            "App::PropertyBool",
-            "Elevation",
-            "Labels",
+            "App::PropertyBool", "Elevation", "Labels",
             "Show elevation labels").Elevation = False
 
         vobj.addProperty(
-            "App::PropertyBool",
-            "Description",
-            "Labels",
+            "App::PropertyBool", "Description", "Labels",
             "Show description labels").Description = False
 
         vobj.addProperty(
-            "App::PropertyColor",
-            "PointColor",
-            "Point Style",
+            "App::PropertyColor", "PointColor", "Point Style",
             "Color of the point group").PointColor = (r, g, b)
 
         vobj.addProperty(
-            "App::PropertyFloatConstraint",
-            "PointSize",
-            "Point Style",
+            "App::PropertyFloatConstraint", "PointSize", "Point Style",
             "Size of the point group").PointSize = (3.0, 1.0, 20.0, 1.0)
 
         vobj.Proxy = self

@@ -317,7 +317,7 @@ class ImportPointFile:
         PointGroup.PointNames = names
         PointGroup.Points = points
         PointGroup.Descriptions = descriptions
-        FreeCAD.ActiveDocument.recompute()
+        PointGroup.recompute()
         FreeCADGui.SendMsgToActiveView("ViewFit")
         UI.close()
 

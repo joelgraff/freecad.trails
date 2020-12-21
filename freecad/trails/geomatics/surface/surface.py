@@ -39,7 +39,6 @@ def create(points=[], name='Surface'):
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "Surface")
     obj.Label = name
     Surface(obj)
-    obj.Points = points
     ViewProviderSurface(obj.ViewObject)
     group.addObject(obj)
     FreeCAD.ActiveDocument.recompute()
@@ -60,52 +59,36 @@ class Surface(SurfaceFunc):
 
         # Triangulation properties.
         obj.addProperty(
-            "App::PropertyVectorList",
-            "Points",
-            "Base",
-            "List of group points", 4).Points = []
+            'App::PropertyLinkList', "PointGroups", "Base",
+            "List of Point Groups").PointGroups = []
 
         obj.addProperty(
-            "App::PropertyIntegerList",
-            "Delaunay",
-            "Base",
+            "App::PropertyIntegerList", "Delaunay", "Base",
             "Index of Delaunay vertices", 4).Delaunay = []
 
         obj.addProperty(
-            "Mesh::PropertyMeshKernel",
-            "Mesh",
-            "Base",
-            "Mesh").Mesh = Mesh.Mesh()
+            "Mesh::PropertyMeshKernel", "Mesh", "Base",
+            "Mesh object of triangulation").Mesh = Mesh.Mesh()
 
         obj.addProperty(
-            "App::PropertyLength",
-            "MaxLength",
-            "Base",
+            "App::PropertyLength", "MaxLength", "Base",
             "Maximum length of triangle edge").MaxLength = 50000
 
         obj.addProperty(
-            "App::PropertyAngle",
-            "MaxAngle",
-            "Base",
+            "App::PropertyAngle","MaxAngle","Base",
             "Maximum angle of triangle edge").MaxAngle = 170
 
         # Contour properties.
         obj.addProperty(
-            "App::PropertyFloatConstraint",
-            "ContourInterval",
-            "Contour",
+            "App::PropertyFloatConstraint", "ContourInterval", "Contour",
             "Size of the point group").ContourInterval = (1.0, 0.0, 100.0, 1.0)
 
         obj.addProperty(
-            "App::PropertyVectorList",
-            "ContourPoints",
-            "Surface Style",
+            "App::PropertyVectorList", "ContourPoints", "Contour",
             "Points of contours", 4).ContourPoints = []
 
         obj.addProperty(
-            "App::PropertyIntegerList",
-            "ContourVertices",
-            "Surface Style",
+            "App::PropertyIntegerList", "ContourVertices", "Contour",
             "Vertices of contours.", 4).ContourVertices = []
 
         obj.Proxy = self
@@ -114,9 +97,12 @@ class Surface(SurfaceFunc):
         '''
         Do something when a data property has changed.
         '''
-        points = obj.getPropertyByName("Points")
+        points = []
+        pgs = obj.getPropertyByName("PointGroups")
+        for pg in pgs:
+            points.extend(pg.Points)
 
-        if prop =="Points":
+        if prop =="PointGroups":
             if len(points) > 2:
                 obj.Delaunay = self.triangulate(points)
 
@@ -143,7 +129,7 @@ class Surface(SurfaceFunc):
         '''
         Do something when doing a recomputation. 
         '''
-        return
+        self.onChanged(obj, 'PointGroups')
 
 class ViewProviderSurface:
     """
@@ -154,14 +140,10 @@ class ViewProviderSurface:
         '''
         Set view properties.
         '''
-        (r, g, b) = (random.random(),
-                     random.random(),
-                     random.random())
+        (r, g, b) = (random.random(), random.random(), random.random())
 
         vobj.addProperty(
-            "App::PropertyColor",
-            "TriangleColor",
-            "Surface Style",
+            "App::PropertyColor", "TriangleColor", "Surface Style",
             "Color of the point group").TriangleColor = (r, g, b)
 
         vobj.Proxy = self
