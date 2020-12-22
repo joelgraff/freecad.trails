@@ -27,6 +27,86 @@ from freecad.trails import ICONPATH
 import os
 
 
+class AddPoint:
+    """
+    Command to add a point to triangulation
+    """
+
+    def __init__(self):
+        """
+        Constructor
+        """
+
+        # Set icon,  menu text and tooltip
+        self.resources = {
+            'Pixmap': ICONPATH + '/icons/AddTriangle.svg',
+            'MenuText': "Add Point",
+            'ToolTip': "Add a point to selected surface."
+            }
+
+    def GetResources(self):
+        """
+        Return the command resources dictionary
+        """
+        return self.resources
+
+    def IsActive(self):
+        """
+        Define tool button activation situation
+        """
+        # Check for document
+        if FreeCAD.ActiveDocument is None:
+            return False
+        return True
+
+    def Activated(self):
+        """
+        Command activation method
+        """
+        # Create an event callback for add_point() function
+        self.MC = FreeCADGui.ActiveDocument.ActiveView.addEventCallbackPivy(
+            coin.SoMouseButtonEvent.getClassTypeId(), self.add_point)
+
+    def add_point(self, cb):
+        """
+        Take two triangle by mouse clicks and swap edge between them
+        """
+        # Get event
+        event = cb.getEvent()
+
+        # If mouse right button pressed finish swap edge operation
+        if event.getButton() == coin.SoMouseButtonEvent.BUTTON3 \
+                and event.getState() == coin.SoMouseButtonEvent.DOWN:
+            FreeCADGui.ActiveDocument.ActiveView.removeEventCallbackPivy(
+                coin.SoMouseButtonEvent.getClassTypeId(), self.MC)
+
+        # If mouse left button pressed get picked point
+        if event.getButton() == coin.SoMouseButtonEvent.BUTTON1 \
+                and event.getState() == coin.SoMouseButtonEvent.DOWN:
+            pickedPoint = cb.getPickedPoint()
+
+            # Get triangle index at picket point
+            if pickedPoint:
+                detail = pickedPoint.getDetail()
+
+                if detail.isOfType(coin.SoFaceDetail.getClassTypeId()):
+                    face_detail = coin.cast(
+                        detail, str(detail.getTypeId().getName()))
+                    index = face_detail.getFaceIndex()
+
+                    view = FreeCADGui.ActiveDocument.ActiveView
+                    obj = view.getObjectInfo(view.getCursorPos())
+                    curpos = FreeCAD.Vector(float(obj["x"]),float(obj["y"]),float(obj["z"]))           
+
+                    surface = FreeCADGui.Selection.getSelection()[-1]
+                    copy_mesh = surface.Mesh.copy()
+                    copy_mesh.insertVertex(index, curpos)
+                    surface.Mesh = copy_mesh
+            else:
+                pass
+
+FreeCADGui.addCommand('Add Point', AddPoint())
+
 class AddTriangle:
     """
     Command to add a tirangle to mesh
@@ -162,7 +242,7 @@ class SwapEdge:
         event = cb.getEvent()
 
         # If mouse right button pressed finish swap edge operation
-        if event.getButton() == coin.SoMouseButtonEvent.BUTTON2 \
+        if event.getButton() == coin.SoMouseButtonEvent.BUTTON3 \
                 and event.getState() == coin.SoMouseButtonEvent.DOWN:
             FreeCADGui.ActiveDocument.ActiveView.removeEventCallbackPivy(
                 coin.SoMouseButtonEvent.getClassTypeId(), self.MC)

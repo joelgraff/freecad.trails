@@ -130,7 +130,7 @@ class TrailsWorkbench(Gui.Workbench):
             'Surface Editor': {
                 'gui': self.group,
                 'cmd': [
-                    'Add Triangle',
+                    'Add Point',
                     'Delete Triangle',
                     'Swap Edge',
                     'Smooth Surface'
