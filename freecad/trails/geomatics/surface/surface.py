@@ -134,7 +134,7 @@ class Surface(SurfaceFunc):
         '''
         Do something when doing a recomputation. 
         '''
-        self.onChanged(obj, 'PointGroups')
+        pass
 
 class ViewProviderSurface:
     """
