@@ -205,10 +205,11 @@ class ViewProviderSurface:
 
         # Surface root.
         surface_root = coin.SoSeparator()
+        surface_root.addChild(contours)
+        surface_root.addChild(offset)
         surface_root.addChild(edges)
         surface_root.addChild(offset)
         surface_root.addChild(shape_hints)
-        surface_root.addChild(contours)
         surface_root.addChild(self.mat_color)
         surface_root.addChild(mat_binding)
         surface_root.addChild(highlight)
