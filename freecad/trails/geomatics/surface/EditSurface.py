@@ -26,6 +26,7 @@ from pivy import coin
 from freecad.trails import ICONPATH
 import os
 
+view = FreeCADGui.ActiveDocument.ActiveView
 
 class AddPoint:
     """
@@ -64,8 +65,8 @@ class AddPoint:
         Command activation method
         """
         # Create an event callback for add_point() function
-        self.MC = FreeCADGui.ActiveDocument.ActiveView.addEventCallbackPivy(
-            coin.SoMouseButtonEvent.getClassTypeId(), self.add_point)
+        self.MC = view.addEventCallbackPivy(
+            coin.SoButtonEvent.getClassTypeId(), self.add_point)
 
     def add_point(self, cb):
         """
@@ -73,15 +74,17 @@ class AddPoint:
         """
         # Get event
         event = cb.getEvent()
+        try:action = event.getButton()
+        except: action = event.getKey()
 
         # If mouse right button pressed finish swap edge operation
-        if event.getButton() == coin.SoMouseButtonEvent.BUTTON3 \
-                and event.getState() == coin.SoMouseButtonEvent.DOWN:
-            FreeCADGui.ActiveDocument.ActiveView.removeEventCallbackPivy(
-                coin.SoMouseButtonEvent.getClassTypeId(), self.MC)
+        if action == coin.SoKeyboardEvent.ESCAPE \
+                and event.getState() == coin.SoKeyboardEvent.DOWN:
+            view.removeEventCallbackPivy(
+                coin.SoButtonEvent.getClassTypeId(), self.MC)
 
         # If mouse left button pressed get picked point
-        if event.getButton() == coin.SoMouseButtonEvent.BUTTON1 \
+        elif action == coin.SoMouseButtonEvent.BUTTON1 \
                 and event.getState() == coin.SoMouseButtonEvent.DOWN:
             pickedPoint = cb.getPickedPoint()
 
@@ -94,7 +97,6 @@ class AddPoint:
                         detail, str(detail.getTypeId().getName()))
                     index = face_detail.getFaceIndex()
 
-                    view = FreeCADGui.ActiveDocument.ActiveView
                     obj = view.getObjectInfo(view.getCursorPos())
                     curpos = FreeCAD.Vector(float(obj["x"]),float(obj["y"]),float(obj["z"]))           
 
@@ -232,7 +234,7 @@ class SwapEdge:
         # Create an event callback for SwapEdge() function
         self.FaceIndexes = []
         self.MC = FreeCADGui.ActiveDocument.ActiveView.addEventCallbackPivy(
-            coin.SoMouseButtonEvent.getClassTypeId(), self.SwapEdge)
+            coin.SoButtonEvent.getClassTypeId(), self.SwapEdge)
 
     def SwapEdge(self, cb):
         """
@@ -240,15 +242,17 @@ class SwapEdge:
         """
         # Get event
         event = cb.getEvent()
+        try:action = event.getButton()
+        except: action = event.getKey()
 
         # If mouse right button pressed finish swap edge operation
-        if event.getButton() == coin.SoMouseButtonEvent.BUTTON3 \
-                and event.getState() == coin.SoMouseButtonEvent.DOWN:
-            FreeCADGui.ActiveDocument.ActiveView.removeEventCallbackPivy(
-                coin.SoMouseButtonEvent.getClassTypeId(), self.MC)
+        if action == coin.SoKeyboardEvent.ESCAPE \
+                and event.getState() == coin.SoKeyboardEvent.DOWN:
+            view.removeEventCallbackPivy(
+                coin.SoButtonEvent.getClassTypeId(), self.MC)
 
         # If mouse left button pressed get picked point
-        if event.getButton() == coin.SoMouseButtonEvent.BUTTON1 \
+        elif action == coin.SoMouseButtonEvent.BUTTON1 \
                 and event.getState() == coin.SoMouseButtonEvent.DOWN:
             pickedPoint = cb.getPickedPoint()
 
