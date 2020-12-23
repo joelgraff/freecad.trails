@@ -117,6 +117,10 @@ class ViewProviderPointGroup:
         (r, g, b) = (random.random(), random.random(), random.random())
 
         vobj.addProperty(
+            "App::PropertyBool", "Labels", "Base",
+            "Show/hide labels").Labels = False
+
+        vobj.addProperty(
             "App::PropertyBool", "Name", "Labels",
             "Show point name labels").Name = False
 
@@ -189,35 +193,37 @@ class ViewProviderPointGroup:
         '''
         Update Object visuals when a view property changed.
         '''
-        if prop == "Name" or prop == "NortingEasting" or prop == "Elevation" or prop == "Description":
-            self.point_labels.removeAllChildren()
-            origin = geo_origin.get(vobj.Object.Points[0])
+        labels = vobj.getPropertyByName("Labels")
+        if labels:
+            if prop == "Name" or prop == "NortingEasting" or prop == "Elevation" or prop == "Description":
+                self.point_labels.removeAllChildren()
+                origin = geo_origin.get(vobj.Object.Points[0])
 
-            show_name = vobj.getPropertyByName("Name")
-            show_ne = vobj.getPropertyByName("NortingEasting")
-            show_z = vobj.getPropertyByName("Elevation")
-            show_des = vobj.getPropertyByName("Description")
+                show_name = vobj.getPropertyByName("Name")
+                show_ne = vobj.getPropertyByName("NortingEasting")
+                show_z = vobj.getPropertyByName("Elevation")
+                show_des = vobj.getPropertyByName("Description")
 
-            for vector in vobj.Object.Points:
-                font = coin.SoFont()
-                font.size = 1000
-                point_label = coin.SoSeparator()
-                location = coin.SoTranslation()
-                text = coin.SoAsciiText()
-                index = vobj.Object.Points.index(vector)
-                labels =[]
+                for vector in vobj.Object.Points:
+                    font = coin.SoFont()
+                    font.size = 1000
+                    point_label = coin.SoSeparator()
+                    location = coin.SoTranslation()
+                    text = coin.SoAsciiText()
+                    index = vobj.Object.Points.index(vector)
+                    labels =[]
 
-                if show_name: labels.append(vobj.Object.PointNames[index])
-                if show_ne: labels.extend([str(vector.x/1000), str(vector.y/1000)])
-                if show_z: labels.append(str(vector.z/1000))
-                if show_des and vobj.Object.Descriptions: labels.append(vobj.Object.Descriptions[index])
+                    if show_name: labels.append(vobj.Object.PointNames[index])
+                    if show_ne: labels.extend([str(vector.x/1000), str(vector.y/1000)])
+                    if show_z: labels.append(str(vector.z/1000))
+                    if show_des and vobj.Object.Descriptions: labels.append(vobj.Object.Descriptions[index])
 
-                location.translation = vector.sub(FreeCAD.Vector(origin.Origin.x, origin.Origin.y, 0))
-                text.string.setValues(labels)
-                point_label.addChild(font)
-                point_label.addChild(location)
-                point_label.addChild(text)
-                self.point_labels.addChild(point_label)
+                    location.translation = vector.sub(FreeCAD.Vector(origin.Origin.x, origin.Origin.y, 0))
+                    text.string.setValues(labels)
+                    point_label.addChild(font)
+                    point_label.addChild(location)
+                    point_label.addChild(text)
+                    self.point_labels.addChild(point_label)
 
         if prop == "PointSize":
             size = vobj.getPropertyByName("PointSize")
