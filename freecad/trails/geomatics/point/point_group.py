@@ -194,9 +194,10 @@ class ViewProviderPointGroup:
         Update Object visuals when a view property changed.
         '''
         labels = vobj.getPropertyByName("Labels")
+        self.point_labels.removeAllChildren()
         if labels:
-            if prop == "Name" or prop == "NortingEasting" or prop == "Elevation" or prop == "Description":
-                self.point_labels.removeAllChildren()
+            if prop == "Labels" or prop == "Name" or prop == "NortingEasting"\
+                or prop == "Elevation" or prop == "Description":
                 origin = geo_origin.get(vobj.Object.Points[0])
 
                 show_name = vobj.getPropertyByName("Name")
@@ -214,8 +215,8 @@ class ViewProviderPointGroup:
                     labels =[]
 
                     if show_name: labels.append(vobj.Object.PointNames[index])
-                    if show_ne: labels.extend([str(vector.x/1000), str(vector.y/1000)])
-                    if show_z: labels.append(str(vector.z/1000))
+                    if show_ne: labels.extend([str(round(vector.x/1000, 3)), str(round(vector.y/1000,3))])
+                    if show_z: labels.append(str(round(vector.z/1000,3)))
                     if show_des and vobj.Object.Descriptions: labels.append(vobj.Object.Descriptions[index])
 
                     location.translation = vector.sub(FreeCAD.Vector(origin.Origin.x, origin.Origin.y, 0))
