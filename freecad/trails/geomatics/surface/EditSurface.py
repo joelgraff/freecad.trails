@@ -26,7 +26,7 @@ from pivy import coin
 from freecad.trails import ICONPATH
 import os
 
-view = FreeCADGui.ActiveDocument.ActiveView
+
 
 class AddPoint:
     """
@@ -37,6 +37,7 @@ class AddPoint:
         """
         Constructor
         """
+        self.view = FreeCADGui.ActiveDocument.ActiveView
 
         # Set icon,  menu text and tooltip
         self.resources = {
@@ -65,7 +66,7 @@ class AddPoint:
         Command activation method
         """
         # Create an event callback for add_point() function
-        self.MC = view.addEventCallbackPivy(
+        self.MC = self.view.addEventCallbackPivy(
             coin.SoButtonEvent.getClassTypeId(), self.add_point)
 
     def add_point(self, cb):
@@ -74,38 +75,38 @@ class AddPoint:
         """
         # Get event
         event = cb.getEvent()
-        try:action = event.getButton()
-        except: action = event.getKey()
 
         # If mouse right button pressed finish swap edge operation
-        if action == coin.SoKeyboardEvent.ESCAPE \
+        if event.getTypeId().isDerivedFrom(coin.SoKeyboardEvent.getClassTypeId()):
+            if event.getKey() == coin.SoKeyboardEvent.ESCAPE \
                 and event.getState() == coin.SoKeyboardEvent.DOWN:
-            view.removeEventCallbackPivy(
-                coin.SoButtonEvent.getClassTypeId(), self.MC)
+                self.view.removeEventCallbackPivy(
+                    coin.SoButtonEvent.getClassTypeId(), self.MC)
 
         # If mouse left button pressed get picked point
-        elif action == coin.SoMouseButtonEvent.BUTTON1 \
+        elif event.getTypeId().isDerivedFrom(coin.SoMouseButtonEvent.getClassTypeId()):
+            if event.getButton() == coin.SoMouseButtonEvent.BUTTON1 \
                 and event.getState() == coin.SoMouseButtonEvent.DOWN:
-            pickedPoint = cb.getPickedPoint()
+                pickedPoint = cb.getPickedPoint()
 
-            # Get triangle index at picket point
-            if pickedPoint:
-                detail = pickedPoint.getDetail()
+                # Get triangle index at picket point
+                if pickedPoint:
+                    detail = pickedPoint.getDetail()
 
-                if detail.isOfType(coin.SoFaceDetail.getClassTypeId()):
-                    face_detail = coin.cast(
-                        detail, str(detail.getTypeId().getName()))
-                    index = face_detail.getFaceIndex()
+                    if detail.isOfType(coin.SoFaceDetail.getClassTypeId()):
+                        face_detail = coin.cast(
+                            detail, str(detail.getTypeId().getName()))
+                        index = face_detail.getFaceIndex()
 
-                    obj = view.getObjectInfo(view.getCursorPos())
-                    curpos = FreeCAD.Vector(float(obj["x"]),float(obj["y"]),float(obj["z"]))           
+                        obj = self.view.getObjectInfo(self.view.getCursorPos())
+                        curpos = FreeCAD.Vector(float(obj["x"]),float(obj["y"]),float(obj["z"]))           
 
-                    surface = FreeCADGui.Selection.getSelection()[-1]
-                    copy_mesh = surface.Mesh.copy()
-                    copy_mesh.insertVertex(index, curpos)
-                    surface.Mesh = copy_mesh
-            else:
-                pass
+                        surface = FreeCADGui.Selection.getSelection()[-1]
+                        copy_mesh = surface.Mesh.copy()
+                        copy_mesh.insertVertex(index, curpos)
+                        surface.Mesh = copy_mesh
+                else:
+                    pass
 
 FreeCADGui.addCommand('Add Point', AddPoint())
 
@@ -204,6 +205,7 @@ class SwapEdge:
         """
         Constructor
         """
+        self.view = FreeCADGui.ActiveDocument.ActiveView
 
         # Set icon,  menu text and tooltip
         self.resources = {
@@ -242,44 +244,44 @@ class SwapEdge:
         """
         # Get event
         event = cb.getEvent()
-        try:action = event.getButton()
-        except: action = event.getKey()
 
         # If mouse right button pressed finish swap edge operation
-        if action == coin.SoKeyboardEvent.ESCAPE \
+        if event.getTypeId().isDerivedFrom(coin.SoKeyboardEvent.getClassTypeId()):
+            if event.getKey() == coin.SoKeyboardEvent.ESCAPE \
                 and event.getState() == coin.SoKeyboardEvent.DOWN:
-            view.removeEventCallbackPivy(
-                coin.SoButtonEvent.getClassTypeId(), self.MC)
+                self.view.removeEventCallbackPivy(
+                    coin.SoButtonEvent.getClassTypeId(), self.MC)
 
         # If mouse left button pressed get picked point
-        elif action == coin.SoMouseButtonEvent.BUTTON1 \
+        elif event.getTypeId().isDerivedFrom(coin.SoMouseButtonEvent.getClassTypeId()):
+            if event.getButton() == coin.SoMouseButtonEvent.BUTTON1 \
                 and event.getState() == coin.SoMouseButtonEvent.DOWN:
-            pickedPoint = cb.getPickedPoint()
+                pickedPoint = cb.getPickedPoint()
 
-            # Get triangle index at picket point
-            if pickedPoint is not None:
-                detail = pickedPoint.getDetail()
+                # Get triangle index at picket point
+                if pickedPoint is not None:
+                    detail = pickedPoint.getDetail()
 
-                if detail.isOfType(coin.SoFaceDetail.getClassTypeId()):
-                    face_detail = coin.cast(
-                        detail, str(detail.getTypeId().getName()))
-                    index = face_detail.getFaceIndex()
-                    self.FaceIndexes.append(index)
+                    if detail.isOfType(coin.SoFaceDetail.getClassTypeId()):
+                        face_detail = coin.cast(
+                            detail, str(detail.getTypeId().getName()))
+                        index = face_detail.getFaceIndex()
+                        self.FaceIndexes.append(index)
 
-                    # try to swap edge between picked triangle
-                    if len(self.FaceIndexes) == 2:
-                        surface = FreeCADGui.Selection.getSelection()[-1]
-                        CopyMesh = surface.Mesh.copy()
+                        # try to swap edge between picked triangle
+                        if len(self.FaceIndexes) == 2:
+                            surface = FreeCADGui.Selection.getSelection()[-1]
+                            CopyMesh = surface.Mesh.copy()
 
-                        try:
-                            CopyMesh.swapEdge(
-                                self.FaceIndexes[0], self.FaceIndexes[1])
+                            try:
+                                CopyMesh.swapEdge(
+                                    self.FaceIndexes[0], self.FaceIndexes[1])
 
-                        except Exception:
-                            print("The edge between these triangles cannot be swappable")
+                            except Exception:
+                                print("The edge between these triangles cannot be swappable")
 
-                        surface.Mesh = CopyMesh
-                        self.FaceIndexes.clear()
+                            surface.Mesh = CopyMesh
+                            self.FaceIndexes.clear()
 
 FreeCADGui.addCommand('Swap Edge', SwapEdge())
 
