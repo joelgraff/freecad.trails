@@ -93,9 +93,8 @@ class CreateSections:
         self.SurfacesList = {}
 
         for surface in SurfacesGroup:
-            if surface.TypeId == 'Mesh::Feature':
-                self.SurfacesList[surface.Label] = surface
-                self.IPFui.SelectSurfacesLW.addItem(surface.Label)
+            self.SurfacesList[surface.Label] = surface
+            self.IPFui.SelectSurfacesLW.addItem(surface.Label)
 
     @staticmethod
     def convert2View(section, origin=None):
