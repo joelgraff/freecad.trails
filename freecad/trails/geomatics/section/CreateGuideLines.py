@@ -118,9 +118,14 @@ class CreateGuideLines:
         alignment_name = self.alignment_list[alignment_index]
 
         Alignment = FreeCAD.ActiveDocument.getObject(alignment_name)
-        Start = Alignment.Proxy.model.data['meta']['StartStation']
-        Length = Alignment.Proxy.model.data['meta']['Length']
-        End = Start + Length/1000
+        if hasattr(Alignment.Proxy, 'model'):
+            Start = Alignment.Proxy.model.data['meta']['StartStation']
+            Length = Alignment.Proxy.model.data['meta']['Length']
+            End = Start + Length/1000
+        else:
+            Start = 0.0
+            Length = Alignment.Length.Value
+            End = Start + Length/1000
 
         return Alignment, Start, End
 
@@ -175,6 +180,32 @@ class CreateGuideLines:
         else:
             self.IPFui.EndStationLE.setEnabled(True)
 
+    def GetOrthoVector(self, line, distance, side=''):
+        """
+        Return the orthogonal vector pointing toward the indicated side at the
+        provided position.  Defaults to left-hand side
+        """
+
+        _dir = 1.0
+
+        _side = side.lower()
+
+        if _side in ['r', 'rt', 'right']:
+            _dir = -1.0
+
+        start = line.Start
+        end = line.End
+
+        if (start is None) or (end is None):
+            return None, None
+
+        _delta = end.sub(start).normalize()
+        _left = Vector(-_delta.y, _delta.x, 0.0)
+
+        _coord = start.add(_delta.multiply(distance*1000))
+
+        return _coord, _left.multiply(_dir)
+
     def CreateGuideLines(self):
         """
         Generates guidelines along a selected alignment
@@ -212,38 +243,48 @@ class CreateGuideLines:
 
         #get 3D coordinate dataset and placement
         Stations = []
-        AlgPl = Alignment.Placement.Base
-        Geometry = Alignment.Proxy.model.data['geometry']
+        if hasattr(Alignment.Proxy, 'model'):
+            AlgPl = Alignment.Placement.Base
+            Geometry = Alignment.Proxy.model.data['geometry']
 
-        for Geo in Geometry:
+            for Geo in Geometry:
+                #compute starting and ending stations based on alignment
+                StartStation = Geo.get('StartStation')
+                EndStation = Geo.get('StartStation')+Geo.get('Length')/1000
 
-            #compute starting and ending stations based on alignment
-            StartStation = Geo.get('StartStation')
-            EndStation = Geo.get('StartStation')+Geo.get('Length')/1000
+                if StartStation != 0:
+                    if self.IPFui.HorGeoPointsChB.isChecked():
+                        Stations.append(StartStation)
 
+                #generate line intervals
+                if Geo.get('Type') == 'Line':
+
+                    #Iterate the station range, rounding to the nearest whole
+                    for i in range(
+                        round(float(StartStation)), round(float(EndStation))):
+
+                        #add stations which land on increments exactly
+                        if i % int(TangentIncrement) == 0:
+                            Stations.append(i)
+
+                #generate curve intervals
+                elif Geo.get('Type') == 'Curve' or Geo["Type"] == 'Spiral':
+
+                    for i in range(round(float(StartStation)), round(float(EndStation))):
+                        if i % int(CurveSpiralIncrement) == 0:
+                            Stations.append(i)
+
+        else:
+            StartStation = Start
+            EndStation = End
+            AlgPl = FreeCAD.Vector(0, 0, 0)
             if StartStation != 0:
                 if self.IPFui.HorGeoPointsChB.isChecked():
                     Stations.append(StartStation)
 
-            #generate line intervals
-            if Geo.get('Type') == 'Line':
-
-                #Iterate the station range, rounding to the nearest whole
-                for i in range(
-                    round(float(StartStation)), round(float(EndStation))):
-
-                    #add stations which land on increments exactly
-                    if i % int(TangentIncrement) == 0:
-                        Stations.append(i)
-
-            #generate curve intervals
-            elif Geo.get('Type') == 'Curve' or Geo["Type"] == 'Spiral':
-
-                for i in range(
-                    round(float(StartStation)), round(float(EndStation))):
-
-                    if i % int(CurveSpiralIncrement) == 0:
-                        Stations.append(i)
+            for i in range(int(float(StartStation)), int(float(EndStation))):
+                if i % int(TangentIncrement) == 0:
+                    Stations.append(i)
 
         #add the end station, rounded to the nearest three decimals
         Stations.append(round(End,3))
@@ -261,8 +302,11 @@ class CreateGuideLines:
         #iterate the final list of stations,
         #computing coordinates and orthoginals for guidelines
         for Station in Result:
+            if hasattr(Alignment.Proxy, 'model'):
+                Coord, vec = Alignment.Proxy.model.get_orthogonal( Station, "Left")
+            else:
+                Coord, vec = self.GetOrthoVector(Alignment, Station, "Left")
 
-            Coord, vec = Alignment.Proxy.model.get_orthogonal( Station, "Left")
             LeftEnd = Coord.add(FreeCAD.Vector(vec).multiply(int(l)*1000))
             RightEnd = Coord.add(vec.negative().multiply(int(r)*1000))
 
