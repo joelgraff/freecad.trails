@@ -69,21 +69,22 @@ class CreateGuideLines:
         return True
 
     def Activated(self):
-        try:
-            self.GuideLineGroup = FreeCAD.ActiveDocument.Alignments
-        except Exception:
-            self.GuideLineGroup = FreeCAD.ActiveDocument.addObject(
-                "App::DocumentObjectGroup", 'Alignments')
-            self.GuideLineGroup.Label = "Alignments"
+        Alignments = FreeCAD.ActiveDocument.getObject('Alignments')
+        AlignmentGroup = FreeCAD.ActiveDocument.getObject('AlignmentGroup')
+        if Alignments: alignment_group = Alignments
+        elif AlignmentGroup: alignment_group = AlignmentGroup
+        else:
+            alignment_group = FreeCAD.ActiveDocument.addObject(
+                "App::DocumentObjectGroup", 'AlignmentGroup')
+            alignment_group.Label = "Alignment Group"
 
-        try:
-            self.GuideLineGroup = FreeCAD.ActiveDocument.GuideLines
-        except Exception:
-            self.GuideLineGroup = FreeCAD.ActiveDocument.addObject(
+        GuideLineGroup = FreeCAD.ActiveDocument.getObject('GuideLines')
+        if not GuideLineGroup:
+            GuideLineGroup = FreeCAD.ActiveDocument.addObject(
                 "App::DocumentObjectGroup", 'GuideLines')
-            self.GuideLineGroup.Label = "Guide Lines"
+            GuideLineGroup.Label = "Guide Lines"
 
-        FreeCAD.ActiveDocument.Alignments.addObject(self.GuideLineGroup)
+        alignment_group.addObject(GuideLineGroup)
 
         self.IPFui.setParent(FreeCADGui.getMainWindow())
         self.IPFui.setWindowFlags(QtCore.Qt.Window)
@@ -91,10 +92,9 @@ class CreateGuideLines:
 
         # List Alignments
         self.IPFui.AlignmentCB.clear()
-        alignment_group = FreeCAD.ActiveDocument.Alignments.Group
         self.alignment_list = []
 
-        for Object in alignment_group:
+        for Object in alignment_group.Group:
             if Object.TypeId == 'Part::Part2DObjectPython':
                 self.alignment_list.append(Object.Name)
                 self.IPFui.AlignmentCB.addItem(Object.Label)
