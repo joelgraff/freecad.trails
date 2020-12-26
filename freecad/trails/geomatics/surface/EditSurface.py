@@ -57,7 +57,13 @@ class AddPoint:
         # Check for document
         if FreeCAD.ActiveDocument is None:
             return False
-        return True
+
+        # Check for selected object
+        if FreeCADGui.Selection.getSelection() is not None:
+            selection = FreeCADGui.Selection.getSelection()[-1]
+            if selection.Proxy.Type == 'Trails::Surface':
+                return True
+        return False
 
     def Activated(self):
         """
@@ -139,7 +145,13 @@ class AddTriangle:
         # Check for document
         if FreeCAD.ActiveDocument is None:
             return False
-        return True
+
+        # Check for selected object
+        if FreeCADGui.Selection.getSelection() is not None:
+            selection = FreeCADGui.Selection.getSelection()[-1]
+            if selection.Proxy.Type == 'Trails::Surface':
+                return True
+        return False
 
     def Activated(self):
         """
@@ -181,7 +193,13 @@ class DeleteTriangle:
         # Check for document
         if FreeCAD.ActiveDocument is None:
             return False
-        return True
+
+        # Check for selected object
+        if FreeCADGui.Selection.getSelection() is not None:
+            selection = FreeCADGui.Selection.getSelection()[-1]
+            if selection.Proxy.Type == 'Trails::Surface':
+                return True
+        return False
 
     @staticmethod
     def Activated():
@@ -224,7 +242,13 @@ class SwapEdge:
         # Check for document
         if FreeCAD.ActiveDocument is None:
             return False
-        return True
+
+        # Check for selected object
+        if FreeCADGui.Selection.getSelection() is not None:
+            selection = FreeCADGui.Selection.getSelection()[-1]
+            if selection.Proxy.Type == 'Trails::Surface':
+                return True
+        return False
 
     def Activated(self):
         """
@@ -314,7 +338,13 @@ class SmoothSurface:
         # Check for document
         if FreeCAD.ActiveDocument is None:
             return False
-        return True
+
+        # Check for selected object
+        if FreeCADGui.Selection.getSelection() is not None:
+            selection = FreeCADGui.Selection.getSelection()[-1]
+            if selection.Proxy.Type == 'Trails::Surface':
+                return True
+        return False
 
     @staticmethod
     def Activated():
