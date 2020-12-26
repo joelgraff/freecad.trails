@@ -37,8 +37,6 @@ class AddPoint:
         """
         Constructor
         """
-        self.view = FreeCADGui.ActiveDocument.ActiveView
-
         # Set icon,  menu text and tooltip
         self.resources = {
             'Pixmap': ICONPATH + '/icons/AddTriangle.svg',
@@ -66,6 +64,7 @@ class AddPoint:
         Command activation method
         """
         # Create an event callback for add_point() function
+        self.view = FreeCADGui.ActiveDocument.ActiveView
         self.MC = self.view.addEventCallbackPivy(
             coin.SoButtonEvent.getClassTypeId(), self.add_point)
 
@@ -205,8 +204,6 @@ class SwapEdge:
         """
         Constructor
         """
-        self.view = FreeCADGui.ActiveDocument.ActiveView
-
         # Set icon,  menu text and tooltip
         self.resources = {
             'Pixmap': ICONPATH + '/icons/SwapEdge.svg',
@@ -234,6 +231,7 @@ class SwapEdge:
         Command activation method
         """
         # Create an event callback for SwapEdge() function
+        self.view = FreeCADGui.ActiveDocument.ActiveView
         self.FaceIndexes = []
         self.MC = FreeCADGui.ActiveDocument.ActiveView.addEventCallbackPivy(
             coin.SoButtonEvent.getClassTypeId(), self.SwapEdge)
