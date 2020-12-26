@@ -64,9 +64,13 @@ class CreateGuideLines:
         return self.resources
 
     def IsActive(self):
-        if FreeCAD.ActiveDocument is None:
-            return False
-        return True
+        """
+        Define tool button activation situation
+        """
+        # Check for document
+        if FreeCAD.ActiveDocument:
+            return True
+        return False
 
     def Activated(self):
         Alignments = FreeCAD.ActiveDocument.getObject('Alignments')

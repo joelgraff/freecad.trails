@@ -54,9 +54,13 @@ class CreateSections:
         return self.Resources
 
     def IsActive(self):
-        if FreeCAD.ActiveDocument is None:
-            return False
-        return True
+        """
+        Define tool button activation situation
+        """
+        # Check for document
+        if FreeCAD.ActiveDocument:
+            return True
+        return False
 
     def Activated(self):
         self.view = FreeCADGui.ActiveDocument.ActiveView

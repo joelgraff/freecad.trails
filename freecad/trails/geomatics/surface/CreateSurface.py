@@ -56,9 +56,9 @@ class CreateSurface:
         Define tool button activation situation
         """
         # Check for document
-        if FreeCAD.ActiveDocument is None:
-            return False
-        return True
+        if FreeCAD.ActiveDocument:
+            return True
+        return False
 
     def Activated(self):
         """

@@ -55,14 +55,12 @@ class AddPoint:
         Define tool button activation situation
         """
         # Check for document
-        if FreeCAD.ActiveDocument is None:
-            return False
-
-        # Check for selected object
-        if FreeCADGui.Selection.getSelection() is not None:
-            selection = FreeCADGui.Selection.getSelection()[-1]
-            if selection.Proxy.Type == 'Trails::Surface':
-                return True
+        if FreeCAD.ActiveDocument:
+            # Check for selected object
+            if FreeCADGui.Selection.getSelection():
+                selection = FreeCADGui.Selection.getSelection()[-1]
+                if selection.Proxy.Type == 'Trails::Surface':
+                    return True
         return False
 
     def Activated(self):
@@ -143,14 +141,12 @@ class AddTriangle:
         Define tool button activation situation
         """
         # Check for document
-        if FreeCAD.ActiveDocument is None:
-            return False
-
-        # Check for selected object
-        if FreeCADGui.Selection.getSelection() is not None:
-            selection = FreeCADGui.Selection.getSelection()[-1]
-            if selection.Proxy.Type == 'Trails::Surface':
-                return True
+        if FreeCAD.ActiveDocument:
+            # Check for selected object
+            if FreeCADGui.Selection.getSelection():
+                selection = FreeCADGui.Selection.getSelection()[-1]
+                if selection.Proxy.Type == 'Trails::Surface':
+                    return True
         return False
 
     def Activated(self):
@@ -191,14 +187,12 @@ class DeleteTriangle:
         Define tool button activation situation
         """
         # Check for document
-        if FreeCAD.ActiveDocument is None:
-            return False
-
-        # Check for selected object
-        if FreeCADGui.Selection.getSelection() is not None:
-            selection = FreeCADGui.Selection.getSelection()[-1]
-            if selection.Proxy.Type == 'Trails::Surface':
-                return True
+        if FreeCAD.ActiveDocument:
+            # Check for selected object
+            if FreeCADGui.Selection.getSelection():
+                selection = FreeCADGui.Selection.getSelection()[-1]
+                if selection.Proxy.Type == 'Trails::Surface':
+                    return True
         return False
 
     @staticmethod
@@ -240,14 +234,12 @@ class SwapEdge:
         Define tool button activation situation
         """
         # Check for document
-        if FreeCAD.ActiveDocument is None:
-            return False
-
-        # Check for selected object
-        if FreeCADGui.Selection.getSelection() is not None:
-            selection = FreeCADGui.Selection.getSelection()[-1]
-            if selection.Proxy.Type == 'Trails::Surface':
-                return True
+        if FreeCAD.ActiveDocument:
+            # Check for selected object
+            if FreeCADGui.Selection.getSelection():
+                selection = FreeCADGui.Selection.getSelection()[-1]
+                if selection.Proxy.Type == 'Trails::Surface':
+                    return True
         return False
 
     def Activated(self):
@@ -336,14 +328,12 @@ class SmoothSurface:
         Define tool button activation situation
         """
         # Check for document
-        if FreeCAD.ActiveDocument is None:
-            return False
-
-        # Check for selected object
-        if FreeCADGui.Selection.getSelection() is not None:
-            selection = FreeCADGui.Selection.getSelection()[-1]
-            if selection.Proxy.Type == 'Trails::Surface':
-                return True
+        if FreeCAD.ActiveDocument:
+            # Check for selected object
+            if FreeCADGui.Selection.getSelection():
+                selection = FreeCADGui.Selection.getSelection()[-1]
+                if selection.Proxy.Type == 'Trails::Surface':
+                    return True
         return False
 
     @staticmethod
