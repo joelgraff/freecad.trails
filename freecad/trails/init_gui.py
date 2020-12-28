@@ -219,7 +219,7 @@ class TrailsWorkbench(Gui.Workbench):
         Called when the workbench is first activated.
         """
 
-        from .geomatics.point import ImportPointFile, ExportPoints
+        from .geomatics.point import import_points, ExportPoints
         from .geomatics.surface import CreateSurface, EditSurface
         from .geomatics.section import CreateGuideLines
         from .geomatics import geoimport_gui

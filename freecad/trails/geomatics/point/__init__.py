@@ -1,2 +1,2 @@
 from . import ExportPoints
-from . import ImportPointFile
+from . import import_points
