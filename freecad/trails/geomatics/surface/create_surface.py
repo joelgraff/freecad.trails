@@ -37,19 +37,17 @@ class CreateSurface:
         """
         Constructor
         """
-
-        # Set icon,  menu text and tooltip
-        self.resources = {
-            'Pixmap': ICONPATH + '/icons/CreateSurface.svg',
-            'MenuText': "Create Surface",
-            'ToolTip': "Create surface from selected point group(s)."
-            }
+        pass
 
     def GetResources(self):
         """
         Return the command resources dictionary
         """
-        return self.resources
+        return {
+            'Pixmap': ICONPATH + '/icons/CreateSurface.svg',
+            'MenuText': "Create Surface",
+            'ToolTip': "Create surface from selected point group(s)."
+            }
 
     def IsActive(self):
         """
@@ -65,7 +63,7 @@ class CreateSurface:
         Command activation method
         """
         # Create Point_Groups' groups
-        PointGroups = point_groups.get()
+        point_groups.get()
         surface.create()
 
 FreeCADGui.addCommand('Create Surface', CreateSurface())

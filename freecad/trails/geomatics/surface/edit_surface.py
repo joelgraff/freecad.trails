@@ -37,18 +37,17 @@ class AddPoint:
         """
         Constructor
         """
-        # Set icon,  menu text and tooltip
-        self.resources = {
-            'Pixmap': ICONPATH + '/icons/AddTriangle.svg',
-            'MenuText': "Add Point",
-            'ToolTip': "Add a point to selected surface."
-            }
+        pass
 
     def GetResources(self):
         """
         Return the command resources dictionary
         """
-        return self.resources
+        return {
+            'Pixmap': ICONPATH + '/icons/AddTriangle.svg',
+            'MenuText': "Add Point",
+            'ToolTip': "Add a point to selected surface."
+            }
 
     def IsActive(self):
         """
@@ -69,7 +68,7 @@ class AddPoint:
         """
         # Create an event callback for add_point() function
         self.view = FreeCADGui.ActiveDocument.ActiveView
-        self.MC = self.view.addEventCallbackPivy(
+        self.event_callback = self.view.addEventCallbackPivy(
             coin.SoButtonEvent.getClassTypeId(), self.add_point)
 
     def add_point(self, cb):
@@ -84,17 +83,17 @@ class AddPoint:
             if event.getKey() == coin.SoKeyboardEvent.ESCAPE \
                 and event.getState() == coin.SoKeyboardEvent.DOWN:
                 self.view.removeEventCallbackPivy(
-                    coin.SoButtonEvent.getClassTypeId(), self.MC)
+                    coin.SoButtonEvent.getClassTypeId(), self.event_callback)
 
         # If mouse left button pressed get picked point
         elif event.getTypeId().isDerivedFrom(coin.SoMouseButtonEvent.getClassTypeId()):
             if event.getButton() == coin.SoMouseButtonEvent.BUTTON1 \
                 and event.getState() == coin.SoMouseButtonEvent.DOWN:
-                pickedPoint = cb.getPickedPoint()
+                picked_point = cb.getPickedPoint()
 
                 # Get triangle index at picket point
-                if pickedPoint:
-                    detail = pickedPoint.getDetail()
+                if picked_point:
+                    detail = picked_point.getDetail()
 
                     if detail.isOfType(coin.SoFaceDetail.getClassTypeId()):
                         face_detail = coin.cast(
@@ -122,19 +121,17 @@ class AddTriangle:
         """
         Constructor
         """
-
-        # Set icon,  menu text and tooltip
-        self.resources = {
-            'Pixmap': ICONPATH + '/icons/AddTriangle.svg',
-            'MenuText': "Add Triangle",
-            'ToolTip': "Add a triangle to selected surface."
-                }
+        pass
 
     def GetResources(self):
         """
         Return the command resources dictionary
         """
-        return self.resources
+        return {
+            'Pixmap': ICONPATH + '/icons/AddTriangle.svg',
+            'MenuText': "Add Triangle",
+            'ToolTip': "Add a triangle to selected surface."
+            }
 
     def IsActive(self):
         """
@@ -168,19 +165,17 @@ class DeleteTriangle:
         """
         Constructor
         """
-
-        # Set icon,  menu text and tooltip
-        self.resources = {
-            'Pixmap': ICONPATH + '/icons/DeleteTriangle.svg',
-            'MenuText': "Delete Triangle",
-            'ToolTip': "Delete triangles from selected surface."
-              }
+        pass
 
     def GetResources(self):
         """
         Return the command resources dictionary
         """
-        return self.resources
+        return {
+            'Pixmap': ICONPATH + '/icons/DeleteTriangle.svg',
+            'MenuText': "Delete Triangle",
+            'ToolTip': "Delete triangles from selected surface."
+              }
 
     def IsActive(self):
         """
@@ -195,8 +190,7 @@ class DeleteTriangle:
                     return True
         return False
 
-    @staticmethod
-    def Activated():
+    def Activated(self):
         """
         Command activation method
         """
@@ -216,18 +210,17 @@ class SwapEdge:
         """
         Constructor
         """
-        # Set icon,  menu text and tooltip
-        self.resources = {
-            'Pixmap': ICONPATH + '/icons/SwapEdge.svg',
-            'MenuText': "Swap Edge",
-            'ToolTip': "Swap Edge of selected surface."
-            }
+        pass
 
     def GetResources(self):
         """
         Return the command resources dictionary
         """
-        return self.resources
+        return {
+            'Pixmap': ICONPATH + '/icons/SwapEdge.svg',
+            'MenuText': "Swap Edge",
+            'ToolTip': "Swap Edge of selected surface."
+            }
 
     def IsActive(self):
         """
@@ -248,7 +241,7 @@ class SwapEdge:
         """
         # Create an event callback for SwapEdge() function
         self.view = FreeCADGui.ActiveDocument.ActiveView
-        self.FaceIndexes = []
+        self.face_indexes = []
         self.MC = FreeCADGui.ActiveDocument.ActiveView.addEventCallbackPivy(
             coin.SoButtonEvent.getClassTypeId(), self.SwapEdge)
 
@@ -270,32 +263,32 @@ class SwapEdge:
         elif event.getTypeId().isDerivedFrom(coin.SoMouseButtonEvent.getClassTypeId()):
             if event.getButton() == coin.SoMouseButtonEvent.BUTTON1 \
                 and event.getState() == coin.SoMouseButtonEvent.DOWN:
-                pickedPoint = cb.getPickedPoint()
+                picked_point = cb.getPickedPoint()
 
                 # Get triangle index at picket point
-                if pickedPoint is not None:
-                    detail = pickedPoint.getDetail()
+                if picked_point is not None:
+                    detail = picked_point.getDetail()
 
                     if detail.isOfType(coin.SoFaceDetail.getClassTypeId()):
                         face_detail = coin.cast(
                             detail, str(detail.getTypeId().getName()))
                         index = face_detail.getFaceIndex()
-                        self.FaceIndexes.append(index)
+                        self.face_indexes.append(index)
 
                         # try to swap edge between picked triangle
-                        if len(self.FaceIndexes) == 2:
+                        if len(self.face_indexes) == 2:
                             surface = FreeCADGui.Selection.getSelection()[-1]
-                            CopyMesh = surface.Mesh.copy()
+                            copy_mesh = surface.Mesh.copy()
 
                             try:
-                                CopyMesh.swapEdge(
-                                    self.FaceIndexes[0], self.FaceIndexes[1])
+                                copy_mesh.swapEdge(
+                                    self.face_indexes[0], self.face_indexes[1])
 
                             except Exception:
                                 print("The edge between these triangles cannot be swappable")
 
-                            surface.Mesh = CopyMesh
-                            self.FaceIndexes.clear()
+                            surface.Mesh = copy_mesh
+                            self.face_indexes.clear()
 
 FreeCADGui.addCommand('Swap Edge', SwapEdge())
 

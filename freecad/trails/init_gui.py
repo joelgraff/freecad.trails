@@ -220,7 +220,7 @@ class TrailsWorkbench(Gui.Workbench):
         """
 
         from .geomatics.point import import_points, export_points
-        from .geomatics.surface import CreateSurface, EditSurface
+        from .geomatics.surface import create_surface, edit_surface
         from .geomatics.section import CreateGuideLines
         from .geomatics import geoimport_gui
         from .design.project.commands \

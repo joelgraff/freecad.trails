@@ -1,2 +1,2 @@
-from . import CreateSurface
-from . import EditSurface
+from . import create_surface
+from . import edit_surface
