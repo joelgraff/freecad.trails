@@ -22,7 +22,7 @@
 
 import FreeCAD
 import FreeCADGui
-from PySide import QtCore, QtGui
+from PySide2 import QtCore, QtGui, QtWidgets
 from freecad.trails import ICONPATH
 from . import point_groups
 import os
@@ -36,32 +36,28 @@ class ExportPoints:
         """
         Constructor
         """
-
-        # Set icon,  menu text and tooltip
-        self.Resources = {
-            'Pixmap': ICONPATH + '/icons/ExportPoints.svg',
-            'MenuText': "Export Points",
-            'ToolTip': "Export points to point file."
-        }
-
         # Get file path
-        self.Path = os.path.dirname(__file__)
+        ui_path = os.path.dirname(__file__)
 
         # Get *.ui file(s)
-        self.EP = FreeCADGui.PySideUic.loadUi(self.Path + "/ExportPoints.ui")
+        ui = FreeCADGui.PySideUic.loadUi(ui_path + "/export_points.ui")
 
         # UI connections
-        UI = self.EP
-        UI.BrowseB.clicked.connect(self.FileDestination)
-        UI.ExportB.clicked.connect(self.ExportPointsToFile)
-        UI.CancelB.clicked.connect(UI.close)
+        ui.BrowseB.clicked.connect(self.file_destination)
+        ui.ExportB.clicked.connect(self.export_points)
+        ui.CancelB.clicked.connect(ui.close)
+        self.ui = ui
 
     def GetResources(self):
         """
         Return the command resources dictionary.
         """
 
-        return self.Resources
+        return {
+            'Pixmap': ICONPATH + '/icons/ExportPoints.svg',
+            'MenuText': "Export Points",
+            'ToolTip': "Export points to point file."
+            }
 
     def IsActive(self):
         """
@@ -77,93 +73,96 @@ class ExportPoints:
         Command activation method
         """
         # Create 'Point_Groups' group
-        PointGroups = point_groups.get()
+        groups = point_groups.get()
 
         # Set and show UI
-        UI = self.EP
-        UI.setParent(FreeCADGui.getMainWindow())
-        UI.setWindowFlags(QtCore.Qt.Window)
-        UI.show()
+        self.ui.setParent(FreeCADGui.getMainWindow())
+        self.ui.setWindowFlags(QtCore.Qt.Window)
+        self.ui.show()
 
         # Clear previous operation
-        UI.FileDestinationLE.clear()
-        UI.PointGroupsLW.clear()
+        self.ui.FileDestinationLE.clear()
+        self.ui.PointGroupsLW.clear()
 
         # Add point groups to QListWidget
-        self.GroupList = []
-        for PointGroup in PointGroups.Group:
-            self.GroupList.append(PointGroup.Name)
-            SubGroupName = PointGroup.Label
-            UI.PointGroupsLW.addItem(SubGroupName)
+        self.group_dict = {}
+        for child in groups.Group:
+            if child.Proxy.Type == 'Trails::PointGroup':
+                self.group_dict[child.Label] = child
+                self.ui.PointGroupsLW.addItem(child.Label)
 
-    def FileDestination(self):
+    def file_destination(self):
         """
         Get file destination.
         """
         # Select file
-        UI = self.EP
-        fileName = QtGui.QFileDialog.getSaveFileName(
+        file_name = QtWidgets.QFileDialog.getSaveFileName(
             None, 'Save File', os.getenv("HOME"), Filter='*.txt')
 
         # Add ".txt" if needed
-        if fileName[0][-4:] == ".txt":
-            fn = fileName[0]
+        if file_name[0][-4:] == ".txt":
+            fn = file_name[0]
         else:
-            fn = fileName[0] + ".txt"
+            fn = file_name[0] + ".txt"
 
-        UI.FileDestinationLE.setText(fn)
+        self.ui.FileDestinationLE.setText(fn)
 
-    def ExportPointsToFile(self):
+    def export_points(self):
         """
         Export selected point group(s).
         """
         # Get user inputs
-        UI = self.EP
-        PointName = UI.PointNameLE.text()
-        Northing = UI.NorthingLE.text()
-        Easting = UI.EastingLE.text()
-        Elevation = UI.ElevationLE.text()
-        Description = UI.DescriptionLE.text()
-        Format = ["", "", "", "", ""]
-        FileDestinationLE = UI.FileDestinationLE.text()
+        line_edit = self.ui.FileDestinationLE
+        point_name = self.ui.PointNameLE.text()
+        northing = self.ui.NorthingLE.text()
+        easting = self.ui.EastingLE.text()
+        elevation = self.ui.ElevationLE.text()
+        description = self.ui.DescriptionLE.text()
+        format = ["", "", "", "", ""]
 
-        if FileDestinationLE.strip() == "" or UI.PointGroupsLW.count() < 1:
+        if line_edit.text().strip() == "" or self.ui.PointGroupsLW.count() < 1:
             return
 
         # Set delimiter
-        if UI.DelimiterCB.currentText() == "Space":
-            Delimiter = ' '
-        elif UI.DelimiterCB.currentText() == "Comma":
-            Delimiter = ','
+        if self.ui.DelimiterCB.currentText() == "Space":
+            delimiter = ' '
+        elif self.ui.DelimiterCB.currentText() == "Comma":
+            delimiter = ','
 
         # Create point file
         try:
-            File = open(FileDestinationLE, 'w')
+            file = open(line_edit.text(), 'w')
         except Exception:
             FreeCAD.Console.PrintMessage("Can't open file")
 
+        counter = 1
         # Get selected point groups
-        Counter = 1
-        for SelectedIndex in UI.PointGroupsLW.selectedIndexes():
-            Index = self.GroupList[SelectedIndex.row()]
-            PointGroup = FreeCAD.ActiveDocument.getObject(Index)
+        for selection in self.ui.PointGroupsLW.selectedIndexes():
+            group = self.group_dict[selection.data()]
 
             # Print points to the file
-            for Point in PointGroup.Points:
-                pn = str(Counter)
-                xx = str(round(float(Point.x) / 1000, 3))
-                yy = str(round(float(Point.y) / 1000, 3))
-                zz = str(round(float(Point.z) / 1000, 3))
-                Format[int(PointName)-1] = pn
-                Format[int(Easting)-1] = xx
-                Format[int(Northing)-1] = yy
-                Format[int(Elevation)-1] = zz
-                Format[int(Description)-1] = ""
-                Counter += 1
+            for point in group.Points:
+                xx = str(round(float(point.x) / 1000, 3))
+                yy = str(round(float(point.y) / 1000, 3))
+                zz = str(round(float(point.z) / 1000, 3))
+                index = group.Points.index(point)
+                if group.PointNames:
+                    pn = group.PointNames[index]
+                else:
+                    pn = counter
+                    counter += 1
 
-                File.write(Format[0]+Delimiter+Format[1]+Delimiter +
-                           Format[2]+Delimiter+Format[3]+Delimiter+Format[4] +
-                           "\n")
-        File.close()
+                if group.Descriptions:
+                    des = group.Descriptions[index]
+                else: des = ''
+
+                format[int(point_name)-1] = pn
+                format[int(easting)-1] = xx
+                format[int(northing)-1] = yy
+                format[int(elevation)-1] = zz
+                format[int(description)-1] = des
+
+                file.write(delimiter.join(format) +"\n")
+        file.close()
 
 FreeCADGui.addCommand('Export Points', ExportPoints())
