@@ -23,13 +23,13 @@
 import FreeCAD
 import FreeCADGui
 from freecad.trails import ICONPATH
-from . import surface
-from ..point import point_groups
+from ..point import point_group
 
 
-class CreateSurface:
+
+class CreatePointGroup:
     """
-    Command to create a new surface
+    Command to create a new point group
     """
 
     def __init__(self):
@@ -43,9 +43,9 @@ class CreateSurface:
         Return the command resources dictionary
         """
         return {
-            'Pixmap': ICONPATH + '/icons/CreateSurface.svg',
-            'MenuText': "Create Surface",
-            'ToolTip': "Create surface from selected point group(s)."
+            'Pixmap': ICONPATH + '/icons/PointGroup.svg',
+            'MenuText': "Create Point Group",
+            'ToolTip': "Create empty point group."
             }
 
     def IsActive(self):
@@ -62,7 +62,6 @@ class CreateSurface:
         Command activation method
         """
         # Create Point_Groups' groups
-        point_groups.get()
-        surface.create()
+        point_group.create()
 
-FreeCADGui.addCommand('Create Surface', CreateSurface())
+FreeCADGui.addCommand('Create Point Group', CreatePointGroup())

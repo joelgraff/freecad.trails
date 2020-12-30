@@ -24,7 +24,6 @@ import FreeCAD
 import FreeCADGui
 from pivy import coin
 from freecad.trails import ICONPATH
-import os
 
 
 

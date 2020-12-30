@@ -24,7 +24,7 @@
 Create a Surfaces Object from FPO.
 '''
 
-import FreeCAD, FreeCADGui
+import FreeCAD
 from freecad.trails import ICONPATH, geo_origin
 from . import surface
 

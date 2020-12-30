@@ -93,6 +93,7 @@ class TrailsWorkbench(Gui.Workbench):
             'Data Tools': {
                 'gui': self.menu + self.toolbar,
                 'cmd': [
+                    'Create Point Group',
                     'Import Point File',
                     'Export Points',
                     'Geo Import Tools'
@@ -219,7 +220,7 @@ class TrailsWorkbench(Gui.Workbench):
         Called when the workbench is first activated.
         """
 
-        from .geomatics.point import import_points, export_points
+        from .geomatics.point import import_points, export_points, create_pointgroup
         from .geomatics.surface import create_surface, edit_surface
         from .geomatics.section import CreateGuideLines
         from .geomatics import geoimport_gui

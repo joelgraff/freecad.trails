@@ -24,7 +24,7 @@
 Create a Surface Object from FPO.
 '''
 
-import FreeCAD, FreeCADGui
+import FreeCAD
 import Mesh
 from pivy import coin
 from .surface_func import SurfaceFunc
