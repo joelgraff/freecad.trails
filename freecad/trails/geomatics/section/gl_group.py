@@ -1,6 +1,6 @@
 # /**********************************************************************
 # *                                                                     *
-# * Copyright (c) 2020 Hakan Seven <hakanseven12@gmail.com>             *
+# * Copyright (c) 2021 Hakan Seven <hakanseven12@gmail.com>             *
 # *                                                                     *
 # * This program is free software; you can redistribute it and/or modify*
 # * it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -21,21 +21,20 @@
 # ***********************************************************************
 
 '''
-Create a Point Group Object from FPO.
+Create a Guide Line Group Object from FPO.
 '''
 
 import FreeCAD
 from freecad.trails import ICONPATH, geo_origin
-from . import point_group
 
 
 
 def get():
     """
-    Find the existing Point Groups object
+    Find the existing Guide Line Groups object
     """
     # Return an existing instance of the same name, if found.
-    obj = FreeCAD.ActiveDocument.getObject('PointGroups')
+    obj = FreeCAD.ActiveDocument.getObject('GuideLineGroups')
 
     if obj:
         return obj
@@ -46,30 +45,40 @@ def get():
 
 def create():
     """
-    Factory method for Point Groups.
+    Factory method for Guide Line Groups.
     """
     main = geo_origin.get()
+    alignments = FreeCAD.ActiveDocument.getObject('Alignments')
+    alignment_group = FreeCAD.ActiveDocument.getObject('AlignmentGroup')
+    if alignments: alignment_group = alignments
+    elif not alignment_group:
+        alignment_group = FreeCAD.ActiveDocument.addObject(
+            "App::DocumentObjectGroup", 'AlignmentGroup')
+        alignment_group.Label = "Alignment Group"
+        main.addObject(alignment_group)
+
     obj = FreeCAD.ActiveDocument.addObject(
-        "App::DocumentObjectGroupPython", 'PointGroups')
-    obj.Label = "Point Groups"
-    PointGroups(obj)
-    ViewProviderPointGroups(obj.ViewObject)
-    main.addObject(obj)
+        "App::DocumentObjectGroupPython", 'GuideLineGroups')
+    obj.Label = "Guide Line Groups"
+    alignment_group.addObject(obj)
+
+    GuideLineGroups(obj)
+    ViewProviderGuideLineGroups(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
 
     return obj
 
 
-class PointGroups:
+class GuideLineGroups:
     """
-    This class is about Point Group Object data features.
+    This class is about Guide Line Group Object data features.
     """
 
     def __init__(self, obj):
         '''
         Set data properties.
         '''
-        self.Type = 'Trails::PointGroups'
+        self.Type = 'Trails::GuideLineGroups'
 
         obj.Proxy = self
 
@@ -86,9 +95,9 @@ class PointGroups:
         return
 
 
-class ViewProviderPointGroups:
+class ViewProviderGuideLineGroups:
     """
-    This class is about Point Group Object view features.
+    This class is about Guide Line Group Object view features.
     """
 
     def __init__(self, vobj):
@@ -109,7 +118,7 @@ class ViewProviderPointGroups:
         '''
         Return object treeview icon.
         '''
-        return ICONPATH + '/icons/PointGroup.svg'
+        return ICONPATH + '/icons/GuideLinesGroups.svg'
 
     def claimChildren(self):
         """

@@ -26,7 +26,6 @@ Create a Surfaces Object from FPO.
 
 import FreeCAD
 from freecad.trails import ICONPATH, geo_origin
-from . import surface
 
 
 
@@ -139,8 +138,7 @@ class ViewProviderSurfaces:
         """
         Context menu construction
         """
-        action = menu.addAction("Create New Surface")
-        action.triggered.connect(surface.create)
+        pass
 
     def edit(self):
         """

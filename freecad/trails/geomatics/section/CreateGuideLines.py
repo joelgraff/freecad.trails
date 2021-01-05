@@ -21,25 +21,17 @@
 # ***********************************************************************
 
 import os
-import math
 import FreeCAD
 import FreeCADGui
 import Draft
-from FreeCAD import Vector
 from PySide import QtCore, QtGui
 from freecad.trails import ICONPATH
+from . import gl_groups
 
 
 class CreateGuideLines:
 
     def __init__(self):
-
-        self.resources = {
-            'Pixmap': ICONPATH + '/icons/CreateGuideLines.svg',
-            'MenuText': "Create Guide Lines",
-            'ToolTip': "Create guide lines for selected alignment"
-                    }
-
         # Command to create guide lines for selected alignment.
         self.Path = os.path.dirname(__file__)
 
@@ -61,7 +53,11 @@ class CreateGuideLines:
 
     def GetResources(self):
         # Return the command resources dictionary
-        return self.resources
+        return {
+            'Pixmap': ICONPATH + '/icons/CreateGuideLines.svg',
+            'MenuText': "Create Guide Lines",
+            'ToolTip': "Create guide lines for selected alignment"
+            }
 
     def IsActive(self):
         """
@@ -73,22 +69,10 @@ class CreateGuideLines:
         return False
 
     def Activated(self):
-        Alignments = FreeCAD.ActiveDocument.getObject('Alignments')
-        AlignmentGroup = FreeCAD.ActiveDocument.getObject('AlignmentGroup')
-        if Alignments: alignment_group = Alignments
-        elif AlignmentGroup: alignment_group = AlignmentGroup
-        else:
-            alignment_group = FreeCAD.ActiveDocument.addObject(
-                "App::DocumentObjectGroup", 'AlignmentGroup')
-            alignment_group.Label = "Alignment Group"
-
-        GuideLineGroup = FreeCAD.ActiveDocument.getObject('GuideLines')
-        if not GuideLineGroup:
-            GuideLineGroup = FreeCAD.ActiveDocument.addObject(
-                "App::DocumentObjectGroup", 'GuideLines')
-            GuideLineGroup.Label = "Guide Lines"
-
-        alignment_group.addObject(GuideLineGroup)
+        gl_groups.get()
+        alignments = FreeCAD.ActiveDocument.getObject('Alignments')
+        alignment_group = FreeCAD.ActiveDocument.getObject('AlignmentGroup')
+        if alignments: alignment_group = alignments
 
         self.IPFui.setParent(FreeCADGui.getMainWindow())
         self.IPFui.setWindowFlags(QtCore.Qt.Window)
@@ -137,10 +121,10 @@ class CreateGuideLines:
 
         # List Guide Lines Groups.
         self.IPFui.GLGroupCB.clear()
-        GuideLines_group = FreeCAD.ActiveDocument.GuideLines.Group
+        gl_grps = gl_groups.get()
         self.GLGList = []
 
-        for Object in GuideLines_group:
+        for Object in gl_grps.Group:
             if Object.TypeId == 'App::DocumentObjectGroup':
                 self.GLGList.append(Object.Name)
                 self.IPFui.GLGroupCB.addItem(Object.Label)
@@ -163,7 +147,8 @@ class CreateGuideLines:
         NewGroup = FreeCAD.ActiveDocument.addObject(
             "App::DocumentObjectGroup", NewGroupName)
         NewGroup.Label = NewGroupName
-        FreeCAD.ActiveDocument.GuideLines.addObject(NewGroup)
+        gl_grps = gl_groups.get()
+        gl_grps.addObject(NewGroup)
         self.IPFui.GLGroupCB.addItem(NewGroupName)
         self.GLGList.append(NewGroup.Name)
         NewGroup.Label = NewGroupName
@@ -204,7 +189,7 @@ class CreateGuideLines:
             return None, None
 
         _delta = end.sub(start).normalize()
-        _left = Vector(-_delta.y, _delta.x, 0.0)
+        _left = FreeCAD.Vector(-_delta.y, _delta.x, 0.0)
 
         _coord = start.add(_delta.multiply(distance*1000))
 
