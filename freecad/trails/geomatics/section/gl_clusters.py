@@ -118,7 +118,7 @@ class ViewProviderGuideLineClusters:
         '''
         Return object treeview icon.
         '''
-        return ICONPATH + '/icons/GuideLineCluster.svg'
+        return ICONPATH + '/icons/GuideLines.svg'
 
     def claimChildren(self):
         """
