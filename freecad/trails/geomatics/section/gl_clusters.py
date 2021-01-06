@@ -21,7 +21,7 @@
 # ***********************************************************************
 
 '''
-Create a Guide Line Group Object from FPO.
+Create a Guide Line Clusters group object from FPO.
 '''
 
 import FreeCAD
@@ -31,10 +31,10 @@ from freecad.trails import ICONPATH, geo_origin
 
 def get():
     """
-    Find the existing Guide Line Groups object
+    Find the existing Guide Line Clusters group object
     """
     # Return an existing instance of the same name, if found.
-    obj = FreeCAD.ActiveDocument.getObject('GuideLineGroups')
+    obj = FreeCAD.ActiveDocument.getObject('GuideLineClusters')
 
     if obj:
         return obj
@@ -45,7 +45,7 @@ def get():
 
 def create():
     """
-    Factory method for Guide Line Groups.
+    Factory method for Guide Line Clusters.
     """
     main = geo_origin.get()
     alignments = FreeCAD.ActiveDocument.getObject('Alignments')
@@ -58,27 +58,27 @@ def create():
         main.addObject(alignment_group)
 
     obj = FreeCAD.ActiveDocument.addObject(
-        "App::DocumentObjectGroupPython", 'GuideLineGroups')
-    obj.Label = "Guide Line Groups"
+        "App::DocumentObjectGroupPython", 'GuideLineClusters')
+    obj.Label = "Guide Line Clusters"
     alignment_group.addObject(obj)
 
-    GuideLineGroups(obj)
-    ViewProviderGuideLineGroups(obj.ViewObject)
+    GuideLineClusters(obj)
+    ViewProviderGuideLineClusters(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
 
     return obj
 
 
-class GuideLineGroups:
+class GuideLineClusters:
     """
-    This class is about Guide Line Group Object data features.
+    This class is about Guide Line Clusters object data features.
     """
 
     def __init__(self, obj):
         '''
         Set data properties.
         '''
-        self.Type = 'Trails::GuideLineGroups'
+        self.Type = 'Trails::GuideLineClusters'
 
         obj.Proxy = self
 
@@ -95,9 +95,9 @@ class GuideLineGroups:
         return
 
 
-class ViewProviderGuideLineGroups:
+class ViewProviderGuideLineClusters:
     """
-    This class is about Guide Line Group Object view features.
+    This class is about Guide Line Clusters object view features.
     """
 
     def __init__(self, vobj):
@@ -118,7 +118,7 @@ class ViewProviderGuideLineGroups:
         '''
         Return object treeview icon.
         '''
-        return ICONPATH + '/icons/GuideLinesGroups.svg'
+        return ICONPATH + '/icons/GuideLineCluster.svg'
 
     def claimChildren(self):
         """

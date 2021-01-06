@@ -21,64 +21,43 @@
 # ***********************************************************************
 
 '''
-Create a Guide Line Group Object from FPO.
+Create a GL Cluster group object from FPO.
 '''
 
 import FreeCAD
 from freecad.trails import ICONPATH, geo_origin
+from . import gl_clusters
 
 
 
-def get():
+def create(name='GL Cluster'):
     """
-    Find the existing Guide Line Groups object
+    Factory method for GL Cluster.
     """
-    # Return an existing instance of the same name, if found.
-    obj = FreeCAD.ActiveDocument.getObject('GuideLineGroups')
-
-    if obj:
-        return obj
-
-    obj = create()
-
-    return obj
-
-def create():
-    """
-    Factory method for Guide Line Groups.
-    """
-    main = geo_origin.get()
-    alignments = FreeCAD.ActiveDocument.getObject('Alignments')
-    alignment_group = FreeCAD.ActiveDocument.getObject('AlignmentGroup')
-    if alignments: alignment_group = alignments
-    elif not alignment_group:
-        alignment_group = FreeCAD.ActiveDocument.addObject(
-            "App::DocumentObjectGroup", 'AlignmentGroup')
-        alignment_group.Label = "Alignment Group"
-        main.addObject(alignment_group)
+    clusters = gl_clusters.get()
 
     obj = FreeCAD.ActiveDocument.addObject(
-        "App::DocumentObjectGroupPython", 'GuideLineGroups')
-    obj.Label = "Guide Line Groups"
-    alignment_group.addObject(obj)
+        "App::DocumentObjectGroupPython", 'GLCluster')
+    obj.Label = name
+    clusters.addObject(obj)
 
-    GuideLineGroups(obj)
-    ViewProviderGuideLineGroups(obj.ViewObject)
+    GLCluster(obj)
+    ViewProviderGLCluster(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
 
     return obj
 
 
-class GuideLineGroups:
+class GLCluster:
     """
-    This class is about Guide Line Group Object data features.
+    This class is about GL Cluster object data features.
     """
 
     def __init__(self, obj):
         '''
         Set data properties.
         '''
-        self.Type = 'Trails::GuideLineGroups'
+        self.Type = 'Trails::GLCluster'
 
         obj.Proxy = self
 
@@ -95,9 +74,9 @@ class GuideLineGroups:
         return
 
 
-class ViewProviderGuideLineGroups:
+class ViewProviderGLCluster:
     """
-    This class is about Guide Line Group Object view features.
+    This class is about GL Cluster object view features.
     """
 
     def __init__(self, vobj):
@@ -118,7 +97,7 @@ class ViewProviderGuideLineGroups:
         '''
         Return object treeview icon.
         '''
-        return ICONPATH + '/icons/GuideLinesGroups.svg'
+        return ICONPATH + '/icons/GuideLineCluster.svg'
 
     def claimChildren(self):
         """

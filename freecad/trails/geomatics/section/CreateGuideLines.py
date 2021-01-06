@@ -26,7 +26,7 @@ import FreeCADGui
 import Draft
 from PySide import QtCore, QtGui
 from freecad.trails import ICONPATH
-from . import gl_groups
+from . import gl_clusters, gl_cluster
 
 
 class CreateGuideLines:
@@ -69,7 +69,8 @@ class CreateGuideLines:
         return False
 
     def Activated(self):
-        gl_groups.get()
+
+        clusters = gl_clusters.get()
         alignments = FreeCAD.ActiveDocument.getObject('Alignments')
         alignment_group = FreeCAD.ActiveDocument.getObject('AlignmentGroup')
         if alignments: alignment_group = alignments
@@ -80,54 +81,32 @@ class CreateGuideLines:
 
         # List Alignments
         self.IPFui.AlignmentCB.clear()
-        self.alignment_list = []
+        self.alignment_dict = {}
 
-        for Object in alignment_group.Group:
-            if Object.TypeId == 'Part::Part2DObjectPython':
-                self.alignment_list.append(Object.Name)
-                self.IPFui.AlignmentCB.addItem(Object.Label)
+        for child in alignment_group.Group:
+            if child.TypeId == 'Part::Part2DObjectPython':
+                self.alignment_dict[child.Label] = child
+                self.IPFui.AlignmentCB.addItem(child.Label)
 
         # Check that the Alignments Group has Wire objects
-        if len(self.alignment_list) == 0:
+        if len(self.alignment_dict) == 0:
             FreeCAD.Console.PrintMessage(
                 "Please add a Wire Object to the Alignment Group")
             return
 
         self.ListGuideLinesGroups()
 
-    def getAlignmentInfos(self):
-        alignment_index = self.IPFui.AlignmentCB.currentIndex()
-
-        if alignment_index < 0:
-            FreeCAD.Console.PrintMessage(
-                "Please add a Alignment object to the Alignment Group")
-            return None, 0.0, 0.0
-
-        alignment_name = self.alignment_list[alignment_index]
-
-        Alignment = FreeCAD.ActiveDocument.getObject(alignment_name)
-        if hasattr(Alignment.Proxy, 'model'):
-            Start = Alignment.Proxy.model.data['meta']['StartStation']
-            Length = Alignment.Proxy.model.data['meta']['Length']
-            End = Start + Length/1000
-        else:
-            Start = 0.0
-            Length = Alignment.Length.Value
-            End = Start + Length/1000
-
-        return Alignment, Start, End
-
     def ListGuideLinesGroups(self):
 
         # List Guide Lines Groups.
         self.IPFui.GLGroupCB.clear()
-        gl_grps = gl_groups.get()
-        self.GLGList = []
+        clusters = gl_clusters.get()
+        self.glc_dict = {}
 
-        for Object in gl_grps.Group:
-            if Object.TypeId == 'App::DocumentObjectGroup':
-                self.GLGList.append(Object.Name)
-                self.IPFui.GLGroupCB.addItem(Object.Label)
+        for child in clusters.Group:
+            if Object.Proxy.Type == 'Trails::GLCluster':
+                self.glc_dict[child.Label] = child
+                self.IPFui.GLGroupCB.addItem(child.Label)
 
         Alignment, Start, End = self.getAlignmentInfos()
 
@@ -143,15 +122,11 @@ class CreateGuideLines:
 
     def CreateNewGroup(self):
         # Create new guide lines group
-        NewGroupName = self.CPGui.GuideLinesGroupNameLE.text()
-        NewGroup = FreeCAD.ActiveDocument.addObject(
-            "App::DocumentObjectGroup", NewGroupName)
-        NewGroup.Label = NewGroupName
-        gl_grps = gl_groups.get()
-        gl_grps.addObject(NewGroup)
-        self.IPFui.GLGroupCB.addItem(NewGroupName)
-        self.GLGList.append(NewGroup.Name)
-        NewGroup.Label = NewGroupName
+        cluster_name = self.CPGui.GuideLinesGroupNameLE.text()
+        new_cluster = gl_cluster.create(cluster_name)
+
+        self.glc_dict[new_cluster.Label] = new_cluster
+        self.IPFui.GLGroupCB.addItem(new_cluster.Label)
         self.CPGui.close()
 
     def ActivateStations(self):
@@ -168,6 +143,27 @@ class CreateGuideLines:
             self.IPFui.EndStationLE.setText(str(round(End, 3)))
         else:
             self.IPFui.EndStationLE.setEnabled(True)
+
+    def getAlignmentInfos(self):
+        text = self.IPFui.AlignmentCB.currentText()
+
+        if not text:
+            FreeCAD.Console.PrintMessage(
+                "Please add a Alignment object to the Alignment Group")
+            return None, 0.0, 0.0
+
+        alignment = self.alignment_dict[text]
+
+        if hasattr(alignment.Proxy, 'model'):
+            Start = alignment.Proxy.model.data['meta']['StartStation']
+            Length = alignment.Proxy.model.data['meta']['Length']
+            End = Start + Length/1000
+        else:
+            Start = 0.0
+            Length = alignment.Length.Value
+            End = Start + Length/1000
+
+        return alignment, Start, End
 
     def GetOrthoVector(self, line, distance, side=''):
         """
@@ -209,14 +205,14 @@ class CreateGuideLines:
         LastStation = self.IPFui.EndStationLE.text()
 
         #target group
-        glg_index = self.IPFui.GLGroupCB.currentIndex()
+        text = self.IPFui.GLGroupCB.currentText()
 
-        if glg_index < 0:
+        if not text:
             FreeCAD.Console.PrintMessage(
                 "Please add a Guide Line Group")
             return
 
-        GLGIndexName = self.GLGList[glg_index]
+        cluster = self.glc_dict[text]
 
         #guideline intervals
         TangentIncrement = self.IPFui.TIncrementLE.text()
@@ -304,7 +300,7 @@ class CreateGuideLines:
             GuideLine.Placement.Base = AlgPl
             GuideLine.Label = str(round(Station, 3))
 
-            FreeCAD.ActiveDocument.getObject(GLGIndexName).addObject(GuideLine)
+            cluster.addObject(GuideLine)
             FreeCAD.ActiveDocument.recompute()
 
 FreeCADGui.addCommand('Create Guide Lines', CreateGuideLines())
