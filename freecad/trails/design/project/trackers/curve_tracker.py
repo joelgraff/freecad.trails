@@ -52,7 +52,8 @@ class CurveTracker(ContextTracker, Style, Drag):
 
         #generate line tracker structures from the pi list
 
-        super().__init__(name=name, parent=parent, view=view)
+        print(name)
+        super().__init__(name=name + '_CURVE_TRACKER', parent=parent, view=view)
 
         self.curve_tracker = None
         self.param_tracker = None
@@ -235,8 +236,13 @@ class CurveTracker(ContextTracker, Style, Drag):
             marker_coords=[], line_coords=[], curve_coord=None)
 
         #get the key graph nodes
-        _start = self.base.copy().getChild(0)
-        _curve = _start.getChild(5)
+        _start = self.base.get_child(
+            f'{self.name}_BASE__Separator', self.base.copy() )
+
+        print(f'start node:{self.name}_BASE__Separator', self.base.copy().getName(), _start)
+        return
+
+        _curve = self.base.get_child(_start, f'{self.name}__arc__BASE__Swtich')
         _polyline = _start.getChild(4)
 
         #add the root node to the drag tracker for representation only

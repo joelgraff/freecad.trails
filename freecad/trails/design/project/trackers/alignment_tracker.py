@@ -93,7 +93,7 @@ class AlignmentTracker(ContextTracker):
 
         for _i, _curve in enumerate(_curves):
             self.curve_trackers.append(
-                CurveTracker('curve_' + str(_i), _curve, self.curve_group))
+                CurveTracker(str(_i), _curve, self.curve_group))
 
         _lines = self.alignment_tracker.lines
 
