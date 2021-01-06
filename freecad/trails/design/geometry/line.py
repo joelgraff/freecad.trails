@@ -203,7 +203,9 @@ def get_coordinate(start, bearing, distance):
 
     print('\n\tLINE GET COORDINATE',start, TupleMath.multiply(_vec, distance), _vec, distance)
 
-    return TupleMath.add(start, TupleMath.multiply(_vec, distance))
+    return TupleMath.add(
+        tuple(start), TupleMath.multiply(tuple(_vec), distance)
+    )
 
 def get_tangent_vector(line, distance):
     """

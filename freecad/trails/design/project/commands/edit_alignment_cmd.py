@@ -27,12 +27,12 @@ Command to edit an alignment
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from freecad.trails import resources
-
-from ..tasks.alignment import edit_alignment_task
-
-from ..support.view_state import ViewState
 from DraftTools import Modifier
+
+from freecad.trails import resources
+#from ..tasks.alignment import edit_alignment_task
+from ..support.view_state import ViewState
+
 
 class EditAlignmentCmd(Modifier):
     """
@@ -99,13 +99,13 @@ class EditAlignmentCmd(Modifier):
         ViewState().view = Gui.ActiveDocument.ActiveView
 
         #create alignment editing task
-        self.task = edit_alignment_task.create(self.doc, data, obj)
+        #self.task = edit_alignment_task.create(self.doc, data, obj)
 
         #cz._zoom_camera(cz.Camera())
 
-        Gui.Control.showDialog(self.task)
-        self.task.setup()
+        #Gui.Control.showDialog(self.task)
+        #self.task.setup()
 
-        Modifier.Activated(self, 'EditAlignmentCommand')
+        #Modifier.Activated(self, 'EditAlignmentCommand')
 
 Gui.addCommand('EditAlignmentCmd', EditAlignmentCmd())
