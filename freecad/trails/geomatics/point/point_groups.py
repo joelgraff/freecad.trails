@@ -24,7 +24,7 @@
 Create a Point Group Object from FPO.
 '''
 
-import FreeCAD, FreeCADGui
+import FreeCAD
 from freecad.trails import ICONPATH, geo_origin
 from . import point_group
 
@@ -139,8 +139,7 @@ class ViewProviderPointGroups:
         """
         Context menu construction
         """
-        action = menu.addAction("Create New Point Group")
-        action.triggered.connect(point_group.create)
+        pass
 
     def edit(self):
         """

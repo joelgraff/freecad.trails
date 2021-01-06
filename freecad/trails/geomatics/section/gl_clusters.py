@@ -1,6 +1,6 @@
 # /**********************************************************************
 # *                                                                     *
-# * Copyright (c) 2019 Hakan Seven <hakanseven12@gmail.com>             *
+# * Copyright (c) 2021 Hakan Seven <hakanseven12@gmail.com>             *
 # *                                                                     *
 # * This program is free software; you can redistribute it and/or modify*
 # * it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -21,82 +21,72 @@
 # ***********************************************************************
 
 '''
-Create a Point Group Object from FPO.
+Create a Guide Line Clusters group object from FPO.
 '''
 
-import FreeCAD, FreeCADGui
-from pivy import coin
-from freecad.trails import ICONPATH, zone_list
+import FreeCAD
+from freecad.trails import ICONPATH, geo_origin
 
 
 
-def get(origin=(0, 0, 0)):
+def get():
     """
-    Find the existing Point Groups object
+    Find the existing Guide Line Clusters group object
     """
     # Return an existing instance of the same name, if found.
-    obj = FreeCAD.ActiveDocument.getObject('GeoOrigin')
+    obj = FreeCAD.ActiveDocument.getObject('GuideLineClusters')
 
     if obj:
-        if obj.Origin == FreeCAD.Vector(0, 0, 0):
-            obj.Origin = origin
         return obj
 
-    obj = create(origin)
+    obj = create()
+
     return obj
 
-def create(origin):
-    obj=FreeCAD.ActiveDocument.addObject(
-        "App::DocumentObjectGroupPython", "GeoOrigin")
-    GeoOrigin(obj)
-    obj.UtmZone = "Z1"
-    obj.Origin = origin
-    ViewProviderGeoOrigin(obj.ViewObject)
+def create():
+    """
+    Factory method for Guide Line Clusters.
+    """
+    main = geo_origin.get()
+    alignments = FreeCAD.ActiveDocument.getObject('Alignments')
+    alignment_group = FreeCAD.ActiveDocument.getObject('AlignmentGroup')
+    if alignments: alignment_group = alignments
+    elif not alignment_group:
+        alignment_group = FreeCAD.ActiveDocument.addObject(
+            "App::DocumentObjectGroup", 'AlignmentGroup')
+        alignment_group.Label = "Alignment Group"
+        main.addObject(alignment_group)
+
+    obj = FreeCAD.ActiveDocument.addObject(
+        "App::DocumentObjectGroupPython", 'GuideLineClusters')
+    obj.Label = "Guide Line Clusters"
+    alignment_group.addObject(obj)
+
+    GuideLineClusters(obj)
+    ViewProviderGuideLineClusters(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
 
     return obj
 
 
-class GeoOrigin:
+class GuideLineClusters:
     """
-    This class is about Point Group Object data features.
+    This class is about Guide Line Clusters object data features.
     """
 
     def __init__(self, obj):
         '''
         Set data properties.
         '''
-        self.Type = 'Trails::GeoOrigin'
+        self.Type = 'Trails::GuideLineClusters'
 
-        obj.addProperty(
-            "App::PropertyEnumeration", "UtmZone", "Base",
-            "UTM zone").UtmZone = zone_list
-        
-        obj.addProperty(
-            "App::PropertyVector", "Origin", "Base",
-            "Origin point.").Origin = (0, 0, 0)
-        
         obj.Proxy = self
-
-        self.UtmZone = None
-        self.Origin = None
 
     def onChanged(self, fp, prop):
         '''
         Do something when a data property has changed.
         '''
-        # Set geo origin.
-        node = self.get_geoorigin()
-
-        if prop == "UtmZone":
-            zone = fp.getPropertyByName("UtmZone")
-            geo_system = ["UTM", zone, "FLAT"]
-            node.geoSystem.setValues(geo_system)
-
-        if prop == "Origin":
-            origin = fp.getPropertyByName("Origin")
-            node.geoCoords.setValue(
-                origin.x, origin.y, 0)
+        return
 
     def execute(self, fp):
         '''
@@ -104,43 +94,10 @@ class GeoOrigin:
         '''
         return
 
-    def __getstate__(self):
-        """
-        Save variables to file.
-        """
-        node = self.get_geoorigin()
-        system = node.geoSystem.getValues()
-        x,y,z = node.geoCoords.getValue().getValue()
-        return system, [x, y, z]
 
-    def __setstate__(self, state):
-        """
-        Get variables from file.
-        """
-        if state:
-            system = state[0]
-            origin = state[1]
-            node = self.get_geoorigin()
-
-            node.geoSystem.setValues(system)
-            node.geoCoords.setValue(
-                origin[0], origin[1], 0)
-
-    def get_geoorigin(self):
-        sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
-        node = sg.getChild(0)
-
-        if not isinstance(node, coin.SoGeoOrigin):
-            node = coin.SoGeoOrigin()
-            sg.insertChild(node,0)
-        
-        return node
-
-
-
-class ViewProviderGeoOrigin:
+class ViewProviderGuideLineClusters:
     """
-    This class is about Point Group Object view features.
+    This class is about Guide Line Clusters object view features.
     """
 
     def __init__(self, vobj):
@@ -161,7 +118,7 @@ class ViewProviderGeoOrigin:
         '''
         Return object treeview icon.
         '''
-        return ICONPATH + '/icons/GeoOrigin.svg'
+        return ICONPATH + '/icons/GuideLines.svg'
 
     def claimChildren(self):
         """

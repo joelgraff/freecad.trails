@@ -24,7 +24,8 @@
 Create a Surface Object from FPO.
 '''
 
-import FreeCAD, FreeCADGui
+import FreeCAD
+import Mesh
 from pivy import coin
 from .surface_func import SurfaceFunc
 from freecad.trails import ICONPATH, geo_origin
@@ -33,12 +34,11 @@ import random, copy
 
 
 
-def create(points=[], name='Surface'):
+def create(name='Surface'):
     group = surfaces.get()
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "Surface")
     obj.Label = name
     Surface(obj)
-    obj.Points = points
     ViewProviderSurface(obj.ViewObject)
     group.addObject(obj)
     FreeCAD.ActiveDocument.recompute()
@@ -59,52 +59,36 @@ class Surface(SurfaceFunc):
 
         # Triangulation properties.
         obj.addProperty(
-            "App::PropertyVectorList",
-            "Points",
-            "Base",
-            "List of group points").Points = []
+            'App::PropertyLinkList', "PointGroups", "Base",
+            "List of Point Groups").PointGroups = []
 
         obj.addProperty(
-            "App::PropertyIntegerList",
-            "Delaunay",
-            "Base",
-            "Index of Delaunay vertices").Delaunay = []
+            "App::PropertyIntegerList", "Delaunay", "Base",
+            "Index of Delaunay vertices", 4).Delaunay = []
 
         obj.addProperty(
-            "App::PropertyIntegerList",
-            "Triangles",
-            "Base",
-            "Index of triangles vertices").Triangles = []
+            "Mesh::PropertyMeshKernel", "Mesh", "Base",
+            "Mesh object of triangulation").Mesh = Mesh.Mesh()
 
         obj.addProperty(
-            "App::PropertyLength",
-            "MaxLength",
-            "Base",
+            "App::PropertyLength", "MaxLength", "Base",
             "Maximum length of triangle edge").MaxLength = 50000
 
         obj.addProperty(
-            "App::PropertyAngle",
-            "MaxAngle",
-            "Base",
+            "App::PropertyAngle","MaxAngle","Base",
             "Maximum angle of triangle edge").MaxAngle = 170
 
         # Contour properties.
         obj.addProperty(
-            "App::PropertyFloatConstraint",
-            "ContourInterval",
-            "Point Style",
+            "App::PropertyFloatConstraint", "ContourInterval", "Contour",
             "Size of the point group").ContourInterval = (1.0, 0.0, 100.0, 1.0)
 
         obj.addProperty(
-            "App::PropertyVectorList",
-            "ContourPoints",
-            "Surface Style",
+            "App::PropertyVectorList", "ContourPoints", "Contour",
             "Points of contours", 4).ContourPoints = []
 
         obj.addProperty(
-            "App::PropertyIntegerList",
-            "ContourVertices",
-            "Surface Style",
+            "App::PropertyIntegerList", "ContourVertices", "Contour",
             "Vertices of contours.", 4).ContourVertices = []
 
         obj.Proxy = self
@@ -113,41 +97,44 @@ class Surface(SurfaceFunc):
         '''
         Do something when a data property has changed.
         '''
-        points = obj.getPropertyByName("Points")
-        lmax = obj.getPropertyByName("MaxLength")
-        amax = obj.getPropertyByName("MaxAngle")
-        deltaH = obj.getPropertyByName("ContourInterval")
+        points = []
+        pgs = obj.getPropertyByName("PointGroups")
+        for pg in pgs:
+            points.extend(pg.Points)
+        if points:
+            origin = geo_origin.get(points[0])
+        else:
+            origin = geo_origin.get()
 
-        if prop =="Points":
-            if points:
+        if prop =="PointGroups":
+            if len(points) > 2:
                 obj.Delaunay = self.triangulate(points)
+            else:
+                obj.Mesh = Mesh.Mesh()
 
         if prop == "Delaunay" or prop == "MaxLength" or prop == "MaxAngle":
             delaunay = obj.getPropertyByName("Delaunay")
+            lmax = obj.getPropertyByName("MaxLength")
+            amax = obj.getPropertyByName("MaxAngle")
 
-            if points and delaunay:
-                triangles = self.test_delaunay(
-                    points, delaunay, lmax, amax)
+            if delaunay:
+                obj.Mesh = self.test_delaunay(
+                    origin.Origin, points, delaunay, lmax, amax)
 
-                obj.Triangles = triangles
+        if prop == "Mesh" or prop == "ContourInterval":
+            deltaH = obj.getPropertyByName("ContourInterval")
+            mesh = obj.getPropertyByName("Mesh")
 
-        if prop == "Points" or prop == "Triangles" or prop == "ContourInterval":
-            triangles = obj.getPropertyByName("Triangles")
+            coords, num_vert = self.contour_points(origin.Origin, mesh, deltaH)
 
-            if points:
-                origin = geo_origin.get(points[0])
-
-                coords, num_vert = self.contour_points(
-                    points, triangles, deltaH)
-
-                obj.ContourPoints = coords
-                obj.ContourVertices = num_vert
+            obj.ContourPoints = coords
+            obj.ContourVertices = num_vert
 
     def execute(self, obj):
         '''
         Do something when doing a recomputation. 
         '''
-        return
+        pass
 
 class ViewProviderSurface:
     """
@@ -158,14 +145,10 @@ class ViewProviderSurface:
         '''
         Set view properties.
         '''
-        (r, g, b) = (random.random(),
-                     random.random(),
-                     random.random())
+        (r, g, b) = (random.random(), random.random(), random.random())
 
         vobj.addProperty(
-            "App::PropertyColor",
-            "TriangleColor",
-            "Surface Style",
+            "App::PropertyColor", "TriangleColor", "Surface Style",
             "Color of the point group").TriangleColor = (r, g, b)
 
         vobj.Proxy = self
@@ -222,10 +205,11 @@ class ViewProviderSurface:
 
         # Surface root.
         surface_root = coin.SoSeparator()
+        surface_root.addChild(contours)
+        surface_root.addChild(offset)
         surface_root.addChild(edges)
         surface_root.addChild(offset)
         surface_root.addChild(shape_hints)
-        surface_root.addChild(contours)
         surface_root.addChild(self.mat_color)
         surface_root.addChild(mat_binding)
         surface_root.addChild(highlight)
@@ -248,25 +232,36 @@ class ViewProviderSurface:
         '''
         Update Object visuals when a data property changed.
         '''
-        if prop == "Points":
-            points = obj.getPropertyByName("Points")
-            if points:
-                # Get GeoOrigin.
-                origin = geo_origin.get(points[0])
+        if prop == "Mesh":
+            mesh = obj.getPropertyByName("Mesh")
+            topo_points = mesh.Topology[0]
+            topo_tri = mesh.Topology[1]
 
-                # Set GeoCoords.
-                geo_system = ["UTM", origin.UtmZone, "FLAT"]
-                self.geo_coords.geoSystem.setValues(geo_system)
-                self.geo_coords.point.values = points
+            # Get GeoOrigin.
+            points = []
+            triangles = []
+            origin = geo_origin.get()
+            base = copy.deepcopy(origin.Origin)
+            base.z = 0
 
-                #Set contour system.
-                self.cont_coords.geoSystem.setValues(geo_system)
+            for i in topo_points:
+                point = copy.deepcopy(i)
+                points.append(point.add(base))
 
-        if prop == "Triangles":
-            triangles = obj.getPropertyByName("Triangles")
+            for i in topo_tri:
+                triangles.extend(list(i))
+                triangles.append(-1)
+
+            # Set GeoCoords.
+            geo_system = ["UTM", origin.UtmZone, "FLAT"]
+            self.geo_coords.geoSystem.setValues(geo_system)
+            self.geo_coords.point.values = points
+
+            #Set contour system.
+            self.cont_coords.geoSystem.setValues(geo_system)
             self.triangles.coordIndex.values = triangles
 
-        if prop == "Points" or prop == "Triangles" or prop == "ContourInterval":
+        if prop == "Mesh" or prop == "ContourInterval":
             cont_points = obj.getPropertyByName("ContourPoints")
             cont_vert = obj.getPropertyByName("ContourVertices")
 

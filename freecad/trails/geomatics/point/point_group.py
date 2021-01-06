@@ -24,7 +24,7 @@
 Create a Point Group Object from FPO.
 '''
 
-import FreeCAD, FreeCADGui
+import FreeCAD
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin, marker_dict
 from . import  point_groups
@@ -72,15 +72,19 @@ class PointGroup:
         self.Type = 'Trails::PointGroup'
 
         obj.addProperty(
-            "App::PropertyVectorList",
-            "Points",
-            "Base",
+            "App::PropertyStringList", "PointNames", "Base",
+            "List of group points").PointNames = []
+
+        obj.addProperty(
+            "App::PropertyVectorList", "Points", "Base",
             "List of group points").Points = []
 
         obj.addProperty(
-            "App::PropertyEnumeration",
-            "Marker",
-            "Base",
+            "App::PropertyStringList", "Descriptions", "Base",
+            "List of group points").Descriptions = []
+
+        obj.addProperty(
+            "App::PropertyEnumeration", "Marker", "Base",
             "List of point markers").Marker = [*marker_dict]
 
         obj.Proxy = self
@@ -110,20 +114,34 @@ class ViewProviderPointGroup:
         '''
         Set view properties.
         '''
-        (r, g, b) = (random.random(),
-                     random.random(),
-                     random.random())
+        (r, g, b) = (random.random(), random.random(), random.random())
 
         vobj.addProperty(
-            "App::PropertyColor",
-            "PointColor",
-            "Point Style",
+            "App::PropertyBool", "Labels", "Base",
+            "Show/hide labels").Labels = False
+
+        vobj.addProperty(
+            "App::PropertyBool", "Name", "Labels",
+            "Show point name labels").Name = False
+
+        vobj.addProperty(
+            "App::PropertyBool", "NortingEasting", "Labels",
+            "Show norting easting labels").NortingEasting = False
+
+        vobj.addProperty(
+            "App::PropertyBool", "Elevation", "Labels",
+            "Show elevation labels").Elevation = False
+
+        vobj.addProperty(
+            "App::PropertyBool", "Description", "Labels",
+            "Show description labels").Description = False
+
+        vobj.addProperty(
+            "App::PropertyColor", "PointColor", "Point Style",
             "Color of the point group").PointColor = (r, g, b)
 
         vobj.addProperty(
-            "App::PropertyFloatConstraint",
-            "PointSize",
-            "Point Style",
+            "App::PropertyFloatConstraint", "PointSize", "Point Style",
             "Size of the point group").PointSize = (3.0, 1.0, 20.0, 1.0)
 
         vobj.Proxy = self
@@ -152,8 +170,14 @@ class ViewProviderPointGroup:
         highlight.addChild(points)
         highlight.addChild(self.markers)
 
+        # Point labels features.
+        color =coin.SoBaseColor()
+        self.point_labels = coin.SoSeparator()
+        self.point_labels.addChild(color)
+
         # Point group root.
         point_root = coin.SoSeparator()
+        point_root.addChild(self.point_labels)
         point_root.addChild(self.point_style)
         point_root.addChild(self.point_normal)
         point_root.addChild(self.color_mat)
@@ -161,6 +185,7 @@ class ViewProviderPointGroup:
         vobj.addDisplayMode(point_root,"Point")
 
         # Take features from properties.
+        if vobj.Object.Points: self.onChanged(vobj,"Elevation")
         self.onChanged(vobj,"PointSize")
         self.onChanged(vobj,"PointColor")
 
@@ -168,6 +193,39 @@ class ViewProviderPointGroup:
         '''
         Update Object visuals when a view property changed.
         '''
+        labels = vobj.getPropertyByName("Labels")
+        self.point_labels.removeAllChildren()
+        if labels:
+            if prop == "Labels" or prop == "Name" or prop == "NortingEasting"\
+                or prop == "Elevation" or prop == "Description":
+                origin = geo_origin.get(vobj.Object.Points[0])
+
+                show_name = vobj.getPropertyByName("Name")
+                show_ne = vobj.getPropertyByName("NortingEasting")
+                show_z = vobj.getPropertyByName("Elevation")
+                show_des = vobj.getPropertyByName("Description")
+
+                for vector in vobj.Object.Points:
+                    font = coin.SoFont()
+                    font.size = 1000
+                    point_label = coin.SoSeparator()
+                    location = coin.SoTranslation()
+                    text = coin.SoAsciiText()
+                    index = vobj.Object.Points.index(vector)
+                    labels =[]
+
+                    if show_name: labels.append(vobj.Object.PointNames[index])
+                    if show_ne: labels.extend([str(round(vector.x/1000, 3)), str(round(vector.y/1000,3))])
+                    if show_z: labels.append(str(round(vector.z/1000,3)))
+                    if show_des and vobj.Object.Descriptions: labels.append(vobj.Object.Descriptions[index])
+
+                    location.translation = vector.sub(FreeCAD.Vector(origin.Origin.x, origin.Origin.y, 0))
+                    text.string.setValues(labels)
+                    point_label.addChild(font)
+                    point_label.addChild(location)
+                    point_label.addChild(text)
+                    self.point_labels.addChild(point_label)
+
         if prop == "PointSize":
             size = vobj.getPropertyByName("PointSize")
             self.point_style.pointSize = size
