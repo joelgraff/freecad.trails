@@ -104,7 +104,7 @@ class CreateGuideLines:
         self.glc_dict = {}
 
         for child in clusters.Group:
-            if Object.Proxy.Type == 'Trails::GLCluster':
+            if child.Proxy.Type == 'Trails::GLCluster':
                 self.glc_dict[child.Label] = child
                 self.IPFui.GLGroupCB.addItem(child.Label)
 
