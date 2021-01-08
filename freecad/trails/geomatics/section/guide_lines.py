@@ -1,6 +1,6 @@
 # /**********************************************************************
 # *                                                                     *
-# * Copyright (c) 2020 Hakan Seven <hakanseven12@gmail.com>             *
+# * Copyright (c) 2021 Hakan Seven <hakanseven12@gmail.com>             *
 # *                                                                     *
 # * This program is free software; you can redistribute it and/or modify*
 # * it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -56,30 +56,6 @@ class PointGroup:
         obj.addProperty(
             "App::PropertyLength", "StartStation", "Base",
             "Guide lines start station").StartStation = 0
-
-        obj.addProperty(
-            "App::PropertyLength", "EndStation", "Base",
-            "Guide lines end station").EndStation = 0
-
-        obj.addProperty(
-            "App::PropertyLength", "RightOffset", "Base",
-            "Length of right offset").RightOffset = 20000
-
-        obj.addProperty(
-            "App::PropertyLength", "LeftOffset", "Base",
-            "Length of left offset").LeftOffset = 20000
-
-        obj.addProperty(
-            "App::PropertyLength", "IncrementAlongTangents", "Base",
-            "Length of left offset").IncrementAlongTangents = 10000
-
-        obj.addProperty(
-            "App::PropertyLength", "IncrementAlongCurves", "Base",
-            "Length of left offset").IncrementAlongCurves = 5000
-
-        obj.addProperty(
-            "App::PropertyLength", "IncrementAlongSpirals", "Base",
-            "Length of left offset").IncrementAlongSpirals = 5000
 
         obj.Proxy = self
 

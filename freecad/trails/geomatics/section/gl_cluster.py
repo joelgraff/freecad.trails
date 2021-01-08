@@ -59,6 +59,46 @@ class GLCluster:
         '''
         self.Type = 'Trails::GLCluster'
 
+        vobj.addProperty(
+            "App::PropertyBool", "FromAlignmentStart", "Base",
+            "Show/hide labels").FromAlignmentStart = True
+
+        vobj.addProperty(
+            "App::PropertyBool", "ToAlignmentEnd", "Base",
+            "Show/hide labels").ToAlignmentEnd = True
+
+        vobj.addProperty(
+            "App::PropertyBool", "AtHorizontalAlignmentPoints", "Base",
+            "Show/hide labels").AtHorizontalAlignmentPoints = True
+
+        obj.addProperty(
+            "App::PropertyLength", "StartStation", "Base",
+            "Guide lines start station").StartStation = 0
+
+        obj.addProperty(
+            "App::PropertyLength", "EndStation", "Base",
+            "Guide lines end station").EndStation = 0
+
+        obj.addProperty(
+            "App::PropertyLength", "RightOffset", "Base",
+            "Length of right offset").RightOffset = 20000
+
+        obj.addProperty(
+            "App::PropertyLength", "LeftOffset", "Base",
+            "Length of left offset").LeftOffset = 20000
+
+        obj.addProperty(
+            "App::PropertyLength", "IncrementAlongTangents", "Base",
+            "Distance between guide lines along tangents").IncrementAlongTangents = 10000
+
+        obj.addProperty(
+            "App::PropertyLength", "IncrementAlongCurves", "Base",
+            "Distance between guide lines along curves").IncrementAlongCurves = 5000
+
+        obj.addProperty(
+            "App::PropertyLength", "IncrementAlongSpirals", "Base",
+            "Distance between guide lines along spirals").IncrementAlongSpirals = 5000
+
         obj.Proxy = self
 
     def onChanged(self, fp, prop):

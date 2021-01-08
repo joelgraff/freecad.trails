@@ -80,6 +80,10 @@ class GuideLineClusters:
         '''
         self.Type = 'Trails::GuideLineClusters'
 
+        obj.addProperty(
+            'App::PropertyLink', "Alignment", "Base",
+            "Parent alignment").PointGroups = []
+
         obj.Proxy = self
 
     def onChanged(self, fp, prop):
