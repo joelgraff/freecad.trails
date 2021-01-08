@@ -82,7 +82,7 @@ class GuideLineClusters:
 
         obj.addProperty(
             'App::PropertyLink', "Alignment", "Base",
-            "Parent alignment").PointGroups = []
+            "Parent alignment").Alignment = None
 
         obj.Proxy = self
 

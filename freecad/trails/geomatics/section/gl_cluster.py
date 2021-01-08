@@ -59,15 +59,15 @@ class GLCluster:
         '''
         self.Type = 'Trails::GLCluster'
 
-        vobj.addProperty(
+        obj.addProperty(
             "App::PropertyBool", "FromAlignmentStart", "Base",
             "Show/hide labels").FromAlignmentStart = True
 
-        vobj.addProperty(
+        obj.addProperty(
             "App::PropertyBool", "ToAlignmentEnd", "Base",
             "Show/hide labels").ToAlignmentEnd = True
 
-        vobj.addProperty(
+        obj.addProperty(
             "App::PropertyBool", "AtHorizontalAlignmentPoints", "Base",
             "Show/hide labels").AtHorizontalAlignmentPoints = True
 
