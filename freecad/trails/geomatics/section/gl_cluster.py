@@ -61,16 +61,16 @@ class GLCluster(GLFunc):
         self.Type = 'Trails::GLCluster'
 
         obj.addProperty(
+            "App::PropertyBool", "AtHorizontalAlignmentPoints", "Base",
+            "Show/hide labels").AtHorizontalAlignmentPoints = True
+
+        obj.addProperty(
             "App::PropertyBool", "FromAlignmentStart", "Base",
             "Show/hide labels").FromAlignmentStart = True
 
         obj.addProperty(
             "App::PropertyBool", "ToAlignmentEnd", "Base",
             "Show/hide labels").ToAlignmentEnd = True
-
-        obj.addProperty(
-            "App::PropertyBool", "AtHorizontalAlignmentPoints", "Base",
-            "Show/hide labels").AtHorizontalAlignmentPoints = True
 
         obj.addProperty(
             "App::PropertyLength", "StartStation", "Station",
@@ -106,13 +106,37 @@ class GLCluster(GLFunc):
         '''
         Do something when a data property has changed.
         '''
-        return
+        if prop == "FromAlignmentStart":
+            from_start = fp.getPropertyByName("FromAlignmentStart")
+            if from_start:
+                fp.StartStation = fp.InList[0].Start
+        
+        if prop == "ToAlignmentEnd":
+            to_end = obj.getPropertyByName("ToAlignmentEnd")
+            if to_end:
+                fp.EndStation = fp.InList[0].End
 
     def execute(self, fp):
         '''
         Do something when doing a recomputation. 
         '''
-        return
+        alignment = fp.InList[0].Alignment
+
+        horiz_pnts = obj.getPropertyByName("AtHorizontalAlignmentPoints")
+        start = obj.getPropertyByName("StartStation")
+        end = obj.getPropertyByName("EndStation")
+        right_offset = obj.getPropertyByName("RightOffset")
+        left_offset = obj.getPropertyByName("LeftOffset")
+        tangent = obj.getPropertyByName("IncrementAlongTangents")
+        curve = obj.getPropertyByName("IncrementAlongCurves")
+        spiral = obj.getPropertyByName("IncrementAlongSpirals")
+
+        increments = [tangent, curve, spiral]
+        ofsets = [left_offset, right_offsets]
+        region = [start, end]
+
+        self.generate(alignment,increments, ofsets, region, horiz_pnts)
+
 
 
 class ViewProviderGLCluster:

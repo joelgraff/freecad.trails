@@ -85,13 +85,31 @@ class GuideLineClusters:
             'App::PropertyLink', "Alignment", "Base",
             "Parent alignment").Alignment = None
 
+        obj.addProperty(
+            "App::PropertyLength", "Start", "Station",
+            "Guide lines start station").Start = 0
+
+        obj.addProperty(
+            "App::PropertyLength", "End", "Station",
+            "Guide lines start station").End = 0
+
         obj.Proxy = self
 
     def onChanged(self, fp, prop):
         '''
         Do something when a data property has changed.
         '''
-        return
+        if prop == "Alignment":
+            alignment = fp.getPropertyByName("Alignment")
+            if hasattr(alignment.Proxy, 'model'):
+                fp.Start = alignment.Proxy.model.data['meta']['StartStation']
+                length = alignment.Proxy.model.data['meta']['Length']
+                fp.End = fp.Start + length/1000
+            else:
+                fp.Start = 0.0
+                length = alignment.Length.Value
+                fp.End = fp.Start + length/1000
+
 
     def execute(self, fp):
         '''

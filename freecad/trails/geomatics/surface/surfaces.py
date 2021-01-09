@@ -68,7 +68,7 @@ class Surfaces:
         '''
         Set data properties.
         '''
-        self.Type = 'Trails::PointGroups'
+        self.Type = 'Trails::Surfaces'
 
         obj.Proxy = self
 
