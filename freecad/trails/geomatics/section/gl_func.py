@@ -26,6 +26,7 @@ Define Surface Object functions.
 '''
 
 import FreeCAD
+import Part
 
 class GLFunc:
     """
@@ -34,7 +35,7 @@ class GLFunc:
     def __init__(self):
         pass
 
-    def GetOrthoVector(self, line, distance, side=''):
+    def line_orthogonal(self, line, distance, side=''):
         """
         Return the orthogonal vector pointing toward the indicated side at the
         provided position.  Defaults to left-hand side
@@ -60,107 +61,106 @@ class GLFunc:
 
         return _coord, _left.multiply(_dir)
 
-    def CreateGuideLines(self, alignment, increments, ofsets, region):
+    def generate(self, alignment, increments, ofsets, region, horiz_pnts = True):
         """
         Generates guidelines along a selected alignment
         """
         # Get left and right offsets from centerline
-        l = ofsets[0]
-        r = ofsets[1]
+        left_offset = ofsets[0]
+        right_offset = ofsets[1]
 
-        # Gegion limits
-        FirstStation = region[0]
-        LastStation = region[1]
-
-        cluster = self
+        # Region limits
+        start_station = region[0]
+        end_station = region[1]
 
         # Guideline intervals
-        TangentIncrement = increments[0]
-        CurveSpiralIncrement = increments[1]
+        tangent_increment = increments[0]
+        curve_increment = increments[1]
+        spiral_increment = increments[2]
 
-        #retrieve alignment data
+        # Retrieve alignment data get geometry and placement
+        stations = []
         if hasattr(alignment.Proxy, 'model'):
-            Start = alignment.Proxy.model.data['meta']['StartStation']
-            Length = alignment.Proxy.model.data['meta']['Length']
-            End = Start + Length/1000
+            start = alignment.Proxy.model.data['meta']['StartStation']
+            length = alignment.Proxy.model.data['meta']['Length']
+            end = start + length/1000
+
+            placement = alignment.Placement.Base
+            geometry = alignment.Proxy.model.data['geometry']
+
+            for element in geometry:
+                # Get starting and ending stations based on alignment
+                elem_start = element.get('StartStation')
+                elem_end = element.get('StartStation')+element.get('Length')/1000
+
+                if elem_start != 0 and horiz_pnts:
+                        stations.append(elem_start)
+
+                # Generate line intervals
+                if element.get('Type') == 'Line':
+
+                    # Iterate the station range
+                    for sta in range(round(elem_start,3), round(elem_end,3)):
+
+                        # Add stations which land on increments exactly
+                        if sta % tangent_increment == 0:
+                            stations.append(sta)
+
+                # Generate curve intervals
+                elif element.get('Type') == 'Curve':
+                    for sta in range(round(elem_start,3), round(elem_end,3)):
+                        if sta % int(curve_increment) == 0:
+                            stations.append(sta)
+
+                #Generate spiral intervals
+                elif element.get("Type") == 'Spiral':
+                    for sta in range(round(elem_start,3), round(elem_end,3)):
+                        if sta % int(spiral_increment) == 0:
+                            stations.append(sta)
+    
+            # Add the end station
+            stations.append(round(end,3))
+
+        # Create guide lines from standart line object
         else:
-            Start = 0.0
-            Length = alignment.Length.Value
-            End = Start + Length/1000
+            for sta in range(0, int(length/1000)):
+                if sta % int(TangentIncrement) == 0:
+                    stations.append(i)
 
-        #get 3D coordinate dataset and placement
-        Stations = []
-        if hasattr(Alignment.Proxy, 'model'):
-            AlgPl = Alignment.Placement.Base
-            Geometry = Alignment.Proxy.model.data['geometry']
+            # Add the end station
+            stations.append(round(length/1000,3))
 
-            for Geo in Geometry:
-                #compute starting and ending stations based on alignment
-                StartStation = Geo.get('StartStation')
-                EndStation = Geo.get('StartStation')+Geo.get('Length')/1000
+        # Iterate the stations, appending what falls in the specified limits
+        region_stations = []
+        for sta in stations:
 
-                if StartStation != 0:
-                    if self.IPFui.HorGeoPointsChB.isChecked():
-                        Stations.append(StartStation)
+            if start_station <= sta <= end_station:
+                region_stations.append(sta)
 
-                #generate line intervals
-                if Geo.get('Type') == 'Line':
+        region_stations.sort()
 
-                    #Iterate the station range, rounding to the nearest whole
-                    for i in range(
-                        round(float(StartStation)), round(float(EndStation))):
-
-                        #add stations which land on increments exactly
-                        if i % int(TangentIncrement) == 0:
-                            Stations.append(i)
-
-                #generate curve intervals
-                elif Geo.get('Type') == 'Curve' or Geo["Type"] == 'Spiral':
-
-                    for i in range(round(float(StartStation)), round(float(EndStation))):
-                        if i % int(CurveSpiralIncrement) == 0:
-                            Stations.append(i)
-
-        else:
-            StartStation = Start
-            EndStation = End
-            AlgPl = FreeCAD.Vector(0, 0, 0)
-            if StartStation != 0:
-                if self.IPFui.HorGeoPointsChB.isChecked():
-                    Stations.append(StartStation)
-
-            for i in range(int(float(StartStation)), int(float(EndStation))):
-                if i % int(TangentIncrement) == 0:
-                    Stations.append(i)
-
-        #add the end station, rounded to the nearest three decimals
-        Stations.append(round(End,3))
-
-        Result = []
-
-        #iterate the stations, appending what falls in the specified limits
-        for Station in Stations:
-
-            if float(FirstStation) <= Station <= float(LastStation):
-                Result.append(Station)
-
-        Result.sort()
-
-        #iterate the final list of stations,
-        #computing coordinates and orthoginals for guidelines
-        for Station in Result:
-            if hasattr(Alignment.Proxy, 'model'):
-                Coord, vec = Alignment.Proxy.model.get_orthogonal( Station, "Left")
+        # Iterate the final list of stations,
+        # Computing coordinates and orthoginals for guidelines
+        for sta in region_stations:
+            if hasattr(alignment.Proxy, 'model'):
+                coord, vec = alignment.Proxy.model.get_orthogonal( sta, "Left")
             else:
-                Coord, vec = self.GetOrthoVector(Alignment, Station, "Left")
+                coord, vec = self.line_orthogonal(alignment, sta, "Left")
 
-            LeftEnd = Coord.add(FreeCAD.Vector(vec).multiply(int(l)*1000))
-            RightEnd = Coord.add(vec.negative().multiply(int(r)*1000))
+            left_side = coord.add(vec.multiply(left_offset*1000))
+            right_side = coord.add(vec.negative().multiply(right_offset*1000))
 
-            #generate guide line object and add to document
-            GuideLine = Draft.makeWire([LeftEnd, Coord, RightEnd])
-            GuideLine.Placement.Base = AlgPl
-            GuideLine.Label = str(round(Station, 3))
+            left_line = Part.LineSegment(left_side, coord)
+            right_line = Part.LineSegment(coord, right_side)
 
-            cluster.addObject(GuideLine)
+            # Generate guide line object and add to cluster
+            shape = Part.Shape([left_line, right_line])
+            wire = Part.Wire(S1.Edges)
+            guide_line = Part.show(guide_line)
+            guide_line.Label = str(round(sta, 3))
+
+            if hasattr(alignment.Proxy, 'model'):
+                guide_line.Placement.Base = placement
+
+            self.addObject(guide_line)
             FreeCAD.ActiveDocument.recompute()

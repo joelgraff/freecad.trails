@@ -27,7 +27,6 @@ Create a Guide Lines object from FPO.
 import FreeCAD
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
-from .gl_func import GLFunc
 
 
 
@@ -42,7 +41,7 @@ def create(cluster=None):
     return obj
 
 
-class GuideLines(GLFunc):
+class GuideLines:
     """
     This class is about Guide Lines object data features.
     """
