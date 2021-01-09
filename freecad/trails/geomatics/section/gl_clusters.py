@@ -43,7 +43,7 @@ def get():
 
     return obj
 
-def create():
+def create(alignment=None):
     """
     Factory method for Guide Line Clusters.
     """
@@ -63,6 +63,7 @@ def create():
     alignment_group.addObject(obj)
 
     GuideLineClusters(obj)
+    obj.Alignment = alignment
     ViewProviderGuideLineClusters(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
 

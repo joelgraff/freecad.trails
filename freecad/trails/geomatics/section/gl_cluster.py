@@ -72,31 +72,31 @@ class GLCluster:
             "Show/hide labels").AtHorizontalAlignmentPoints = True
 
         obj.addProperty(
-            "App::PropertyLength", "StartStation", "Base",
+            "App::PropertyLength", "StartStation", "Station",
             "Guide lines start station").StartStation = 0
 
         obj.addProperty(
-            "App::PropertyLength", "EndStation", "Base",
+            "App::PropertyLength", "EndStation", "Station",
             "Guide lines end station").EndStation = 0
 
         obj.addProperty(
-            "App::PropertyLength", "RightOffset", "Base",
+            "App::PropertyLength", "RightOffset", "Offset",
             "Length of right offset").RightOffset = 20000
 
         obj.addProperty(
-            "App::PropertyLength", "LeftOffset", "Base",
+            "App::PropertyLength", "LeftOffset", "Offset",
             "Length of left offset").LeftOffset = 20000
 
         obj.addProperty(
-            "App::PropertyLength", "IncrementAlongTangents", "Base",
+            "App::PropertyLength", "IncrementAlongTangents", "Increment",
             "Distance between guide lines along tangents").IncrementAlongTangents = 10000
 
         obj.addProperty(
-            "App::PropertyLength", "IncrementAlongCurves", "Base",
+            "App::PropertyLength", "IncrementAlongCurves", "Increment",
             "Distance between guide lines along curves").IncrementAlongCurves = 5000
 
         obj.addProperty(
-            "App::PropertyLength", "IncrementAlongSpirals", "Base",
+            "App::PropertyLength", "IncrementAlongSpirals", "Increment",
             "Distance between guide lines along spirals").IncrementAlongSpirals = 5000
 
         obj.Proxy = self

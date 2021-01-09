@@ -171,14 +171,6 @@ class ViewProviderSurface:
         edge_color.rgb = (0.5, 0.5, 0.5)
         offset = coin.SoPolygonOffset()
 
-        # Highlight for selection.
-        highlight = coin.SoType.fromName('SoFCSelection').createInstance()
-        #highlight.documentName.setValue(FreeCAD.ActiveDocument.Name)
-        #highlight.objectName.setValue(vobj.Object.Name)
-        #highlight.subElementName.setValue("Main")
-        highlight.addChild(self.geo_coords)
-        highlight.addChild(self.triangles)
-
         # Line style.
         line_style = coin.SoDrawStyle()
         line_style.style = coin.SoDrawStyle.LINES
@@ -197,21 +189,30 @@ class ViewProviderSurface:
         contours.addChild(self.cont_coords)
         contours.addChild(self.cont_lines)
 
-        # Edge root.
-        edges = coin.SoSeparator()
-        edges.addChild(edge_color)
-        edges.addChild(line_style)
-        edges.addChild(highlight)
+        # Face root.
+        faces = coin.SoSeparator()
+        faces.addChild(shape_hints)
+        faces.addChild(self.mat_color)
+        faces.addChild(mat_binding)
+        faces.addChild(self.geo_coords)
+        faces.addChild(self.triangles)
+
+        # Highlight for selection.
+        highlight = coin.SoType.fromName('SoFCSelection').createInstance()
+        #highlight.documentName.setValue(FreeCAD.ActiveDocument.Name)
+        #highlight.objectName.setValue(vobj.Object.Name)
+        #highlight.subElementName.setValue("Main")
+        highlight.addChild(edge_color)
+        highlight.addChild(line_style)
+        highlight.addChild(self.geo_coords)
+        highlight.addChild(self.triangles)
 
         # Surface root.
         surface_root = coin.SoSeparator()
         surface_root.addChild(contours)
         surface_root.addChild(offset)
-        surface_root.addChild(edges)
+        surface_root.addChild(faces)
         surface_root.addChild(offset)
-        surface_root.addChild(shape_hints)
-        surface_root.addChild(self.mat_color)
-        surface_root.addChild(mat_binding)
         surface_root.addChild(highlight)
         vobj.addDisplayMode(surface_root,"Surface")
 

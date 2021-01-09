@@ -27,21 +27,22 @@ Create a Guide Lines object from FPO.
 import FreeCAD
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
+from .gl_func import GLFunc
 
 
 
 def create(cluster=None):
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "GuideLines")
     obj.Label = "Guide Lines"
-    PointGroup(obj)
-    ViewProviderPointGroup(obj.ViewObject)
+    GuideLines(obj)
+    ViewProviderGuideLines(obj.ViewObject)
     cluster.addObject(obj)
     FreeCAD.ActiveDocument.recompute()
 
     return obj
 
 
-class PointGroup:
+class GuideLines(GLFunc):
     """
     This class is about Guide Lines object data features.
     """
@@ -75,7 +76,7 @@ class PointGroup:
         return
 
 
-class ViewProviderPointGroup:
+class ViewProviderGuideLines:
     """
     This class is about Point Group Object view features.
     """
