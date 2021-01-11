@@ -29,7 +29,7 @@ from freecad.trails import ICONPATH, geo_origin
 
 
 
-def get():
+def get(alignment=None):
     """
     Find the existing Guide Line Clusters group object
     """
@@ -39,11 +39,11 @@ def get():
     if obj:
         return obj
 
-    obj = create()
+    obj = create(alignment)
 
     return obj
 
-def create(alignment=None):
+def create(alignment):
     """
     Factory method for Guide Line Clusters.
     """
@@ -101,14 +101,15 @@ class GuideLineClusters:
         '''
         if prop == "Alignment":
             alignment = fp.getPropertyByName("Alignment")
-            if hasattr(alignment.Proxy, 'model'):
-                fp.Start = alignment.Proxy.model.data['meta']['StartStation']
-                length = alignment.Proxy.model.data['meta']['Length']
-                fp.End = fp.Start + length/1000
-            else:
-                fp.Start = 0.0
-                length = alignment.Length.Value
-                fp.End = fp.Start + length/1000
+            if alignment:
+                if hasattr(alignment.Proxy, 'model'):
+                    fp.Start = alignment.Proxy.model.data['meta']['StartStation']
+                    length = alignment.Proxy.model.data['meta']['Length']
+                    fp.End = fp.Start + length/1000
+                else:
+                    fp.Start = 0.0
+                    length = alignment.Length.Value
+                    fp.End = fp.Start + length/1000
 
 
     def execute(self, fp):

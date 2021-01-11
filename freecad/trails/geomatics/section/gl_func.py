@@ -123,12 +123,14 @@ class GLFunc:
 
         # Create guide lines from standart line object
         else:
+            length = alignment.Length.Value
             for sta in range(0, int(length/1000)):
-                if sta % int(TangentIncrement) == 0:
-                    stations.append(i)
+                if sta % int(tangent_increment/1000) == 0:
+                    stations.append(sta)
 
             # Add the end station
             stations.append(round(length/1000,3))
+        print(stations)
 
         # Iterate the stations, appending what falls in the specified limits
         region_stations = []
@@ -138,6 +140,7 @@ class GLFunc:
                 region_stations.append(sta)
 
         region_stations.sort()
+        print(region_stations)
 
         # Iterate the final list of stations,
         # Computing coordinates and orthoginals for guidelines
@@ -147,20 +150,13 @@ class GLFunc:
             else:
                 coord, vec = self.line_orthogonal(alignment, sta, "Left")
 
-            left_side = coord.add(vec.multiply(left_offset*1000))
-            right_side = coord.add(vec.negative().multiply(right_offset*1000))
+            left_side = coord.add(vec.multiply(left_offset))
+            right_side = coord.add(vec.negative().multiply(right_offset))
 
             left_line = Part.LineSegment(left_side, coord)
             right_line = Part.LineSegment(coord, right_side)
 
             # Generate guide line object and add to cluster
             shape = Part.Shape([left_line, right_line])
-            wire = Part.Wire(S1.Edges)
-            guide_line = Part.show(guide_line)
-            guide_line.Label = str(round(sta, 3))
-
-            if hasattr(alignment.Proxy, 'model'):
-                guide_line.Placement.Base = placement
-
-            self.addObject(guide_line)
-            FreeCAD.ActiveDocument.recompute()
+            wire = Part.Wire(shape.Edges)
+            Part.show(wire)

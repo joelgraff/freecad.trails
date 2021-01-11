@@ -31,11 +31,11 @@ from .gl_func import GLFunc
 
 
 
-def create(name='GL Cluster'):
+def create(name='GL Cluster', alignment=None):
     """
     Factory method for GL Cluster.
     """
-    clusters = gl_clusters.get()
+    clusters = gl_clusters.get(alignment)
 
     obj = FreeCAD.ActiveDocument.addObject(
         "App::DocumentObjectGroupPython", 'GLCluster')
@@ -112,7 +112,7 @@ class GLCluster(GLFunc):
                 fp.StartStation = fp.InList[0].Start
         
         if prop == "ToAlignmentEnd":
-            to_end = obj.getPropertyByName("ToAlignmentEnd")
+            to_end = fp.getPropertyByName("ToAlignmentEnd")
             if to_end:
                 fp.EndStation = fp.InList[0].End
 
@@ -121,18 +121,19 @@ class GLCluster(GLFunc):
         Do something when doing a recomputation. 
         '''
         alignment = fp.InList[0].Alignment
+        if not alignment: return
 
-        horiz_pnts = obj.getPropertyByName("AtHorizontalAlignmentPoints")
-        start = obj.getPropertyByName("StartStation")
-        end = obj.getPropertyByName("EndStation")
-        right_offset = obj.getPropertyByName("RightOffset")
-        left_offset = obj.getPropertyByName("LeftOffset")
-        tangent = obj.getPropertyByName("IncrementAlongTangents")
-        curve = obj.getPropertyByName("IncrementAlongCurves")
-        spiral = obj.getPropertyByName("IncrementAlongSpirals")
+        horiz_pnts = fp.getPropertyByName("AtHorizontalAlignmentPoints")
+        start = fp.getPropertyByName("StartStation")
+        end = fp.getPropertyByName("EndStation")
+        right_offset = fp.getPropertyByName("RightOffset")
+        left_offset = fp.getPropertyByName("LeftOffset")
+        tangent = fp.getPropertyByName("IncrementAlongTangents")
+        curve = fp.getPropertyByName("IncrementAlongCurves")
+        spiral = fp.getPropertyByName("IncrementAlongSpirals")
 
         increments = [tangent, curve, spiral]
-        ofsets = [left_offset, right_offsets]
+        ofsets = [left_offset, right_offset]
         region = [start, end]
 
         self.generate(alignment,increments, ofsets, region, horiz_pnts)
