@@ -23,7 +23,7 @@
 
 import FreeCADGui as Gui
 
-from DraftTools import Modifier
+from draftguitools.gui_base_original import Modifier
 
 from freecad.trails import ICONPATH
 
@@ -66,7 +66,7 @@ class TrailsGuide(Modifier):
         panel = Panel()
         Gui.Control.showDialog(panel)
 
-        Modifier.Activated(self, 'TrailsGuide')
+        #Modifier.Activated(self, 'TrailsGuide')
 
 
 class Panel:

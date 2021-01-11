@@ -201,8 +201,6 @@ def get_coordinate(start, bearing, distance):
 
     _vec = TupleMath.bearing_vector(bearing)
 
-    print('\n\tLINE GET COORDINATE',start, TupleMath.multiply(_vec, distance), _vec, distance)
-
     return TupleMath.add(
         tuple(start), TupleMath.multiply(tuple(_vec), distance)
     )
