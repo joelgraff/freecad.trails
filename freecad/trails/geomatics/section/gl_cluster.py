@@ -27,14 +27,15 @@ Create a GL Cluster group object from FPO.
 import FreeCAD
 from freecad.trails import ICONPATH, geo_origin
 from . import gl_clusters
+from .gl_func import GLFunc
 
 
 
-def create(name='GL Cluster'):
+def create(name='GL Cluster', alignment=None):
     """
     Factory method for GL Cluster.
     """
-    clusters = gl_clusters.get()
+    clusters = gl_clusters.get(alignment)
 
     obj = FreeCAD.ActiveDocument.addObject(
         "App::DocumentObjectGroupPython", 'GLCluster')
@@ -48,7 +49,7 @@ def create(name='GL Cluster'):
     return obj
 
 
-class GLCluster:
+class GLCluster(GLFunc):
     """
     This class is about GL Cluster object data features.
     """
@@ -59,19 +60,84 @@ class GLCluster:
         '''
         self.Type = 'Trails::GLCluster'
 
+        obj.addProperty(
+            "App::PropertyBool", "AtHorizontalAlignmentPoints", "Base",
+            "Show/hide labels").AtHorizontalAlignmentPoints = True
+
+        obj.addProperty(
+            "App::PropertyBool", "FromAlignmentStart", "Base",
+            "Show/hide labels").FromAlignmentStart = True
+
+        obj.addProperty(
+            "App::PropertyBool", "ToAlignmentEnd", "Base",
+            "Show/hide labels").ToAlignmentEnd = True
+
+        obj.addProperty(
+            "App::PropertyLength", "StartStation", "Station",
+            "Guide lines start station").StartStation = 0
+
+        obj.addProperty(
+            "App::PropertyLength", "EndStation", "Station",
+            "Guide lines end station").EndStation = 0
+
+        obj.addProperty(
+            "App::PropertyLength", "RightOffset", "Offset",
+            "Length of right offset").RightOffset = 20000
+
+        obj.addProperty(
+            "App::PropertyLength", "LeftOffset", "Offset",
+            "Length of left offset").LeftOffset = 20000
+
+        obj.addProperty(
+            "App::PropertyLength", "IncrementAlongTangents", "Increment",
+            "Distance between guide lines along tangents").IncrementAlongTangents = 10000
+
+        obj.addProperty(
+            "App::PropertyLength", "IncrementAlongCurves", "Increment",
+            "Distance between guide lines along curves").IncrementAlongCurves = 5000
+
+        obj.addProperty(
+            "App::PropertyLength", "IncrementAlongSpirals", "Increment",
+            "Distance between guide lines along spirals").IncrementAlongSpirals = 5000
+
         obj.Proxy = self
 
     def onChanged(self, fp, prop):
         '''
         Do something when a data property has changed.
         '''
-        return
+        if prop == "FromAlignmentStart":
+            from_start = fp.getPropertyByName("FromAlignmentStart")
+            if from_start:
+                fp.StartStation = fp.InList[0].Start
+        
+        if prop == "ToAlignmentEnd":
+            to_end = fp.getPropertyByName("ToAlignmentEnd")
+            if to_end:
+                fp.EndStation = fp.InList[0].End
 
     def execute(self, fp):
         '''
         Do something when doing a recomputation. 
         '''
-        return
+        alignment = fp.InList[0].Alignment
+        if not alignment: return
+
+        horiz_pnts = fp.getPropertyByName("AtHorizontalAlignmentPoints")
+        start = fp.getPropertyByName("StartStation")
+        end = fp.getPropertyByName("EndStation")
+        right_offset = fp.getPropertyByName("RightOffset")
+        left_offset = fp.getPropertyByName("LeftOffset")
+        tangent = fp.getPropertyByName("IncrementAlongTangents")
+        curve = fp.getPropertyByName("IncrementAlongCurves")
+        spiral = fp.getPropertyByName("IncrementAlongSpirals")
+
+        increments = [tangent, curve, spiral]
+        ofsets = [left_offset, right_offset]
+        region = [start, end]
+
+        self.generate(alignment,increments, ofsets, region, horiz_pnts)
+
 
 
 class ViewProviderGLCluster:
