@@ -27,6 +27,7 @@ Define Surface Object functions.
 
 import FreeCAD
 import Part
+import copy
 
 class GLFunc:
     """
@@ -130,7 +131,6 @@ class GLFunc:
 
             # Add the end station
             stations.append(round(length/1000,3))
-        print(stations)
 
         # Iterate the stations, appending what falls in the specified limits
         region_stations = []
@@ -140,7 +140,6 @@ class GLFunc:
                 region_stations.append(sta)
 
         region_stations.sort()
-        print(region_stations)
 
         # Iterate the final list of stations,
         # Computing coordinates and orthoginals for guidelines
@@ -150,11 +149,14 @@ class GLFunc:
             else:
                 coord, vec = self.line_orthogonal(alignment, sta, "Left")
 
-            left_side = coord.add(vec.multiply(left_offset))
-            right_side = coord.add(vec.negative().multiply(right_offset))
+            left_vec = copy.deepcopy(vec)
+            right_vec = copy.deepcopy(vec)
+
+            left_side = coord.add(left_vec.multiply(left_offset))
+            right_side = coord.add(right_vec.negative().multiply(right_offset))
 
             left_line = Part.LineSegment(left_side, coord)
-            right_line = Part.LineSegment(coord, right_side)
+            right_line = Part.LineSegment(right_side, coord)
 
             # Generate guide line object and add to cluster
             shape = Part.Shape([left_line, right_line])
