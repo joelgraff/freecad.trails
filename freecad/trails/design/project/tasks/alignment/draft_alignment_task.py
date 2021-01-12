@@ -25,7 +25,7 @@
 Task to draft an alignment
 """
 
-from .... import resources
+from freecad.trails import resources
 
 __title__ = "draft_alignment_task.py"
 __author__ = "Joel Graff"

@@ -350,10 +350,11 @@ class Miki(object):
 	def parse2(self, configurationString):
 		'''parse the configuration string'''
 
+		# print(configurationString)
 		ls = configurationString.splitlines()
 
-		# pylint: disable=unused-variable
 		app = self.app
+		False if app else True  # get pylint and LGTM silent
 		line = 0
 		depth = 0
 		d = [0]*30
@@ -363,6 +364,7 @@ class Miki(object):
 		r = None
 		r = [-1, 0, 0, '']
 		for l in ls:
+			# print(l)
 			ltxt = l
 
 			if r:
@@ -1121,7 +1123,7 @@ MainWindow:
 		itemClicked.connect: app.itemClicked
 	HorizontalLayout:
 		QtGui.QLabel:
-			#setGeometry:  PySide.QtCore.QRect(0,0,100,300)
+			#setGeometry:  QtCore.QRect(0,0,100,300)
 			setPixmap: QtGui.QPixmap('/home/thomas/Bilder/freeka.png')
 		VerticalLayout:
 			QtGui.QLineEdit:
@@ -1142,7 +1144,7 @@ MainWindow:
 				setFocusPolicy: QtCore.Qt.StrongFocus
 			QtGui.QDial:
 			QtGui.QSlider:
-				setOrientation: PySide.QtCore.Qt.Orientation.Horizontal
+				setOrientation: QtCore.Qt.Orientation.Horizontal
 
 	HorizontalGroup:
 		QtGui.QComboBox:

@@ -54,9 +54,13 @@ class CreateSections:
         return self.Resources
 
     def IsActive(self):
-        if FreeCAD.ActiveDocument is None:
-            return False
-        return True
+        """
+        Define tool button activation situation
+        """
+        # Check for document
+        if FreeCAD.ActiveDocument:
+            return True
+        return False
 
     def Activated(self):
         self.view = FreeCADGui.ActiveDocument.ActiveView
@@ -93,9 +97,8 @@ class CreateSections:
         self.SurfacesList = {}
 
         for surface in SurfacesGroup:
-            if surface.TypeId == 'Mesh::Feature':
-                self.SurfacesList[surface.Label] = surface
-                self.IPFui.SelectSurfacesLW.addItem(surface.Label)
+            self.SurfacesList[surface.Label] = surface
+            self.IPFui.SelectSurfacesLW.addItem(surface.Label)
 
     @staticmethod
     def convert2View(section, origin=None):
@@ -185,28 +188,26 @@ class CreateSections:
                 _points = []
 
                 for _edge in guide_line.Shape.Edges:
-                    _params = MeshPart.findSectionParameters(
-                        _edge, _surface.Mesh, FreeCAD.Vector(0, 0, 1))
-                    _params.insert(0, _edge.FirstParameter+1)
-                    _params.append(_edge.LastParameter-1)
+                    Vec = _edge.Vertexes[0].Point - _edge.Vertexes[1].Point
+                    Vec.x, Vec.y = -(Vec.y), Vec.x
 
-                    _values = [_edge.valueAt(i) for i in _params]
-                    _points += _values
+                    section_points = _surface.Mesh.crossSections(
+                        [(_edge.Vertexes[0].Point,Vec)],0.000001)
+                    FreeCAD.Console.PrintMessage(section_points)
 
-                section_points = MeshPart.projectPointsOnMesh(
-                    _points, _surface.Mesh, FreeCAD.Vector(0, 0, 1))
+                    if section_points:
+                        for section in section_points[0]:
+                            sec_points_2d = self.convert2View(section, _origin)
+                            _section = Draft.makeWire(sec_points_2d)
 
-                sec_points_2d = self.convert2View(section_points, _origin)
-                _section = Draft.makeWire(sec_points_2d)
+                            view_width.append([min(i.x for i in sec_points_2d),
+                                max(i.x for i in sec_points_2d)])
+                            view_heigth.append([min(i.y for i in sec_points_2d),
+                                max(i.y for i in sec_points_2d)])
 
-                view_width.append([min(i.x for i in sec_points_2d),
-                    max(i.x for i in sec_points_2d)])
-                view_heigth.append([min(i.y for i in sec_points_2d),
-                    max(i.y for i in sec_points_2d)])
-
-                _section.Placement.move(_position)
-                self.SectionsGroup.addObject(_section)
-                _origin = section_points[0]
+                            _section.Placement.move(_position)
+                            self.SectionsGroup.addObject(_section)
+                            _origin = section[0]
 
             if _counter == multi_views_nor:
                 _dx = max(i[1] for i in view_width) - min(i[0] for i in view_width)

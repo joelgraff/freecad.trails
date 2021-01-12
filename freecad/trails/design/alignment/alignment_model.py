@@ -176,7 +176,8 @@ class AlignmentModel:
 
             _coord = _geo.get('Start')
 
-            _d = abs(TupleMath.length(TupleMath.subtract(_coord, _prev_coord)))
+            _d = abs(TupleMath.length(TupleMath.subtract(
+                tuple(_coord), tuple(_prev_coord))))
 
             #test for gap at start of geometry and end of previous geometry
             if not support.within_tolerance(_d, tolerance=0.01):
@@ -388,7 +389,7 @@ class AlignmentModel:
             #get the vector between the two geometries
             #and the station distance
             _vector = TupleMath.subtract(
-                _geo.get('Start'), _prev_geo.get('End'))
+                tuple(_geo.get('Start')), tuple(_prev_geo.get('End')))
 
             _sta_len = abs(
                 _geo.get('InternalStation')[0] \
@@ -519,8 +520,9 @@ class AlignmentModel:
                 if not geo_coord:
                     geo_coord = prev_coord
 
+                print(geo_coord, prev_coord)
                 delta = TupleMath.length(
-                    TupleMath.subtract(geo_coord, prev_coord))
+                    TupleMath.subtract(tuple(geo_coord), tuple(prev_coord)))
 
                 if not support.within_tolerance(delta):
                     geo_station += delta / units.scale_factor()

@@ -62,7 +62,8 @@ class KeyMaps(Const):
              'version']
     }
 
-    #map of LandXML tags to internal Python dictionary
+    #map of LandXML tags to internal Python dictionary to provide more
+    #meaningful internal names.
     XML_MAP = {
         'chord': 'Chord', 'constant': 'Constant', 'crvType': 'CurveType',
         'delta': 'Delta', 'desc': 'Description', 'dir': 'BearingIn',
@@ -85,6 +86,7 @@ class KeyMaps(Const):
     #attributes for each LandXML Tag.
     #Attribute names are divided into two lists.
     #The first list is required attributes, the second is optional
+    #Used for validating imported data sets
     XML_ATTRIBS = {
         'Alignment': [
             ['name', 'length', 'staStart'],

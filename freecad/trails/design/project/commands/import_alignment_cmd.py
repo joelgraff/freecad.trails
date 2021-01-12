@@ -64,6 +64,4 @@ class ImportAlignmentCmd():
         Gui.Control.showDialog(panel)
         panel.setup()
 
-        return
-
 Gui.addCommand('ImportAlignmentCmd', ImportAlignmentCmd())

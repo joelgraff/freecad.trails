@@ -30,7 +30,7 @@ from PySide import QtGui
 from FreeCAD import Vector
 import FreeCADGui as Gui
 
-import DraftTools
+from draftguitools.gui_tool_utils import redraw3DView
 
 from freecad.trails import resources
 
@@ -169,7 +169,7 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
 
         self.alignment_tracker.mouse_state.callbacks.append(self.update_status_bar)
 
-        DraftTools.redraw3DView()
+        redraw3DView()
 
     def update_status_bar(self, mouse_state):
         """

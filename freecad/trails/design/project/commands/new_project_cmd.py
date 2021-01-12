@@ -31,7 +31,7 @@ import FreeCADGui as Gui
 from PySide import QtGui, QtCore
 
 from ..support import document_properties
-from ... import resources, corridor
+from freecad.trails import resources, corridor
 
 class NewProjectCmd():
     """

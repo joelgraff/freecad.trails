@@ -29,7 +29,7 @@ import FreeCADGui as Gui
 
 from types import SimpleNamespace
 
-from freecad.trails import ContextTracker, PolyLineTracker, Drag
+from freecad.trails.design import ContextTracker, PolyLineTracker, Drag
 from .curve_tracker import CurveTracker
 
 from freecad_python_support.tuple_math import TupleMath
@@ -93,7 +93,7 @@ class AlignmentTracker(ContextTracker):
 
         for _i, _curve in enumerate(_curves):
             self.curve_trackers.append(
-                CurveTracker('curve_' + str(_i), _curve, self.curve_group))
+                CurveTracker(str(_i), _curve, self.curve_group))
 
         _lines = self.alignment_tracker.lines
 

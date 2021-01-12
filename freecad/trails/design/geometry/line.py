@@ -201,9 +201,9 @@ def get_coordinate(start, bearing, distance):
 
     _vec = TupleMath.bearing_vector(bearing)
 
-    print('\n\tLINE GET COORDINATE',start, TupleMath.multiply(_vec, distance), _vec, distance)
-
-    return TupleMath.add(start, TupleMath.multiply(_vec, distance))
+    return TupleMath.add(
+        tuple(start), TupleMath.multiply(tuple(_vec), distance)
+    )
 
 def get_tangent_vector(line, distance):
     """
@@ -236,19 +236,22 @@ def get_ortho_vector(line, distance, side=''):
 
     if _side in ['r', 'rt', 'right']:
         _dir = -1.0
-    start = line.get('Start')
-    end = line.get('End')
+
+    start = tuple(line.get('Start'))
+    end = tuple(line.get('End'))
     bearing = line.get('BearingIn')
 
     if (start is None) or (end is None):
         return None, None
 
-    _delta = end.sub(start).normalize()
-    _left = Vector(-_delta.y, _delta.x, 0.0)
+    _delta = TupleMath.subtract(end, start)
+    _delta = TupleMath.normalize(_delta)
+
+    _left = tuple(-_delta.y, _delta.x, 0.0)
 
     _coord = get_coordinate(start, bearing, distance)
 
-    return _coord, _left.multiply(_dir)
+    return _coord, TupleMath.multiply(_left, _dir)
 
 def get_orthogonal_point(start_pt, end_pt, coord):
     """

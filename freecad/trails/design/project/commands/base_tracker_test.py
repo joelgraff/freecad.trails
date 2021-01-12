@@ -29,7 +29,7 @@ import FreeCADGui as Gui
 
 from DraftTools import Modifier
 
-from ... import resources
+from freecad.trails import resources
 
 from ..tasks.alignment import base_tracker_test_task
 
