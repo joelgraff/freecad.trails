@@ -27,12 +27,8 @@ Command to edit an alignment
 import FreeCAD as App
 import FreeCADGui as Gui
 
-<<<<<<< HEAD:freecad/trails/design/project/commands/edit_alignment_cmd.py
-from freecad.trails import resources
-=======
 #from DraftTools import Modifier
 from draftguitools.gui_base_original import Modifier
->>>>>>> dev:freecad/trails/project/commands/edit_alignment_cmd.py
 
 from freecad.trails import resources
 from ..tasks.alignment import edit_alignment_task
