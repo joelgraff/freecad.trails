@@ -29,7 +29,7 @@ from freecad.trails import ICONPATH, geo_origin
 
 
 
-def get(alignment=None):
+def get():
     """
     Find the existing Guide Line Clusters group object
     """
@@ -39,11 +39,11 @@ def get(alignment=None):
     if obj:
         return obj
 
-    obj = create(alignment)
+    obj = create()
 
     return obj
 
-def create(alignment):
+def create():
     """
     Factory method for Guide Line Clusters.
     """
@@ -63,7 +63,6 @@ def create(alignment):
     alignment_group.addObject(obj)
 
     GuideLineClusters(obj)
-    obj.Alignment = alignment
     ViewProviderGuideLineClusters(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
 
@@ -79,7 +78,7 @@ class GuideLineClusters:
         '''
         Set data properties.
         '''
-        self.Type = 'Trails::GuideLineClusters'
+        self.Type = 'Trails::GLClusters'
 
         obj.addProperty(
             'App::PropertyLink', "Alignment", "Base",
