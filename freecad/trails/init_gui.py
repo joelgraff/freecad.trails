@@ -233,14 +233,35 @@ class TrailsWorkbench(Gui.Workbench):
         Called when the workbench is first activated.
         """
 
-        from .geomatics.point import ImportPointFile, ExportPoints
-        from .geomatics import geoimport_gui
-        from .geomatics.surface import CreateSurface, EditSurface, Contours
+        import time
+
+        x = time.perf_counter()
+        from .geomatics.point import import_points, export_points, create_pointgroup
+        print('geo1', time.perf_counter() - x)
+
+        x = time.perf_counter()
+        from .geomatics.surface import create_surface, edit_surface
+        print('geo2', time.perf_counter() - x)
+
+        x = time.perf_counter()
         from .geomatics.section import CreateGuideLines
-        from .geomatics import GeoDataWB
-        from .design.project.commands \
-            import import_alignment_cmd, edit_alignment_cmd,\
-                trails_guide_cmd
+        print('geo3', time.perf_counter() - x)
+
+        x = time.perf_counter()
+        from .geomatics import geoimport_gui
+        print('geo4', time.perf_counter() - x)
+
+        x = time.perf_counter()
+        from .design.project.commands import import_alignment_cmd
+        print('hv1', time.perf_counter() - x)
+
+        x = time.perf_counter()
+        from .design.project.commands import edit_alignment_cmd
+        print('hv2', time.perf_counter() - x)
+
+        x = time.perf_counter()
+        from .design.project.commands import trails_guide_cmd
+        print('hv3', time.perf_counter() - x)
 
         for _k, _v in self.command_ui.items():
 
