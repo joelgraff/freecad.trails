@@ -23,7 +23,7 @@
 import FreeCAD
 import FreeCADGui
 from freecad.trails import ICONPATH
-from ...project.support import utils
+from ...design.project.support import utils
 import os
 import Draft
 
