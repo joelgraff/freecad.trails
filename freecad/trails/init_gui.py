@@ -234,6 +234,7 @@ class TrailsWorkbench(Gui.Workbench):
         """
 
         from .geomatics.point import ImportPointFile, ExportPoints
+        from .geomatics import geoimport_gui
         from .geomatics.surface import CreateSurface, EditSurface, Contours
         from .geomatics.section import CreateGuideLines
         from .geomatics import GeoDataWB
