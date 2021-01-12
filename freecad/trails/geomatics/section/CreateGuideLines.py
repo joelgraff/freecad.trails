@@ -23,7 +23,6 @@
 import os
 import FreeCAD
 import FreeCADGui
-import Draft
 from PySide import QtCore, QtGui
 from freecad.trails import ICONPATH
 from . import gl_clusters, gl_cluster

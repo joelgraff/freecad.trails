@@ -101,7 +101,7 @@ class GLFunc:
                 if element.get('Type') == 'Line':
 
                     # Iterate the station range
-                    for sta in range(round(elem_start,3), round(elem_end,3)):
+                    for sta in range(int(elem_start), int(elem_end)):
 
                         # Add stations which land on increments exactly
                         if sta % tangent_increment == 0:
@@ -109,13 +109,13 @@ class GLFunc:
 
                 # Generate curve intervals
                 elif element.get('Type') == 'Curve':
-                    for sta in range(round(elem_start,3), round(elem_end,3)):
+                    for sta in range(int(elem_start), int(elem_end)):
                         if sta % int(curve_increment) == 0:
                             stations.append(sta)
 
                 #Generate spiral intervals
                 elif element.get("Type") == 'Spiral':
-                    for sta in range(round(elem_start,3), round(elem_end,3)):
+                    for sta in range(int(elem_start), int(elem_end)):
                         if sta % int(spiral_increment) == 0:
                             stations.append(sta)
     

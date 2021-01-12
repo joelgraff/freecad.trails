@@ -31,11 +31,12 @@ from .gl_func import GLFunc
 
 
 
-def create(name='GL Cluster', alignment=None):
+def create(name='GL Cluster', alignment):
     """
     Factory method for GL Cluster.
     """
-    clusters = gl_clusters.get(alignment)
+    clusters = gl_clusters.get()
+    clusters.Alignment = alignment
 
     obj = FreeCAD.ActiveDocument.addObject(
         "App::DocumentObjectGroupPython", 'GLCluster')
