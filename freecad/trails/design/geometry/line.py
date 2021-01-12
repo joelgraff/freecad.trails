@@ -239,7 +239,7 @@ def get_ortho_vector(line, distance, side=''):
 
     start = tuple(line.get('Start'))
     end = tuple(line.get('End'))
-    bearing = tuple(line.get('BearingIn'))
+    bearing = line.get('BearingIn')
 
     if (start is None) or (end is None):
         return None, None
