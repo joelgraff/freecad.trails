@@ -26,7 +26,7 @@ GUI Initialization module
 import os
 import FreeCADGui as Gui
 
-from .corridor.template import ViewTemplateLibrary
+from .design.corridor.template import ViewTemplateLibrary
 from . import resources
 
 from draftutils import init_tools as draft_tools
@@ -34,10 +34,10 @@ from draftutils import init_tools as draft_tools
 TRAILSWB_VERSION = '(alpha)'
 
 class CommandGroup:
-    def __init__(self, cmdlist, menu, TypeId=None, tooltip=None):
+    def __init__(self, cmdlist, menu, Type=None, tooltip=None):
         self.cmdlist = cmdlist
         self.menu = menu
-        self.TypeId = TypeId
+        self.Type = Type
         if tooltip is None:
             self.tooltip = menu
         else:
@@ -48,6 +48,21 @@ class CommandGroup:
 
     def GetResources(self):
         return {'MenuText': self.menu, 'ToolTip': self.tooltip}
+
+    def IsActive(self):
+        """
+        Define tool button activation situation
+        """
+        """
+        # Check for document
+        if FreeCAD.ActiveDocument:
+            # Check for selected object
+            if FreeCADGui.Selection.getSelection():
+                selection = FreeCADGui.Selection.getSelection()[-1]
+                if selection.Proxy.Type == 'Trails::Surface':
+                    return True
+        """
+        return True
 
 class TrailsWorkbench(Gui.Workbench):
     """
@@ -78,9 +93,10 @@ class TrailsWorkbench(Gui.Workbench):
             'Data Tools': {
                 'gui': self.menu + self.toolbar,
                 'cmd': [
+                    'Create Point Group',
                     'Import Point File',
                     'Export Points',
-                    'Geodata Tools'
+                    'Geo Import Tools'
                     ]
             },
 
@@ -88,8 +104,7 @@ class TrailsWorkbench(Gui.Workbench):
                 'gui': self.menu + self.toolbar + self.context,
                 'cmd': [
                     'Create Surface',
-                    'Surface Editor',
-                    'Create Contour'
+                    'Surface Editor'
                     ]
             },
 
@@ -114,14 +129,6 @@ class TrailsWorkbench(Gui.Workbench):
                 'cmd': ['ViewTemplateLibrary']
             },
 
-            'Test': {
-                'gui': self.menu + self.toolbar,
-                'cmd': [
-                    'BaseTrackerTest',
-                    'BaseTrackerLinkedTest'
-                    ]
-            },
-
             'Help': {
                 'gui': self.toolbar,
                 'cmd': ['TrailsGuide']
@@ -139,16 +146,16 @@ class TrailsWorkbench(Gui.Workbench):
             'Surface Editor': {
                 'gui': self.group,
                 'cmd': [
-                    'Add Triangle',
+                    'Add Point',
                     'Delete Triangle',
                     'Swap Edge',
                     'Smooth Surface'
                 ],
                 'tooltip': 'Edit selected surface',
-                'type_id': 'Mesh::Feature'
+                'type': 'Trails::Surface'
             },
 
-            'Geodata Tools': {
+            'Geo Import Tools': {
                 'gui': self.group,
                 'cmd': [
                     'Import OSM Map',
@@ -166,7 +173,7 @@ class TrailsWorkbench(Gui.Workbench):
                     'ElevationGrid',
                     'Import EMIR',
                ],
-               'tooltip': 'Geodata Tools'
+               'tooltip': 'Geo Import Tools'
             },
 
             'Drawing Tools': {
@@ -183,9 +190,10 @@ class TrailsWorkbench(Gui.Workbench):
 
             'Utility Tools': {
                 'gui': self.group,
-                'cmd': draft_tools.get_draft_utility_commands(),
+                'cmd': draft_tools.get_draft_small_commands(),
                 'tooltip': 'Draft utility tools'
             }
+
         }
 
         if not self.dev:
@@ -208,18 +216,52 @@ class TrailsWorkbench(Gui.Workbench):
         """
         return 'Gui::PythonWorkbench'
 
+    def import_module(self, path, name=None):
+        """
+        Return an import of a module specified by path and module name
+        """
+
+        _name_list = []
+
+        if name:
+            _name_list = [name]
+
+        return __import__(path, globals(), locals(), _name_list)
+
     def Initialize(self):
         """
         Called when the workbench is first activated.
         """
 
-        from .point import ImportPointFile, ExportPoints
-        from .surface import CreateSurface, EditSurface, Contours
-        from .section import CreateGuideLines
-        from . import GeoData
-        from .project.commands \
-            import import_alignment_cmd, edit_alignment_cmd,\
-                base_tracker_test, trails_guide_cmd
+        import time
+
+        x = time.perf_counter()
+        from .geomatics.point import import_points, export_points, create_pointgroup
+        print('geo1', time.perf_counter() - x)
+
+        x = time.perf_counter()
+        from .geomatics.surface import create_surface, edit_surface
+        print('geo2', time.perf_counter() - x)
+
+        x = time.perf_counter()
+        from .geomatics.section import CreateGuideLines
+        print('geo3', time.perf_counter() - x)
+
+        x = time.perf_counter()
+        from .geomatics import geoimport_gui
+        print('geo4', time.perf_counter() - x)
+
+        x = time.perf_counter()
+        from .design.project.commands import import_alignment_cmd
+        print('hv1', time.perf_counter() - x)
+
+        x = time.perf_counter()
+        from .design.project.commands import edit_alignment_cmd
+        print('hv2', time.perf_counter() - x)
+
+        x = time.perf_counter()
+        from .design.project.commands import trails_guide_cmd
+        print('hv3', time.perf_counter() - x)
 
         for _k, _v in self.command_ui.items():
 
@@ -231,7 +273,7 @@ class TrailsWorkbench(Gui.Workbench):
 
             if _v['gui'] & self.group:
                 Gui.addCommand(_k, CommandGroup(
-                    _v['cmd'], _v['tooltip'], _v.get('type_id'))
+                    _v['cmd'], _v['tooltip'], _v.get('type'))
                 )
 
     def Activated(self):
