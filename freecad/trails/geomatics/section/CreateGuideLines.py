@@ -127,7 +127,7 @@ class CreateGuideLines:
 
         # Create new guide lines group
         cluster_name = self.CPGui.GuideLinesGroupNameLE.text()
-        new_cluster = gl_cluster.create(cluster_name, alignment)
+        new_cluster = gl_cluster.create(alignment, cluster_name)
 
         self.glc_dict[new_cluster.Label] = new_cluster
         self.IPFui.GLGroupCB.addItem(new_cluster.Label)
