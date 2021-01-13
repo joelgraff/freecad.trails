@@ -132,15 +132,6 @@ class TrailsWorkbench(Gui.Workbench):
                 'cmd': ['TrailsGuide']
             },
 
-            'Draft Tools': {
-                'gui': self.toolbar,
-                'cmd': [
-                    'Drawing Tools',
-                    'Modification Tools',
-                    'Utility Tools'
-                    ]
-            },
-
             'Surface Editor': {
                 'gui': self.group,
                 'cmd': [
