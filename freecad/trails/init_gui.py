@@ -29,8 +29,6 @@ import FreeCADGui as Gui
 from .design.corridor.template import ViewTemplateLibrary
 from . import resources
 
-from draftutils import init_tools as draft_tools
-
 TRAILSWB_VERSION = '(alpha)'
 
 class CommandGroup:
@@ -134,15 +132,6 @@ class TrailsWorkbench(Gui.Workbench):
                 'cmd': ['TrailsGuide']
             },
 
-            'Draft Tools': {
-                'gui': self.toolbar,
-                'cmd': [
-                    'Drawing Tools',
-                    'Modification Tools',
-                    'Utility Tools'
-                    ]
-            },
-
             'Surface Editor': {
                 'gui': self.group,
                 'cmd': [
@@ -174,26 +163,7 @@ class TrailsWorkbench(Gui.Workbench):
                     'Import EMIR',
                ],
                'tooltip': 'Geo Import Tools'
-            },
-
-            'Drawing Tools': {
-                'gui': self.group,
-                'cmd': draft_tools.get_draft_drawing_commands(),
-                'tooltip': 'Draft creation tools'
-            },
-
-            'Modification Tools': {
-                'gui': self.group,
-                'cmd': draft_tools.get_draft_modification_commands(),
-                'tooltip': 'Draft modification tools'
-            },
-
-            'Utility Tools': {
-                'gui': self.group,
-                'cmd': draft_tools.get_draft_small_commands(),
-                'tooltip': 'Draft utility tools'
             }
-
         }
 
         if not self.dev:
