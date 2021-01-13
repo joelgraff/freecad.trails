@@ -27,7 +27,7 @@ Create a GL Cluster group object from FPO.
 import FreeCAD
 from freecad.trails import ICONPATH, geo_origin
 from . import gl_clusters
-from .gl_func import GLFunc
+from .glc_func import GLCFunc
 
 
 
@@ -50,7 +50,7 @@ def create(alignment, name='GL Cluster'):
     return obj
 
 
-class GLCluster(GLFunc):
+class GLCluster(GLCFunc):
     """
     This class is about GL Cluster object data features.
     """
