@@ -52,7 +52,6 @@ class CurveTracker(ContextTracker, Style, Drag):
 
         #generate line tracker structures from the pi list
 
-        print(name)
         super().__init__(name=name + '_CURVE_TRACKER', parent=parent, view=view)
 
         self.curve_tracker = None
