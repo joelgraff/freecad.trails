@@ -99,12 +99,12 @@ class EditAlignmentCmd(Modifier):
         ViewState().view = Gui.ActiveDocument.ActiveView
 
         #create alignment editing task
-        #self.task = edit_alignment_task.create(self.doc, data, obj)
+        self.task = edit_alignment_task.create(self.doc, data, obj)
 
         #cz._zoom_camera(cz.Camera())
 
-        #Gui.Control.showDialog(self.task)
-        #self.task.setup()
+        Gui.Control.showDialog(self.task)
+        self.task.setup()
 
         Modifier.Activated(self, 'EditAlignmentCommand')
 
