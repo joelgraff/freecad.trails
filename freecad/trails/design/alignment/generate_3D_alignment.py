@@ -61,7 +61,7 @@ class Generate3dAlignment():
 
         icon_path = os.path.dirname(os.path.abspath(__file__))
 
-        icon_path += "/../../../icons/new_alignment.svg"
+        icon_path += "../../../../icons/new_alignment.svg"
 
         return {'Pixmap'  : icon_path,
                 'Accel'   : "Ctrl+Alt+G",

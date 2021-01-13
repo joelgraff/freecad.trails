@@ -68,7 +68,7 @@ class SpriteSplitter(Modifier):
         Icon resources.
         """
 
-        icon_path = resources.__path__[0] + '/icons/new_alignment.svg'
+        icon_path = resources.__path__[0] + '/../icons/new_alignment.svg'
 
         return {'Pixmap'  : icon_path,
                 'Accel'   : 'Ctrl+Shift+D',

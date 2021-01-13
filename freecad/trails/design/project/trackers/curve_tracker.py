@@ -239,11 +239,12 @@ class CurveTracker(ContextTracker, Style, Drag):
 
         #get the key graph nodes
         _start = self.base.get_child(
-            f'{self.name}_arc__Coordinate', self.base.copy() )
-
-        print(f'\n\tstart node:{self.name}_BASE_Separator', self.base.copy().getName(), _start)
 
         _curve = self.base.get_child(_start, f'{self.name}_arc_BASE_Swtich')
+
+        print(_curve.getName())
+        return
+
         _polyline = _start.getChild(4)
 
         #add the root node to the drag tracker for representation only

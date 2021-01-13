@@ -29,6 +29,9 @@ import FreeCADGui as Gui
 from .design.corridor.template import ViewTemplateLibrary
 from . import resources
 
+
+from . import draft_tools
+
 TRAILSWB_VERSION = '(alpha)'
 
 class CommandGroup:
@@ -202,6 +205,7 @@ class TrailsWorkbench(Gui.Workbench):
         """
         Called when the workbench is first activated.
         """
+
         from .geomatics.point import import_points, export_points, create_pointgroup
 
         from .geomatics.surface import create_surface, edit_surface
