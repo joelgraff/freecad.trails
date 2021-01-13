@@ -245,7 +245,7 @@ def get_ortho_vector(line, distance, side=''):
         return None, None
 
     _delta = TupleMath.subtract(end, start)
-    _delta = TupleMath.normalize(_delta)
+    _delta = TupleMath.unit(_delta)
 
     _left = tuple(-_delta.y, _delta.x, 0.0)
 
