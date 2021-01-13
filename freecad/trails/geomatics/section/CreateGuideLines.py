@@ -150,14 +150,13 @@ class CreateGuideLines:
 
     def CreateNewGroup(self):
         # Create new guide lines group
-        NewGroupName = self.CPGui.GuideLinesGroupNameLE.text()
-        NewGroup = FreeCAD.ActiveDocument.addObject(
-            "App::DocumentObjectGroup", NewGroupName)
-        NewGroup.Label = NewGroupName
-        FreeCAD.ActiveDocument.GuideLines.addObject(NewGroup)
-        self.IPFui.GLGroupCB.addItem(NewGroupName)
-        self.GLGList.append(NewGroup.Name)
-        NewGroup.Label = NewGroupName
+
+        cluster_name = self.CPGui.GuideLinesGroupNameLE.text()
+        new_cluster = gl_cluster.create(alignment, cluster_name)
+
+        self.glc_dict[new_cluster.Label] = new_cluster
+        self.IPFui.GLGroupCB.addItem(new_cluster.Label)
+
         self.CPGui.close()
 
     def ActivateStations(self):

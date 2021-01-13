@@ -27,11 +27,11 @@ Create a GL Cluster group object from FPO.
 import FreeCAD
 from freecad.trails import ICONPATH, geo_origin
 from . import gl_clusters
-from .gl_func import GLFunc
+from .glc_func import GLCFunc
 
 
 
-def create(name='GL Cluster', alignment):
+def create(alignment, name='GL Cluster'):
     """
     Factory method for GL Cluster.
     """
@@ -50,7 +50,7 @@ def create(name='GL Cluster', alignment):
     return obj
 
 
-class GLCluster(GLFunc):
+class GLCluster(GLCFunc):
     """
     This class is about GL Cluster object data features.
     """
@@ -111,7 +111,7 @@ class GLCluster(GLFunc):
             from_start = fp.getPropertyByName("FromAlignmentStart")
             if from_start:
                 fp.StartStation = fp.InList[0].Start
-        
+
         if prop == "ToAlignmentEnd":
             to_end = fp.getPropertyByName("ToAlignmentEnd")
             if to_end:
@@ -119,7 +119,7 @@ class GLCluster(GLFunc):
 
     def execute(self, fp):
         '''
-        Do something when doing a recomputation. 
+        Do something when doing a recomputation.
         '''
         alignment = fp.InList[0].Alignment
         if not alignment: return
@@ -207,7 +207,7 @@ class ViewProviderGLCluster:
         Save variables to file.
         """
         return None
- 
+
     def __setstate__(self,state):
         """
         Get variables from file.

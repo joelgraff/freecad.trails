@@ -29,7 +29,7 @@ import FreeCAD
 import Part
 import copy
 
-class GLFunc:
+class GLCFunc:
     """
     This class is contain Surface Object functions.
     """
