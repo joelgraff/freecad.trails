@@ -29,7 +29,7 @@ import FreeCADGui as Gui
 from .design.corridor.template import ViewTemplateLibrary
 from . import resources
 
-from draftutils import init_tools as draft_tools
+
 from . import draft_tools
 
 TRAILSWB_VERSION = '(alpha)'
@@ -133,15 +133,6 @@ class TrailsWorkbench(Gui.Workbench):
             'Help': {
                 'gui': self.toolbar,
                 'cmd': ['TrailsGuide']
-            },
-
-            'Draft Tools': {
-                'gui': self.toolbar,
-                'cmd': [
-                    'Drawing Tools',
-                    'Modification Tools',
-                    'Utility Tools'
-                    ]
             },
 
             'Surface Editor': {
