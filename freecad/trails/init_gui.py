@@ -30,6 +30,7 @@ from .design.corridor.template import ViewTemplateLibrary
 from . import resources
 
 from draftutils import init_tools as draft_tools
+from . import draft_tools
 
 TRAILSWB_VERSION = '(alpha)'
 
@@ -175,25 +176,6 @@ class TrailsWorkbench(Gui.Workbench):
                ],
                'tooltip': 'Geo Import Tools'
             },
-
-            'Drawing Tools': {
-                'gui': self.group,
-                'cmd': draft_tools.get_draft_drawing_commands(),
-                'tooltip': 'Draft creation tools'
-            },
-
-            'Modification Tools': {
-                'gui': self.group,
-                'cmd': draft_tools.get_draft_modification_commands(),
-                'tooltip': 'Draft modification tools'
-            },
-
-            'Utility Tools': {
-                'gui': self.group,
-                'cmd': draft_tools.get_draft_small_commands(),
-                'tooltip': 'Draft utility tools'
-            }
-
         }
 
         if not self.dev:
@@ -233,35 +215,14 @@ class TrailsWorkbench(Gui.Workbench):
         Called when the workbench is first activated.
         """
 
-        import time
-
-        x = time.perf_counter()
         from .geomatics.point import import_points, export_points, create_pointgroup
-        print('geo1', time.perf_counter() - x)
 
-        x = time.perf_counter()
         from .geomatics.surface import create_surface, edit_surface
-        print('geo2', time.perf_counter() - x)
-
-        x = time.perf_counter()
         from .geomatics.section import CreateGuideLines
-        print('geo3', time.perf_counter() - x)
-
-        x = time.perf_counter()
         from .geomatics import geoimport_gui
-        print('geo4', time.perf_counter() - x)
-
-        x = time.perf_counter()
         from .design.project.commands import import_alignment_cmd
-        print('hv1', time.perf_counter() - x)
-
-        x = time.perf_counter()
         from .design.project.commands import edit_alignment_cmd
-        print('hv2', time.perf_counter() - x)
-
-        x = time.perf_counter()
         from .design.project.commands import trails_guide_cmd
-        print('hv3', time.perf_counter() - x)
 
         for _k, _v in self.command_ui.items():
 
