@@ -34,7 +34,7 @@ from ...geometry import arc
 from freecad_python_support.tuple_math import TupleMath
 
 from pivy_trackers.coin.coin_styles import CoinStyles as Styles
-
+from pivy_trackers.coin.coin_enums import NodeTypes as Nodes
 from pivy_trackers.tracker.context_tracker import ContextTracker
 
 from pivy_trackers.trait.drag import Drag
@@ -239,13 +239,20 @@ class CurveTracker(ContextTracker, Style, Drag):
 
         #get the key graph nodes
         _curve_coord = \
-            self.base.get_child(f'{self.name}_arc_Coordinate', self.base.root)
+            self.base.get_child_by_name(
+                f'{self.name}_arc_Coordinate', self.base.root)
 
         _curve_style = \
-            self.base.get_child(f'{self.name}_arc_STYLE_DrawStyle', self.base.root)
+            self.base.get_child_by_name(
+                f'{self.name}_arc_STYLE_DrawStyle', self.base.root)
 
         _curve_color = \
-            self.base.get_child(f'{self.name}_arc_STYLE_BaseColor', self.base.root)
+            self.base.get_child_by_name(
+                f'{self.name}_arc_STYLE_BaseColor', self.base.root)
+
+        _radius_base = \
+            self.base.get_child_by_name(
+                f'{self.name}_radius_BASE_Switch', self.base.root)
 
         #add the root node to the drag tracker for representation only
         Drag.drag_tracker.insert_no_drag(_start)
@@ -257,6 +264,12 @@ class CurveTracker(ContextTracker, Style, Drag):
         #get the curve coordinate node
         self.drag_copy.curve_coord = _curve_coord
 
+        _radius_nodes = self.base.get_child_by_type(
+            _radius_base, Nodes.COORDINATE.getTypeId()
+        )
+
+        print (radius_nodes)
+        return
         #get style and coordinate nodes for the markers and lines
         for _i in (0, 1, 2, 9, 10):
 
