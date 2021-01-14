@@ -103,7 +103,7 @@ class CurveTracker(ContextTracker, Style, Drag):
                 _j += 1
 
         self.c_tracker =\
-            LineTracker(_name + '_arc ', curve.points, self.base)
+            LineTracker(_name + '_arc', curve.points, self.base)
 
         self.c_tracker.update_after_drag = False
         self.c_tracker.is_draggable = False
@@ -238,27 +238,24 @@ class CurveTracker(ContextTracker, Style, Drag):
             marker_coords=[], line_coords=[], curve_coord=None)
 
         #get the key graph nodes
-        _start = self.base.get_child(
+        _curve_coord = \
+            self.base.get_child(f'{self.name}_arc_Coordinate', self.base.root)
 
-        _curve = self.base.get_child(_start, f'{self.name}_arc_BASE_Swtich')
+        _curve_style = \
+            self.base.get_child(f'{self.name}_arc_STYLE_DrawStyle', self.base.root)
 
-        print(_curve.getName())
-        return
-
-        _polyline = _start.getChild(4)
+        _curve_color = \
+            self.base.get_child(f'{self.name}_arc_STYLE_BaseColor', self.base.root)
 
         #add the root node to the drag tracker for representation only
         Drag.drag_tracker.insert_no_drag(_start)
 
         #append the styling nodes
-        self.drag_copy.draw_list.append(
-            _curve.getChild(0).getChild(1).getChild(0))
-
-        self.drag_copy.color_list.append(
-            _curve.getChild(0).getChild(1).getChild(1))
+        self.drag_copy.draw_list.append(_curve_style)
+        self.drag_copy.color_list.append(_curve_color)
 
         #get the curve coordinate node
-        self.drag_copy.curve_coord = _curve.getChild(0).getChild(2).getChild(1)
+        self.drag_copy.curve_coord = _curve_coord
 
         #get style and coordinate nodes for the markers and lines
         for _i in (0, 1, 2, 9, 10):
