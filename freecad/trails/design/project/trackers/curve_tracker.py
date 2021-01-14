@@ -238,7 +238,7 @@ class CurveTracker(ContextTracker, Style, Drag):
             marker_coords=[], line_coords=[], curve_coord=None)
 
         #get the key graph nodes
-        _start = self.base.get_child(
+        #_start = self.base.get_child(
 
         #_curve = self.base.get_child(_start, f'{self.name}_arc_BASE_Switch')
 
