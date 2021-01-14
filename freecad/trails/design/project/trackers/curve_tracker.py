@@ -240,9 +240,8 @@ class CurveTracker(ContextTracker, Style, Drag):
         #get the key graph nodes
         _start = self.base.get_child(
 
-        _curve = self.base.get_child(_start, f'{self.name}_arc_BASE_Swtich')
+        #_curve = self.base.get_child(_start, f'{self.name}_arc_BASE_Switch')
 
-        print(_curve.getName())
         return
 
         _polyline = _start.getChild(4)
