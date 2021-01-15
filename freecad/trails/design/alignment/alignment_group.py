@@ -105,10 +105,11 @@ class _AlignmentGroup():
 
         self.data = AlignmentImporter().import_file(obj.Xml_Path)
 
-    def get_alignment_data(self, _id):
+    def get_alignment_data(self, group, _id):
         """
         Return a reference to the XML data
         """
+        self.data = AlignmentImporter().import_file(group.Xml_Path)
 
         _aligns = self.data.get('Alignments')
 
@@ -132,7 +133,8 @@ class _AlignmentGroup():
         #iterate the list of children, acquiring their data sets
         #and creating a total data set for alignments.
         for _obj in self.Object.OutList:
-            _list.append(_obj.Proxy.get_data())
+            if _obj.Proxy.Type == 'Trails::Alignment':
+                _list.append(_obj.Proxy.get_data())
 
         exporter = AlignmentExporter()
 

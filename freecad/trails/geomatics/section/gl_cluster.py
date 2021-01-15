@@ -30,24 +30,23 @@ from . import gl_clusters
 from .glc_func import GLCFunc
 
 
-
 def create(alignment, name='GL Cluster'):
     """
     Factory method for GL Cluster.
     """
     clusters = gl_clusters.get()
-    clusters.Alignment = alignment
-
     obj = FreeCAD.ActiveDocument.addObject(
         "App::DocumentObjectGroupPython", 'GLCluster')
     obj.Label = name
     clusters.addObject(obj)
 
     GLCluster(obj)
+    obj.Alignment = alignment
     ViewProviderGLCluster(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
 
     return obj
+
 
 
 class GLCluster(GLCFunc):
@@ -60,6 +59,10 @@ class GLCluster(GLCFunc):
         Set data properties.
         '''
         self.Type = 'Trails::GLCluster'
+
+        obj.addProperty(
+            'App::PropertyLink', "Alignment", "Base",
+            "Parent alignment").Alignment = None
 
         obj.addProperty(
             "App::PropertyBool", "AtHorizontalAlignmentPoints", "Base",
@@ -82,14 +85,6 @@ class GLCluster(GLCFunc):
             "Guide lines end station").EndStation = 0
 
         obj.addProperty(
-            "App::PropertyLength", "RightOffset", "Offset",
-            "Length of right offset").RightOffset = 20000
-
-        obj.addProperty(
-            "App::PropertyLength", "LeftOffset", "Offset",
-            "Length of left offset").LeftOffset = 20000
-
-        obj.addProperty(
             "App::PropertyLength", "IncrementAlongTangents", "Increment",
             "Distance between guide lines along tangents").IncrementAlongTangents = 10000
 
@@ -101,43 +96,60 @@ class GLCluster(GLCFunc):
             "App::PropertyLength", "IncrementAlongSpirals", "Increment",
             "Distance between guide lines along spirals").IncrementAlongSpirals = 5000
 
+        obj.setEditorMode('StartStation', 1)
+        obj.setEditorMode('EndStation', 1)
         obj.Proxy = self
 
     def onChanged(self, fp, prop):
         '''
         Do something when a data property has changed.
         '''
+        alignment = fp.getPropertyByName("Alignment")
+        if not alignment: return
+        start, end = self.get_alignment_infos(alignment)
+
+        if prop == "Alignment":
+                fp.StartStation = start
+                fp.EndStation = end
+
         if prop == "FromAlignmentStart":
             from_start = fp.getPropertyByName("FromAlignmentStart")
             if from_start:
-                fp.StartStation = fp.InList[0].Start
+                fp.setEditorMode('StartStation', 1)
+                fp.StartStation = start
+            else:
+                fp.setEditorMode('StartStation', 0)
 
         if prop == "ToAlignmentEnd":
             to_end = fp.getPropertyByName("ToAlignmentEnd")
             if to_end:
-                fp.EndStation = fp.InList[0].End
+                fp.setEditorMode('EndStation', 1)
+                fp.EndStation = end
+            else:
+                fp.setEditorMode('EndStation', 0)
 
     def execute(self, fp):
         '''
         Do something when doing a recomputation.
         '''
-        alignment = fp.InList[0].Alignment
+        alignment = fp.getPropertyByName("Alignment")
         if not alignment: return
 
         horiz_pnts = fp.getPropertyByName("AtHorizontalAlignmentPoints")
         start = fp.getPropertyByName("StartStation")
         end = fp.getPropertyByName("EndStation")
-        right_offset = fp.getPropertyByName("RightOffset")
-        left_offset = fp.getPropertyByName("LeftOffset")
         tangent = fp.getPropertyByName("IncrementAlongTangents")
         curve = fp.getPropertyByName("IncrementAlongCurves")
         spiral = fp.getPropertyByName("IncrementAlongSpirals")
 
-        increments = [tangent, curve, spiral]
-        ofsets = [left_offset, right_offset]
         region = [start, end]
+        increments = [tangent, curve, spiral]
+        stations = self.generate(alignment,increments, region, horiz_pnts)
 
-        self.generate(alignment,increments, ofsets, region, horiz_pnts)
+        if not hasattr(self, 'Group'): return
+        guide_lines = self.guide_lines()
+        guide_lines.StationList = stations
+        guide_lines.Alignment = alignment
 
 
 

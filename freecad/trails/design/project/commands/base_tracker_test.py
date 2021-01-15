@@ -77,7 +77,7 @@ class BaseTrackerTest(Modifier):
         Icon resources.
         """
 
-        icon_path = resources.__path__[0] + '/../icons/new_alignment.svg'
+        icon_path = resources.__path__[0] + '/icons/new_alignment.svg'
 
         _tool_tip = 'Tracker Test'
 

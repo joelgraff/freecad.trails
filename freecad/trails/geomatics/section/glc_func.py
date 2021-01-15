@@ -28,6 +28,7 @@ Define Surface Object functions.
 import FreeCAD
 import Part
 import copy
+from . import guide_lines
 
 class GLCFunc:
     """
@@ -35,6 +36,27 @@ class GLCFunc:
     """
     def __init__(self):
         pass
+
+    def guide_lines(self):
+        """
+        Find the existing Guide Line Clusters group object
+        """
+        # Return an existing instance of the same name, if found.
+        for child in self.Group:
+            if child.Proxy.Type == 'Trails::GuideLines':
+                return child
+        return guide_lines.create()
+
+    def get_alignment_infos(self, alignment):
+        if hasattr(alignment.Proxy, 'model'):
+            start = alignment.Proxy.model.data['meta']['StartStation']*1000
+            length = alignment.Proxy.model.data['meta']['Length']
+            end = start + length
+        else:
+            start = 0.0
+            length = alignment.Length.Value
+            end = start + length
+        return start, end
 
     def line_orthogonal(self, line, distance, side=''):
         """
@@ -62,22 +84,18 @@ class GLCFunc:
 
         return _coord, _left.multiply(_dir)
 
-    def generate(self, alignment, increments, ofsets, region, horiz_pnts = True):
+    def generate(self, alignment, increments, region, horiz_pnts = True):
         """
         Generates guidelines along a selected alignment
         """
-        # Get left and right offsets from centerline
-        left_offset = ofsets[0]
-        right_offset = ofsets[1]
-
-        # Region limits
-        start_station = region[0]
-        end_station = region[1]
-
         # Guideline intervals
         tangent_increment = increments[0]
         curve_increment = increments[1]
         spiral_increment = increments[2]
+
+        # Region limits
+        start_station = region[0]
+        end_station = region[1]
 
         # Retrieve alignment data get geometry and placement
         stations = []
@@ -104,19 +122,19 @@ class GLCFunc:
                     for sta in range(int(elem_start), int(elem_end)):
 
                         # Add stations which land on increments exactly
-                        if sta % tangent_increment == 0:
+                        if sta % int(tangent_increment/1000) == 0:
                             stations.append(sta)
 
                 # Generate curve intervals
                 elif element.get('Type') == 'Curve':
                     for sta in range(int(elem_start), int(elem_end)):
-                        if sta % int(curve_increment) == 0:
+                        if sta % int(curve_increment/1000) == 0:
                             stations.append(sta)
 
                 #Generate spiral intervals
                 elif element.get("Type") == 'Spiral':
                     for sta in range(int(elem_start), int(elem_end)):
-                        if sta % int(spiral_increment) == 0:
+                        if sta % int(spiral_increment/1000) == 0:
                             stations.append(sta)
     
             # Add the end station
@@ -140,25 +158,4 @@ class GLCFunc:
                 region_stations.append(sta)
 
         region_stations.sort()
-
-        # Iterate the final list of stations,
-        # Computing coordinates and orthoginals for guidelines
-        for sta in region_stations:
-            if hasattr(alignment.Proxy, 'model'):
-                coord, vec = alignment.Proxy.model.get_orthogonal( sta, "Left")
-            else:
-                coord, vec = self.line_orthogonal(alignment, sta, "Left")
-
-            left_vec = copy.deepcopy(vec)
-            right_vec = copy.deepcopy(vec)
-
-            left_side = coord.add(left_vec.multiply(left_offset))
-            right_side = coord.add(right_vec.negative().multiply(right_offset))
-
-            left_line = Part.LineSegment(left_side, coord)
-            right_line = Part.LineSegment(right_side, coord)
-
-            # Generate guide line object and add to cluster
-            shape = Part.Shape([left_line, right_line])
-            wire = Part.Wire(shape.Edges)
-            Part.show(wire)
+        return region_stations

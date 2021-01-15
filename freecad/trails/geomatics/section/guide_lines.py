@@ -29,7 +29,6 @@ from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
 
 
-
 def create(cluster=None):
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "GuideLines")
     obj.Label = "Guide Lines"
@@ -54,8 +53,20 @@ class GuideLines:
         self.Type = 'Trails::GuideLines'
 
         obj.addProperty(
-            "App::PropertyLength", "StartStation", "Base",
-            "Guide lines start station").StartStation = 0
+            'App::PropertyLink', "Alignment", "Base",
+            "Parent alignment").Alignment = None
+
+        obj.addProperty(
+            "App::PropertyFloatList", "StationList", "Base",
+            "List of stations").StationList = []
+
+        obj.addProperty(
+            "App::PropertyLength", "RightOffset", "Offset",
+            "Length of right offset").RightOffset = 20000
+
+        obj.addProperty(
+            "App::PropertyLength", "LeftOffset", "Offset",
+            "Length of left offset").LeftOffset = 20000
 
         obj.Proxy = self
 
@@ -63,16 +74,15 @@ class GuideLines:
         '''
         Do something when a data property has changed.
         '''
-        if prop == "Points":
-            points = obj.getPropertyByName("Points")
-            if points:
-                origin = geo_origin.get(points[0])
+        return
 
     def execute(self, obj):
         '''
         Do something when doing a recomputation. 
         '''
-        return
+        stations = obj.getPropertyByName("StationList")
+        if stations:
+            lines = self.get_lines(stations)
 
 
 class ViewProviderGuideLines:

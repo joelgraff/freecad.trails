@@ -432,7 +432,7 @@ class AlignmentModel:
                         TupleMath.bearing_vector(_geo.get('BearingIn')),
                         _sta_len)
 
-                    _start_pt = TupleMath.add(_prev_geo.get('End'),_bearing_vector)
+                    _start_pt = TupleMath.add(tuple(_prev_geo.get('End')),tuple(_bearing_vector))
                     _geo['Start'] = _start_pt
 
             _prev_geo = _geo

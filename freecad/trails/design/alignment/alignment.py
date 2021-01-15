@@ -33,7 +33,7 @@ from ..project.support import properties, units
 from ..geometry import support
 from . import alignment_group, alignment_model
 
-_CLASS_NAME = 'Alignment'
+_CLASS_NAME = 'Trails::Alignment'
 _TYPE = 'Part::Part2DObjectPython'
 
 __title__ = 'alignment.py'
@@ -184,9 +184,10 @@ class Alignment(Draft._Wire):
         """
 
         self.Object = obj
+        group = obj.InList[0]
 
         self.model = alignment_model.AlignmentModel(
-            self.Object.InList[0].Proxy.get_alignment_data(obj.ID)
+            self.Object.InList[0].Proxy.get_alignment_data(group, obj.ID)
         )
 
         self.build_curve_edge_dict()
