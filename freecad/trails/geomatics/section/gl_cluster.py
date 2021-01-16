@@ -100,54 +100,53 @@ class GLCluster(GLCFunc):
         obj.setEditorMode('EndStation', 1)
         obj.Proxy = self
 
-    def onChanged(self, fp, prop):
+    def onChanged(self, obj, prop):
         '''
         Do something when a data property has changed.
         '''
-        alignment = fp.getPropertyByName("Alignment")
+        alignment = obj.getPropertyByName("Alignment")
         if not alignment: return
         start, end = self.get_alignment_infos(alignment)
 
         if prop == "Alignment":
-                fp.StartStation = start
-                fp.EndStation = end
+                obj.StartStation = start
+                obj.EndStation = end
 
         if prop == "FromAlignmentStart":
-            from_start = fp.getPropertyByName("FromAlignmentStart")
+            from_start = obj.getPropertyByName("FromAlignmentStart")
             if from_start:
-                fp.setEditorMode('StartStation', 1)
-                fp.StartStation = start
+                obj.setEditorMode('StartStation', 1)
+                obj.StartStation = start
             else:
-                fp.setEditorMode('StartStation', 0)
+                obj.setEditorMode('StartStation', 0)
 
         if prop == "ToAlignmentEnd":
-            to_end = fp.getPropertyByName("ToAlignmentEnd")
+            to_end = obj.getPropertyByName("ToAlignmentEnd")
             if to_end:
-                fp.setEditorMode('EndStation', 1)
-                fp.EndStation = end
+                obj.setEditorMode('EndStation', 1)
+                obj.EndStation = end
             else:
-                fp.setEditorMode('EndStation', 0)
+                obj.setEditorMode('EndStation', 0)
 
-    def execute(self, fp):
+    def execute(self, obj):
         '''
         Do something when doing a recomputation.
         '''
-        alignment = fp.getPropertyByName("Alignment")
+        alignment = obj.getPropertyByName("Alignment")
         if not alignment: return
 
-        horiz_pnts = fp.getPropertyByName("AtHorizontalAlignmentPoints")
-        start = fp.getPropertyByName("StartStation")
-        end = fp.getPropertyByName("EndStation")
-        tangent = fp.getPropertyByName("IncrementAlongTangents")
-        curve = fp.getPropertyByName("IncrementAlongCurves")
-        spiral = fp.getPropertyByName("IncrementAlongSpirals")
+        horiz_pnts = obj.getPropertyByName("AtHorizontalAlignmentPoints")
+        start = obj.getPropertyByName("StartStation")
+        end = obj.getPropertyByName("EndStation")
+        tangent = obj.getPropertyByName("IncrementAlongTangents")
+        curve = obj.getPropertyByName("IncrementAlongCurves")
+        spiral = obj.getPropertyByName("IncrementAlongSpirals")
 
         region = [start, end]
         increments = [tangent, curve, spiral]
         stations = self.generate(alignment,increments, region, horiz_pnts)
 
-        if not hasattr(self, 'Group'): return
-        guide_lines = self.guide_lines()
+        guide_lines = self.guide_lines(obj)
         guide_lines.StationList = stations
         guide_lines.Alignment = alignment
 
@@ -202,7 +201,7 @@ class ViewProviderGLCluster:
         """
         pass
 
-    def setupContextMenu(self, obj, menu):
+    def setupContextMenu(self, vobj, menu):
         """
         Context menu construction
         """
