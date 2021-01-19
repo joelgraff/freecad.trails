@@ -34,13 +34,12 @@ from ...geometry import arc
 from freecad_python_support.tuple_math import TupleMath
 
 from pivy_trackers.coin.coin_styles import CoinStyles as Styles
-
+from pivy_trackers.coin.coin_enums import NodeTypes as Nodes, NodeSearch
 from pivy_trackers.tracker.context_tracker import ContextTracker
 
 from pivy_trackers.trait.drag import Drag
-from pivy_trackers.trait.style import Style
 
-class CurveTracker(ContextTracker, Style, Drag):
+class CurveTracker(ContextTracker, Drag):
     """
     Tracker object for managing curves
     """
@@ -102,9 +101,7 @@ class CurveTracker(ContextTracker, Style, Drag):
                 _m.name = self.name + "_" + _point_names[_j]
                 _j += 1
 
-        self.c_tracker =\
-            LineTracker(_name + '_arc ', curve.points, self.base)
-
+        self.c_tracker = LineTracker(f'{_name}_arc', curve.points, self.base)
         self.c_tracker.update_after_drag = False
         self.c_tracker.is_draggable = False
 
@@ -234,57 +231,39 @@ class CurveTracker(ContextTracker, Style, Drag):
 
         #build the drag copy data structure
         self.drag_copy = SimpleNamespace(
-            draw_list=[], color_list=[],
-            marker_coords=[], line_coords=[], curve_coord=None)
+            draw_nodes=[], color_nodes=[], coord_nodes=[])
 
         #get the key graph nodes
-        #_start = self.base.get_child(f'{self.name}_BASE_Separator', self.base.copy())
-        #_curve = self.base.get_child(_start, f'{self.name}_arc_BASE_Switch')
+        _radius = self.base.get_first_child_by_name(
+                f'{self.name}_radius_BASE_Switch', self.base.root)
 
-        return
-
-        _polyline = _start.getChild(4)
+        _start = self.base.get_first_child_by_name(
+            f'{self.name}_BASE_Switch', self.base.root)
 
         #add the root node to the drag tracker for representation only
         Drag.drag_tracker.insert_no_drag(_start)
 
-        #append the styling nodes
-        self.drag_copy.draw_list.append(
-            _curve.getChild(0).getChild(1).getChild(0))
-
-        self.drag_copy.color_list.append(
-            _curve.getChild(0).getChild(1).getChild(1))
-
         #get the curve coordinate node
-        self.drag_copy.curve_coord = _curve.getChild(0).getChild(2).getChild(1)
+        self.drag_copy.coord_nodes =\
+            self.base.get_children_by_type(Nodes.COORDINATE, _radius)
 
-        #get style and coordinate nodes for the markers and lines
-        for _i in (0, 1, 2, 9, 10):
+        self.drag_copy.draw_nodes =\
+            self.base.get_children_by_type(Nodes.DRAW_STYLE, _radius)
 
-            _base = _polyline.getChild(0).getChild(_i).getChild(0)
-
-            self.drag_copy.draw_list.append(_base.getChild(1).getChild(0))
-            self.drag_copy.color_list.append(_base.getChild(1).getChild(1))
-
-            _node = _base.getChild(2).getChild(1)
-
-            if _i < 9:
-                self.drag_copy.marker_coords.append(_node)
-
-            else:
-                self.drag_copy.line_coords.append(_node)
+        self.drag_copy.color_nodes =\
+            self.base.get_children_by_type(Nodes.COLOR, _start)
 
         #set the default styles
         style = Styles.DASHED
         style.color = Styles.Color.BLUE
 
-        for _d in self.drag_copy.draw_list:
+        for _d in self.drag_copy.draw_nodes:
 
             _d.lineWidth = style.line_width
             _d.style = style.style
             _d.linePattern = style.line_pattern
 
-        for _c in self.drag_copy.color_list:
+        for _c in self.drag_copy.color_nodes:
             _c.rgb = style.color
 
     def find_geometry(self, name):
@@ -385,7 +364,8 @@ class CurveTracker(ContextTracker, Style, Drag):
         #update the drag copy if in the middle of drag ops
         if self.drag_copy:
 
-            _coordinate = self.drag_copy.curve_coord
+            #update the arc coordinate node
+            _coordinate = self.drag_copy.coord_nodes[-1]
             _coordinate.point.setValues(_points)
 
             _pts = (    tuple(self.arc.start),
@@ -393,7 +373,8 @@ class CurveTracker(ContextTracker, Style, Drag):
                         tuple(self.arc.end)
                     )
 
-            for _i, _c in enumerate(self.drag_copy.line_coords):
+            #update the radius line coordinate nodes
+            for _i, _c in enumerate(self.drag_copy.coord_nodes[2:4]):
                 _c.point.setValues((_pts[_i], _pts[_i + 1]))
 
             _color = Styles.Color.BLUE
@@ -401,7 +382,7 @@ class CurveTracker(ContextTracker, Style, Drag):
             if self.is_invalid:
                 _color = Styles.Color.RED
 
-            for _s in self.drag_copy.color_list:
+            for _s in self.drag_copy.color_nodes:
                 _s.rgb = _color
 
         else:
@@ -412,12 +393,6 @@ class CurveTracker(ContextTracker, Style, Drag):
                 tuple(self.arc.start), tuple(self.arc.center), tuple(self.arc.end)]
 
             self.param_tracker.update(_pts)
-
-            #_geo = self.top.getChild(5).getChild(0).getChild(2)
-            #todo.delay(self.base.dump, _geo)
-
-            #_fn = lambda x: print(self.view_state.get_matrix(x).getValue())
-            #todo.delay(_fn, _geo.getChild(1))
 
     def _update_text(self):
         """
