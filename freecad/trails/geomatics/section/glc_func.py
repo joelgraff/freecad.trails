@@ -37,12 +37,12 @@ class GLCFunc:
     def __init__(self):
         pass
 
-    def guide_lines(self):
+    def guide_lines(self, obj):
         """
         Find the existing Guide Line Clusters group object
         """
         # Return an existing instance of the same name, if found.
-        for child in self.Group:
+        for child in obj.Group:
             if child.Proxy.Type == 'Trails::GuideLines':
                 return child
         return guide_lines.create()
