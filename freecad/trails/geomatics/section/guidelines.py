@@ -27,20 +27,20 @@ Create a Guide Lines object from FPO.
 import FreeCAD
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
+from .gl_func import GLFunc
 
 
-def create(cluster=None):
+def create():
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "GuideLines")
     obj.Label = "Guide Lines"
     GuideLines(obj)
     ViewProviderGuideLines(obj.ViewObject)
-    cluster.addObject(obj)
     FreeCAD.ActiveDocument.recompute()
 
     return obj
 
 
-class GuideLines:
+class GuideLines(GLFunc):
     """
     This class is about Guide Lines object data features.
     """
@@ -80,9 +80,13 @@ class GuideLines:
         '''
         Do something when doing a recomputation. 
         '''
+        alignment = obj.getPropertyByName("Alignment")
         stations = obj.getPropertyByName("StationList")
-        if stations:
-            lines = self.get_lines(stations)
+        if alignment and stations:
+            left_offset = obj.getPropertyByName("LeftOffset")
+            right_offset = obj.getPropertyByName("RightOffset")
+            offsets = [left_offset, right_offset]
+            lines = self.get_lines(alignment, offsets, stations)
 
 
 class ViewProviderGuideLines:
@@ -94,10 +98,6 @@ class ViewProviderGuideLines:
         '''
         Set view properties.
         '''
-        vobj.addProperty(
-            "App::PropertyColor", "PointColor", "Point Style",
-            "Color of the point group").PointColor = (r, g, b)
-
         vobj.Proxy = self
 
     def attach(self, vobj):
