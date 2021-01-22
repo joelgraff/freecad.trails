@@ -28,7 +28,7 @@ Define Surface Object functions.
 import FreeCAD
 import Part
 import copy
-from . import guide_lines
+from . import guidelines
 
 class GLCFunc:
     """
@@ -37,7 +37,7 @@ class GLCFunc:
     def __init__(self):
         pass
 
-    def guide_lines(self, obj):
+    def guidelines(self, obj):
         """
         Find the existing Guide Line Clusters group object
         """
@@ -45,7 +45,7 @@ class GLCFunc:
         for child in obj.Group:
             if child.Proxy.Type == 'Trails::GuideLines':
                 return child
-        return guide_lines.create()
+        return guidelines.create()
 
     def get_alignment_infos(self, alignment):
         if hasattr(alignment.Proxy, 'model'):
@@ -57,32 +57,6 @@ class GLCFunc:
             length = alignment.Length.Value
             end = start + length
         return start, end
-
-    def line_orthogonal(self, line, distance, side=''):
-        """
-        Return the orthogonal vector pointing toward the indicated side at the
-        provided position.  Defaults to left-hand side
-        """
-
-        _dir = 1.0
-
-        _side = side.lower()
-
-        if _side in ['r', 'rt', 'right']:
-            _dir = -1.0
-
-        start = line.Start
-        end = line.End
-
-        if (start is None) or (end is None):
-            return None, None
-
-        _delta = end.sub(start).normalize()
-        _left = FreeCAD.Vector(-_delta.y, _delta.x, 0.0)
-
-        _coord = start.add(_delta.multiply(distance*1000))
-
-        return _coord, _left.multiply(_dir)
 
     def generate(self, alignment, increments, region, horiz_pnts = True):
         """
