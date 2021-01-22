@@ -247,7 +247,7 @@ def get_ortho_vector(line, distance, side=''):
     _delta = TupleMath.subtract(end, start)
     _delta = TupleMath.unit(_delta)
 
-    _left = tuple((-_delta[0], _delta[1], 0.0))
+    _left = tuple((-_delta[1], _delta[0], 0.0))
 
     _coord = get_coordinate(start, bearing, distance)
 
