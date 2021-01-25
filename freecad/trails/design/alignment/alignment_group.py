@@ -42,30 +42,31 @@ def get():
     Find the existing alignments object
     """
 
-    return App.ActiveDocument.getObject('Alignments')
+    #return an existing instance of the same name, if found
+    obj = App.ActiveDocument.getObject('Alignments')
+
+    if obj:
+        return obj
+
+    obj = create()
+
+    return obj
 
 def create():
     """
     Factory method for alignment group
     """
 
-    #return an existing instance of the same name, if found
-    obj = App.ActiveDocument.getObject('Alignments')
-
-    if obj:
-        return obj.Proxy
-
     main = geo_origin.get()
     obj = App.ActiveDocument.addObject(
         "App::DocumentObjectGroupPython", 'Alignments'
         )
 
-    fpo = _AlignmentGroup(obj)
+    _AlignmentGroup(obj)
     _ViewProviderAlignmentGroup(obj.ViewObject)
-
     main.addObject(obj)
 
-    return fpo
+    return obj
 
 
 class _AlignmentGroup():
