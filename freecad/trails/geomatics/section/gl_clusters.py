@@ -26,6 +26,7 @@ Create a Guide Line Clusters group object from FPO.
 
 import FreeCAD
 from freecad.trails import ICONPATH, geo_origin
+from freecad.trails.design.alignment import alignment_group
 
 
 
@@ -48,19 +49,13 @@ def create():
     Factory method for Guide Line Clusters.
     """
     main = geo_origin.get()
-    alignments = FreeCAD.ActiveDocument.getObject('Alignments')
-    alignment_group = FreeCAD.ActiveDocument.getObject('AlignmentGroup')
-    if alignments: alignment_group = alignments
-    elif not alignment_group:
-        alignment_group = FreeCAD.ActiveDocument.addObject(
-            "App::DocumentObjectGroup", 'AlignmentGroup')
-        alignment_group.Label = "Alignment Group"
-        main.addObject(alignment_group)
+    alignments = alignment_group.get()
+    main.addObject(alignments)
 
     obj = FreeCAD.ActiveDocument.addObject(
         "App::DocumentObjectGroupPython", 'GuideLineClusters')
     obj.Label = "Guide Line Clusters"
-    alignment_group.addObject(obj)
+    alignments.addObject(obj)
 
     GuideLineClusters(obj)
     ViewProviderGuideLineClusters(obj.ViewObject)
