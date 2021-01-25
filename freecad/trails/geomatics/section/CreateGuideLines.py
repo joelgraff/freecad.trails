@@ -26,6 +26,7 @@ import FreeCADGui
 from PySide import QtCore, QtGui
 from freecad.trails import ICONPATH
 from . import gl_clusters, gl_cluster
+from freecad.trails.design.alignment import alignment_group
 
 
 class CreateGuideLines:
@@ -69,20 +70,16 @@ class CreateGuideLines:
 
     def Activated(self):
 
-        clusters = gl_clusters.get()
-        alignments = FreeCAD.ActiveDocument.getObject('Alignments')
-        alignment_group = FreeCAD.ActiveDocument.getObject('AlignmentGroup')
-        if alignments: alignment_group = alignments
-
         self.IPFui.setParent(FreeCADGui.getMainWindow())
         self.IPFui.setWindowFlags(QtCore.Qt.Window)
         self.IPFui.show()
 
         # List Alignments
+        alignments = alignment_group.get()
         self.IPFui.AlignmentCB.clear()
         self.alignment_dict = {}
 
-        for child in alignment_group.Group:
+        for child in alignments.Group:
             if child.TypeId == 'Part::Part2DObjectPython':
                 self.alignment_dict[child.Label] = child
                 self.IPFui.AlignmentCB.addItem(child.Label)
