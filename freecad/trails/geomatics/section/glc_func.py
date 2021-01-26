@@ -45,7 +45,9 @@ class GLCFunc:
         for child in obj.Group:
             if child.Proxy.Type == 'Trails::GuideLines':
                 return child
-        return guidelines.create()
+        gl = guidelines.create()
+        obj.addObject(gl)
+        return gl
 
     def get_alignment_infos(self, alignment):
         if hasattr(alignment.Proxy, 'model'):
