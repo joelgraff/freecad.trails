@@ -29,6 +29,7 @@ import Part
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
 from .gl_func import GLFunc
+import copy
 
 
 def create():
@@ -94,7 +95,7 @@ class GuideLines(GLFunc):
 
             offsets = [left_offset, right_offset]
             obj.Shape = self.get_lines(alignment, offsets, stations)
-            Part.show(obj.Shape)
+            # Part.show(obj.Shape)
 
 
 class ViewProviderGuideLines:
@@ -113,7 +114,8 @@ class ViewProviderGuideLines:
         Create Object visuals in 3D view.
         '''
         # Lines root.
-        self.lines = coin.SoSeparator()
+        self.line_coords = coin.SoGeoCoordinate()
+        self.lines = coin.SoLineSet()
 
         # Line style.
         line_color = coin.SoBaseColor()
@@ -122,45 +124,58 @@ class ViewProviderGuideLines:
         line_style.style = coin.SoDrawStyle.LINES
         line_style.lineWidth = 2
 
-
-
         # Highlight for selection.
         highlight = coin.SoType.fromName('SoFCSelection').createInstance()
         #highlight.documentName.setValue(FreeCAD.ActiveDocument.Name)
         #highlight.objectName.setValue(vobj.Object.Name)
         #highlight.subElementName.setValue("Main")
-        highlight.addChild(line_color)
         highlight.addChild(line_style)
+        highlight.addChild(self.line_coords)
         highlight.addChild(self.lines)
 
         # Surface root.
-        surface_root = coin.SoSeparator()
-        surface_root.addChild(highlight)
-        vobj.addDisplayMode(surface_root,"Surface")
+        guidelines_root = coin.SoSeparator()
+        guidelines_root.addChild(line_color)
+        guidelines_root.addChild(highlight)
+        vobj.addDisplayMode(guidelines_root,"Lines")
 
     def onChanged(self, vobj, prop):
         '''
         Update Object visuals when a view property changed.
         '''
-        if prop == "Shape":
-            shape = vobj.getPropertyByName("Shape")
-            for edge in shape.Edges:
-                pass
+        pass
 
     def updateData(self, obj, prop):
         '''
         Update Object visuals when a data property changed.
         '''
-        if prop == "Marker":
-            marker = obj.getPropertyByName("Marker")
-            self.markers.markerIndex = marker_dict[marker]
+        if prop == "Shape":
+            shape = obj.getPropertyByName("Shape")
+
+            # Get GeoOrigin.
+            origin = geo_origin.get()
+            base = copy.deepcopy(origin.Origin)
+            base.z = 0
+            # Set GeoCoords.
+            geo_system = ["UTM", origin.UtmZone, "FLAT"]
+            self.line_coords.geoSystem.setValues(geo_system)
+
+            points = []
+            line_vert = []
+            for wire in shape.Wires:
+                for vertex in wire.Vertexes:
+                    points.append(vertex.Point)
+                line_vert.append(len(wire.Vertexes))
+
+            self.line_coords.point.values = points
+            self.lines.numVertices.values = line_vert
 
     def getDisplayModes(self, vobj):
         '''
         Return a list of display modes.
         '''
         modes=[]
-        modes.append("Point")
+        modes.append("Lines")
 
         return modes
 
@@ -168,7 +183,7 @@ class ViewProviderGuideLines:
         '''
         Return the name of the default display mode.
         '''
-        return "Point"
+        return "Lines"
 
     def setDisplayMode(self,mode):
         '''
