@@ -109,7 +109,7 @@ class TrailsWorkbench(Gui.Workbench):
             'Section Tools': {
                 'gui': self.menu + self.toolbar,
                 'cmd': [
-                    'Create Guide Lines',
+                    'Create Guidelines',
                     'Create Section Views'
                     ]
             },
@@ -205,7 +205,7 @@ class TrailsWorkbench(Gui.Workbench):
         from .geomatics.point import import_points, export_points, create_pointgroup
 
         from .geomatics.surface import create_surface, edit_surface
-        from .geomatics.section import CreateGuideLines
+        from .geomatics.section import create_guidelines, CreateSections
         from .geomatics import geoimport_gui
         from .design.project.commands import import_alignment_cmd
         from .design.project.commands import edit_alignment_cmd
