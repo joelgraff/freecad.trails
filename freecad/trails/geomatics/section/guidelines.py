@@ -25,6 +25,7 @@ Create a Guide Lines object from FPO.
 '''
 
 import FreeCAD
+import Part
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
 from .gl_func import GLFunc
@@ -61,6 +62,14 @@ class GuideLines(GLFunc):
             "List of stations").StationList = []
 
         obj.addProperty(
+            "Part::PropertyGeometryList", "Lines", "Base",
+            "List of lines").Lines = []
+
+        obj.addProperty(
+            "Part::PropertyPartShape", "Shape", "Base",
+            "Object shape").Shape = Part.Shape()
+
+        obj.addProperty(
             "App::PropertyLength", "RightOffset", "Offset",
             "Length of right offset").RightOffset = 20000
 
@@ -82,11 +91,15 @@ class GuideLines(GLFunc):
         '''
         alignment = obj.getPropertyByName("Alignment")
         stations = obj.getPropertyByName("StationList")
+
         if alignment and stations:
             left_offset = obj.getPropertyByName("LeftOffset")
             right_offset = obj.getPropertyByName("RightOffset")
+
             offsets = [left_offset, right_offset]
-            lines = self.get_lines(alignment, offsets, stations)
+            obj.Lines = self.get_lines(alignment, offsets, stations)
+            obj.Shape = Part.Shape(obj.Lines)
+            Part.show(obj.Shape)
 
 
 class ViewProviderGuideLines:
