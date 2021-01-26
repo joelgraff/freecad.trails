@@ -66,6 +66,8 @@ class GLFunc:
         """
         Find the existing Guide Line Clusters group object
         """
+        geometry_list = []
+
         # Get left and right offsets from centerline
         left_offset = offsets[0]
         right_offset = offsets[1]
@@ -90,6 +92,6 @@ class GLFunc:
             right_line = Part.LineSegment(right_side, coord)
 
             # Generate guide line object and add to cluster
-            shape = Part.Shape([left_line, right_line])
-            wire = Part.Wire(shape.Edges)
-            Part.show(wire)
+            geometry_list.extend([left_line,right_line])
+
+        return geometry_list
