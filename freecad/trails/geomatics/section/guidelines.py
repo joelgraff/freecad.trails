@@ -95,7 +95,6 @@ class GuideLines(GLFunc):
 
             offsets = [left_offset, right_offset]
             obj.Shape = self.get_lines(alignment, offsets, stations)
-            # Part.show(obj.Shape)
 
 
 class ViewProviderGuideLines:
