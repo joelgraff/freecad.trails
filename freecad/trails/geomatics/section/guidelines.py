@@ -62,10 +62,6 @@ class GuideLines(GLFunc):
             "List of stations").StationList = []
 
         obj.addProperty(
-            "Part::PropertyGeometryList", "Lines", "Base",
-            "List of lines").Lines = []
-
-        obj.addProperty(
             "Part::PropertyPartShape", "Shape", "Base",
             "Object shape").Shape = Part.Shape()
 
@@ -97,8 +93,7 @@ class GuideLines(GLFunc):
             right_offset = obj.getPropertyByName("RightOffset")
 
             offsets = [left_offset, right_offset]
-            obj.Lines = self.get_lines(alignment, offsets, stations)
-            obj.Shape = Part.Shape(obj.Lines)
+            obj.Shape = self.get_lines(alignment, offsets, stations)
             Part.show(obj.Shape)
 
 
@@ -117,16 +112,40 @@ class ViewProviderGuideLines:
         '''
         Create Object visuals in 3D view.
         '''
-        # GeoCoord Node.
-        self.geo_coords = coin.SoGeoCoordinate()
+        # Lines root.
+        self.lines = coin.SoSeparator()
+
+        # Line style.
+        line_color = coin.SoBaseColor()
+        line_color.rgb = (0.0, 1.0, 1.0)
+        line_style = coin.SoDrawStyle()
+        line_style.style = coin.SoDrawStyle.LINES
+        line_style.lineWidth = 2
+
+
+
+        # Highlight for selection.
+        highlight = coin.SoType.fromName('SoFCSelection').createInstance()
+        #highlight.documentName.setValue(FreeCAD.ActiveDocument.Name)
+        #highlight.objectName.setValue(vobj.Object.Name)
+        #highlight.subElementName.setValue("Main")
+        highlight.addChild(line_color)
+        highlight.addChild(line_style)
+        highlight.addChild(self.lines)
+
+        # Surface root.
+        surface_root = coin.SoSeparator()
+        surface_root.addChild(highlight)
+        vobj.addDisplayMode(surface_root,"Surface")
 
     def onChanged(self, vobj, prop):
         '''
         Update Object visuals when a view property changed.
         '''
-        if prop == "PointSize":
-            size = vobj.getPropertyByName("PointSize")
-            self.point_style.pointSize = size
+        if prop == "Shape":
+            shape = vobj.getPropertyByName("Shape")
+            for edge in shape.Edges:
+                pass
 
     def updateData(self, obj, prop):
         '''
