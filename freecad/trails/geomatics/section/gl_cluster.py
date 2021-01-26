@@ -147,7 +147,6 @@ class GLCluster(GLCFunc):
         stations = self.generate(alignment,increments, region, horiz_pnts)
 
         guidelines = self.guidelines(obj)
-        obj.addObject(guidelines)
         guidelines.StationList = stations
         guidelines.Alignment = alignment
 
