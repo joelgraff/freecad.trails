@@ -61,8 +61,18 @@ class CreateSurface:
         """
         Command activation method
         """
-        # Create Point_Groups' groups
+        # Check for selected object
         point_groups.get()
-        surface.create()
+        surf = surface.create()
+        selection = FreeCADGui.Selection.getSelection()
+
+        if selection:
+            pgs = surf.PointGroups.copy()
+
+            for obj in selection:
+                if obj.Proxy.Type == 'Trails::PointGroup':
+                    pgs.append(obj)
+
+            surf.PointGroups = pgs
 
 FreeCADGui.addCommand('Create Surface', CreateSurface())
