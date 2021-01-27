@@ -43,7 +43,7 @@ class GLCFunc:
         """
         # Return an existing instance of the same name, if found.
         for child in obj.Group:
-            if child.Proxy.Type == 'Trails::GuideLines':
+            if child.Proxy.Type == 'Trails::Guidelines':
                 return child
         gl = guidelines.create()
         obj.addObject(gl)
@@ -65,13 +65,13 @@ class GLCFunc:
         Generates guidelines along a selected alignment
         """
         # Guideline intervals
-        tangent_increment = increments[0]
-        curve_increment = increments[1]
-        spiral_increment = increments[2]
+        tangent_increment = increments[0]/1000
+        curve_increment = increments[1]/1000
+        spiral_increment = increments[2]/1000
 
         # Region limits
-        start_station = region[0]
-        end_station = region[1]
+        start_station = round(region[0]/1000, 3)
+        end_station = round(region[1]/1000, 3)
 
         # Retrieve alignment data get geometry and placement
         stations = []
@@ -98,19 +98,19 @@ class GLCFunc:
                     for sta in range(int(elem_start), int(elem_end)):
 
                         # Add stations which land on increments exactly
-                        if sta % int(tangent_increment/1000) == 0:
+                        if sta % int(tangent_increment) == 0:
                             stations.append(sta)
 
                 # Generate curve intervals
                 elif element.get('Type') == 'Curve':
                     for sta in range(int(elem_start), int(elem_end)):
-                        if sta % int(curve_increment/1000) == 0:
+                        if sta % int(curve_increment) == 0:
                             stations.append(sta)
 
                 #Generate spiral intervals
                 elif element.get("Type") == 'Spiral':
                     for sta in range(int(elem_start), int(elem_end)):
-                        if sta % int(spiral_increment/1000) == 0:
+                        if sta % int(spiral_increment) == 0:
                             stations.append(sta)
     
             # Add the end station
@@ -120,7 +120,7 @@ class GLCFunc:
         else:
             length = alignment.Length.Value
             for sta in range(0, int(length/1000)):
-                if sta % int(tangent_increment/1000) == 0:
+                if sta % int(tangent_increment) == 0:
                     stations.append(sta)
 
             # Add the end station
@@ -129,7 +129,6 @@ class GLCFunc:
         # Iterate the stations, appending what falls in the specified limits
         region_stations = []
         for sta in stations:
-
             if start_station <= sta <= end_station:
                 region_stations.append(sta)
 
