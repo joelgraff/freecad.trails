@@ -115,6 +115,7 @@ class ViewProviderGuideLines:
         # Lines root.
         self.line_coords = coin.SoGeoCoordinate()
         self.lines = coin.SoLineSet()
+        self.gl_labels = coin.SoSeparator()
 
         # Line style.
         line_color = coin.SoBaseColor()
@@ -134,6 +135,7 @@ class ViewProviderGuideLines:
 
         # Surface root.
         guidelines_root = coin.SoSeparator()
+        guidelines_root.addChild(self.gl_labels)
         guidelines_root.addChild(line_color)
         guidelines_root.addChild(highlight)
         vobj.addDisplayMode(guidelines_root,"Lines")
@@ -161,9 +163,25 @@ class ViewProviderGuideLines:
 
             points = []
             line_vert = []
+            counter = 0
             for wire in shape.Wires:
+                font = coin.SoFont()
+                font.size = 1000
+                gl_label = coin.SoSeparator()
+                location = coin.SoTranslation()
+                text = coin.SoAsciiText()
+
                 for vertex in wire.Vertexes:
                     points.append(vertex.Point)
+                    label = str(round(obj.StationList[counter], 2))
+                    location.translation = wire.Vertexes[-1].Point.sub(base)
+                    text.string.setValues([label])
+                    gl_label.addChild(font)
+                    gl_label.addChild(location)
+                    gl_label.addChild(text)
+                    self.gl_labels.addChild(gl_label)
+
+                counter += 1
                 line_vert.append(len(wire.Vertexes))
 
             self.line_coords.point.values = points
