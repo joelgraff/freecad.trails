@@ -33,8 +33,8 @@ import copy
 
 
 def create():
-    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "GuideLines")
-    obj.Label = "Guide Lines"
+    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "Guidelines")
+    obj.Label = "Guidelines"
     GuideLines(obj)
     ViewProviderGuideLines(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
@@ -52,7 +52,7 @@ class GuideLines(GLFunc):
         Set data properties.
         '''
 
-        self.Type = 'Trails::GuideLines'
+        self.Type = 'Trails::Guidelines'
 
         obj.addProperty(
             'App::PropertyLink', "Alignment", "Base",
