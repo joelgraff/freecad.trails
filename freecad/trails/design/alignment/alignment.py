@@ -63,8 +63,8 @@ def create(geometry, object_name='', no_visual=False, zero_reference=False):
         _obj = App.ActiveDocument.addObject(_TYPE, _name)
 
     else:
-        parent = alignment_group.create()
-        _obj = parent.Object.newObject(_TYPE, _name)
+        parent = alignment_group.get()
+        _obj = parent.newObject(_TYPE, _name)
 
     result = Alignment(_obj, _name)
     result.set_geometry(geometry, zero_reference)
