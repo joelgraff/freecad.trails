@@ -26,6 +26,7 @@ Useful math functions and constants
 """
 import math
 import FreeCAD as App
+from collections.abc import Iterable
 
 from ..project.support import utils
 from ..project.support.utils import Constants as C
@@ -153,8 +154,14 @@ def within_tolerance(lhs, rhs=None, tolerance=None):
     if tolerance is None:
         tolerance = C.TOLERANCE
 
+    if not isinstance(lhs, Iterable):
+        lhs = [lhs]
+
+    if not isinstance(rhs, Iterable):
+        rhs = [rhs]
+
     #item list eliminates none types
-    item_list = [_v for _v in [lhs, rhs] if _v is not None]
+    item_list = [_v for _v in tuple(lhs) + tuple(rhs) if _v is not None]
 
     if not item_list:
         print('utils.within_tolerance() - empty item list')
