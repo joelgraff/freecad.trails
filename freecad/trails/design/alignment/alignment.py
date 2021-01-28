@@ -27,14 +27,16 @@ Class for managing 2D Horizontal Alignments
 from copy import deepcopy
 
 import FreeCAD as App
+from pivy import coin
 import Draft
 
+from freecad.trails import ICONPATH, geo_origin
 from ..project.support import properties, units
 from ..geometry import support
 from . import alignment_group, alignment_model
 
 _CLASS_NAME = 'Trails::Alignment'
-_TYPE = 'Part::Part2DObjectPython'
+_TYPE = 'App::FeaturePython'
 
 __title__ = 'alignment.py'
 __author__ = 'Joel Graff'
@@ -70,14 +72,14 @@ def create(geometry, object_name='', no_visual=False, zero_reference=False):
     result.set_geometry(geometry, zero_reference)
 
     if not no_visual:
-
-        Draft._ViewProviderWire(_obj.ViewObject)
+        _ViewProviderHorizontalAlignment(_obj.ViewObject)
+        #Draft._ViewProviderWire(_obj.ViewObject)
 
     App.ActiveDocument.recompute()
 
     return result
 
-class Alignment(Draft._Wire):
+class Alignment: #(Draft._Wire):
     """
     FeaturePython Alignment class
     """
@@ -87,7 +89,7 @@ class Alignment(Draft._Wire):
         Default Constructor
         """
 
-        super(Alignment, self).__init__(obj)
+        #super(Alignment, self).__init__(obj)
 
         self.no_execute = True
 
@@ -104,7 +106,7 @@ class Alignment(Draft._Wire):
         self.hashes = None
 
         obj.Label = label
-        obj.Closed = False
+        #obj.Closed = False
 
         if not label:
             obj.Label = obj.Name
@@ -142,6 +144,12 @@ class Alignment(Draft._Wire):
         )
 
         #geometry
+        properties.add(
+            obj, 'VectorList', 'Points', """
+            Discretization of Points of Intersection (PIs) as a list of
+            vectors""", []
+            )
+
         properties.add(
             obj, 'VectorList', 'PIs', """
             Discretization of Points of Intersection (PIs) as a list of
@@ -190,7 +198,7 @@ class Alignment(Draft._Wire):
             self.Object.InList[0].Proxy.get_alignment_data(group, obj.ID)
         )
 
-        self.build_curve_edge_dict()
+        #self.build_curve_edge_dict()
 
     def _plot_vectors(self, stations, interval=1.0, is_ortho=True):
         """
@@ -443,14 +451,14 @@ class Alignment(Draft._Wire):
             return
 
         self.Object.Points = points
-
+        """
         _pl = App.Placement()
         #_pl.Base = self.model.data.get('meta').get('Start')
 
         self.Object.Placement = _pl
 
         super(Alignment, self).execute(obj)
-
+        """
 
 class _ViewProviderHorizontalAlignment:
 
@@ -467,17 +475,52 @@ class _ViewProviderHorizontalAlignment:
     def __setstate__(self, state):
         return None
 
-    def attach(self, obj):
+    def attach(self, vobj):
         """
         View provider scene graph initialization
         """
-        self.Object = obj
+        # Lines root.
+        self.line_coords = coin.SoGeoCoordinate()
+        self.lines = coin.SoLineSet()
+
+        # Line style.
+        line_color = coin.SoBaseColor()
+        line_color.rgb = (1.0, 0.0, 0.0)
+        line_style = coin.SoDrawStyle()
+        line_style.style = coin.SoDrawStyle.LINES
+        line_style.lineWidth = 2
+
+        # Highlight for selection.
+        highlight = coin.SoType.fromName('SoFCSelection').createInstance()
+        #highlight.documentName.setValue(FreeCAD.ActiveDocument.Name)
+        #highlight.objectName.setValue(vobj.Object.Name)
+        #highlight.subElementName.setValue("Main")
+        highlight.addChild(line_style)
+        highlight.addChild(self.line_coords)
+        highlight.addChild(self.lines)
+
+        # Surface root.
+        lines_root = coin.SoSeparator()
+        lines_root.addChild(line_color)
+        lines_root.addChild(highlight)
+        vobj.addDisplayMode(lines_root,"Wireframe")
 
     def updateData(self, obj, prop):
         """
         Property update handler
         """
-        pass
+        if prop == "Points":
+            points = obj.getPropertyByName("Points")
+            if points:
+                # Get GeoOrigin.
+                origin = geo_origin.get(points[0])
+                base = deepcopy(origin.Origin)
+                base.z = 0
+
+                # Set GeoCoords.
+                geo_system = ["UTM", origin.UtmZone, "FLAT"]
+                self.line_coords.geoSystem.setValues(geo_system)
+                self.line_coords.point.values = points
 
     def getDisplayMode(self, obj):
         """
@@ -502,3 +545,9 @@ class _ViewProviderHorizontalAlignment:
         Handle individual property changes
         """
         pass
+
+    def getIcon(self):
+        '''
+        Return object treeview icon.
+        '''
+        return ICONPATH + '/icons/Alignment.svg'
