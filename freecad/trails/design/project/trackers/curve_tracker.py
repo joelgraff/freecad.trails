@@ -30,6 +30,7 @@ from pivy_trackers.tracker.line_tracker import LineTracker
 from pivy_trackers.tracker.polyline_tracker import PolyLineTracker
 
 from ...geometry import arc
+from pivy_trackers.coin.todo import todo
 
 from freecad_python_support.tuple_math import TupleMath
 
@@ -62,14 +63,16 @@ class CurveTracker(ContextTracker, Style, Drag):
         self.arc = None
         self.axes = [(), (), ()]
 
-        self.drag_start_point = None
-        self.drag_axis = None
+        self.drag_refs = SimpleNamespace(
+            start_point = None,
+            axis = None,
+            direction = None,
+            nodes = None
+        )
+
         self.is_invalid = False
-
         self.build_trackers(parent, curve)
-
         self.set_visibility()
-
         self.last_rebuild = None
 
     def build_trackers(self, parent, curve):
@@ -109,15 +112,15 @@ class CurveTracker(ContextTracker, Style, Drag):
         self.c_tracker.is_draggable = False
 
         #build list of all trackers and append curve callbacks to them
-        _t = [self.c_tracker]
+        _trackers = [self.c_tracker]
 
         for _l in self.param_tracker.lines:
-            _t.append(_l)
+            _trackers.append(_l)
 
             for _m in _l.markers:
-                _t.append(_m)
+                _trackers.append(_m)
 
-        for _v in _t:
+        for _v in _trackers:
 
             _v.before_drag_callbacks.append(self.before_drag)
             _v.on_drag_callbacks.append(self.on_drag)
@@ -131,35 +134,59 @@ class CurveTracker(ContextTracker, Style, Drag):
         """
 
         self.text_copies = []
-        self.drag_copy = None
-        self.drag_start_point = None
+
+        self.drag_refs = SimpleNamespace(
+            start_point = None,
+            axis = None,
+            direction = None,
+            nodes = None
+        )
+
         self.is_inavlid = False
+        self.drag_copy = None
 
         self.update()
 
     def on_drag(self, user_data):
 
+        if not self.drag_refs.nodes:
+            self.setup_drag_tracker_geometry()
+            self.setup_drag_references(user_data.obj.name)
+
         _xlate = user_data.matrix.getValue()[3]
         _point = Drag.drag_tracker.drag_position
+
+        _mod_point = None
 
         for _v in ['start', 'center', 'end']:
 
             if _v in user_data.obj.name:
+                _mod_point = (_v, _point)
 
-                self.arc.set(_v, _point)
+            if _v == 'center' and 'arc' in user_data.obj.name:
 
-            elif _v == 'center' and 'arc' in user_data.obj.name:
+                if self.drag_refs.axis:
+                    _xlate = TupleMath.project(_xlate[0:3], self.drag_refs.axis)
 
-                if self.drag_axis:
-                    _xlate = TupleMath.project(_xlate[0:3], self.drag_axis)
+                _mod_point = (
+                    _v, TupleMath.add(self.drag_refs.start_point, _xlate)
+                )
 
-                self.arc.set(_v, TupleMath.add(self.drag_start_point, _xlate))
+            if _mod_point:
+                exit
 
-            else:
-                self.arc.set(_v, None)
+        _dir = TupleMath.signs(TupleMath.subtract(self.arc.pi, _mod_point[-1]))
+
+        if not self.drag_refs.direction:
+            self.drag_refs.direction = _dir
+
+        if self.drag_refs.direction == _dir:
+            self.arc.set(_mod_point[0], _mod_point[-1])
 
         self.arc.radius = None
         self.arc.tangent = None
+        self.arc.start = None
+        self.arc.end = None
 
         self.update()
 
@@ -175,8 +202,13 @@ class CurveTracker(ContextTracker, Style, Drag):
         if self.drag_copy:
             return
 
-        self.setup_drag_tracker_geometry()
-        self.setup_drag_references(user_data.obj.name)
+        self.drag_copy = self.copy()
+
+        #add the root node to the drag tracker for representation only
+        Drag.drag_tracker.insert_no_drag(self.drag_copy)
+
+        #self.setup_drag_tracker_geometry()
+        #self.setup_drag_references(user_data.obj.name)
 
         #if this object is the object directly picked, set the drag center
         #if self.name == user_data.obj.name:
@@ -206,8 +238,9 @@ class CurveTracker(ContextTracker, Style, Drag):
 
                 if (_l % 2):
                     _drag_ctr = TupleMath.mean(_drag_ctr, self.arc.points[_l_2])
+
                 _drag_ctr = self.arc.center
-                self.drag_start_point = self.arc.center
+                self.drag_refs.start_point = self.arc.center
                 _origin = self.arc.center
 
         elif 'end' in nam:
@@ -224,8 +257,8 @@ class CurveTracker(ContextTracker, Style, Drag):
         while _bearing > math.pi:
             _bearing -= math.pi
 
-        self.drag_axis = (1.0, 1.0 /    math.tan(_bearing), 0.0)
-        Drag.drag_tracker.set_constraint_geometry(self.drag_axis,_origin)
+        self.drag_refs.axis = (1.0, 1.0 /    math.tan(_bearing), 0.0)
+        Drag.drag_tracker.set_constraint_geometry(self.drag_refs.axis,_origin)
 
     def setup_drag_tracker_geometry(self):
         """
@@ -233,58 +266,48 @@ class CurveTracker(ContextTracker, Style, Drag):
         """
 
         #build the drag copy data structure
-        self.drag_copy = SimpleNamespace(
-            draw_list=[], color_list=[],
-            marker_coords=[], line_coords=[], curve_coord=None)
+        self.drag_refs.nodes = SimpleNamespace(
+            draw_nodes=[], color_nodes=[], coord_nodes=[])
 
+        self.base.dump(self.drag_copy)
         #get the key graph nodes
-        #_start = self.base.get_child(f'{self.name}_BASE_Separator', self.base.copy())
-        #_curve = self.base.get_child(_start, f'{self.name}_arc_BASE_Switch')
+        _radius = self.base.get_first_child_by_name(
+                f'{self.name}_radius_BASE_Switch', self.drag_copy)
 
-        return
+        print('found radius')
 
-        _polyline = _start.getChild(4)
+        print('insert drag')
 
-        #add the root node to the drag tracker for representation only
-        Drag.drag_tracker.insert_no_drag(_start)
-
-        #append the styling nodes
-        self.drag_copy.draw_list.append(
-            _curve.getChild(0).getChild(1).getChild(0))
-
-        self.drag_copy.color_list.append(
-            _curve.getChild(0).getChild(1).getChild(1))
-
+        print(self.drag_copy)
+        print(self.drag_copy.getName())
+        print('drag copy print out')
         #get the curve coordinate node
-        self.drag_copy.curve_coord = _curve.getChild(0).getChild(2).getChild(1)
+        self.drag_refs.nodes.coord_nodes =\
+            self.base.get_children_by_type(Nodes.COORDINATE, self.drag_copy)
 
-        #get style and coordinate nodes for the markers and lines
-        for _i in (0, 1, 2, 9, 10):
+        print('\n\t-=-=-= coord nodes:\n\t',[_v.getName() for _v in self.drag_refs.nodes.coord_nodes])
 
-            _base = _polyline.getChild(0).getChild(_i).getChild(0)
+        self.drag_refs.nodes.draw_nodes =\
+            self.base.get_children_by_type(Nodes.DRAW_STYLE, self.drag_copy)
 
-            self.drag_copy.draw_list.append(_base.getChild(1).getChild(0))
-            self.drag_copy.color_list.append(_base.getChild(1).getChild(1))
+        print('\n\t-=-=-= draw nodes:\n\t', [_v.getName() for _v in self.drag_refs.nodes.draw_nodes])
 
-            _node = _base.getChild(2).getChild(1)
+        self.drag_refs.nodes.color_nodes =\
+            self.base.get_children_by_type(Nodes.COLOR, self.drag_copy)
 
-            if _i < 9:
-                self.drag_copy.marker_coords.append(_node)
-
-            else:
-                self.drag_copy.line_coords.append(_node)
+        print('\n\t-=-=-= color nodes:\n\t', [_v.getName() for _v in self.drag_refs.nodes.color_nodes])
 
         #set the default styles
         style = Styles.DASHED
         style.color = Styles.Color.BLUE
 
-        for _d in self.drag_copy.draw_list:
+        #for _d in self.drag_copy.draw_nodes:
 
-            _d.lineWidth = style.line_width
-            _d.style = style.style
-            _d.linePattern = style.line_pattern
+        #    _d.lineWidth = style.line_width
+        #    _d.style = style.style
+        #    _d.linePattern = style.line_pattern
 
-        for _c in self.drag_copy.color_list:
+        for _c in self.drag_refs.nodes.color_nodes:
             _c.rgb = style.color
 
     def find_geometry(self, name):
@@ -377,7 +400,10 @@ class CurveTracker(ContextTracker, Style, Drag):
         else:
             self.arc = arc.Arc(arc.get_parameters(arc_obj))
 
-        if not all([self.arc.start, self.arc.end, self.arc.center]):
+        if not all([
+            self.arc.start, self.arc.end, self.arc.center,
+            self.arc.tangent, self.arc.radius]):
+
             self.arc = arc.Arc(arc.get_parameters(arc_obj))
 
         _points = arc.get_points(self.arc, _dtype=tuple)
@@ -385,7 +411,8 @@ class CurveTracker(ContextTracker, Style, Drag):
         #update the drag copy if in the middle of drag ops
         if self.drag_copy:
 
-            _coordinate = self.drag_copy.curve_coord
+            #update the arc coordinate node
+            _coordinate = self.drag_refs.nodes.coord_nodes[-1]
             _coordinate.point.setValues(_points)
 
             _pts = (    tuple(self.arc.start),
@@ -393,7 +420,8 @@ class CurveTracker(ContextTracker, Style, Drag):
                         tuple(self.arc.end)
                     )
 
-            for _i, _c in enumerate(self.drag_copy.line_coords):
+            #update the radius line coordinate nodes
+            for _i, _c in enumerate(self.drag_refs.nodes.coord_nodes[3:5]):
                 _c.point.setValues((_pts[_i], _pts[_i + 1]))
 
             _color = Styles.Color.BLUE
@@ -401,7 +429,7 @@ class CurveTracker(ContextTracker, Style, Drag):
             if self.is_invalid:
                 _color = Styles.Color.RED
 
-            for _s in self.drag_copy.color_list:
+            for _s in self.drag_refs.nodes.color_nodes:
                 _s.rgb = _color
 
         else:
@@ -447,7 +475,7 @@ class CurveTracker(ContextTracker, Style, Drag):
         Override of Drag.drag_mouse_event()
         """
 
-        self.set_drag_axis(self.drag_axis)
+        self.set_drag_axis(self.drag_refs.axis)
         super().drag_mouse_event(user_data, event_cb)
 
     def link_marker(self, marker, index):
