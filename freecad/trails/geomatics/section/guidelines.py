@@ -25,22 +25,24 @@ Create a Guide Lines object from FPO.
 '''
 
 import FreeCAD
+import Part
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
+from .gl_func import GLFunc
+import copy
 
 
-def create(cluster=None):
-    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "GuideLines")
-    obj.Label = "Guide Lines"
+def create():
+    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "Guidelines")
+    obj.Label = "Guidelines"
     GuideLines(obj)
     ViewProviderGuideLines(obj.ViewObject)
-    cluster.addObject(obj)
     FreeCAD.ActiveDocument.recompute()
 
     return obj
 
 
-class GuideLines:
+class GuideLines(GLFunc):
     """
     This class is about Guide Lines object data features.
     """
@@ -50,7 +52,7 @@ class GuideLines:
         Set data properties.
         '''
 
-        self.Type = 'Trails::GuideLines'
+        self.Type = 'Trails::Guidelines'
 
         obj.addProperty(
             'App::PropertyLink', "Alignment", "Base",
@@ -59,6 +61,10 @@ class GuideLines:
         obj.addProperty(
             "App::PropertyFloatList", "StationList", "Base",
             "List of stations").StationList = []
+
+        obj.addProperty(
+            "Part::PropertyPartShape", "Shape", "Base",
+            "Object shape").Shape = Part.Shape()
 
         obj.addProperty(
             "App::PropertyLength", "RightOffset", "Offset",
@@ -80,9 +86,15 @@ class GuideLines:
         '''
         Do something when doing a recomputation. 
         '''
+        alignment = obj.getPropertyByName("Alignment")
         stations = obj.getPropertyByName("StationList")
-        if stations:
-            lines = self.get_lines(stations)
+
+        if alignment and stations:
+            left_offset = obj.getPropertyByName("LeftOffset")
+            right_offset = obj.getPropertyByName("RightOffset")
+
+            offsets = [left_offset, right_offset]
+            obj.Shape = self.get_lines(alignment, offsets, stations)
 
 
 class ViewProviderGuideLines:
@@ -94,41 +106,93 @@ class ViewProviderGuideLines:
         '''
         Set view properties.
         '''
-        vobj.addProperty(
-            "App::PropertyColor", "PointColor", "Point Style",
-            "Color of the point group").PointColor = (r, g, b)
-
         vobj.Proxy = self
 
     def attach(self, vobj):
         '''
         Create Object visuals in 3D view.
         '''
-        # GeoCoord Node.
-        self.geo_coords = coin.SoGeoCoordinate()
+        # Lines root.
+        self.line_coords = coin.SoGeoCoordinate()
+        self.lines = coin.SoLineSet()
+        self.gl_labels = coin.SoSeparator()
+
+        # Line style.
+        line_color = coin.SoBaseColor()
+        line_color.rgb = (0.0, 1.0, 1.0)
+        line_style = coin.SoDrawStyle()
+        line_style.style = coin.SoDrawStyle.LINES
+        line_style.lineWidth = 2
+
+        # Highlight for selection.
+        highlight = coin.SoType.fromName('SoFCSelection').createInstance()
+        #highlight.documentName.setValue(FreeCAD.ActiveDocument.Name)
+        #highlight.objectName.setValue(vobj.Object.Name)
+        #highlight.subElementName.setValue("Main")
+        highlight.addChild(line_style)
+        highlight.addChild(self.line_coords)
+        highlight.addChild(self.lines)
+
+        # Surface root.
+        guidelines_root = coin.SoSeparator()
+        guidelines_root.addChild(self.gl_labels)
+        guidelines_root.addChild(line_color)
+        guidelines_root.addChild(highlight)
+        vobj.addDisplayMode(guidelines_root,"Lines")
 
     def onChanged(self, vobj, prop):
         '''
         Update Object visuals when a view property changed.
         '''
-        if prop == "PointSize":
-            size = vobj.getPropertyByName("PointSize")
-            self.point_style.pointSize = size
+        pass
 
     def updateData(self, obj, prop):
         '''
         Update Object visuals when a data property changed.
         '''
-        if prop == "Marker":
-            marker = obj.getPropertyByName("Marker")
-            self.markers.markerIndex = marker_dict[marker]
+        if prop == "Shape":
+            shape = obj.getPropertyByName("Shape")
+
+            # Get GeoOrigin.
+            origin = geo_origin.get()
+            base = copy.deepcopy(origin.Origin)
+            base.z = 0
+            # Set GeoCoords.
+            geo_system = ["UTM", origin.UtmZone, "FLAT"]
+            self.line_coords.geoSystem.setValues(geo_system)
+
+            points = []
+            line_vert = []
+            counter = 0
+            for wire in shape.Wires:
+                font = coin.SoFont()
+                font.size = 1000
+                gl_label = coin.SoSeparator()
+                location = coin.SoTranslation()
+                text = coin.SoAsciiText()
+
+                for vertex in wire.Vertexes:
+                    points.append(vertex.Point)
+                    label = str(round(obj.StationList[counter], 2))
+                    location.translation = wire.Vertexes[-1].Point.sub(base)
+                    text.string.setValues([label])
+                    gl_label.addChild(font)
+                    gl_label.addChild(location)
+                    gl_label.addChild(text)
+                    self.gl_labels.addChild(gl_label)
+
+                counter += 1
+                line_vert.append(len(wire.Vertexes))
+
+            self.line_coords.point.values = points
+            self.lines.numVertices.values = line_vert
 
     def getDisplayModes(self, vobj):
         '''
         Return a list of display modes.
         '''
         modes=[]
-        modes.append("Point")
+        modes.append("Lines")
 
         return modes
 
@@ -136,7 +200,7 @@ class ViewProviderGuideLines:
         '''
         Return the name of the default display mode.
         '''
-        return "Point"
+        return "Lines"
 
     def setDisplayMode(self,mode):
         '''

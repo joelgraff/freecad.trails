@@ -60,12 +60,11 @@ def create(align_name):
         "App::DocumentObjectGroupPython", align_name
         )
 
-    fpo = _AlignmentGroup(obj)
+    _AlignmentGroup(obj)
     _ViewProviderAlignmentGroup(obj.ViewObject)
-
     main.addObject(obj)
 
-    return fpo
+    return obj
 
 
 class _AlignmentGroup():

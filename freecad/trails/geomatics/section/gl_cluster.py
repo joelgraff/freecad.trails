@@ -146,9 +146,9 @@ class GLCluster(GLCFunc):
         increments = [tangent, curve, spiral]
         stations = self.generate(alignment,increments, region, horiz_pnts)
 
-        guide_lines = self.guide_lines(obj)
-        guide_lines.StationList = stations
-        guide_lines.Alignment = alignment
+        guidelines = self.guidelines(obj)
+        guidelines.StationList = stations
+        guidelines.Alignment = alignment
 
 
 

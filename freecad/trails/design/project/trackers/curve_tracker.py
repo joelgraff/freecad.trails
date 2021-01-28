@@ -35,13 +35,12 @@ from pivy_trackers.coin.todo import todo
 from freecad_python_support.tuple_math import TupleMath
 
 from pivy_trackers.coin.coin_styles import CoinStyles as Styles
-
+from pivy_trackers.coin.coin_enums import NodeTypes as Nodes, NodeSearch
 from pivy_trackers.tracker.context_tracker import ContextTracker
 
 from pivy_trackers.trait.drag import Drag
-from pivy_trackers.trait.style import Style
 
-class CurveTracker(ContextTracker, Style, Drag):
+class CurveTracker(ContextTracker, Drag):
     """
     Tracker object for managing curves
     """
@@ -105,9 +104,7 @@ class CurveTracker(ContextTracker, Style, Drag):
                 _m.name = self.name + "_" + _point_names[_j]
                 _j += 1
 
-        self.c_tracker =\
-            LineTracker(_name + '_arc ', curve.points, self.base)
-
+        self.c_tracker = LineTracker(f'{_name}_arc', curve.points, self.base)
         self.c_tracker.update_after_drag = False
         self.c_tracker.is_draggable = False
 
@@ -440,12 +437,6 @@ class CurveTracker(ContextTracker, Style, Drag):
                 tuple(self.arc.start), tuple(self.arc.center), tuple(self.arc.end)]
 
             self.param_tracker.update(_pts)
-
-            #_geo = self.top.getChild(5).getChild(0).getChild(2)
-            #todo.delay(self.base.dump, _geo)
-
-            #_fn = lambda x: print(self.view_state.get_matrix(x).getValue())
-            #todo.delay(_fn, _geo.getChild(1))
 
     def _update_text(self):
         """

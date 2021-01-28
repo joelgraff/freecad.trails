@@ -55,9 +55,9 @@ class AddPoint:
         # Check for document
         if FreeCAD.ActiveDocument:
             # Check for selected object
-            if FreeCADGui.Selection.getSelection():
-                selection = FreeCADGui.Selection.getSelection()[-1]
-                if selection.Proxy.Type == 'Trails::Surface':
+            selection = FreeCADGui.Selection.getSelection()
+            if selection:
+                if selection[-1].Proxy.Type == 'Trails::Surface':
                     return True
         return False
 
@@ -139,9 +139,9 @@ class AddTriangle:
         # Check for document
         if FreeCAD.ActiveDocument:
             # Check for selected object
-            if FreeCADGui.Selection.getSelection():
-                selection = FreeCADGui.Selection.getSelection()[-1]
-                if selection.Proxy.Type == 'Trails::Surface':
+            selection = FreeCADGui.Selection.getSelection()
+            if selection:
+                if selection[-1].Proxy.Type == 'Trails::Surface':
                     return True
         return False
 
@@ -183,9 +183,9 @@ class DeleteTriangle:
         # Check for document
         if FreeCAD.ActiveDocument:
             # Check for selected object
-            if FreeCADGui.Selection.getSelection():
-                selection = FreeCADGui.Selection.getSelection()[-1]
-                if selection.Proxy.Type == 'Trails::Surface':
+            selection = FreeCADGui.Selection.getSelection()
+            if selection:
+                if selection[-1].Proxy.Type == 'Trails::Surface':
                     return True
         return False
 
@@ -228,9 +228,9 @@ class SwapEdge:
         # Check for document
         if FreeCAD.ActiveDocument:
             # Check for selected object
-            if FreeCADGui.Selection.getSelection():
-                selection = FreeCADGui.Selection.getSelection()[-1]
-                if selection.Proxy.Type == 'Trails::Surface':
+            selection = FreeCADGui.Selection.getSelection()
+            if selection:
+                if selection[-1].Proxy.Type == 'Trails::Surface':
                     return True
         return False
 
@@ -322,9 +322,9 @@ class SmoothSurface:
         # Check for document
         if FreeCAD.ActiveDocument:
             # Check for selected object
-            if FreeCADGui.Selection.getSelection():
-                selection = FreeCADGui.Selection.getSelection()[-1]
-                if selection.Proxy.Type == 'Trails::Surface':
+            selection = FreeCADGui.Selection.getSelection()
+            if selection:
+                if selection[-1].Proxy.Type == 'Trails::Surface':
                     return True
         return False
 

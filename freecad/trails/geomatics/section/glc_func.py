@@ -28,7 +28,7 @@ Define Surface Object functions.
 import FreeCAD
 import Part
 import copy
-from . import guide_lines
+from . import guidelines
 
 class GLCFunc:
     """
@@ -37,15 +37,17 @@ class GLCFunc:
     def __init__(self):
         pass
 
-    def guide_lines(self, obj):
+    def guidelines(self, obj):
         """
         Find the existing Guide Line Clusters group object
         """
         # Return an existing instance of the same name, if found.
         for child in obj.Group:
-            if child.Proxy.Type == 'Trails::GuideLines':
+            if child.Proxy.Type == 'Trails::Guidelines':
                 return child
-        return guide_lines.create()
+        gl = guidelines.create()
+        obj.addObject(gl)
+        return gl
 
     def get_alignment_infos(self, alignment):
         if hasattr(alignment.Proxy, 'model'):
@@ -58,44 +60,18 @@ class GLCFunc:
             end = start + length
         return start, end
 
-    def line_orthogonal(self, line, distance, side=''):
-        """
-        Return the orthogonal vector pointing toward the indicated side at the
-        provided position.  Defaults to left-hand side
-        """
-
-        _dir = 1.0
-
-        _side = side.lower()
-
-        if _side in ['r', 'rt', 'right']:
-            _dir = -1.0
-
-        start = line.Start
-        end = line.End
-
-        if (start is None) or (end is None):
-            return None, None
-
-        _delta = end.sub(start).normalize()
-        _left = FreeCAD.Vector(-_delta.y, _delta.x, 0.0)
-
-        _coord = start.add(_delta.multiply(distance*1000))
-
-        return _coord, _left.multiply(_dir)
-
     def generate(self, alignment, increments, region, horiz_pnts = True):
         """
         Generates guidelines along a selected alignment
         """
         # Guideline intervals
-        tangent_increment = increments[0]
-        curve_increment = increments[1]
-        spiral_increment = increments[2]
+        tangent_increment = increments[0]/1000
+        curve_increment = increments[1]/1000
+        spiral_increment = increments[2]/1000
 
         # Region limits
-        start_station = region[0]
-        end_station = region[1]
+        start_station = round(region[0]/1000, 3)
+        end_station = round(region[1]/1000, 3)
 
         # Retrieve alignment data get geometry and placement
         stations = []
@@ -104,9 +80,7 @@ class GLCFunc:
             length = alignment.Proxy.model.data['meta']['Length']
             end = start + length/1000
 
-            placement = alignment.Placement.Base
             geometry = alignment.Proxy.model.data['geometry']
-
             for element in geometry:
                 # Get starting and ending stations based on alignment
                 elem_start = element.get('StartStation')
@@ -122,19 +96,19 @@ class GLCFunc:
                     for sta in range(int(elem_start), int(elem_end)):
 
                         # Add stations which land on increments exactly
-                        if sta % int(tangent_increment/1000) == 0:
+                        if sta % int(tangent_increment) == 0:
                             stations.append(sta)
 
                 # Generate curve intervals
                 elif element.get('Type') == 'Curve':
                     for sta in range(int(elem_start), int(elem_end)):
-                        if sta % int(curve_increment/1000) == 0:
+                        if sta % int(curve_increment) == 0:
                             stations.append(sta)
 
                 #Generate spiral intervals
                 elif element.get("Type") == 'Spiral':
                     for sta in range(int(elem_start), int(elem_end)):
-                        if sta % int(spiral_increment/1000) == 0:
+                        if sta % int(spiral_increment) == 0:
                             stations.append(sta)
     
             # Add the end station
@@ -144,7 +118,7 @@ class GLCFunc:
         else:
             length = alignment.Length.Value
             for sta in range(0, int(length/1000)):
-                if sta % int(tangent_increment/1000) == 0:
+                if sta % int(tangent_increment) == 0:
                     stations.append(sta)
 
             # Add the end station
@@ -153,7 +127,6 @@ class GLCFunc:
         # Iterate the stations, appending what falls in the specified limits
         region_stations = []
         for sta in stations:
-
             if start_station <= sta <= end_station:
                 region_stations.append(sta)
 
