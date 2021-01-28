@@ -175,9 +175,10 @@ def _create_geo_func():
     for _i in range(0, 6):
         _fn.append([lambda _x: 0.0]*7)
 
+    _fn.append([lambda _x: _x]*7)
+
     #Vector order: Radius Start, Radius End, Tangent Start, Tangent End,
     #Middle, Chord, UP
-    _fn.append([lambda _x: _x]*7)
 
     _fn[1][0] = lambda _x: _x
     _fn[3][2] = _fn[1][0]
@@ -272,6 +273,7 @@ def get_scalar_matrix(vecs):
         _result.A[_i][_i] = math.sqrt(_result.A[_i][_i])
 
     #calculate the delta for the lower left side
+    #This is a dot-product calculation to determine the angle between vectors
     for _i in range(0, 7):
         _d1 = _result.A[_i][_i]
 
@@ -285,7 +287,12 @@ def get_scalar_matrix(vecs):
             if not (any([math.isnan(_v) for _v in [_denom, _n]])
                     or _denom == 0.0):
 
-                _angle = math.acos(_n / _denom)
+                _ratio = _n / _denom
+
+                if abs(_ratio) > 1.0:
+                    _ratio = math.copysign(1, _ratio)
+
+                _angle = math.acos(_ratio)
 
             #compute the arc central angle for all but the last row
             if _angle:
@@ -312,42 +319,25 @@ def get_bearings(arc, mat, delta, rot):
     bearing_in = arc.get('BearingIn')
     bearing_out = arc.get('BearingOut')
 
-    bearings = []
+    bearings = mat.A[6]
 
-    #calculate the bearings using other curve properties
-    #for later comparison to ensure curve is valid
-    for _i in range(0, 6):
-        bearings.append(_GEO.FUNC[6][_i](mat.A[6][_i], delta, rot))
+    if not any([math.isnan(_v) for _v in bearings]):
 
-    #normalize bearings within [0, 2 * PI]
-    #this is accomlpished by reducing bearings in excess of 2PI and
-    #converting negative bearings to positives
-    _b = [_v - (C.TWO_PI * int(_v / C.TWO_PI)) + (C.TWO_PI * int(_v < 0.0)) \
-            for _v in bearings[0:6] if utils.to_float(_v)
-         ]
+        #calculate the delta angle from the radius and tangent bearings
+        #as a cross check
+        _deltas = [
+            abs(bearings[0] - bearings[1]), abs(bearings[2] - bearings[3])
+        ]
 
-    if _b:
+        #if delta exceeds PI, the wrong direction was calculated.  Reverse.
+        for _i, _v in enumerate(_deltas):
+            if _v > math.pi:
+                _deltas[_i] = math.pi*2 - _v
 
-        _deltas = [abs(_i - _j) for _i in _b for _j in _b]
-
-        #check to ensure all tangent start bearing values are identical
-        assert(support.within_tolerance(_deltas[0:2])), """
-            Tangents exceed tolerances
+        assert(support.within_tolerance(_deltas)),\
+        f"""
+            Radius bearing/delta tolerance fail: {str(_deltas[0])} != {str(_deltas[1])}
         """
-
-        assert(support.within_tolerance(_deltas[2:4])), """
-            Tangents exceed tolerances
-        """
-
-        assert(support.within_tolerance(_deltas[4:6])), """
-            Tangents exceed tolerances
-        """
-
-        #default to calculated if different from supplied bearing
-        if not support.within_tolerance(_b[0], bearing_in):
-            bearing_in = _b[0]
-
-    assert(bearing_in), 'Unable to determine bearing_in'
 
     #a negative rotation could push out bearing under pi
     #a positive rotation could push out bearing over 2pi
