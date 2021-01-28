@@ -80,9 +80,7 @@ class GLCFunc:
             length = alignment.Proxy.model.data['meta']['Length']
             end = start + length/1000
 
-            placement = alignment.Placement.Base
             geometry = alignment.Proxy.model.data['geometry']
-
             for element in geometry:
                 # Get starting and ending stations based on alignment
                 elem_start = element.get('StartStation')
