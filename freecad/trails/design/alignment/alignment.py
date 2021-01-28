@@ -41,7 +41,7 @@ __author__ = 'Joel Graff'
 __url__ = "https://www.freecadweb.org"
 
 
-def create(geometry, object_name='', no_visual=False, zero_reference=False):
+def create(geometry, object_name='', parent = None, no_visual=False, zero_reference=False):
     """
     Class construction method
     object_name - Optional. Name of new object.  Defaults to class name.
@@ -63,7 +63,9 @@ def create(geometry, object_name='', no_visual=False, zero_reference=False):
         _obj = App.ActiveDocument.addObject(_TYPE, _name)
 
     else:
-        parent = alignment_group.create()
+        if not parent:
+            parent = alignment_group.create(object_name)
+
         _obj = parent.Object.newObject(_TYPE, _name)
 
     result = Alignment(_obj, _name)

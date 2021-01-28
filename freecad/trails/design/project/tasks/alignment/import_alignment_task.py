@@ -67,11 +67,12 @@ class ImportAlignmentTask:
 
         errors = []
 
-        alignment_group.create()
+        parent = alignment_group.create(data['Project']['ID'])
 
         for _v in data['Alignments'].values():
 
-            result = alignment.create(_v, _v['meta']['ID'] + ' Horiz')
+            result = alignment.create(
+                _v, _v['meta']['ID'] + ' Horiz', parent=parent)
 
             if result.errors:
                 errors += result.errors
