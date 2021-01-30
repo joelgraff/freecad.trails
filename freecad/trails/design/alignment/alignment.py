@@ -236,9 +236,7 @@ class ViewProviderHorizontalAlignment:
 
         # Highlight for selection.
         highlight = coin.SoType.fromName('SoFCSelection').createInstance()
-        #highlight.documentName.setValue(FreeCAD.ActiveDocument.Name)
-        #highlight.objectName.setValue(vobj.Object.Name)
-        #highlight.subElementName.setValue("Main")
+        highlight.style = 'EMISSIVE_DIFFUSE'
         highlight.addChild(line_style)
         highlight.addChild(self.line_coords)
         highlight.addChild(self.lines)
