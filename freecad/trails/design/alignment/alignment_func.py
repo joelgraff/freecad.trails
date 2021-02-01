@@ -28,6 +28,7 @@ Define Alignment Object functions.
 import FreeCAD as App
 from . import alignment_model
 
+from copy import deepcopy
 
 
 class AlignmentFunc:

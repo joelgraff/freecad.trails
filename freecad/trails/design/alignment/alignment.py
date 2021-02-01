@@ -41,9 +41,7 @@ from .alignment_func import AlignmentFunc
 
 from copy import deepcopy
 
-
-
-def create(geometry, object_name='', parent = None, no_visual=False, zero_reference=False):
+def create(geometry, object_name='', parent=None, no_visual=False, zero_reference=False):
     """
     Class construction method
     object_name - Optional. Name of new object.  Defaults to class name.
@@ -54,14 +52,19 @@ def create(geometry, object_name='', parent = None, no_visual=False, zero_refere
         print('No curve geometry supplied')
         return
 
-    alignments = alignment_group.get()
     obj = App.ActiveDocument.addObject("App::FeaturePython", "Alignment")
-    if object_name: obj.Label = object_name
-    alignments.addObject(obj)
+
+    if object_name:
+        obj.Label = object_name
+
+    parent.addObject(obj)
 
     HorizontalAlignment(obj)
+
     obj.Proxy.set_geometry(geometry, zero_reference)
+
     ViewProviderHorizontalAlignment(obj.ViewObject)
+
     App.ActiveDocument.recompute()
 
     return obj
