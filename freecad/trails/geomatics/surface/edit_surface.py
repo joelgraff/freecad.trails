@@ -193,13 +193,13 @@ class DeleteTriangle:
         """
         Command activation method
         """
-        # Create an event callback for add_point() function
+        # Create an event callback for delete() function
         self.view = FreeCADGui.ActiveDocument.ActiveView
         self.event_callback = self.view.addEventCallbackPivy(
-            coin.SoButtonEvent.getClassTypeId(), self.add_point)
+            coin.SoButtonEvent.getClassTypeId(), self.delete)
         self.indexes = []
 
-    def add_point(self, cb):
+    def delete(self, cb):
         """
         Take two triangle by mouse clicks and swap edge between them
         """
