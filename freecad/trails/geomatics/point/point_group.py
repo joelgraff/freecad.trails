@@ -163,9 +163,7 @@ class ViewProviderPointGroup:
 
         # Highlight for selection.
         highlight = coin.SoType.fromName('SoFCSelection').createInstance()
-        #highlight.documentName.setValue(FreeCAD.ActiveDocument.Name)
-        #highlight.objectName.setValue(vobj.Object.Name)
-        #highlight.subElementName.setValue("Main")
+        highlight.style = 'EMISSIVE_DIFFUSE'
         highlight.addChild(self.geo_coords)
         highlight.addChild(points)
         highlight.addChild(self.markers)
