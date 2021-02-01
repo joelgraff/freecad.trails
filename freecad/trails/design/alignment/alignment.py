@@ -57,7 +57,8 @@ def create(geometry, object_name='', parent=None, no_visual=False, zero_referenc
     if object_name:
         obj.Label = object_name
 
-    parent.addObject(obj)
+    if parent:
+        parent.addObject(obj)
 
     HorizontalAlignment(obj)
 
