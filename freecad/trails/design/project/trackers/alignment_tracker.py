@@ -228,7 +228,7 @@ class AlignmentTracker(ContextTracker):
 
     def rebuild_bearings(self, matrix, pi_nums):
         """
-        Recaluclate bearings and update curves accordingly
+        Recalculate bearings and update curves accordingly
         """
 
         _xlate = matrix.getValue()[3]

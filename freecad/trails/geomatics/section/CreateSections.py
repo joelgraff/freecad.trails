@@ -181,48 +181,49 @@ class CreateSections:
 
         view_width =[]
         view_heigth =[]
-        for guide_line in guide_lines:
-            _origin = None
-            for SelectedItem in self.IPFui.SelectSurfacesLW.selectedItems():
-                _surface = self.SurfacesList[SelectedItem.text()]
-                _points = []
+        _origin = None
+        for SelectedItem in self.IPFui.SelectSurfacesLW.selectedItems():
+            _surface = self.SurfacesList[SelectedItem.text()]
+            _points = []
 
-                for _edge in guide_line.Shape.Edges:
-                    Vec = _edge.Vertexes[0].Point - _edge.Vertexes[1].Point
-                    Vec.x, Vec.y = -(Vec.y), Vec.x
+            for _edge in guide_line.Shape.Edges:
+                _params = MeshPart.findSectionParameters(
+                    _edge, _surface.Mesh, FreeCAD.Vector(0, 0, 1))
+                _params.insert(0, _edge.FirstParameter+1)
+                _params.append(_edge.LastParameter-1)
 
-                    section_points = _surface.Mesh.crossSections(
-                        [(_edge.Vertexes[0].Point,Vec)],0.000001)
-                    FreeCAD.Console.PrintMessage(section_points)
+                _values = [_edge.valueAt(i) for i in _params]
+                _points += _values
 
-                    if section_points:
-                        for section in section_points[0]:
-                            sec_points_2d = self.convert2View(section, _origin)
-                            _section = Draft.makeWire(sec_points_2d)
+            section_points = MeshPart.projectPointsOnMesh(
+                _points, _surface.Mesh, FreeCAD.Vector(0, 0, 1))
 
-                            view_width.append([min(i.x for i in sec_points_2d),
-                                max(i.x for i in sec_points_2d)])
-                            view_heigth.append([min(i.y for i in sec_points_2d),
-                                max(i.y for i in sec_points_2d)])
+            sec_points_2d = self.convert2View(section_points, _origin)
+            _section = Draft.makeWire(sec_points_2d)
 
-                            _section.Placement.move(_position)
-                            self.SectionsGroup.addObject(_section)
-                            _origin = section[0]
+            view_width.append([min(i.x for i in sec_points_2d),
+                max(i.x for i in sec_points_2d)])
+            view_heigth.append([min(i.y for i in sec_points_2d),
+                max(i.y for i in sec_points_2d)])
 
-            if _counter == multi_views_nor:
-                _dx = max(i[1] for i in view_width) - min(i[0] for i in view_width)
-                _shifting = _position.x - pos.x + _buffer
-                _reposition = FreeCAD.Vector(_dx + _shifting, 0, 0)
-                _position = pos.add(_reposition)
-                view_width.clear()
-                view_heigth.clear()
-                _counter = 0
-            else:
-                _dy = max(i[1] for i in view_heigth) - min(i[0] for i in view_heigth)
-                _reposition = FreeCAD.Vector(0, -(_dy + _buffer), 0)
-                _position = _position.add(_reposition)
-                view_heigth.clear()
-                _counter += 1
+            _section.Placement.move(_position)
+            self.SectionsGroup.addObject(_section)
+            _origin = section_points[0]
+
+        if _counter == multi_views_nor:
+            _dx = max(i[1] for i in view_width) - min(i[0] for i in view_width)
+            _shifting = _position.x - pos.x + _buffer
+            _reposition = FreeCAD.Vector(_dx + _shifting, 0, 0)
+            _position = pos.add(_reposition)
+            view_width.clear()
+            view_heigth.clear()
+            _counter = 0
+        else:
+            _dy = max(i[1] for i in view_heigth) - min(i[0] for i in view_heigth)
+            _reposition = FreeCAD.Vector(0, -(_dy + _buffer), 0)
+            _position = _position.add(_reposition)
+            view_heigth.clear()
+            _counter += 1
 
         FreeCAD.ActiveDocument.recompute()
 FreeCADGui.addCommand('Create Section Views', CreateSections())

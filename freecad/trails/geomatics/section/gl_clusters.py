@@ -26,6 +26,7 @@ Create a Guide Line Clusters group object from FPO.
 
 import FreeCAD
 from freecad.trails import ICONPATH, geo_origin
+from freecad.trails.design.alignment import alignment_group
 
 
 
@@ -48,19 +49,13 @@ def create():
     Factory method for Guide Line Clusters.
     """
     main = geo_origin.get()
-    alignments = FreeCAD.ActiveDocument.getObject('Alignments')
-    alignment_group = FreeCAD.ActiveDocument.getObject('AlignmentGroup')
-    if alignments: alignment_group = alignments
-    elif not alignment_group:
-        alignment_group = FreeCAD.ActiveDocument.addObject(
-            "App::DocumentObjectGroup", 'AlignmentGroup')
-        alignment_group.Label = "Alignment Group"
-        main.addObject(alignment_group)
+    alignments = alignment_group.get()
+    main.addObject(alignments)
 
     obj = FreeCAD.ActiveDocument.addObject(
         "App::DocumentObjectGroupPython", 'GuideLineClusters')
     obj.Label = "Guide Line Clusters"
-    alignment_group.addObject(obj)
+    alignments.addObject(obj)
 
     GuideLineClusters(obj)
     ViewProviderGuideLineClusters(obj.ViewObject)
@@ -79,37 +74,13 @@ class GuideLineClusters:
         Set data properties.
         '''
         self.Type = 'Trails::GLClusters'
-
-        obj.addProperty(
-            'App::PropertyLink', "Alignment", "Base",
-            "Parent alignment").Alignment = None
-
-        obj.addProperty(
-            "App::PropertyLength", "Start", "Station",
-            "Guide lines start station").Start = 0
-
-        obj.addProperty(
-            "App::PropertyLength", "End", "Station",
-            "Guide lines start station").End = 0
-
         obj.Proxy = self
 
     def onChanged(self, fp, prop):
         '''
         Do something when a data property has changed.
         '''
-        if prop == "Alignment":
-            alignment = fp.getPropertyByName("Alignment")
-            if alignment:
-                if hasattr(alignment.Proxy, 'model'):
-                    fp.Start = alignment.Proxy.model.data['meta']['StartStation']
-                    length = alignment.Proxy.model.data['meta']['Length']
-                    fp.End = fp.Start + length/1000
-                else:
-                    fp.Start = 0.0
-                    length = alignment.Length.Value
-                    fp.End = fp.Start + length/1000
-
+        return
 
     def execute(self, fp):
         '''

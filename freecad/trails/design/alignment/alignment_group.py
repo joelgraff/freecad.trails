@@ -37,35 +37,34 @@ from ..project.xml.alignment_exporter import AlignmentExporter
 from ..project.xml.alignment_importer import AlignmentImporter
 from freecad.trails import ICONPATH, geo_origin, resources
 
-def get():
+def get(align_name):
     """
     Find the existing alignments object
     """
 
-    return App.ActiveDocument.getObject('Alignments')
+    return App.ActiveDocument.getObject(align_name)
 
-def create():
+def create(align_name):
     """
     Factory method for alignment group
     """
 
     #return an existing instance of the same name, if found
-    obj = App.ActiveDocument.getObject('Alignments')
+    obj = App.ActiveDocument.getObject(align_name)
 
     if obj:
         return obj.Proxy
 
     main = geo_origin.get()
     obj = App.ActiveDocument.addObject(
-        "App::DocumentObjectGroupPython", 'Alignments'
+        "App::DocumentObjectGroupPython", align_name
         )
 
-    fpo = _AlignmentGroup(obj)
+    _AlignmentGroup(obj)
     _ViewProviderAlignmentGroup(obj.ViewObject)
-
     main.addObject(obj)
 
-    return fpo
+    return obj
 
 
 class _AlignmentGroup():
@@ -105,12 +104,13 @@ class _AlignmentGroup():
 
         self.data = AlignmentImporter().import_file(obj.Xml_Path)
 
-    def get_alignment_data(self, _id):
+    def get_alignment_data(self, group, _id):
         """
         Return a reference to the XML data
         """
+        self.data = AlignmentImporter().import_file(group.Xml_Path)
 
-        _aligns = self.data.get('Alignments')
+        _aligns = self.data.get(align_name)
 
         if _aligns is None:
             print('No Alignment Group data found')
@@ -132,7 +132,8 @@ class _AlignmentGroup():
         #iterate the list of children, acquiring their data sets
         #and creating a total data set for alignments.
         for _obj in self.Object.OutList:
-            _list.append(_obj.Proxy.get_data())
+            if _obj.Proxy.Type == 'Trails::Alignment':
+                _list.append(_obj.Proxy.get_data())
 
         exporter = AlignmentExporter()
 

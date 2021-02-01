@@ -23,29 +23,27 @@
 import FreeCAD
 import FreeCADGui
 from freecad.trails import ICONPATH
-from . import surface
-from ..point import point_groups
+from . import gl_cluster
+from freecad.trails.design.alignment import alignment_group
 
 
-class CreateSurface:
+class CreateGuidelines:
     """
-    Command to create a new surface
+    Command to create a new Guidelines
     """
 
     def __init__(self):
         """
-        Constructor
+        Command to create guide lines for selected alignment.
         """
         pass
 
     def GetResources(self):
-        """
-        Return the command resources dictionary
-        """
+        # Return the command resources dictionary
         return {
-            'Pixmap': ICONPATH + '/icons/CreateSurface.svg',
-            'MenuText': "Create Surface",
-            'ToolTip': "Create surface from selected point group(s)."
+            'Pixmap': ICONPATH + '/icons/CreateGuideLines.svg',
+            'MenuText': "Create Guidelines",
+            'ToolTip': "Create guidelines for selected alignment"
             }
 
     def IsActive(self):
@@ -58,21 +56,21 @@ class CreateSurface:
         return False
 
     def Activated(self):
-        """
-        Command activation method
-        """
+
         # Check for selected object
-        point_groups.get()
-        surf = surface.create()
+        alignments = alignment_group.get()
         selection = FreeCADGui.Selection.getSelection()
 
-        if selection:
-            pgs = surf.PointGroups.copy()
+        # Check that the Alignments Group has objects
+        if len(alignments.Group) == 0:
+            FreeCAD.Console.PrintMessage(
+                "Please add an Alignment or Wire to the Alignment Group")
+            return
 
-            for obj in selection:
-                if obj.Proxy.Type == 'Trails::PointGroup':
-                    pgs.append(obj)
+        try:
+            gl_cluster.create(selection[-1])
+        except Exception:
+            FreeCAD.Console.PrintMessage(
+                "Please select an Alignment or Wire")
 
-            surf.PointGroups = pgs
-
-FreeCADGui.addCommand('Create Surface', CreateSurface())
+FreeCADGui.addCommand('Create Guidelines', CreateGuidelines())

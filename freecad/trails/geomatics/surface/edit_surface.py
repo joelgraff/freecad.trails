@@ -55,9 +55,9 @@ class AddPoint:
         # Check for document
         if FreeCAD.ActiveDocument:
             # Check for selected object
-            if FreeCADGui.Selection.getSelection():
-                selection = FreeCADGui.Selection.getSelection()[-1]
-                if selection.Proxy.Type == 'Trails::Surface':
+            selection = FreeCADGui.Selection.getSelection()
+            if selection:
+                if selection[-1].Proxy.Type == 'Trails::Surface':
                     return True
         return False
 
@@ -139,9 +139,9 @@ class AddTriangle:
         # Check for document
         if FreeCAD.ActiveDocument:
             # Check for selected object
-            if FreeCADGui.Selection.getSelection():
-                selection = FreeCADGui.Selection.getSelection()[-1]
-                if selection.Proxy.Type == 'Trails::Surface':
+            selection = FreeCADGui.Selection.getSelection()
+            if selection:
+                if selection[-1].Proxy.Type == 'Trails::Surface':
                     return True
         return False
 
@@ -183,9 +183,9 @@ class DeleteTriangle:
         # Check for document
         if FreeCAD.ActiveDocument:
             # Check for selected object
-            if FreeCADGui.Selection.getSelection():
-                selection = FreeCADGui.Selection.getSelection()[-1]
-                if selection.Proxy.Type == 'Trails::Surface':
+            selection = FreeCADGui.Selection.getSelection()
+            if selection:
+                if selection[-1].Proxy.Type == 'Trails::Surface':
                     return True
         return False
 
@@ -193,9 +193,54 @@ class DeleteTriangle:
         """
         Command activation method
         """
-        # Call for Mesh.RemoveComponents function
-        FreeCADGui.runCommand("Mesh_RemoveComponents")
+        # Create an event callback for delete() function
+        self.view = FreeCADGui.ActiveDocument.ActiveView
+        self.event_callback = self.view.addEventCallbackPivy(
+            coin.SoButtonEvent.getClassTypeId(), self.delete)
+        self.indexes = []
 
+    def delete(self, cb):
+        """
+        Take two triangle by mouse clicks and swap edge between them
+        """
+        # Get event
+        event = cb.getEvent()
+
+        # If mouse right button pressed finish swap edge operation
+        if event.getTypeId().isDerivedFrom(coin.SoKeyboardEvent.getClassTypeId()):
+            if event.getKey() == coin.SoKeyboardEvent.ESCAPE \
+                and event.getState() == coin.SoKeyboardEvent.DOWN:
+                self.view.removeEventCallbackPivy(
+                    coin.SoButtonEvent.getClassTypeId(), self.event_callback)
+
+        # If mouse left button pressed get picked point
+        elif event.getTypeId().isDerivedFrom(coin.SoMouseButtonEvent.getClassTypeId()):
+            if event.getButton() == coin.SoMouseButtonEvent.BUTTON1 \
+                and event.getState() == coin.SoMouseButtonEvent.DOWN:
+                picked_point = cb.getPickedPoint()
+
+                # Get triangle index at picket point
+                if picked_point:
+                    detail = picked_point.getDetail()
+
+                    if detail.isOfType(coin.SoFaceDetail.getClassTypeId()):
+                        face_detail = coin.cast(
+                            detail, str(detail.getTypeId().getName()))
+                        index = face_detail.getFaceIndex()
+                        self.indexes.append(index)
+
+        # If mouse left button pressed get picked point
+        if event.getTypeId().isDerivedFrom(coin.SoKeyboardEvent.getClassTypeId()):
+            if event.getKey() == coin.SoKeyboardEvent.DELETE \
+                and event.getState() == coin.SoKeyboardEvent.DOWN:
+
+                surface = FreeCADGui.Selection.getSelection()[-1]
+                copy_mesh = surface.Mesh.copy()
+                copy_mesh.removeFacets(self.indexes)
+                self.indexes.clear()
+                surface.Mesh = copy_mesh
+            else:
+                pass
 
 FreeCADGui.addCommand('Delete Triangle', DeleteTriangle())
 
@@ -228,9 +273,9 @@ class SwapEdge:
         # Check for document
         if FreeCAD.ActiveDocument:
             # Check for selected object
-            if FreeCADGui.Selection.getSelection():
-                selection = FreeCADGui.Selection.getSelection()[-1]
-                if selection.Proxy.Type == 'Trails::Surface':
+            selection = FreeCADGui.Selection.getSelection()
+            if selection:
+                if selection[-1].Proxy.Type == 'Trails::Surface':
                     return True
         return False
 
@@ -322,9 +367,9 @@ class SmoothSurface:
         # Check for document
         if FreeCAD.ActiveDocument:
             # Check for selected object
-            if FreeCADGui.Selection.getSelection():
-                selection = FreeCADGui.Selection.getSelection()[-1]
-                if selection.Proxy.Type == 'Trails::Surface':
+            selection = FreeCADGui.Selection.getSelection()
+            if selection:
+                if selection[-1].Proxy.Type == 'Trails::Surface':
                     return True
         return False
 

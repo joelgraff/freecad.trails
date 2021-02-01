@@ -6,7 +6,7 @@
 #https://forum.freecadweb.org/viewtopic.php?t=12829
 
 import FreeCAD as App
-#from ...project.support import properties
+from ...project.support import properties
 
 def create(sketch_object, template_name):
     """

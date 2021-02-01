@@ -242,14 +242,18 @@ class ImportPointFile:
 
             # Add points to point group
             elif operation == "Import":
-                try:
-                    names.append(row[pn])
-                    vectors.append((float(row[e]) * 1000,
-                                    float(row[n]) * 1000,
-                                    float(row[z]) * 1000))
-                    descriptions.append(row[d])
-                except Exception:
-                    pass
+                try: name = row[pn]
+                except Exception: name = ""
+
+                try: des = row[d]
+                except Exception: des = ""
+
+                names.append(name)
+                descriptions.append(des)
+                vectors.append((float(row[e]) * 1000,
+                                float(row[n]) * 1000,
+                                float(row[z]) * 1000))
+
         return names, vectors, descriptions
 
     def preview(self):
