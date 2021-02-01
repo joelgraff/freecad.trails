@@ -94,7 +94,13 @@ class GuideLines(GLFunc):
             right_offset = obj.getPropertyByName("RightOffset")
 
             offsets = [left_offset, right_offset]
-            obj.Shape = self.get_lines(alignment, offsets, stations)
+
+            # Get GeoOrigin.
+            origin = geo_origin.get()
+            base = copy.deepcopy(origin.Origin)
+            base.z = 0
+
+            obj.Shape = self.get_lines(base, alignment, offsets, stations)
 
 
 class ViewProviderGuideLines:
@@ -155,6 +161,7 @@ class ViewProviderGuideLines:
             origin = geo_origin.get()
             base = copy.deepcopy(origin.Origin)
             base.z = 0
+
             # Set GeoCoords.
             geo_system = ["UTM", origin.UtmZone, "FLAT"]
             self.line_coords.geoSystem.setValues(geo_system)
@@ -170,9 +177,9 @@ class ViewProviderGuideLines:
                 text = coin.SoAsciiText()
 
                 for vertex in wire.Vertexes:
-                    points.append(vertex.Point)
+                    points.append(vertex.Point.add(base))
                     label = str(round(obj.StationList[counter], 2))
-                    location.translation = wire.Vertexes[-1].Point.sub(base)
+                    location.translation = wire.Vertexes[-1].Point
                     text.string.setValues([label])
                     gl_label.addChild(font)
                     gl_label.addChild(location)
