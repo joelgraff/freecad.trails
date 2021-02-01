@@ -62,7 +62,7 @@ class GLFunc:
 
         return _coord, _left.multiply(_dir)
 
-    def get_lines(self, alignment, offsets, stations):
+    def get_lines(self, fpoint, alignment, offsets, stations):
         """
         Find the existing Guide Line Clusters group object
         """
@@ -76,9 +76,9 @@ class GLFunc:
         for sta in stations:
             if hasattr(alignment.Proxy, 'model'):
                 tuple_coord, tuple_vec = alignment.Proxy.model.get_orthogonal( sta, "Left")
-                coord = FreeCAD.Vector(tuple_coord)
+                coord = FreeCAD.Vector(tuple_coord).sub(fpoint)
                 vec = FreeCAD.Vector(tuple_vec)
-                
+
             else:
                 coord, vec = self.line_orthogonal(alignment, sta, "Left")
 
