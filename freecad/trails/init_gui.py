@@ -25,6 +25,7 @@ GUI Initialization module
 
 import os
 import FreeCADGui as Gui
+from . import draft_init
 
 from .design.corridor.template import ViewTemplateLibrary
 from . import resources

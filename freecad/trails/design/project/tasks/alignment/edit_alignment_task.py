@@ -47,12 +47,12 @@ from ...support.subscriber import Subscriber
 
 from ...trackers.alignment_tracker import AlignmentTracker
 
-def create(doc, alignment_data, object_name):
+def create(doc, alignment_data, obj):
     """
     Class factory method
     """
 
-    return EditAlignmentTask(doc, alignment_data, object_name)
+    return EditAlignmentTask(doc, alignment_data, obj)
 
 class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
     """
@@ -77,9 +77,9 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         self.doc = doc
         self.Object = obj
         self.alignment = alignment.create(
-            alignment_data, 'TEMP', None, True, False)
+            alignment_data, 'TEMP', None, True, False).Proxy
 
-        self.alignment = self.alignment.Proxy
+        #self.alignment = self.alignment.Proxy
 
         self.alignment_tracker = None
         self.terminator_tracker = None
@@ -167,6 +167,7 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
 
         self.camera_state['position'] = _camera.position.getValue().getValue()
         self.camera_state['height'] = _camera.height.getValue()
+
         self.camera_state['bound box'] = self.Object.Shape.BoundBox
 
         self._zoom_camera, self

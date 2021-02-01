@@ -21,25 +21,27 @@
 #*                                                                     *
 #***********************************************************************
 
+"""
+Class for managing 2D Horizontal Alignments
+"""
+from copy import deepcopy
+
+import FreeCAD as App
+import Draft
+
+from freecad.trails import ICONPATH, geo_origin
+
+from ..project.support import properties, units
+from ..geometry import support
+from . import alignment_group, alignment_model
+
+_CLASS_NAME = 'HorizontalAlignment'
+_TYPE = 'Part::Part2DObjectPython'
 
 __title__ = 'alignment.py'
 __author__ = 'Joel Graff'
 __url__ = "https://www.freecadweb.org"
 
-"""
-Class for managing 2D Horizontal Alignments
-"""
-
-import FreeCAD as App
-from pivy import coin
-
-from freecad.trails import ICONPATH, geo_origin
-from ..project.support import properties, units
-from ..geometry import support
-from . import alignment_group, alignment_model
-from .alignment_func import AlignmentFunc
-
-from copy import deepcopy
 
 def create(geometry, object_name='', parent=None, no_visual=False, zero_reference=False):
     """
@@ -52,33 +54,41 @@ def create(geometry, object_name='', parent=None, no_visual=False, zero_referenc
         print('No curve geometry supplied')
         return
 
-    obj = App.ActiveDocument.addObject("App::FeaturePython", "Alignment")
+    _name = _CLASS_NAME
 
     if object_name:
-        obj.Label = object_name
+        _name = object_name
 
-    if parent:
-        parent.addObject(obj)
+    _obj = None
 
-    HorizontalAlignment(obj)
+    if not parent:
+        _obj = App.ActiveDocument.addObject(_TYPE, _name)
 
-    obj.Proxy.set_geometry(geometry, zero_reference)
+    else:
+        _obj = parent.newObject(_TYPE, _name)
 
-    ViewProviderHorizontalAlignment(obj.ViewObject)
+    result = Alignment(_obj, _name)
+    result.set_geometry(geometry, zero_reference)
+
+    ViewProviderHorizontalAlignment(_obj.ViewObject)
 
     App.ActiveDocument.recompute()
 
-    return obj
+    return _obj
 
-class HorizontalAlignment(AlignmentFunc):
+class Alignment(Draft._Wire):
     """
-    This class is about Alignment Object data features.
+    FeaturePython Alignment class
     """
 
-    def __init__(self, obj):
-        '''
-        Set data properties.
-        '''
+    def __init__(self, obj, label=''):
+        """
+        Default Constructor
+        """
+
+        super(Alignment, self).__init__(obj)
+
+        self.no_execute = True
 
         obj.Proxy = self
 
@@ -91,6 +101,12 @@ class HorizontalAlignment(AlignmentFunc):
         self.model = None
         self.meta = {}
         self.hashes = None
+
+        obj.Label = label
+        obj.Closed = False
+
+        if not label:
+            obj.Label = obj.Name
 
         #add class properties
 
@@ -126,12 +142,6 @@ class HorizontalAlignment(AlignmentFunc):
 
         #geometry
         properties.add(
-            obj, 'VectorList', 'Points', """
-            Discretization of Points of Intersection (PIs) as a list of
-            vectors""", []
-            )
-
-        properties.add(
             obj, 'VectorList', 'PIs', """
             Discretization of Points of Intersection (PIs) as a list of
             vectors""", []
@@ -158,75 +168,313 @@ class HorizontalAlignment(AlignmentFunc):
                        int(1000.0 / units.scale_factor()) / 100.0
                       )
 
+        delattr(self, 'no_execute')
+
+    def __getstate__(self):
+        return self.Type
+
+    def __setstate__(self, state):
+        if state:
+            self.Type = state
+
     def onDocumentRestored(self, obj):
         """
         Restore object references on reload
         """
 
         self.Object = obj
-        group = obj.InList[0]
 
         self.model = alignment_model.AlignmentModel(
-            self.Object.InList[0].Proxy.get_alignment_data(group, obj.ID)
+            self.Object.InList[0].Proxy.get_alignment_data(obj.ID)
         )
 
-        #self.build_curve_edge_dict()
+        self.build_curve_edge_dict()
+
+    def _plot_vectors(self, stations, interval=1.0, is_ortho=True):
+        """
+        Testing function to plot coordinates and vectors between specified
+        stations.
+
+        stations - tuple / list of starting / ending stations
+        is_ortho - bool, False plots tangent, True plots orthogonal
+        """
+
+        if not stations:
+            stations = [
+                self.model.data.get('meta').get('StartStation'),
+                self.model.data.get('meta').get('StartStation') \
+                    + self.model.data.get('meta').get('Length') / 1000.0
+            ]
+
+        _pos = stations[0]
+        _items = []
+
+        while _pos < stations[1]:
+
+            if is_ortho:
+                _items.append(tuple(self.model.get_orthogonal(_pos, 'Left')))
+
+            else:
+                _items.append(tuple(self.model.get_tangent(_pos)))
+
+            _pos += interval
+
+        for _v in _items:
+
+            _start = _v[0]
+            _end = _start + _v[1] * 100000.0
+
+            _pt = [self.model.data.get('meta').get('Start')]*2
+            _pt[0] = _pt[0].add(_start)
+            _pt[1] = _pt[1].add(_end)
+
+            line = Draft.makeWire(_pt, closed=False, face=False, support=None)
+
+            Draft.autogroup(line)
+
+        App.ActiveDocument.recompute()
+
+
+    def build_curve_edge_dict(self):
+        """
+        Build the dictionary which correlates edges to their corresponding
+        curves for quick lookup when curve editing
+        """
+
+        curve_dict = {}
+        curves = self.model.data.get('geometry')
+
+        #iterate the curves, creating the dictionary for each curve
+        #that lists it's wire edges keyed by it's Edge index
+        for curve in curves:
+
+            if curve.get('Type') == 'Line':
+                continue
+
+            curve_edges = self.Object.Shape.Edges
+            curve_pts = [curve.get('Start'), curve.get('End')]
+            edge_dict = {}
+
+            #iterate edge list, add edges that fall within curve limits
+            for _i, edge in enumerate(curve_edges):
+
+                edge_pts = [edge.Vertexes[0].Point, edge.Vertexes[1].Point]
+
+                #empty list means we haven't found the start yet
+                if not edge_dict:
+
+                    if not support.within_tolerance(curve_pts[0], edge_pts[0]):
+                        continue
+
+                #still here?  then we're within the geometry
+                edge_dict['Edge' + str(_i + 1)] = edge
+
+                #if this edge fits the end, we're done
+                if support.within_tolerance(curve_pts[1], edge_pts[1]):
+                    break
+
+            #calculate a unique hash based on the curve start and end points
+            #and save the edge list to it
+
+            curve_dict[curve['Hash']] = edge_dict
+
+        self.curve_edges = curve_dict
+
+    def get_pi_coords(self):
+        """
+        Convenience function to get PI coordinates from the model
+        """
+
+        return self.model.get_pi_coords()
+
+    def get_edges(self):
+        """
+        Return the dictionary of curve edges
+        """
+
+        return self.curve_edges
+
+    def get_data(self):
+        """
+        Return the complete dataset for the alignment
+        """
+
+        return self.model.data
+
+    def get_data_copy(self):
+        """
+        Returns a deep copy of the alignment dataset
+        """
+
+        return deepcopy(self.model.data)
+
+    def get_length(self):
+        """
+        Return the alignment length
+        """
+
+        return self.model.data.get('meta').get('Length')
+
+    def get_curves(self):
+        """
+        Return a list of only the curves
+        """
+
+        return [_v for _v in self.model.data.get('geometry') \
+            if _v.get('Type') != 'Line']
+
+    def get_geometry(self, curve_hash=None):
+        """
+        Return the geometry of the curve matching the specified hash
+        value.  If no match, return all of the geometry
+        """
+
+        if not curve_hash:
+            return self.model.data.get('geometry')
+
+        for _geo in self.model.data.get('geometry'):
+
+            if _geo['Hash'] == curve_hash:
+                return _geo
+
+        return None
+
+    def update_curves(self, curves, pi_list, zero_reference=False):
+        """
+        Assign updated alignment curves to the model.
+        """
+
+        _model = {
+            'meta': {
+                'Start': pi_list[0],
+                'StartStation':
+                    self.model.data.get('meta').get('StartStation'),
+                'End': pi_list[-1],
+            },
+            'geometry': curves,
+            'station': self.model.data.get('station')
+        }
+
+        self.set_geometry(_model, zero_reference)
+
+    def set_geometry(self, geometry, zero_reference=False):
+        """
+        Assign geometry to the alignment object
+        """
+        self.model = alignment_model.AlignmentModel(geometry, zero_reference)
+
+        if self.model.errors:
+            for _err in self.model.errors:
+                print('Error in alignment {0}: {1}'\
+                    .format(self.Object.Label, _err)
+                     )
+
+            self.model.errors.clear()
+
+        self.assign_meta_data()
+
+        return self.model.errors
+
+    def assign_meta_data(self, model=None):
+        """
+        Extract the meta data for the alignment from the data set
+        Check it for errors
+        Assign properties
+        """
+
+        obj = self.Object
+
+        meta = self.model.data.get('meta')
+
+        if meta.get('ID'):
+            obj.ID = meta.get('ID')
+
+        if meta.get('Description'):
+            obj.Description = meta.get('Description')
+
+        if meta.get('ObjectID'):
+            obj.ObjectID = meta.get('ObjectID')
+
+        if meta.get('Length'):
+            obj.Length = meta.get('Length')
+
+        if meta.get('Status'):
+            obj.Status = meta.get('Status')
+
+        if meta.get('StartStation'):
+            obj.Start_Station = str(meta.get('StartStation')) + ' ft'
 
     def onChanged(self, obj, prop):
-        '''
-        Do something when a data property has changed.
-        '''
+        """
+        Property change callback
+        """
         #dodge onChanged calls during initialization
-        if prop == "Method" and hasattr(obj, 'Seg_Value'):
-            method = obj.getPropertyByName(prop)
+        if hasattr(self, 'no_execute'):
+            return
 
-            if method == 'Interval':
-                obj.Seg_Value = int(3000.0 / units.scale_factor())
+        if prop == "Method":
 
-            elif method == 'Segment':
-                obj.Seg_Value = 200.0
+            _prop = obj.getPropertyByName(prop)
 
-            elif method == 'Tolerance':
-                obj.Seg_Value = \
+            if _prop == 'Interval':
+                self.Object.Seg_Value = int(3000.0 / units.scale_factor())
+
+            elif _prop == 'Segment':
+                self.Object.Seg_Value = 200.0
+
+            elif _prop == 'Tolerance':
+                self.Object.Seg_Value = \
                     int(1000.0 / units.scale_factor()) / 100.0
 
     def execute(self, obj):
-        '''
-        Do something when doing a recomputation.
-        '''
-        if hasattr(self.model, 'discretize_geometry'):
-            obj.Points = self.model.discretize_geometry(
-                [0.0], self.Object.Method, self.Object.Seg_Value)
+        """
+        Recompute callback
+        """
+        if hasattr(self, 'no_execute'):
+            return
+
+        points = self.model.discretize_geometry(
+            [0.0], self.Object.Method, self.Object.Seg_Value
+        )
+
+        if not points:
+            return
+
+        self.Object.Points = points
+
+        _pl = App.Placement()
+        #_pl.Base = self.model.data.get('meta').get('Start')
+
+        self.Object.Placement = _pl
+
+        super(Alignment, self).execute(obj)
+
+
+class ViewProviderHorizontalAlignment(Draft._ViewProviderWire):
+
+    def __init__(self, obj):
+        """
+        Initialize the view provider
+        """
+        obj.Proxy = self
+        self.Object = obj
+
+        self.lines = None
+        self.line_coords = None
+
 
     def __getstate__(self):
-        """
-        Save variables to file.
-        """
-        return self.Type
+        return None
 
     def __setstate__(self, state):
-        """
-        Get variables from file.
-        """
-        if state:
-            self.Type = state
-
-
-class ViewProviderHorizontalAlignment:
-    """
-    This class is about Point Group Object view features.
-    """
-
-    def __init__(self, vobj):
-        '''
-        Set view properties.
-        '''
-        vobj.Proxy = self
+        return None
 
     def attach(self, vobj):
-        '''
-        Create Object visuals in 3D view.
-        '''
+        """
+        View provider scene graph initialization
+        """
+        self.Object = vobj
+
         # Lines root.
         self.line_coords = coin.SoGeoCoordinate()
         self.lines = coin.SoLineSet()
@@ -251,19 +499,17 @@ class ViewProviderHorizontalAlignment:
         lines_root.addChild(highlight)
         vobj.addDisplayMode(lines_root,"Wireframe")
 
-    def onChanged(self, vobj, prop):
-        '''
-        Update Object visuals when a view property changed.
-        '''
-        pass
-
     def updateData(self, obj, prop):
         '''
         Update Object visuals when a data property changed.
         '''
+
         if prop == "Points":
+
             points = obj.getPropertyByName("Points")
+
             if points:
+
                 # Get GeoOrigin.
                 origin = geo_origin.get(points[0])
                 base = deepcopy(origin.Origin)
@@ -271,26 +517,27 @@ class ViewProviderHorizontalAlignment:
 
                 # Set GeoCoords.
                 geo_system = ["UTM", origin.UtmZone, "FLAT"]
-                self.line_coords.geoSystem.setValues(geo_system)
-                self.line_coords.point.values = points
 
-    def getDisplayMode(self, vobj):
-        '''
-        Return a list of display modes.
-        '''
+                if self.line_coords:
+                    self.line_coords.geoSystem.setValues(geo_system)
+                    self.line_coords.point.values = points
+
+    def getDisplayMode(self, obj):
+        """
+        Valid display modes
+        """
         return ["Wireframe"]
 
     def getDefaultDisplayMode(self):
-        '''
-        Return the name of the default display mode.
-        '''
+        """
+        Return default display mode
+        """
         return "Wireframe"
 
     def setDisplayMode(self, mode):
-        '''
-        Map the display mode defined in attach with
-        those defined in getDisplayModes.
-        '''
+        """
+        Set mode - wireframe only
+        """
         return "Wireframe"
 
     def getIcon(self):
@@ -299,14 +546,8 @@ class ViewProviderHorizontalAlignment:
         '''
         return ICONPATH + '/icons/Alignment.svg'
 
-    def __getstate__(self):
+    def onChanged(self, vobj, prop):
         """
-        Save variables to file.
+        Handle individual property changes
         """
-        return None
-
-    def __setstate__(self, state):
-        """
-        Get variables from file.
-        """
-        return None
+        pass

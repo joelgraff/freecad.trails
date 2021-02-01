@@ -72,11 +72,11 @@ class ImportAlignmentTask:
         for _v in data['Alignments'].values():
 
             result = alignment.create(
-                _v, _v['meta']['ID'] + ' Horiz', parent=parent)
+                _v, _v['meta']['ID'] + ' Horiz', parent=parent).Proxy
 
-            if result.Proxy.errors:
-                errors += result.Proxy.errors
-                result.Proxy.errors = []
+            if result.errors:
+                errors += result.errors
+                result.errors = []
 
             App.ActiveDocument.recompute()
 
@@ -86,9 +86,9 @@ class ImportAlignmentTask:
             for _e in errors:
                 print(_e)
 
-        if result.Proxy.errors:
-            errors += result.Proxy.errors
-            result.Proxy.errors = []
+        if result.errors:
+            errors += result.errors
+            result.errors = []
 
             App.ActiveDocument.recompute()
 
