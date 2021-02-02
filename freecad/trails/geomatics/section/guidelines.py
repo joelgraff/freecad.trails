@@ -158,6 +158,7 @@ class ViewProviderGuideLines:
         Update Object visuals when a data property changed.
         '''
         if prop == "Shape":
+            self.gl_labels.removeAllChildren()
             shape = obj.getPropertyByName("Shape")
 
             # Get GeoOrigin.
