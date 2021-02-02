@@ -35,6 +35,9 @@ def create(alignment, name='GL Cluster'):
     Factory method for GL Cluster.
     """
     clusters = gl_clusters.get()
+    parent = alignment.InList[0]
+    parent.addObject(clusters)
+
     obj = FreeCAD.ActiveDocument.addObject(
         "App::DocumentObjectGroupPython", 'GLCluster')
     obj.Label = name
@@ -43,6 +46,7 @@ def create(alignment, name='GL Cluster'):
     GLCluster(obj)
     obj.Alignment = alignment
     ViewProviderGLCluster(obj.ViewObject)
+    guidelines = obj.Proxy.guidelines(obj)
     FreeCAD.ActiveDocument.recompute()
 
     return obj
@@ -96,6 +100,10 @@ class GLCluster(GLCFunc):
             "App::PropertyLength", "IncrementAlongSpirals", "Increment",
             "Distance between guide lines along spirals").IncrementAlongSpirals = 5000
 
+        obj.addProperty(
+            "App::PropertyFloatList", "StationList", "Base",
+            "List of stations").StationList = []
+
         obj.setEditorMode('StartStation', 1)
         obj.setEditorMode('EndStation', 1)
         obj.Proxy = self
@@ -144,11 +152,7 @@ class GLCluster(GLCFunc):
 
         region = [start, end]
         increments = [tangent, curve, spiral]
-        stations = self.generate(alignment,increments, region, horiz_pnts)
-
-        guidelines = self.guidelines(obj)
-        guidelines.StationList = stations
-        guidelines.Alignment = alignment
+        obj.StationList = self.generate(alignment,increments, region, horiz_pnts)
 
 
 
