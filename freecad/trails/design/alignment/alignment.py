@@ -30,6 +30,7 @@ import FreeCAD as App
 import Draft
 
 from freecad.trails import ICONPATH, geo_origin
+from pivy import coin
 
 from ..project.support import properties, units
 from ..geometry import support
@@ -185,7 +186,7 @@ class Alignment(Draft._Wire):
         self.Object = obj
 
         self.model = alignment_model.AlignmentModel(
-            self.Object.InList[0].Proxy.get_alignment_data(obj.ID)
+            self.Object.InList[0].Proxy.get_alignment_data(obj, obj.Name)
         )
 
         self.build_curve_edge_dict()

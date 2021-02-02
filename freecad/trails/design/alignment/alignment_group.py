@@ -94,6 +94,7 @@ class _AlignmentGroup():
         Restore object references on reload
         """
 
+        print('Alignment Group onDocumentRestored()')
         self.Object = obj
 
         ProjectObserver.get(App.ActiveDocument).register(
