@@ -24,6 +24,7 @@ import FreeCAD
 import FreeCADGui
 from PySide import QtCore, QtGui
 from freecad.trails import ICONPATH
+from ..surface import surfaces
 import MeshPart
 import Draft
 import os
@@ -68,35 +69,11 @@ class CreateSections:
         self.IPFui.setWindowFlags(QtCore.Qt.Window)
         self.IPFui.show()
 
-        self.IPFui.GLGCB.clear()
-
-        try:
-            self.GuideLines = FreeCAD.ActiveDocument.GuideLines
-        except Exception:
-            self.GuideLines = FreeCAD.ActiveDocument.addObject(
-                "App::DocumentObjectGroup", 'GuideLines')
-            self.GuideLines.Label = "Guide Lines"
-
-        GuideLinesGroup = self.GuideLines.Group
-        self.GuideLinesList = []
-
-        for group in GuideLinesGroup:
-            if group.TypeId == 'App::DocumentObjectGroup':
-                self.GuideLinesList.append(group.Name)
-                self.IPFui.GLGCB.addItem(group.Label)
-
         self.IPFui.SelectSurfacesLW.clear()
-        try:
-            self.Surfaces = FreeCAD.ActiveDocument.Surfaces
-        except Exception:
-            self.Surfaces = FreeCAD.ActiveDocument.addObject(
-                "App::DocumentObjectGroup", 'Surfaces')
-            self.Surfaces.Label = "Surfaces"
-
-        SurfacesGroup = self.Surfaces.Group
+        surface_group = surfaces.get()
         self.SurfacesList = {}
 
-        for surface in SurfacesGroup:
+        for surface in surface_group.Group:
             self.SurfacesList[surface.Label] = surface
             self.IPFui.SelectSurfacesLW.addItem(surface.Label)
 
@@ -136,35 +113,19 @@ class CreateSections:
         """
         Select section views location
         """
-        try:
-            if (event["Button"] == "BUTTON1") and (event["State"] == "DOWN"):
-                clickPos = event["Position"]
-                self.view.removeEventCallback("SoEvent", self.callback)
-                position = self.view.getPoint(clickPos)
-                self.drawSecViews(position)
-        except Exception: pass
+        if (event["Button"] == "BUTTON1") and (event["State"] == "DOWN"):
+            clickPos = event["Position"]
+            self.view.removeEventCallback("SoEvent", self.callback)
+            position = self.view.getPoint(clickPos)
+            self.drawSecViews(position)
 
 
     def CreateSections(self):
-        FreeCADVersion = FreeCAD.Version()
-        if FreeCADVersion[0] == '0' and int(FreeCADVersion[1]) < 19:
-            FreeCAD.Console.PrintError(
-                "This feature is only available on versions > 0.18")
-            return
-
         try:
             self.SectionsGroup = FreeCAD.ActiveDocument.Sections
         except Exception:
             self.SectionsGroup = FreeCAD.ActiveDocument.addObject(
                 "App::DocumentObjectGroup", 'Sections')
-            self.SectionsGroup.Label = "Sections"
-
-        self.GuideLineIndex = self.IPFui.GLGCB.currentIndex()
-
-        if self.GuideLineIndex < 0:
-            FreeCAD.Console.PrintMessage(
-                "No Guide Lines Group")
-            return
 
         self.callback = self.view.addEventCallback("SoEvent",self.placeSecViews)
 
@@ -174,56 +135,59 @@ class CreateSections:
         _counter = 0
         _buffer = 50000
 
-        GuideLineName = self.GuideLinesList[self.GuideLineIndex]
-        guide_lines = FreeCAD.ActiveDocument.getObject(GuideLineName).Group
+        selection = FreeCADGui.Selection.getSelection()
 
-        multi_views_nor = math.ceil(len(guide_lines)**0.5)
+        if selection:
+            if selection[-1].Proxy.Type == 'Trails::Guidelines':
+                guide_lines = selection[-1]
 
-        view_width =[]
-        view_heigth =[]
-        _origin = None
-        for SelectedItem in self.IPFui.SelectSurfacesLW.selectedItems():
-            _surface = self.SurfacesList[SelectedItem.text()]
-            _points = []
+                multi_views_nor = math.ceil(len(guide_lines.Shape.Wires)**0.5)
 
-            for _edge in guide_line.Shape.Edges:
-                _params = MeshPart.findSectionParameters(
-                    _edge, _surface.Mesh, FreeCAD.Vector(0, 0, 1))
-                _params.insert(0, _edge.FirstParameter+1)
-                _params.append(_edge.LastParameter-1)
+                view_width =[]
+                view_heigth =[]
+                _origin = None
+                for SelectedItem in self.IPFui.SelectSurfacesLW.selectedItems():
+                    _surface = self.SurfacesList[SelectedItem.text()]
+                    _points = []
 
-                _values = [_edge.valueAt(i) for i in _params]
-                _points += _values
+                    for _edge in guide_lines.Shape.Edges:
+                        _params = MeshPart.findSectionParameters(
+                            _edge, _surface.Mesh, FreeCAD.Vector(0, 0, 1))
+                        _params.insert(0, _edge.FirstParameter+1)
+                        _params.append(_edge.LastParameter-1)
 
-            section_points = MeshPart.projectPointsOnMesh(
-                _points, _surface.Mesh, FreeCAD.Vector(0, 0, 1))
+                        _values = [_edge.valueAt(i) for i in _params]
+                        _points += _values
 
-            sec_points_2d = self.convert2View(section_points, _origin)
-            _section = Draft.makeWire(sec_points_2d)
+                    section_points = MeshPart.projectPointsOnMesh(
+                        _points, _surface.Mesh, FreeCAD.Vector(0, 0, 1))
 
-            view_width.append([min(i.x for i in sec_points_2d),
-                max(i.x for i in sec_points_2d)])
-            view_heigth.append([min(i.y for i in sec_points_2d),
-                max(i.y for i in sec_points_2d)])
+                    sec_points_2d = self.convert2View(section_points, _origin)
+                    _section = Draft.makeWire(sec_points_2d)
 
-            _section.Placement.move(_position)
-            self.SectionsGroup.addObject(_section)
-            _origin = section_points[0]
+                    view_width.append([min(i.x for i in sec_points_2d),
+                        max(i.x for i in sec_points_2d)])
+                    view_heigth.append([min(i.y for i in sec_points_2d),
+                        max(i.y for i in sec_points_2d)])
 
-        if _counter == multi_views_nor:
-            _dx = max(i[1] for i in view_width) - min(i[0] for i in view_width)
-            _shifting = _position.x - pos.x + _buffer
-            _reposition = FreeCAD.Vector(_dx + _shifting, 0, 0)
-            _position = pos.add(_reposition)
-            view_width.clear()
-            view_heigth.clear()
-            _counter = 0
-        else:
-            _dy = max(i[1] for i in view_heigth) - min(i[0] for i in view_heigth)
-            _reposition = FreeCAD.Vector(0, -(_dy + _buffer), 0)
-            _position = _position.add(_reposition)
-            view_heigth.clear()
-            _counter += 1
+                    _section.Placement.move(_position)
+                    self.SectionsGroup.addObject(_section)
+                    _origin = section_points[0]
+
+                if _counter == multi_views_nor:
+                    _dx = max(i[1] for i in view_width) - min(i[0] for i in view_width)
+                    _shifting = _position.x - pos.x + _buffer
+                    _reposition = FreeCAD.Vector(_dx + _shifting, 0, 0)
+                    _position = pos.add(_reposition)
+                    view_width.clear()
+                    view_heigth.clear()
+                    _counter = 0
+                else:
+                    _dy = max(i[1] for i in view_heigth) - min(i[0] for i in view_heigth)
+                    _reposition = FreeCAD.Vector(0, -(_dy + _buffer), 0)
+                    _position = _position.add(_reposition)
+                    view_heigth.clear()
+                    _counter += 1
 
         FreeCAD.ActiveDocument.recompute()
 FreeCADGui.addCommand('Create Section Views', CreateSections())
