@@ -46,6 +46,7 @@ class GLCFunc:
             if child.Proxy.Type == 'Trails::Guidelines':
                 return child
         gl = guidelines.create()
+        gl.Alignment = obj.Alignment
         obj.addObject(gl)
         return gl
 
