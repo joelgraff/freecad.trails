@@ -24,7 +24,6 @@ import FreeCAD
 import FreeCADGui
 from freecad.trails import ICONPATH
 from . import gl_cluster
-from freecad.trails.design.alignment import alignment_group
 
 
 class CreateGuidelines:
@@ -52,25 +51,23 @@ class CreateGuidelines:
         """
         # Check for document
         if FreeCAD.ActiveDocument:
-            return True
+            # Check for selected object
+            selection = FreeCADGui.Selection.getSelection()
+            if selection:
+                if selection[-1].Proxy.Type == 'Trails::Alignment':
+                    return True
         return False
 
     def Activated(self):
 
         # Check for selected object
-        alignments = alignment_group.get()
         selection = FreeCADGui.Selection.getSelection()
 
-        # Check that the Alignments Group has objects
-        if len(alignments.Group) == 0:
-            FreeCAD.Console.PrintMessage(
-                "Please add an Alignment or Wire to the Alignment Group")
-            return
-
-        try:
-            gl_cluster.create(selection[-1])
-        except Exception:
-            FreeCAD.Console.PrintMessage(
-                "Please select an Alignment or Wire")
+        if selection:
+            if selection[-1].Proxy.Type == 'Trails::Alignment':
+                gl_cluster.create(selection[-1])
+            else:
+                FreeCAD.Console.PrintMessage(
+                    "Please select an Alignment or Wire")
 
 FreeCADGui.addCommand('Create Guidelines', CreateGuidelines())
