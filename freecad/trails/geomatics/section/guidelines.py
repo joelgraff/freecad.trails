@@ -86,6 +86,9 @@ class GuideLines(GLFunc):
         '''
         Do something when doing a recomputation. 
         '''
+        if not obj.InList: return
+
+        obj.StationList = obj.InList[0].StationList
         alignment = obj.getPropertyByName("Alignment")
         stations = obj.getPropertyByName("StationList")
 
@@ -168,25 +171,24 @@ class ViewProviderGuideLines:
 
             points = []
             line_vert = []
-            counter = 0
-            for wire in shape.Wires:
+            for i, wire in enumerate(shape.Wires):
                 font = coin.SoFont()
                 font.size = 1000
                 gl_label = coin.SoSeparator()
                 location = coin.SoTranslation()
                 text = coin.SoAsciiText()
 
+                label = str(round(obj.StationList[i], 2))
+                location.translation = wire.Vertexes[-1].Point
+                text.string.setValues([label])
+                gl_label.addChild(font)
+                gl_label.addChild(location)
+                gl_label.addChild(text)
+                self.gl_labels.addChild(gl_label)
+
                 for vertex in wire.Vertexes:
                     points.append(vertex.Point.add(base))
-                    label = str(round(obj.StationList[counter], 2))
-                    location.translation = wire.Vertexes[-1].Point
-                    text.string.setValues([label])
-                    gl_label.addChild(font)
-                    gl_label.addChild(location)
-                    gl_label.addChild(text)
-                    self.gl_labels.addChild(gl_label)
 
-                counter += 1
                 line_vert.append(len(wire.Vertexes))
 
             self.line_coords.point.values = points
