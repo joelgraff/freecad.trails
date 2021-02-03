@@ -94,16 +94,37 @@ class _AlignmentGroup():
         Restore object references on reload
         """
 
-        print('Alignment Group onDocumentRestored()')
         self.Object = obj
 
         ProjectObserver.get(App.ActiveDocument).register(
             'StartSaveDocument', self.write_xml
             )
 
-        print('Restoring alignment data...')
-
         self.data = AlignmentImporter().import_file(obj.Xml_Path)
+
+        if not obj.OutList:
+            print(f'WARNING: No alignments found in group {obj.Name}')
+            return
+
+        _aligns = self.data.get('Alignments')
+
+        #force initialization of the alignment objects, assuming
+        #alignment group object is loaded last.
+        for _c in obj.OutList:
+
+            _n = None
+
+            for _v in _aligns.keys():
+
+                if _v in _c.Label:
+                    _n = _v
+                    break
+
+            if _n:
+                _c.Proxy.initialize_model(_aligns[_n])
+
+            else:
+                print(f'WARNING: Unable to retrieve data for {_c.Label} alignment')
 
     def get_alignment_data(self, group, align_name):
         """
@@ -111,13 +132,13 @@ class _AlignmentGroup():
         """
         self.data = AlignmentImporter().import_file(group.Xml_Path)
 
-        _aligns = self.data.get(align_name)
+        _aligns = self.data.get('Alignments')
 
         if _aligns is None:
             print('No Alignment Group data found')
             return None
 
-        if _aligns[lign_name] is None:
+        if _aligns[align_name] is None:
             print('No alignment data found for ', align_name)
             return None
 

@@ -185,11 +185,16 @@ class Alignment(Draft._Wire):
 
         self.Object = obj
 
-        self.model = alignment_model.AlignmentModel(
-            self.Object.InList[0].Proxy.get_alignment_data(obj, obj.Name)
-        )
+    def initialize_model(self, model):
+        """
+        Callback triggered from the parent group to force model update
+        """
+        self.model = alignment_model.AlignmentModel(model)
+            #self.Object.InList[0].Proxy.get_alignment_data(obj, obj.Name)
+        #)
 
         self.build_curve_edge_dict()
+
 
     def _plot_vectors(self, stations, interval=1.0, is_ortho=True):
         """
