@@ -28,6 +28,7 @@ from copy import deepcopy
 
 import FreeCAD as App
 import Draft
+import Part
 
 from freecad.trails import ICONPATH, geo_origin
 from pivy import coin
@@ -35,9 +36,6 @@ from pivy import coin
 from ..project.support import properties, units
 from ..geometry import support
 from . import alignment_group, alignment_model
-
-_CLASS_NAME = 'HorizontalAlignment'
-_TYPE = 'Part::Part2DObjectPython'
 
 __title__ = 'alignment.py'
 __author__ = 'Joel Graff'
@@ -55,7 +53,7 @@ def create(geometry, object_name='', parent=None, no_visual=False, zero_referenc
         print('No curve geometry supplied')
         return
 
-    _name = _CLASS_NAME
+    _name = "Alignment FeaturePython Object"
 
     if object_name:
         _name = object_name
@@ -63,13 +61,14 @@ def create(geometry, object_name='', parent=None, no_visual=False, zero_referenc
     _obj = None
 
     if not parent:
-        _obj = App.ActiveDocument.addObject(_TYPE, _name)
+        _obj = App.ActiveDocument.addObject("Part::Part2DObjectPython", _name)
 
     else:
-        _obj = parent.newObject(_TYPE, _name)
+        _obj = parent.newObject("Part::Part2DObjectPython", _name)
 
-    result = Alignment(_obj, _name)
-    result.set_geometry(geometry, zero_reference)
+    HorizontalAlignment(_obj, _name)
+
+    _obj.Proxy.set_geometry(geometry, zero_reference)
 
     ViewProviderHorizontalAlignment(_obj.ViewObject)
 
@@ -77,7 +76,7 @@ def create(geometry, object_name='', parent=None, no_visual=False, zero_referenc
 
     return _obj
 
-class Alignment(Draft._Wire):
+class HorizontalAlignment():
     """
     FeaturePython Alignment class
     """
@@ -87,13 +86,11 @@ class Alignment(Draft._Wire):
         Default Constructor
         """
 
-        super(Alignment, self).__init__(obj)
-
         self.no_execute = True
 
         obj.Proxy = self
 
-        self.Type = 'Trails::Alignment'
+        self.Type = 'Trails::HorizontalAlignment'
         self.Object = obj
         self.errors = []
 
@@ -104,7 +101,6 @@ class Alignment(Draft._Wire):
         self.hashes = None
 
         obj.Label = label
-        obj.Closed = False
 
         if not label:
             obj.Label = obj.Name
@@ -131,6 +127,9 @@ class Alignment(Draft._Wire):
         obj.addProperty(
             'App::PropertyEnumeration', 'Status', 'Base', 'Alignment status'
         ).Status = ['existing', 'proposed', 'abandoned', 'destroyed']
+
+        #obj.addProperty("Part::PropertyPartShape", "Shape", "Base",
+        #    "Alignment Shape").Shape = Part.Shape()
 
         properties.add(
             obj, 'Vector', 'Datum', 'Datum value as Northing / Easting',
@@ -189,12 +188,12 @@ class Alignment(Draft._Wire):
         """
         Callback triggered from the parent group to force model update
         """
+
         self.model = alignment_model.AlignmentModel(model)
             #self.Object.InList[0].Proxy.get_alignment_data(obj, obj.Name)
         #)
 
         self.build_curve_edge_dict()
-
 
     def _plot_vectors(self, stations, interval=1.0, is_ortho=True):
         """
@@ -436,32 +435,45 @@ class Alignment(Draft._Wire):
         """
         Recompute callback
         """
+
         if hasattr(self, 'no_execute'):
             return
 
-        points = self.model.discretize_geometry(
-            [0.0], self.Object.Method, self.Object.Seg_Value
-        )
+        points = None
+
+        if hasattr(self.model, 'discretize_geometry'):
+            points = self.model.discretize_geometry(
+                [0.0], self.Object.Method, self.Object.Seg_Value)
 
         if not points:
             return
 
-        self.Object.Points = points
+        _wires = []
+        _prev = App.Vector(points[0])
+
+        for _p in points[1:]:
+            _q = App.Vector(_p)
+
+            _wires.append(Part.LineSegment(_prev, _q))
+            _prev = _q
+
+        _shape = Part.Shape(_wires)
+        _wire = Part.Wire(_shape.Edges)
+
+        self.Shape = Part.makeCompound(_wire)
 
         _pl = App.Placement()
         #_pl.Base = self.model.data.get('meta').get('Start')
 
-        self.Object.Placement = _pl
+        self.Shape.Placement = _pl
 
-        super(Alignment, self).execute(obj)
-
-
-class ViewProviderHorizontalAlignment(Draft._ViewProviderWire):
+class ViewProviderHorizontalAlignment():
 
     def __init__(self, obj):
         """
         Initialize the view provider
         """
+
         obj.Proxy = self
         self.Object = obj
 
@@ -479,6 +491,7 @@ class ViewProviderHorizontalAlignment(Draft._ViewProviderWire):
         """
         View provider scene graph initialization
         """
+
         self.Object = vobj
 
         # Lines root.

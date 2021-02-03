@@ -59,7 +59,7 @@ def create(geometry, object_name='', parent=None, no_visual=False, zero_referenc
     if object_name:
         _name = object_name
 
-    _obj = App.ActiveDocument.addObject("App::FeaturePython", "Alignment")
+    _obj = App.ActiveDocument.addObject("Part::Part2DObjectPython", "Alignment")
 
     if object_name:
         _obj.Label = object_name

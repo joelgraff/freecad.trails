@@ -110,7 +110,7 @@ class GLCFunc:
                     for sta in range(int(elem_start), int(elem_end)):
                         if sta % int(spiral_increment) == 0:
                             stations.append(sta)
-    
+
             # Add the end station
             stations.append(round(end,3))
 
