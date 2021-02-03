@@ -89,7 +89,7 @@ class GLFunc:
             right_side = coord.add(right_vec.negative().multiply(right_offset))
 
             left_line = Part.LineSegment(left_side, coord)
-            right_line = Part.LineSegment(right_side, coord)
+            right_line = Part.LineSegment(coord, right_side)
 
             # Generate guide line object and add to cluster
             shape = Part.Shape([left_line,right_line])
