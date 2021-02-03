@@ -112,11 +112,13 @@ class CreateSections:
         """
         Select section views location
         """
-        if (event["Button"] == "BUTTON1") and (event["State"] == "DOWN"):
-            clickPos = event["Position"]
-            self.view.removeEventCallback("SoEvent", self.callback)
-            position = self.view.getPoint(clickPos)
-            self.drawSecViews(position)
+        try:
+            if (event["Button"] == "BUTTON1") and (event["State"] == "DOWN"):
+                clickPos = event["Position"]
+                self.view.removeEventCallback("SoEvent", self.callback)
+                position = self.view.getPoint(clickPos)
+                self.drawSecViews(position)
+        except Exception: pass
 
 
     def CreateSections(self):
@@ -144,13 +146,13 @@ class CreateSections:
 
                 view_width =[]
                 view_heigth =[]
-                _origin = None
-                for SelectedItem in self.IPFui.SelectSurfacesLW.selectedItems():
-                    _surface = self.SurfacesList[SelectedItem.text()]
-                    _points = []
-                    wire_list = []
+                wire_list = []
+                for wire in guide_lines.Shape.Wires:
+                    _origin = None
+                    for SelectedItem in self.IPFui.SelectSurfacesLW.selectedItems():
+                        _surface = self.SurfacesList[SelectedItem.text()]
+                        _points = []
 
-                    for wire in guide_lines.Shape.Wires:
                         for _edge in wire.Edges:
                             _params = MeshPart.findSectionParameters(
                                 _edge, _surface.Mesh, FreeCAD.Vector(0, 0, 1))
@@ -199,8 +201,8 @@ class CreateSections:
                         view_heigth.clear()
                         _counter += 1
 
-                    _section = Part.makeCompound(wire_list)
-                    self.SectionsGroup.addObject(Part.show(_section))
+                _section = Part.makeCompound(wire_list)
+                Part.show(_section)
 
         FreeCAD.ActiveDocument.recompute()
 FreeCADGui.addCommand('Create Section Views', CreateSections())
