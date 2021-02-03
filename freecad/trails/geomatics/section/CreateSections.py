@@ -25,8 +25,7 @@ import FreeCADGui
 from PySide import QtCore, QtGui
 from freecad.trails import ICONPATH
 from ..surface import surfaces
-import MeshPart
-import Draft
+import MeshPart, Part
 import os
 
 class CreateSections:
@@ -149,45 +148,59 @@ class CreateSections:
                 for SelectedItem in self.IPFui.SelectSurfacesLW.selectedItems():
                     _surface = self.SurfacesList[SelectedItem.text()]
                     _points = []
+                    wire_list = []
 
-                    for _edge in guide_lines.Shape.Edges:
-                        _params = MeshPart.findSectionParameters(
-                            _edge, _surface.Mesh, FreeCAD.Vector(0, 0, 1))
-                        _params.insert(0, _edge.FirstParameter+1)
-                        _params.append(_edge.LastParameter-1)
+                    for wire in guide_lines.Shape.Wires:
+                        for _edge in wire.Edges:
+                            _params = MeshPart.findSectionParameters(
+                                _edge, _surface.Mesh, FreeCAD.Vector(0, 0, 1))
+                            _params.insert(0, _edge.FirstParameter+1)
+                            _params.append(_edge.LastParameter-1)
 
-                        _values = [_edge.valueAt(i) for i in _params]
-                        _points += _values
+                            _values = [_edge.valueAt(i) for i in _params]
+                            _points += _values
 
-                    section_points = MeshPart.projectPointsOnMesh(
-                        _points, _surface.Mesh, FreeCAD.Vector(0, 0, 1))
+                        section_points = MeshPart.projectPointsOnMesh(
+                            _points, _surface.Mesh, FreeCAD.Vector(0, 0, 1))
 
-                    sec_points_2d = self.convert2View(section_points, _origin)
-                    _section = Draft.makeWire(sec_points_2d)
+                        sec_points_2d = self.convert2View(section_points, _origin)
 
-                    view_width.append([min(i.x for i in sec_points_2d),
-                        max(i.x for i in sec_points_2d)])
-                    view_heigth.append([min(i.y for i in sec_points_2d),
-                        max(i.y for i in sec_points_2d)])
+                        view_width.append([min(i.x for i in sec_points_2d),
+                            max(i.x for i in sec_points_2d)])
+                        view_heigth.append([min(i.y for i in sec_points_2d),
+                            max(i.y for i in sec_points_2d)])
 
-                    _section.Placement.move(_position)
-                    self.SectionsGroup.addObject(_section)
-                    _origin = section_points[0]
+                        draw_sec = []
+                        for i in sec_points_2d:
+                            draw_sec.append(i.add(_position))
 
-                if _counter == multi_views_nor:
-                    _dx = max(i[1] for i in view_width) - min(i[0] for i in view_width)
-                    _shifting = _position.x - pos.x + _buffer
-                    _reposition = FreeCAD.Vector(_dx + _shifting, 0, 0)
-                    _position = pos.add(_reposition)
-                    view_width.clear()
-                    view_heigth.clear()
-                    _counter = 0
-                else:
-                    _dy = max(i[1] for i in view_heigth) - min(i[0] for i in view_heigth)
-                    _reposition = FreeCAD.Vector(0, -(_dy + _buffer), 0)
-                    _position = _position.add(_reposition)
-                    view_heigth.clear()
-                    _counter += 1
+                        line_segments = []
+                        for i in range(0, len(draw_sec)-1):
+                            if draw_sec[i] == draw_sec[i+1]: continue
+                            line_segments.append(Part.LineSegment(draw_sec[i], draw_sec[i+1]))
+
+                        shape = Part.Shape(line_segments)
+                        wire = Part.Wire(shape.Edges)
+                        wire_list.append(wire)
+                        _origin = section_points[0]
+
+                    if _counter == multi_views_nor:
+                        _dx = max(i[1] for i in view_width) - min(i[0] for i in view_width)
+                        _shifting = _position.x - pos.x + _buffer
+                        _reposition = FreeCAD.Vector(_dx + _shifting, 0, 0)
+                        _position = pos.add(_reposition)
+                        view_width.clear()
+                        view_heigth.clear()
+                        _counter = 0
+                    else:
+                        _dy = max(i[1] for i in view_heigth) - min(i[0] for i in view_heigth)
+                        _reposition = FreeCAD.Vector(0, -(_dy + _buffer), 0)
+                        _position = _position.add(_reposition)
+                        view_heigth.clear()
+                        _counter += 1
+
+                    _section = Part.makeCompound(wire_list)
+                    self.SectionsGroup.addObject(Part.show(_section))
 
         FreeCAD.ActiveDocument.recompute()
 FreeCADGui.addCommand('Create Section Views', CreateSections())
