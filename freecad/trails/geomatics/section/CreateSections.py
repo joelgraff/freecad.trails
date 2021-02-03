@@ -46,7 +46,7 @@ class CreateSections:
             self.Path + "/CreateSections.ui")
 
         # To Do List
-        self.IPFui.CreateB.clicked.connect(self.CreateSections)
+        self.IPFui.CreateB.clicked.connect(self.start_event)
         self.IPFui.CancelB.clicked.connect(self.IPFui.close)
 
     def GetResources(self):
@@ -121,13 +121,7 @@ class CreateSections:
         except Exception: pass
 
 
-    def CreateSections(self):
-        try:
-            self.SectionsGroup = FreeCAD.ActiveDocument.Sections
-        except Exception:
-            self.SectionsGroup = FreeCAD.ActiveDocument.addObject(
-                "App::DocumentObjectGroup", 'Sections')
-
+    def start_event(self):
         self.callback = self.view.addEventCallback("SoEvent",self.placeSecViews)
 
     def drawSecViews(self, pos):
