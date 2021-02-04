@@ -34,7 +34,7 @@ from draftguitools.gui_tool_utils import redraw3DView
 
 from freecad.trails import resources
 
-from ....alignment import alignment
+from ....alignment import horizontal_alignment
 
 from ...support import const, utils, units
 from ...support.mouse_state import MouseState
@@ -76,7 +76,7 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         self.panel = None
         self.doc = doc
         self.Object = obj
-        self.alignment = alignment.create(
+        self.alignment = horizontal_alignment.create(
             alignment_data, 'TEMP', None, True, False).Proxy
 
         #self.alignment = self.alignment.Proxy

@@ -65,7 +65,7 @@ class EditAlignmentCmd(Modifier):
         if not selected:
             return False
 
-        if not selected[0].Proxy.Type == 'Trails::Alignment':
+        if not selected[0].Proxy.Type == 'Trails::HorizontalAlignment':
             return False
 
         return True

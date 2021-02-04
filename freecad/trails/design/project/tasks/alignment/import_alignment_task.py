@@ -36,7 +36,7 @@ from . import import_xml_subtask #, ImportCsvSubtask
 
 from ...support import utils
 from freecad.trails import resources
-from ....alignment import alignment_group, alignment
+from ....alignment import alignment_group, horizontal_alignment
 
 class ImportAlignmentTask:
     """
@@ -71,7 +71,7 @@ class ImportAlignmentTask:
 
         for _v in data['Alignments'].values():
 
-            result = alignment.create(
+            result = horizontal_alignment.create(
                 _v, _v['meta']['ID'] + ' Horiz', parent=parent).Proxy
 
             if result.errors:
