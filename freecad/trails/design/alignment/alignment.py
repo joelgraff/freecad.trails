@@ -61,10 +61,10 @@ def create(geometry, object_name='', parent=None, no_visual=False, zero_referenc
     _obj = None
 
     if not parent:
-        _obj = App.ActiveDocument.addObject("Part::Part2DObjectPython", _name)
+        _obj = App.ActiveDocument.addObject("App::FeaturePython", _name)
 
     else:
-        _obj = parent.newObject("Part::Part2DObjectPython", _name)
+        _obj = parent.newObject("App::FeaturePython", _name)
 
     HorizontalAlignment(_obj, _name)
 
@@ -128,8 +128,8 @@ class HorizontalAlignment():
             'App::PropertyEnumeration', 'Status', 'Base', 'Alignment status'
         ).Status = ['existing', 'proposed', 'abandoned', 'destroyed']
 
-        #obj.addProperty("Part::PropertyPartShape", "Shape", "Base",
-        #    "Alignment Shape").Shape = Part.Shape()
+        obj.addProperty("Part::PropertyPartShape", "Shape", "Base",
+            "Alignment Shape").Shape = Part.Shape()
 
         properties.add(
             obj, 'Vector', 'Datum', 'Datum value as Northing / Easting',
@@ -460,12 +460,12 @@ class HorizontalAlignment():
         _shape = Part.Shape(_wires)
         _wire = Part.Wire(_shape.Edges)
 
-        self.Shape = Part.makeCompound(_wire)
+        obj.Shape = Part.makeCompound(_wire)
 
-        _pl = App.Placement()
+        #_pl = App.Placement()
         #_pl.Base = self.model.data.get('meta').get('Start')
 
-        self.Shape.Placement = _pl
+        #obj.Shape.Placement = _pl
 
 class ViewProviderHorizontalAlignment():
 
@@ -476,10 +476,6 @@ class ViewProviderHorizontalAlignment():
 
         obj.Proxy = self
         self.Object = obj
-
-        self.lines = None
-        self.line_coords = None
-
 
     def __getstate__(self):
         return None
@@ -523,11 +519,15 @@ class ViewProviderHorizontalAlignment():
         Update Object visuals when a data property changed.
         '''
 
-        if prop == "Points":
+        if prop == "Shape":
 
-            points = obj.getPropertyByName("Points")
+            shape = obj.getPropertyByName("Shape")
 
-            if points:
+            if shape.Vertexes:
+                points = []
+
+                for vertex in shape.Vertexes:
+                    points.append(vertex.Point)
 
                 # Get GeoOrigin.
                 origin = geo_origin.get(points[0])
