@@ -587,8 +587,8 @@ class ViewProviderHorizontalAlignment():
                 left_vec = deepcopy(vec)
                 right_vec = deepcopy(vec)
 
-                left_side = coord.add(left_vec.multiply(3000))
-                right_side = coord.add(right_vec.negative().multiply(3000))
+                left_side = coord.add(left_vec.multiply(1500))
+                right_side = coord.add(right_vec.negative().multiply(1500))
                 stations[sta] = [left_side, right_side]
 
         return stations
