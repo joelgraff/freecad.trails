@@ -87,4 +87,3 @@ class Navigation:
                 0.0+math.cos(math.pi*self.roll/180)))
 
 
-Navigation()
