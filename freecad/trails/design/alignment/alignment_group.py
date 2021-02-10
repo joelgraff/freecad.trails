@@ -31,11 +31,13 @@ __url__ = "https://www.freecadweb.org"
 
 import FreeCAD as App
 
+from pivy_trackers.coin.todo import todo
 from ..project.support import properties, units
 from ..project.project_observer import ProjectObserver
 from ..project.xml.alignment_exporter import AlignmentExporter
 from ..project.xml.alignment_importer import AlignmentImporter
 from freecad.trails import ICONPATH, geo_origin, resources
+from .alignment_registrar import AlignmentRegistrar
 
 def get(align_name):
     """
@@ -76,6 +78,7 @@ class _AlignmentGroup():
         self.Object = obj
         self.data = None
         self.importer = AlignmentImporter()
+        self.registrar = AlignmentRegistrar()
 
         properties.add(obj, 'String', 'ID', 'Alignment group name', '',
                        is_read_only=True)
@@ -96,21 +99,30 @@ class _AlignmentGroup():
 
         self.Object = obj
 
+        self.registrar = AlignmentRegistrar()
+
+        self.registrar.set_group(self)
+
+    def initialize_alignment(self, alignment):
+        """
+        Initialize the passed alignment
+        """
+
         ProjectObserver.get(App.ActiveDocument).register(
             'StartSaveDocument', self.write_xml
             )
 
-        self.data = AlignmentImporter().import_file(obj.Xml_Path)
+        self.data = AlignmentImporter().import_file(self.Object.Xml_Path)
 
-        if not obj.OutList:
-            print(f'WARNING: No alignments found in group {obj.Name}')
+        if not self.Object.OutList:
+            print(f'WARNING: No alignments found in group {self.Object.Name}')
             return
 
         _aligns = self.data.get('Alignments')
 
         #force initialization of the alignment objects, assuming
         #alignment group object is loaded last.
-        for _c in obj.OutList:
+        for _c in self.Object.OutList:
 
             _n = None
 
@@ -154,7 +166,7 @@ class _AlignmentGroup():
         #iterate the list of children, acquiring their data sets
         #and creating a total data set for alignments.
         for _obj in self.Object.OutList:
-            if _obj.Proxy.Type == 'Trails::Alignment':
+            if _obj.Proxy.Type == 'Trails::HorizontalAlignment':
                 _list.append(_obj.Proxy.get_data())
 
         exporter = AlignmentExporter()

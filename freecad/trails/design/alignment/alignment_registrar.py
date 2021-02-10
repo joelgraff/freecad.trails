@@ -22,12 +22,14 @@
 #***********************************************************************
 
 """
-Abstract Class for Alignments
+Class for restoring alignment data after a document has loaded
 """
 
-class Alignment():
+from freecad_python_support.singleton import Singleton
+
+class AlignmentRegistrar(metaclass=Singleton):
     """
-    Abstract parent class for alignment inheritance
+    Registrar class for managing object data restoration
     """
 
     def __init__(self):
@@ -35,23 +37,33 @@ class Alignment():
         Constructor
         """
 
-        pass
+        self.alignments = []
+        self.group = None
 
-    def onChanged(self, obj, prop):
+    def set_group(self, obj):
         """
-        Property change callback stub
-        """
-
-        #if Iinitialized property does not exist, object construction is not
-        #yet complete and event has been triggered prematurely
-        return hasattr(self, 'Object') and hasattr(self.Object, 'Initialized')
-
-
-    def execute(self, obj):
-        """
-        Recompute callback stub
+        Set the AlignmentGroup object
         """
 
-        #if Iinitialized property does not exist, object construction is not
-        #yet complete and event has been triggered prematurely
-        return hasattr(self, 'Object') and hasattr(self.Object, 'Initialized')
+        self.group = obj
+
+        #force initizliation if alignments are defined:
+        if self.alignments:
+
+            for _a in self.alignments:
+                self.group.initialize_alignment(_a)
+
+            self.alignments = []
+
+    def register_alignment(self, obj):
+        """
+        Add the alignment object
+        """
+
+        #intialize alignment if group is defined
+        if self.group:
+            self.group.initialize_alignment(obj)
+
+        #save to list until group is defined
+        else:
+            self.alignments.append(obj)

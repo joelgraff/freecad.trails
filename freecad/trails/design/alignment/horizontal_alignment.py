@@ -37,8 +37,9 @@ from ..project.support import properties, units
 from ..geometry import support
 from . import alignment_group, alignment_model
 from .alignment import Alignment
+from .alignment_registrar import AlignmentRegistrar
 
-__title__ = 'alignment.py'
+__title__ = 'horizontal_alignment.py'
 __author__ = 'Joel Graff'
 __url__ = "https://www.freecadweb.org"
 
@@ -87,18 +88,8 @@ class HorizontalAlignment(Alignment):
         Default Constructor
         """
 
-        self.errors = []
-
-        self.curve_edges = None
-
-        self.model = None
-        self.meta = {}
-        self.hashes = None
-
-        #add class properties
-
         #metadata
-        properties.add(obj, 'String', 'ID', 'ID of alignment', '')
+        properties.add(obj, 'String', 'ID', 'ID of alignment', label)
         properties.add(obj, 'String', 'oID', 'Object ID', '')
 
         properties.add(
@@ -158,7 +149,34 @@ class HorizontalAlignment(Alignment):
                        int(1000.0 / units.scale_factor()) / 100.0
                       )
 
-        super().__init__(obj, label, 'HorizontalAlignment')
+        #add class members
+        obj.Label = label
+
+        self.init_class_members(obj)
+
+        #create property to indicate object is fully initialized
+        #done to prevent premature event excution
+        obj.addProperty('App::PropertyBool', 'Initialized', 'Base', 'Is Initialized').Initialized = True
+
+    def init_class_members(self, obj):
+        """
+        Separate function for initialization on creation / reload
+        """
+
+        obj.Proxy = self
+
+        self.errors = []
+
+        self.curve_edges = None
+
+        self.model = None
+        self.meta = {}
+        self.hashes = None
+
+        self.registrar = AlignmentRegistrar()
+
+        self.Type = 'Trails::HorizontalAlignment'
+        self.Object = obj
 
     def __getstate__(self):
         return self.Type
@@ -172,7 +190,10 @@ class HorizontalAlignment(Alignment):
         Restore object references on reload
         """
 
-        self.Object = obj
+        super().__init__(obj, obj.Name, 'HorizontalAlignment')
+
+        self.init_class_members(obj)
+        self.registrar.register_alignment(self)
 
     def initialize_model(self, model):
         """
@@ -180,9 +201,6 @@ class HorizontalAlignment(Alignment):
         """
 
         self.model = alignment_model.AlignmentModel(model)
-            #self.Object.InList[0].Proxy.get_alignment_data(obj, obj.Name)
-        #)
-
         self.build_curve_edge_dict()
 
     def _plot_vectors(self, stations, interval=1.0, is_ortho=True):
@@ -404,8 +422,8 @@ class HorizontalAlignment(Alignment):
         Property change callback
         """
 
-        if not super().onChanged(obj, prop):
-            return
+        #if not super().onChanged(obj, prop):
+        #    return
 
         #dodge onChanged calls during initialization
         #if hasattr(self, 'no_execute'):
@@ -430,8 +448,8 @@ class HorizontalAlignment(Alignment):
         Recompute callback
         """
 
-        if not super().execute(obj):
-            return
+        #if not super().execute(obj):
+        #    return
 
         points = None
 
