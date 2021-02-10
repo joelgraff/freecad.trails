@@ -476,19 +476,16 @@ class HorizontalAlignment(Alignment):
 
 class ViewProviderHorizontalAlignment():
 
-    def __init__(self, obj):
+    def __init__(self, vobj):
         """
         Initialize the view provider
         """
 
-        obj.Proxy = self
-        self.Object = obj
+        vobj.addProperty(
+            "App::PropertyBool", "Labels", "Base",
+            "Show/hide labels").Labels = False
 
-    def __getstate__(self):
-        return None
-
-    def __setstate__(self, state):
-        return None
+        vobj.Proxy = self
 
     def attach(self, vobj):
         """
@@ -508,18 +505,66 @@ class ViewProviderHorizontalAlignment():
         line_style.style = coin.SoDrawStyle.LINES
         line_style.lineWidth = 2
 
+        # Labels root.
+        self.tick_coords = coin.SoGeoCoordinate()
+        self.ticks = coin.SoLineSet()
+        self.labels = coin.SoSeparator()
+
         # Highlight for selection.
         highlight = coin.SoType.fromName('SoFCSelection').createInstance()
         highlight.style = 'EMISSIVE_DIFFUSE'
         highlight.addChild(line_style)
         highlight.addChild(self.line_coords)
         highlight.addChild(self.lines)
+        highlight.addChild(self.tick_coords)
+        highlight.addChild(self.ticks)
 
-        # Surface root.
+        # Alignment root.
         lines_root = coin.SoSeparator()
         lines_root.addChild(line_color)
+        lines_root.addChild(self.labels)
         lines_root.addChild(highlight)
         vobj.addDisplayMode(lines_root,"Wireframe")
+
+    def onChanged(self, vobj, prop):
+        """
+        Handle individual property changes
+        """
+        if prop == "Labels":
+            self.labels.removeAllChildren()
+            labels = vobj.getPropertyByName("Labels")
+            if labels:
+                # Get GeoOrigin.
+                origin = geo_origin.get()
+                base = deepcopy(origin.Origin)
+                base.z = 0
+
+                geo_system = ["UTM", origin.UtmZone, "FLAT"]
+
+                points = []
+                line_vert = []
+                stations = self.get_stations(vobj.Object)
+
+                for label, tick in stations.items():
+                    font = coin.SoFont()
+                    font.size = 3000
+                    sta_label = coin.SoSeparator()
+                    location = coin.SoTranslation()
+                    text = coin.SoAsciiText()
+
+                    location.translation = deepcopy(tick[1]).sub(base)
+                    text.string.setValues([str(label)])
+                    sta_label.addChild(font)
+                    sta_label.addChild(location)
+                    sta_label.addChild(text)
+                    self.labels.addChild(sta_label)
+
+                    points.extend(tick)
+                    line_vert.append(len(tick))
+
+                self.tick_coords.geoSystem.setValues(geo_system)
+                self.tick_coords.point.values = points
+                self.ticks.numVertices.values = line_vert
 
     def updateData(self, obj, prop):
         '''
@@ -527,7 +572,6 @@ class ViewProviderHorizontalAlignment():
         '''
 
         if prop == "Shape":
-
             shape = obj.getPropertyByName("Shape")
 
             if shape.Vertexes:
@@ -543,10 +587,29 @@ class ViewProviderHorizontalAlignment():
 
                 # Set GeoCoords.
                 geo_system = ["UTM", origin.UtmZone, "FLAT"]
+                self.line_coords.geoSystem.setValues(geo_system)
+                self.line_coords.point.values = points
 
-                if self.line_coords:
-                    self.line_coords.geoSystem.setValues(geo_system)
-                    self.line_coords.point.values = points
+    def get_stations(self, obj):
+        start = obj.Proxy.model.data['meta']['StartStation']
+        length = obj.Proxy.model.data['meta']['Length']
+        end = start + length/1000
+
+        stations = {}
+        for sta in range(int(start), int(end)):
+            if sta % 10 == 0:
+                tuple_coord, tuple_vec = obj.Proxy.model.get_orthogonal( sta, "Left")
+                coord = App.Vector(tuple_coord)
+                vec = App.Vector(tuple_vec)
+
+                left_vec = deepcopy(vec)
+                right_vec = deepcopy(vec)
+
+                left_side = coord.add(left_vec.multiply(1500))
+                right_side = coord.add(right_vec.negative().multiply(1500))
+                stations[sta] = [left_side, right_side]
+
+        return stations
 
     def getDisplayMode(self, obj):
         """
@@ -572,8 +635,8 @@ class ViewProviderHorizontalAlignment():
         '''
         return ICONPATH + '/icons/Alignment.svg'
 
-    def onChanged(self, vobj, prop):
-        """
-        Handle individual property changes
-        """
-        pass
+    def __getstate__(self):
+        return None
+
+    def __setstate__(self, state):
+        return None
