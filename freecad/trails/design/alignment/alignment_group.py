@@ -112,17 +112,18 @@ class _AlignmentGroup():
             'StartSaveDocument', self.write_xml
             )
 
-        self.data = AlignmentImporter().import_file(self.Object.Xml_Path)
+        group = alignment.InList[0]
+        self.data = AlignmentImporter().import_file(group.Xml_Path)
 
-        if not self.Object.OutList:
-            print(f'WARNING: No alignments found in group {self.Object.Name}')
+        if not group.OutList:
+            print(f'WARNING: No alignments found in group {group.Name}')
             return
 
         _aligns = self.data.get('Alignments')
 
         #force initialization of the alignment objects, assuming
         #alignment group object is loaded last.
-        for _c in self.Object.OutList:
+        for _c in group.OutList:
 
             _n = None
 
