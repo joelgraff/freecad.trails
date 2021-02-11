@@ -193,7 +193,7 @@ class HorizontalAlignment(Alignment):
         super().__init__()
 
         self.init_class_members(obj)
-        self.registrar.register_alignment(self)
+        self.registrar.register_alignment(obj)
 
     def initialize_model(self, model):
         """
