@@ -65,7 +65,7 @@ class EditAlignmentCmd(Modifier):
         if not selected:
             return False
 
-        if not selected[0].Proxy.Type == 'Trails::Alignment':
+        if not selected[0].Proxy.Type == 'Trails::HorizontalAlignment':
             return False
 
         return True
@@ -98,6 +98,7 @@ class EditAlignmentCmd(Modifier):
         ViewState().view = Gui.ActiveDocument.ActiveView
 
         #create alignment editing task
+
         self.task = edit_alignment_task.create(self.doc, data, obj)
 
         #cz._zoom_camera(cz.Camera())

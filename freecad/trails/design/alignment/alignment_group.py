@@ -31,11 +31,13 @@ __url__ = "https://www.freecadweb.org"
 
 import FreeCAD as App
 
+from pivy_trackers.coin.todo import todo
 from ..project.support import properties, units
 from ..project.project_observer import ProjectObserver
 from ..project.xml.alignment_exporter import AlignmentExporter
 from ..project.xml.alignment_importer import AlignmentImporter
 from freecad.trails import ICONPATH, geo_origin, resources
+from .alignment_registrar import AlignmentRegistrar
 
 def get(align_name):
     """
@@ -76,6 +78,7 @@ class _AlignmentGroup():
         self.Object = obj
         self.data = None
         self.importer = AlignmentImporter()
+        self.registrar = AlignmentRegistrar()
 
         properties.add(obj, 'String', 'ID', 'Alignment group name', '',
                        is_read_only=True)
@@ -96,31 +99,63 @@ class _AlignmentGroup():
 
         self.Object = obj
 
+        self.registrar = AlignmentRegistrar()
+
+        self.registrar.set_group(self)
+
+    def initialize_alignment(self, alignment):
+        """
+        Initialize the passed alignment
+        """
+
         ProjectObserver.get(App.ActiveDocument).register(
             'StartSaveDocument', self.write_xml
             )
 
-        print('Restoring alignment data...')
+        group = alignment.InList[0]
+        self.data = AlignmentImporter().import_file(group.Xml_Path)
 
-        self.data = AlignmentImporter().import_file(obj.Xml_Path)
+        if not group.OutList:
+            print(f'WARNING: No alignments found in group {group.Name}')
+            return
 
-    def get_alignment_data(self, group, _id):
+        _aligns = self.data.get('Alignments')
+
+        #force initialization of the alignment objects, assuming
+        #alignment group object is loaded last.
+        for _c in group.OutList:
+
+            _n = None
+
+            for _v in _aligns.keys():
+
+                if _v in _c.Label:
+                    _n = _v
+                    break
+
+            if _n:
+                _c.Proxy.initialize_model(_aligns[_n])
+
+            else:
+                print(f'WARNING: Unable to retrieve data for {_c.Label} alignment')
+
+    def get_alignment_data(self, group, align_name):
         """
         Return a reference to the XML data
         """
         self.data = AlignmentImporter().import_file(group.Xml_Path)
 
-        _aligns = self.data.get(align_name)
+        _aligns = self.data.get('Alignments')
 
         if _aligns is None:
             print('No Alignment Group data found')
             return None
 
-        if _aligns[_id] is None:
-            print('No alignment data found for ', id)
+        if _aligns[align_name] is None:
+            print('No alignment data found for ', align_name)
             return None
 
-        return _aligns[_id]
+        return _aligns[align_name]
 
     def write_xml(self):
         """
@@ -132,7 +167,7 @@ class _AlignmentGroup():
         #iterate the list of children, acquiring their data sets
         #and creating a total data set for alignments.
         for _obj in self.Object.OutList:
-            if _obj.Proxy.Type == 'Trails::Alignment':
+            if _obj.Proxy.Type == 'Trails::HorizontalAlignment':
                 _list.append(_obj.Proxy.get_data())
 
         exporter = AlignmentExporter()

@@ -77,7 +77,6 @@ class BaseTrackerTestTask():
 
 
         super().__init__()
-        #    '.'.join([doc.Name, 'BASE_TRACKER_TEST_TASK', 'TASK']))
 
         self.view_state = ViewState(Gui.ActiveDocument.ActiveView)
         self.panel = None

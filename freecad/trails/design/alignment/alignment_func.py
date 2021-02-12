@@ -26,12 +26,15 @@ Define Alignment Object functions.
 '''
 
 import FreeCAD as App
-from . import alignment_model
 
+from . import alignment_model
 from copy import deepcopy
 
+from Draft import _Wire
 
-class AlignmentFunc:
+
+class AlignmentFunc(_Wire):
+
     def _plot_vectors(self, stations, interval=1.0, is_ortho=True):
         """
         Testing function to plot coordinates and vectors between specified
