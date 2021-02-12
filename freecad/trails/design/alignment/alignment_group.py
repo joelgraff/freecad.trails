@@ -134,7 +134,7 @@ class _AlignmentGroup():
                     break
 
             if _n:
-                _c.Proxy.initialize_model(_aligns[_n])
+                _c.Proxy.initialize_model(_aligns[_n], _c)
 
             else:
                 print(f'WARNING: Unable to retrieve data for {_c.Label} alignment')
