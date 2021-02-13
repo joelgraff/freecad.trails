@@ -55,8 +55,16 @@ class CrossSections(CSFunc):
         self.Type = 'Trails::CrossSections'
 
         obj.addProperty(
+            'App::PropertyVector', "Position", "Base",
+            "Section creation origin").Position = FreeCAD.Vector()
+
+        obj.addProperty(
+            'App::PropertyLink', "Guidelines", "Base",
+            "Base guidelines").Guidelines = None
+
+        obj.addProperty(
             'App::PropertyLinkList', "Surfaces", "Base",
-            "List of Point Groups").Surfaces = []
+            "Projection surfaces").Surfaces = []
 
         obj.addProperty(
             "Part::PropertyPartShape", "Shape", "Base",
@@ -74,19 +82,15 @@ class CrossSections(CSFunc):
         '''
         Do something when doing a recomputation. 
         '''
+        position = obj.getPropertyByName("Position")
+        gl = obj.getPropertyByName("Guidelines")
         surfaces = obj.getPropertyByName("Surfaces")
 
-        if surfaces:
-
-            # Get GeoOrigin.
-            origin = geo_origin.get()
-            base = copy.deepcopy(origin.Origin)
-            base.z = 0
-
-            obj.Shape = self.get_lines(base, alignment, offsets, stations)
+        if surfaces and position:
+            obj.Shape = self.draw_sections(position, gl, surfaces)
 
 
-class ViewProviderGuideLines:
+class ViewProviderCrossSections:
     """
     This class is about Point Group Object view features.
     """
