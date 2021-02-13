@@ -111,8 +111,10 @@ class CreateSections:
                 cs.Position = position
                 cs.Guidelines = self.selection[-1]
 
+                surfs = []
                 for item in self.IPFui.SelectSurfacesLW.selectedItems():
                     surface = self.surface_list[item.text()]
-                    cs.Surfaces += surface
+                    surfs.append(surface)
+                cs.Surfaces = surfs
 
 FreeCADGui.addCommand('Create Sections', CreateSections())
