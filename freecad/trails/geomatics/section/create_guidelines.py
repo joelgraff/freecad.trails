@@ -38,7 +38,9 @@ class CreateGuidelines:
         pass
 
     def GetResources(self):
-        # Return the command resources dictionary
+        """
+        Return the command resources dictionary
+        """
         return {
             'Pixmap': ICONPATH + '/icons/CreateGuideLines.svg',
             'MenuText': "Create Guidelines",
@@ -59,7 +61,9 @@ class CreateGuidelines:
         return False
 
     def Activated(self):
-
+        """
+        Command activation method
+        """
         # Check for selected object
         selection = FreeCADGui.Selection.getSelection()
         gl_cluster.create(selection[-1])
