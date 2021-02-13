@@ -37,9 +37,9 @@ class CreateSections:
 
         # Import *.ui file(s)
         self.IPFui = FreeCADGui.PySideUic.loadUi(
-            self.Path + "/CreateSections.ui")
+            self.Path + "/create_sections.ui")
 
-        # To Do List
+        # Set button functions
         self.IPFui.CreateB.clicked.connect(self.start_event)
         self.IPFui.CancelB.clicked.connect(self.IPFui.close)
 
@@ -115,4 +115,4 @@ class CreateSections:
                     surface = self.surface_list[item.text()]
                     cs.Surfaces += surface
 
-FreeCADGui.addCommand('Create Section Views', CreateSections())
+FreeCADGui.addCommand('Create Sections', CreateSections())
