@@ -174,7 +174,7 @@ class ViewProviderGuideLines:
             line_vert = []
             for i, wire in enumerate(shape.Wires):
                 font = coin.SoFont()
-                font.size = 1000
+                font.size = 3000
                 gl_label = coin.SoSeparator()
                 location = coin.SoTranslation()
                 text = coin.SoAsciiText()
