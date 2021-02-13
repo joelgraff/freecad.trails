@@ -38,7 +38,9 @@ class CreateGuidelines:
         pass
 
     def GetResources(self):
-        # Return the command resources dictionary
+        """
+        Return the command resources dictionary
+        """
         return {
             'Pixmap': ICONPATH + '/icons/CreateGuideLines.svg',
             'MenuText': "Create Guidelines",
@@ -54,20 +56,16 @@ class CreateGuidelines:
             # Check for selected object
             selection = FreeCADGui.Selection.getSelection()
             if selection:
-                if selection[-1].Proxy.Type == 'Trails::Alignment':
+                if selection[-1].Proxy.Type == 'Trails::HorizontalAlignment':
                     return True
         return False
 
     def Activated(self):
-
+        """
+        Command activation method
+        """
         # Check for selected object
         selection = FreeCADGui.Selection.getSelection()
-
-        if selection:
-            if selection[-1].Proxy.Type == 'Trails::Alignment':
-                gl_cluster.create(selection[-1])
-            else:
-                FreeCAD.Console.PrintMessage(
-                    "Please select an Alignment or Wire")
+        gl_cluster.create(selection[-1])
 
 FreeCADGui.addCommand('Create Guidelines', CreateGuidelines())

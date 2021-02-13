@@ -195,13 +195,13 @@ class HorizontalAlignment(Alignment):
         self.init_class_members(obj)
         self.registrar.register_alignment(obj)
 
-    def initialize_model(self, model):
+    def initialize_model(self, model, obj):
         """
         Callback triggered from the parent group to force model update
         """
 
         self.model = alignment_model.AlignmentModel(model)
-        self.build_curve_edge_dict()
+        self.build_curve_edge_dict(obj)
 
     def _plot_vectors(self, stations, interval=1.0, is_ortho=True):
         """
@@ -248,7 +248,7 @@ class HorizontalAlignment(Alignment):
         App.ActiveDocument.recompute()
 
 
-    def build_curve_edge_dict(self):
+    def build_curve_edge_dict(self, obj):
         """
         Build the dictionary which correlates edges to their corresponding
         curves for quick lookup when curve editing
@@ -264,7 +264,7 @@ class HorizontalAlignment(Alignment):
             if curve.get('Type') == 'Line':
                 continue
 
-            curve_edges = self.Object.Shape.Edges
+            curve_edges = obj.Shape.Edges
             curve_pts = [curve.get('Start'), curve.get('End')]
             edge_dict = {}
 

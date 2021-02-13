@@ -24,16 +24,6 @@
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QLabel" name="SelectGLGL">
-      <property name="text">
-       <string>Select Guide Line Group:</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QComboBox" name="GLGCB"/>
-    </item>
-    <item>
      <widget class="QLabel" name="SelectSurfacesL">
       <property name="text">
        <string>Select Surfaces:</string>
