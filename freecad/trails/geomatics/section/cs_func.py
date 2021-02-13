@@ -26,7 +26,7 @@ Define Surface Object functions.
 '''
 
 import FreeCAD
-import Part
+import Part, MeshPart
 import copy, math
 
 class CSFunc:
@@ -71,6 +71,7 @@ class CSFunc:
     def draw_sections(self, position, guidelines, surfaces):
         _counter = 0
         _buffer = 50000
+        pos = position
 
         multi_views_nor = math.ceil(len(guidelines.Shape.Wires)**0.5)
 
