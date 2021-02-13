@@ -158,12 +158,12 @@ class ViewProviderCrossSections:
             line_vert = []
             for i, wire in enumerate(shape.Wires):
                 font = coin.SoFont()
-                font.size = 1000
+                font.size = 3000
                 gl_label = coin.SoSeparator()
                 location = coin.SoTranslation()
                 text = coin.SoAsciiText()
 
-                label = str(round(obj.StationList[i], 2))
+                label = str(round(obj.Guidelines.StationList[i], 2))
                 location.translation = wire.Vertexes[-1].Point
                 text.string.setValues([label])
                 gl_label.addChild(font)
@@ -205,7 +205,7 @@ class ViewProviderCrossSections:
         '''
         Return object treeview icon.
         '''
-        return ICONPATH + '/icons/GuideLines.svg'
+        return ICONPATH + '/icons/CreateSections.svg'
 
     def __getstate__(self):
         """
