@@ -37,40 +37,42 @@ class CSFunc:
         pass
 
     @staticmethod
-    def convert2View(section, origin=None):
-        import math
-        sectionView = []
+    def section_converter(section_3d, origin=None):
+        section_2d = []
 
-        if origin: section.insert(0, origin)
-        sectionView.append(FreeCAD.Vector(0, 0, 0))
+        if origin: section_3d.insert(0, origin)
+        section_2d.append(FreeCAD.Vector(0, 0, 0))
 
-        for i in range(0, len(section)-1):
-            virtual_point = FreeCAD.Vector(section[i+1].x, section[i+1].y, section[i].z)
+        for i in range(0, len(section_3d)-1):
+            virtual_point = copy.deepcopy(section_3d[i+1])
+            virtual_point.z = section_3d[i].z
 
-            real_vector = section[i].sub(section[i+1])
-            virtual_vector = section[i].sub(virtual_point)
-            _length = real_vector.Length
-            _angle = virtual_vector.getAngle(real_vector)
+            real_vector = section_3d[i].sub(section_3d[i+1])
+            virtual_vector = section_3d[i].sub(virtual_point)
+            length = real_vector.Length
+            angle = virtual_vector.getAngle(real_vector)
 
-            dx = _length * math.cos(_angle)
-            dy = _length * math.sin(_angle)
+            dx = length * math.cos(angle)
+            dy = length * math.sin(angle)
 
             if i == 0 and origin:
-                side_point = FreeCAD.Vector(section[-1].x, section[-1].y, section[0].z)
-                first_vector = section[0].sub(virtual_point)
+                side_point = copy.deepcopy(section_3d[-1])
+                side_point.z = section_3d[0].z
+
+                first_vector = section_3d[0].sub(virtual_point)
                 second_vector = virtual_point.sub(side_point)
                 second_vector = first_vector.add(second_vector.normalize())
                 if first_vector.Length > second_vector.Length: dx = -dx
 
             if virtual_vector.z < real_vector.z: dy = -dy
-            sectionView.append(sectionView[-1].add(FreeCAD.Vector(dx, dy, 0)))
+            section_2d.append(section_2d[-1].add(FreeCAD.Vector(dx, dy, 0)))
 
-        sectionView.pop(0)
-        return sectionView
+        section_2d.pop(0)
+        return section_2d
 
     def draw_sections(self, position, guidelines, surfaces):
-        _counter = 0
-        _buffer = 50000
+        counter = 0
+        buffer = 50000
         pos = position
 
         multi_views_nor = math.ceil(len(guidelines.Shape.Wires)**0.5)
@@ -79,31 +81,31 @@ class CSFunc:
         view_heigth =[]
         wire_list = []
         for wire in guidelines.Shape.Wires:
-            _origin = None
+            origin = None
             for surface in surfaces:
-                _points = []
+                points = []
 
-                for _edge in wire.Edges:
-                    _params = MeshPart.findSectionParameters(
-                        _edge, surface.Mesh, FreeCAD.Vector(0, 0, 1))
-                    _params.insert(0, _edge.FirstParameter+1)
-                    _params.append(_edge.LastParameter-1)
+                for edge in wire.Edges:
+                    params = MeshPart.findSectionParameters(
+                        edge, surface.Mesh, FreeCAD.Vector(0, 0, 1))
+                    params.insert(0, edge.FirstParameter+1)
+                    params.append(edge.LastParameter-1)
 
-                    _values = [_edge.valueAt(i) for i in _params]
-                    _points += _values
+                    values = [edge.valueAt(i) for i in params]
+                    points += values
 
-                section_points = MeshPart.projectPointsOnMesh(
-                    _points, surface.Mesh, FreeCAD.Vector(0, 0, 1))
+                section_3d = MeshPart.projectPointsOnMesh(
+                    points, surface.Mesh, FreeCAD.Vector(0, 0, 1))
 
-                sec_points_2d = self.convert2View(section_points, _origin)
+                section_2d = self.section_converter(section_3d, origin)
 
-                view_width.append([min(i.x for i in sec_points_2d),
-                    max(i.x for i in sec_points_2d)])
-                view_heigth.append([min(i.y for i in sec_points_2d),
-                    max(i.y for i in sec_points_2d)])
+                view_width.append([min(i.x for i in section_2d),
+                    max(i.x for i in section_2d)])
+                view_heigth.append([min(i.y for i in section_2d),
+                    max(i.y for i in section_2d)])
 
                 draw_sec = []
-                for i in sec_points_2d:
+                for i in section_2d:
                     draw_sec.append(i.add(position))
 
                 line_segments = []
@@ -114,22 +116,22 @@ class CSFunc:
                 shape = Part.Shape(line_segments)
                 wire = Part.Wire(shape.Edges)
                 wire_list.append(wire)
-                _origin = section_points[0]
+                origin = section_3d[0]
 
-            if _counter == multi_views_nor:
-                _dx = max(i[1] for i in view_width) - min(i[0] for i in view_width)
-                _shifting = position.x - pos.x + _buffer
-                _reposition = FreeCAD.Vector(_dx + _shifting, 0, 0)
-                position = pos.add(_reposition)
+            if counter == multi_views_nor:
+                dx = max(i[1] for i in view_width) - min(i[0] for i in view_width)
+                shifting = position.x - pos.x + buffer
+                reposition = FreeCAD.Vector(dx + shifting, 0, 0)
+                position = pos.add(reposition)
                 view_width.clear()
                 view_heigth.clear()
-                _counter = 0
+                counter = 0
             else:
-                _dy = max(i[1] for i in view_heigth) - min(i[0] for i in view_heigth)
-                _reposition = FreeCAD.Vector(0, -(_dy + _buffer), 0)
-                position = position.add(_reposition)
+                dy = max(i[1] for i in view_heigth) - min(i[0] for i in view_heigth)
+                reposition = FreeCAD.Vector(0, -(dy + buffer), 0)
+                position = position.add(reposition)
                 view_heigth.clear()
-                _counter += 1
+                counter += 1
 
-        _section = Part.makeCompound(wire_list)
-        return _section
+        section = Part.makeCompound(wire_list)
+        return section
