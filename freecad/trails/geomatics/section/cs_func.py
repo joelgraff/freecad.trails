@@ -70,7 +70,36 @@ class CSFunc:
         section_2d.pop(0)
         return section_2d
 
-    def draw_sections(self, position, guidelines, surfaces):
+    def create_3d_sections(self, gl, surface)
+        wire_list = []
+        for wire in gl.Shape.Wires:
+
+            points = []
+            for edge in wire.Edges:
+                params = MeshPart.findSectionParameters(
+                    edge, surface.Mesh, FreeCAD.Vector(0, 0, 1))
+                params.insert(0, edge.FirstParameter+1)
+                params.append(edge.LastParameter-1)
+
+                values = [edge.valueAt(i) for i in params]
+                points += values
+
+            section_3d = MeshPart.projectPointsOnMesh(
+                points, surface.Mesh, FreeCAD.Vector(0, 0, 1))
+
+            line_segments = []
+            for i in range(0, len(section_3d)-1):
+                if section_3d[i] == section_3d[i+1]: continue
+                line_segments.append(Part.LineSegment(section_3d[i], section_3d[i+1]))
+
+            shape = Part.Shape(line_segments)
+            wire = Part.Wire(shape.Edges)
+            wire_list.append(wire)
+
+        sections3d = Part.makeCompound(wire_list)
+        return sections3d
+
+    def draw_2d_sections(self, position, gl, group):
         counter = 0
         buffer = 50000
         pos = position
@@ -80,22 +109,14 @@ class CSFunc:
         view_width =[]
         view_heigth =[]
         wire_list = []
-        for wire in guidelines.Shape.Wires:
+        for i, wire in enumerate(guidelines.Shape.Wires):
+
             origin = None
-            for surface in surfaces:
-                points = []
+            for section in group:
 
-                for edge in wire.Edges:
-                    params = MeshPart.findSectionParameters(
-                        edge, surface.Mesh, FreeCAD.Vector(0, 0, 1))
-                    params.insert(0, edge.FirstParameter+1)
-                    params.append(edge.LastParameter-1)
-
-                    values = [edge.valueAt(i) for i in params]
-                    points += values
-
-                section_3d = MeshPart.projectPointsOnMesh(
-                    points, surface.Mesh, FreeCAD.Vector(0, 0, 1))
+                section_3d = []
+                for vertex in section.Shape.Wires[i].Vertexes:
+                    section_3d.append(vertex.Point)
 
                 section_2d = self.section_converter(section_3d, origin)
 
@@ -133,5 +154,5 @@ class CSFunc:
                 view_heigth.clear()
                 counter += 1
 
-        section = Part.makeCompound(wire_list)
-        return section
+        section_draws = Part.makeCompound(wire_list)
+        return section_draws
