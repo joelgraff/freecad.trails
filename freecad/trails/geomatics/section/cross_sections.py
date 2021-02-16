@@ -82,7 +82,7 @@ class CrossSections(CSFunc):
         gl = obj.getPropertyByName("Guidelines")
         group = obj.getPropertyByName("Group")
 
-        if group and position:
+        if group and gl:
             obj.Shape = self.draw_2d_sections(position, gl, group)
 
 
@@ -155,6 +155,7 @@ class ViewProviderCrossSections:
 
             points = []
             line_vert = []
+            sta_list = obj.Guidelines.StationList
             for i, wire in enumerate(shape.Wires):
                 font = coin.SoFont()
                 font.size = 3000
@@ -162,7 +163,7 @@ class ViewProviderCrossSections:
                 location = coin.SoTranslation()
                 text = coin.SoAsciiText()
 
-                label = str(round(obj.Guidelines.StationList[i], 2))
+                label = str(round(sta_list[i % len(sta_list)], 2))
                 location.translation = wire.Vertexes[-1].Point
                 text.string.setValues([label])
                 gl_label.addChild(font)
