@@ -33,7 +33,7 @@ import copy
 
 
 def create():
-    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "CrossSections")
+    obj=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython", "CrossSections")
     obj.Label = "Cross Sections"
     CrossSections(obj)
     ViewProviderCrossSections(obj.ViewObject)
@@ -63,10 +63,6 @@ class CrossSections(CSFunc):
             "Base guidelines").Guidelines = None
 
         obj.addProperty(
-            'App::PropertyLinkList', "Surfaces", "Base",
-            "Projection surfaces").Surfaces = []
-
-        obj.addProperty(
             "Part::PropertyPartShape", "Shape", "Base",
             "Object shape").Shape = Part.Shape()
 
@@ -84,10 +80,10 @@ class CrossSections(CSFunc):
         '''
         position = obj.getPropertyByName("Position")
         gl = obj.getPropertyByName("Guidelines")
-        surfaces = obj.getPropertyByName("Surfaces")
+        group = obj.getPropertyByName("Group")
 
-        if surfaces and position:
-            obj.Shape = self.draw_sections(position, gl, surfaces)
+        if group and position:
+            obj.Shape = self.draw_2d_sections(position, gl, group)
 
 
 class ViewProviderCrossSections:
@@ -99,12 +95,15 @@ class ViewProviderCrossSections:
         '''
         Set view properties.
         '''
+        self.Object = vobj.Object
         vobj.Proxy = self
 
     def attach(self, vobj):
         '''
         Create Object visuals in 3D view.
         '''
+        self.Object = vobj.Object
+
         # Lines root.
         self.line_coords = coin.SoGeoCoordinate()
         self.lines = coin.SoLineSet()
@@ -206,6 +205,42 @@ class ViewProviderCrossSections:
         Return object treeview icon.
         '''
         return ICONPATH + '/icons/CreateSections.svg'
+
+    def claimChildren(self):
+        """
+        Provides object grouping
+        """
+        return self.Object.Group
+
+    def setEdit(self, vobj, mode=0):
+        """
+        Enable edit
+        """
+        return True
+
+    def unsetEdit(self, vobj, mode=0):
+        """
+        Disable edit
+        """
+        return False
+
+    def doubleClicked(self, vobj):
+        """
+        Detect double click
+        """
+        pass
+
+    def setupContextMenu(self, vobj, menu):
+        """
+        Context menu construction
+        """
+        pass
+
+    def edit(self):
+        """
+        Edit callback
+        """
+        pass
 
     def __getstate__(self):
         """
