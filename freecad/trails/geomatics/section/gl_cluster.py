@@ -56,6 +56,8 @@ def create(alignment, name='GL Cluster'):
     obj.addObject(cs)
 
     obj.Alignment = alignment
+    obj.Guidelines = gl
+    obj.CrossSections = cs
 
     ViewProviderGLCluster(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
@@ -78,6 +80,14 @@ class GLCluster(GLCFunc):
         obj.addProperty(
             'App::PropertyLink', "Alignment", "Base",
             "Parent alignment").Alignment = None
+
+        obj.addProperty(
+            'App::PropertyLink', "Guidelines", "Base",
+            "Parent alignment").Guidelines = None
+
+        obj.addProperty(
+            'App::PropertyLink', "CrossSections", "Base",
+            "Parent alignment").CrossSections = None
 
         obj.addProperty(
             "App::PropertyBool", "AtHorizontalAlignmentPoints", "Base",
