@@ -32,12 +32,10 @@ from .cs_func import CSFunc
 import copy
 
 
-def create(surface, guidelines):
+def create():
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "CrossSection")
     obj.Label = "Cross Section"
     cs = CrossSection(obj)
-    cs.Surface = surface
-    cs.Guidelines = guidelines
     ViewProviderCrossSection(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
 
