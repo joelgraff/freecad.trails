@@ -78,11 +78,7 @@ class CrossSection(CSFunc):
         '''
         Do something when doing a recomputation. 
         '''
-        gl = obj.getPropertyByName("Guidelines")
-        surface = obj.getPropertyByName("Surface")
-
-        if gl and surface:
-            obj.Shape = self.create_3d_sections(gl, surface)
+        pass
 
 
 class ViewProviderCrossSection:
@@ -97,8 +93,8 @@ class ViewProviderCrossSection:
         self.Object = vobj.Object
 
         vobj.addProperty(
-            "App::PropertyBool", "Visibility", "Base",
-            "Show point name labels").Visibility = False
+            "App::PropertyBool", "ShowSections", "Base",
+            "Show point name labels").ShowSections = False
 
         vobj.Proxy = self
 
@@ -144,12 +140,20 @@ class ViewProviderCrossSection:
         '''
         Update Object visuals when a data property changed.
         '''
+        if prop == "ShowSections":
+            show_sections = obj.getPropertyByName("ShowSections")
+            if show_sections: 
+                gl = obj.getPropertyByName("Guidelines")
+                surface = obj.getPropertyByName("Surface")
+
+                if gl and surface:
+                    obj.Shape = self.create_3d_sections(gl, surface)
+                else:
+                    obj.Shape = Part.Shape()
+
         if prop == "Shape":
             self.gl_labels.removeAllChildren()
             shape = obj.getPropertyByName("Shape")
-            visibility = obj.getPropertyByName("Visibility")
-
-            if not visibility: return
 
             # Get GeoOrigin.
             origin = geo_origin.get()
