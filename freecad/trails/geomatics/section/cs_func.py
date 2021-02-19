@@ -37,40 +37,33 @@ class CSFunc:
         pass
 
     @staticmethod
-    def section_converter(section_3d, origin=None):
+    def section_converter(section_3d, origin):
         section_2d = []
-
-        if origin: section_3d.insert(0, origin)
         section_2d.append(FreeCAD.Vector(0, 0, 0))
 
-        for i in range(0, len(section_3d)-1):
-            virtual_point = copy.deepcopy(section_3d[i+1])
-            virtual_point.z = section_3d[i].z
+        prev_vector = origin
+        for i in section_3d:
+            reduced_vector = copy.deepcopy(i)
+            reduced_vector.z = prev_vector.z
 
-            real_vector = section_3d[i].sub(section_3d[i+1])
-            virtual_vector = section_3d[i].sub(virtual_point)
-            length = real_vector.Length
-            angle = virtual_vector.getAngle(real_vector)
+            vector = prev_vector.sub(i)
+            x_vector = prev_vector.sub(reduced_vector)
+            length = vector.Length
+            angle = x_vector.getAngle(vector)
 
             dx = length * math.cos(angle)
             dy = length * math.sin(angle)
 
-            if i == 0 and origin:
-                side_point = copy.deepcopy(section_3d[-1])
-                side_point.z = section_3d[0].z
-
-                first_vector = section_3d[0].sub(virtual_point)
-                second_vector = virtual_point.sub(side_point)
-                second_vector = first_vector.add(second_vector.normalize())
-                if first_vector.Length > second_vector.Length: dx = -dx
-
-            if virtual_vector.z < real_vector.z: dy = -dy
-            section_2d.append(section_2d[-1].add(FreeCAD.Vector(dx, dy, 0)))
+            if x_vector.z < vector.z: dy = -dy
+            vector_2d = section_2d[-1].add(FreeCAD.Vector(dx, dy, 0))
+            section_2d.append(vector_2d)
+            prev_vector = i
 
         section_2d.pop(0)
+        print(section_2d)
         return section_2d
 
-    def create_3d_sections(self, gl, surface)
+    def create_3d_sections(self, gl, surface):
         wire_list = []
         for wire in gl.Shape.Wires:
 
@@ -104,19 +97,27 @@ class CSFunc:
         buffer = 50000
         pos = position
 
-        multi_views_nor = math.ceil(len(guidelines.Shape.Wires)**0.5)
+        multi_views_nor = math.ceil(len(gl.Shape.Wires)**0.5)
 
         view_width =[]
         view_heigth =[]
         wire_list = []
-        for i, wire in enumerate(guidelines.Shape.Wires):
+        for wire in gl.Shape.Wires:
 
-            origin = None
+            origin = wire.Vertexes[0].Point
             for section in group:
+                points = []
+                for edge in wire.Edges:
+                    params = MeshPart.findSectionParameters(
+                        edge, section.Surface.Mesh, FreeCAD.Vector(0, 0, 1))
+                    params.insert(0, edge.FirstParameter+1)
+                    params.append(edge.LastParameter-1)
 
-                section_3d = []
-                for vertex in section.Shape.Wires[i].Vertexes:
-                    section_3d.append(vertex.Point)
+                    values = [edge.valueAt(i) for i in params]
+                    points += values
+
+                section_3d = MeshPart.projectPointsOnMesh(
+                    points, section.Surface.Mesh, FreeCAD.Vector(0, 0, 1))
 
                 section_2d = self.section_converter(section_3d, origin)
 
@@ -135,9 +136,8 @@ class CSFunc:
                     line_segments.append(Part.LineSegment(draw_sec[i], draw_sec[i+1]))
 
                 shape = Part.Shape(line_segments)
-                wire = Part.Wire(shape.Edges)
-                wire_list.append(wire)
-                origin = section_3d[0]
+                w = Part.Wire(shape.Edges)
+                wire_list.append(w)
 
             if counter == multi_views_nor:
                 dx = max(i[1] for i in view_width) - min(i[0] for i in view_width)
