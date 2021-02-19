@@ -143,6 +143,8 @@ class ViewProviderCrossSections:
         if prop == "Shape":
             self.gl_labels.removeAllChildren()
             shape = obj.getPropertyByName("Shape")
+            gl = obj.getPropertyByName("Guidelines")
+            if not gl: return
 
             # Get GeoOrigin.
             origin = geo_origin.get()
