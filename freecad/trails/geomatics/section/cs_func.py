@@ -60,7 +60,6 @@ class CSFunc:
             prev_vector = i
 
         section_2d.pop(0)
-        print(section_2d)
         return section_2d
 
     def create_3d_sections(self, gl, surface):
