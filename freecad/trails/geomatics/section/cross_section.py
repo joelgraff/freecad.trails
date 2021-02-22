@@ -29,7 +29,7 @@ import Part
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
 from .cs_func import CSFunc
-import copy
+import copy, random
 
 
 def create():
@@ -63,10 +63,6 @@ class CrossSection(CSFunc):
             "Projection surface").Surface = None
 
         obj.addProperty(
-            "App::PropertyBool", "ShowSections", "Base",
-            "Show point name labels").ShowSections = False
-
-        obj.addProperty(
             "Part::PropertyPartShape", "Shape", "Base",
             "Object shape").Shape = Part.Shape()
 
@@ -76,16 +72,7 @@ class CrossSection(CSFunc):
         '''
         Do something when a data property has changed.
         '''
-        if prop == "ShowSections":
-            show_sections = obj.getPropertyByName("ShowSections")
-            if show_sections: 
-                gl = obj.getPropertyByName("Guidelines")
-                surface = obj.getPropertyByName("Surface")
-
-                if gl and surface:
-                    obj.Shape = self.create_3d_sections(gl, surface)
-                else:
-                    obj.Shape = Part.Shape()
+        return
 
     def execute(self, obj):
         '''
@@ -105,6 +92,12 @@ class ViewProviderCrossSection:
         '''
         self.Object = vobj.Object
 
+        (r, g, b) = (random.random(), random.random(), random.random())
+
+        vobj.addProperty(
+            "App::PropertyColor", "SectionColor", "Point Style",
+            "Color of the section").SectionColor = (r, g, b)
+
         vobj.Proxy = self
 
     def attach(self, vobj):
@@ -119,8 +112,7 @@ class ViewProviderCrossSection:
         self.gl_labels = coin.SoSeparator()
 
         # Line style.
-        line_color = coin.SoBaseColor()
-        line_color.rgb = (0.0, 1.0, 1.0)
+        self.line_color = coin.SoBaseColor()
         line_style = coin.SoDrawStyle()
         line_style.style = coin.SoDrawStyle.LINES
         line_style.lineWidth = 2
@@ -135,7 +127,7 @@ class ViewProviderCrossSection:
         # Surface root.
         guidelines_root = coin.SoSeparator()
         guidelines_root.addChild(self.gl_labels)
-        guidelines_root.addChild(line_color)
+        guidelines_root.addChild(self.line_color)
         guidelines_root.addChild(highlight)
         vobj.addDisplayMode(guidelines_root,"Lines")
 
@@ -143,7 +135,9 @@ class ViewProviderCrossSection:
         '''
         Update Object visuals when a view property changed.
         '''
-        pass
+        if prop == "SectionColor":
+            color = vobj.getPropertyByName("SectionColor")
+            self.line_color.rgb = (color[0],color[1],color[2])
 
     def updateData(self, obj, prop):
         '''
@@ -165,20 +159,6 @@ class ViewProviderCrossSection:
             points = []
             line_vert = []
             for i, wire in enumerate(shape.Wires):
-                font = coin.SoFont()
-                font.size = 3000
-                gl_label = coin.SoSeparator()
-                location = coin.SoTranslation()
-                text = coin.SoAsciiText()
-
-                label = str(round(obj.Guidelines.StationList[i], 2))
-                location.translation = wire.Vertexes[-1].Point
-                text.string.setValues([label])
-                gl_label.addChild(font)
-                gl_label.addChild(location)
-                gl_label.addChild(text)
-                self.gl_labels.addChild(gl_label)
-
                 for vertex in wire.Vertexes:
                     points.append(vertex.Point.add(base))
 
