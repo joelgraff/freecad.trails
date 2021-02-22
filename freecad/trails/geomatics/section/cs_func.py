@@ -100,11 +100,17 @@ class CSFunc:
 
         view_width =[]
         view_heigth =[]
-        wire_list = []
+        section_dict = {}
         for wire in gl.Shape.Wires:
 
             origin = wire.Vertexes[0].Point
             for section in group:
+                if section in section_dict:
+                    shp = section_dict[section]
+                else:
+                    section_dict[section] = Part.makeCompound(section.Shape)
+                    shp = section_dict[section]
+
                 points = []
                 for edge in wire.Edges:
                     params = MeshPart.findSectionParameters(
@@ -136,7 +142,7 @@ class CSFunc:
 
                 shape = Part.Shape(line_segments)
                 w = Part.Wire(shape.Edges)
-                wire_list.append(w)
+                shp.add(w)
 
             if counter == multi_views_nor:
                 dx = max(i[1] for i in view_width) - min(i[0] for i in view_width)
@@ -146,6 +152,7 @@ class CSFunc:
                 view_width.clear()
                 view_heigth.clear()
                 counter = 0
+
             else:
                 dy = max(i[1] for i in view_heigth) - min(i[0] for i in view_heigth)
                 reposition = FreeCAD.Vector(0, -(dy + buffer), 0)
@@ -153,5 +160,5 @@ class CSFunc:
                 view_heigth.clear()
                 counter += 1
 
-        section_draws = Part.makeCompound(wire_list)
-        return section_draws
+        for section, compound in section_dict.items():
+            section.Shape = compound
