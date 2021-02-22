@@ -62,10 +62,6 @@ class CrossSections(CSFunc):
             'App::PropertyLink', "Guidelines", "Base",
             "Base guidelines").Guidelines = None
 
-        obj.addProperty(
-            "Part::PropertyPartShape", "Shape", "Base",
-            "Object shape").Shape = Part.Shape()
-
         obj.Proxy = self
 
     def onChanged(self, obj, prop):
@@ -82,8 +78,11 @@ class CrossSections(CSFunc):
         gl = obj.getPropertyByName("Guidelines")
         group = obj.getPropertyByName("Group")
 
+        for section in group:
+            section.Shape = Part.Shape()
+
         if group and gl:
-            obj.Shape = self.draw_2d_sections(position, gl, group)
+            self.draw_2d_sections(position, gl, group)
 
 
 class ViewProviderCrossSections:
