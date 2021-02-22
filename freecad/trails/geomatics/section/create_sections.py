@@ -107,6 +107,7 @@ class CreateSections:
 
                 pos = event.getPosition().getValue()
                 position = self.view.getPoint(pos[0], pos[1])
+                position.z = 0
                 cs = cross_sections.create()
                 cs.Position = position
                 cs.Guidelines = self.selection[-1]
