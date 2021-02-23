@@ -59,7 +59,7 @@ def AreasBetweenPolylines(wireA, wireB, create=False):
       Part.show(faceResult)
 
     return faceResult.Area
-
+"""
 project = App.getDocument("Ba__lant__").getObject("CrossSection")
 ground = App.getDocument("Ba__lant__").getObject("CrossSection001")
 
@@ -67,3 +67,4 @@ prj = project.Shape.Wires[1]
 grd = ground.Shape.Wires[1]
 
 AreasBetweenPolylines(prj, grd, create=True)
+"""
