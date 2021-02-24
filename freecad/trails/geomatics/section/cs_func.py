@@ -91,74 +91,55 @@ class CSFunc:
         sections3d = Part.makeCompound(wire_list)
         return sections3d
 
-    def draw_2d_sections(self, position, gl, group):
+    def draw_2d_sections(self, position, gl, surface, geometry, gaps):
         counter = 0
         buffer = 50000
         pos = position
 
         multi_views_nor = math.ceil(len(gl.Shape.Wires)**0.5)
 
-        view_width =[]
-        view_heigth =[]
-        section_dict = {}
+        section_list = []
         for wire in gl.Shape.Wires:
 
+            points = []
             origin = wire.Vertexes[0].Point
-            for section in group:
-                if section in section_dict:
-                    shp = section_dict[section]
-                else:
-                    section_dict[section] = Part.makeCompound(section.Shape)
-                    shp = section_dict[section]
+            for edge in wire.Edges:
+                params = MeshPart.findSectionParameters(
+                    edge, surface.Mesh, FreeCAD.Vector(0, 0, 1))
+                params.insert(0, edge.FirstParameter+1)
+                params.append(edge.LastParameter-1)
 
-                points = []
-                for edge in wire.Edges:
-                    params = MeshPart.findSectionParameters(
-                        edge, section.Surface.Mesh, FreeCAD.Vector(0, 0, 1))
-                    params.insert(0, edge.FirstParameter+1)
-                    params.append(edge.LastParameter-1)
+                values = [edge.valueAt(i) for i in params]
+                points += values
 
-                    values = [edge.valueAt(i) for i in params]
-                    points += values
+            section_3d = MeshPart.projectPointsOnMesh(
+                points, surface.Mesh, FreeCAD.Vector(0, 0, 1))
 
-                section_3d = MeshPart.projectPointsOnMesh(
-                    points, section.Surface.Mesh, FreeCAD.Vector(0, 0, 1))
+            section_2d = self.section_converter(section_3d, origin)
 
-                section_2d = self.section_converter(section_3d, origin)
+            draw_sec = []
+            for i in section_2d:
+                draw_sec.append(i.add(position))
 
-                view_width.append([min(i.x for i in section_2d),
-                    max(i.x for i in section_2d)])
-                view_heigth.append([min(i.y for i in section_2d),
-                    max(i.y for i in section_2d)])
+            line_segments = []
+            for i in range(0, len(draw_sec)-1):
+                if draw_sec[i] == draw_sec[i+1]: continue
+                line_segments.append(Part.LineSegment(draw_sec[i], draw_sec[i+1]))
 
-                draw_sec = []
-                for i in section_2d:
-                    draw_sec.append(i.add(position))
-
-                line_segments = []
-                for i in range(0, len(draw_sec)-1):
-                    if draw_sec[i] == draw_sec[i+1]: continue
-                    line_segments.append(Part.LineSegment(draw_sec[i], draw_sec[i+1]))
-
-                shape = Part.Shape(line_segments)
-                w = Part.Wire(shape.Edges)
-                shp.add(w)
+            shape = Part.Shape(line_segments)
+            sec = Part.Wire(shape.Edges)
+            section_list.append(sec)
 
             if counter == multi_views_nor:
-                dx = max(i[1] for i in view_width) - min(i[0] for i in view_width)
-                shifting = position.x - pos.x + buffer
-                reposition = FreeCAD.Vector(dx + shifting, 0, 0)
+                shifting = position.x - pos.x + gaps[1]
+                reposition = FreeCAD.Vector(geometry[1] + shifting, 0, 0)
                 position = pos.add(reposition)
-                view_width.clear()
-                view_heigth.clear()
                 counter = 0
 
             else:
-                dy = max(i[1] for i in view_heigth) - min(i[0] for i in view_heigth)
-                reposition = FreeCAD.Vector(0, -(dy + buffer), 0)
+                reposition = FreeCAD.Vector(0, -(geometry[0] + gaps[0]), 0)
                 position = position.add(reposition)
-                view_heigth.clear()
                 counter += 1
 
-        for section, compound in section_dict.items():
-            section.Shape = compound
+        section_draws = Part.makeCompound(section_list)
+        return section_draws
