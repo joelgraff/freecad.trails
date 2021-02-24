@@ -32,10 +32,11 @@ from .cs_func import CSFunc
 import copy, random
 
 
-def create():
+def create(surface):
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "CrossSection")
     obj.Label = "Cross Section"
     cs = CrossSection(obj)
+    cs.Surface = surface
     ViewProviderCrossSection(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
 
@@ -53,10 +54,6 @@ class CrossSection(CSFunc):
         '''
 
         self.Type = 'Trails::CrossSection'
-
-        obj.addProperty(
-            'App::PropertyLink', "Guidelines", "Base",
-            "Base guidelines").Guidelines = None
 
         obj.addProperty(
             'App::PropertyLink', "Surface", "Base",
@@ -78,7 +75,20 @@ class CrossSection(CSFunc):
         '''
         Do something when doing a recomputation. 
         '''
-        pass
+        surface = obj.getPropertyByName("Surface")
+
+        if surface and obj.InList:
+            group = obj.InList[0]
+            pos = group.Position
+            gl = group.Guidelines
+            h = group.Heigth.Value
+            w = group.Width.Value
+            ver = group.Vertical.Value
+            hor = group.Horizontal.Value
+            geometry = [h, w]
+            gaps = [ver, hor]
+
+            obj.Shape = self.draw_2d_sections(pos, gl, surface, geometry, gaps)
 
 
 class ViewProviderCrossSection:
