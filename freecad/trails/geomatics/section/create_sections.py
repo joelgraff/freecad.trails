@@ -108,15 +108,11 @@ class CreateSections:
                 pos = event.getPosition().getValue()
                 position = self.view.getPoint(pos[0], pos[1])
                 position.z = 0
-                cs = cross_sections.create()
-                cs.Position = position
-                cs.Guidelines = self.selection[-1]
+                cs = cross_sections.create(position, self.selection[-1])
 
                 for item in self.IPFui.SelectSurfacesLW.selectedItems():
                     surface = self.surface_list[item.text()]
-                    sections = cross_section.create()
-                    sections.Surface = surface
-                    sections.Guidelines = self.selection[-1]
+                    sections = cross_section.create(surface)
                     cs.addObject(sections)
                 FreeCAD.ActiveDocument.recompute()
 
