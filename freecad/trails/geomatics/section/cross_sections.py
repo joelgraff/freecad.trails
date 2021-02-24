@@ -28,21 +28,22 @@ import FreeCAD
 import Part
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
-from .cs_func import CSFunc
 import copy
 
 
-def create():
+def create(position, guidelines):
     obj=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython", "CrossSections")
     obj.Label = "Cross Sections"
     CrossSections(obj)
+    obj.Position = position
+    obj.Guidelines = guidelines
     ViewProviderCrossSections(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
 
     return obj
 
 
-class CrossSections(CSFunc):
+class CrossSections:
     """
     This class is about Cross Section object data features.
     """
@@ -62,6 +63,22 @@ class CrossSections(CSFunc):
             'App::PropertyLink', "Guidelines", "Base",
             "Base guidelines").Guidelines = None
 
+        obj.addProperty(
+            "App::PropertyLength", "Heigth", "Geometry",
+            "Heigth of cross section view").Heigth = 50000
+
+        obj.addProperty(
+            "App::PropertyLength", "Width", "Geometry",
+            "Width of cross section view").Width = 100000
+
+        obj.addProperty(
+            "App::PropertyLength", "Vertical", "Gaps",
+            "Vertical gap between cross section view").Vertical = 50000
+
+        obj.addProperty(
+            "App::PropertyLength", "Horizontal", "Gaps",
+            "Horizontal gap between cross section view").Horizontal = 50000
+
         obj.Proxy = self
 
     def onChanged(self, obj, prop):
@@ -74,15 +91,7 @@ class CrossSections(CSFunc):
         '''
         Do something when doing a recomputation. 
         '''
-        position = obj.getPropertyByName("Position")
-        gl = obj.getPropertyByName("Guidelines")
-        group = obj.getPropertyByName("Group")
-
-        for section in group:
-            section.Shape = Part.Shape()
-
-        if group and gl:
-            self.draw_2d_sections(position, gl, group)
+        pass
 
 
 class ViewProviderCrossSections:
@@ -95,6 +104,7 @@ class ViewProviderCrossSections:
         Set view properties.
         '''
         self.Object = vobj.Object
+
         vobj.Proxy = self
 
     def attach(self, vobj):
