@@ -1,7 +1,10 @@
 import Part
 
+shapes = []
+
 def AreasBetweenPolylines(wireA, wireB, create=False):
     '''calculate the areas above wireA and below wireB'''
+
     shapeA = wireA
     shapeB = wireB
 
@@ -14,8 +17,6 @@ def AreasBetweenPolylines(wireA, wireB, create=False):
     limMinY = min(boxA.YMin, boxB.YMin) - 1.0
     limMaxY = max(boxA.YMax, boxB.YMax) + 1.0
 
-    print(wireA.Vertexes[0].Point.x)
-    print(boxA.XMin)
 
     if wireA.Vertexes[0].Point.x == boxA.XMin:
         staA = wireA.Vertexes[0].Point
@@ -56,15 +57,18 @@ def AreasBetweenPolylines(wireA, wireB, create=False):
     faceResult = faceA.common(faceB)
 
     if create and faceResult.Area != 0.0:
-      Part.show(faceResult)
+        shapes.append(faceResult)
 
     return faceResult.Area
 """
-project = App.getDocument("Ba__lant__").getObject("CrossSection")
-ground = App.getDocument("Ba__lant__").getObject("CrossSection001")
+project = App.ActiveDocument.CrossSection
+ground = App.ActiveDocument.CrossSection001
 
-prj = project.Shape.Wires[1]
-grd = ground.Shape.Wires[1]
+for i in range(len(project.Shape.Wires)):
+    prj = project.Shape.Wires[i]
+    grd = ground.Shape.Wires[i]
+    res = AreasBetweenPolylines(prj, grd, create=True)
+    print(res)
 
-AreasBetweenPolylines(prj, grd, create=True)
+Part.show(Part.makeCompound(shapes))
 """
