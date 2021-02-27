@@ -111,7 +111,8 @@ class TrailsWorkbench(Gui.Workbench):
                 'gui': self.menu + self.toolbar,
                 'cmd': [
                     'Create Guidelines',
-                    'Create Sections'
+                    'Create Sections',
+                    'Compute Areas'
                     ]
             },
 
@@ -207,6 +208,7 @@ class TrailsWorkbench(Gui.Workbench):
         from .geomatics.surface import create_surface, edit_surface
         from .geomatics.guideline import create_guidelines
         from .geomatics.section import create_sections
+        from .geomatics.volume import compute_areas
         from .geomatics import geoimport_gui
 
         from .design.project.commands import import_alignment_cmd
