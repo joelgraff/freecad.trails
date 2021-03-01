@@ -68,7 +68,6 @@ class Line():
 
         if line_dict:
             for _k, _v in line_dict.items():
-                print(_k, _v)
                 self.set(_k, _v)
 
     def __str__(self):

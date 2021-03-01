@@ -111,7 +111,7 @@ class ViewState(metaclass=Singleton):
 
         return self._matrix.getValue()[3][3] == 1.0
 
-    def transform_points(self, points, node=None, refresh=True):
+    def transform_points(self, points, node=None, matrix=None, refresh=True):
         """
         Transform selected points by the transformation matrix
         """
@@ -119,7 +119,11 @@ class ViewState(metaclass=Singleton):
         #store the view state matrix if a valid node is passed.
         #subsequent calls with null node will re-use the last valid node matrix
         refresh = refresh and node is not None
-        _matrix = self.get_matrix(node, refresh=refresh)
+
+        _martix = matrix
+
+        if not _matrix:
+            _matrix = self.get_matrix(node, refresh=refresh)
 
         if not _matrix:
             return []

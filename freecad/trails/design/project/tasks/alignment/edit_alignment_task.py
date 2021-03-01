@@ -187,7 +187,7 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         """
         Fancy routine to smooth zoom the camera
         """
-        print('zoom')
+
         _camera = ViewState().view.getCameraNode()
 
         _start_pos = Vector(_camera.position.getValue().getValue())
