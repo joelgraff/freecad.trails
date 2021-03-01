@@ -21,30 +21,30 @@
 # ***********************************************************************
 
 '''
-Create a Guide Lines object from FPO.
+Create a Cross Sections object from FPO.
 '''
 
 import FreeCAD
 import Part
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
-from .gl_func import GLFunc
+from .cs_func import CSFunc
 import copy
 
 
 def create():
-    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "Guidelines")
-    obj.Label = "Guidelines"
-    GuideLines(obj)
-    ViewProviderGuideLines(obj.ViewObject)
+    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "CrossSections")
+    obj.Label = "Cross Sections"
+    CrossSections(obj)
+    ViewProviderCrossSections(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
 
     return obj
 
 
-class GuideLines(GLFunc):
+class CrossSections(CSFunc):
     """
-    This class is about Guide Lines object data features.
+    This class is about Cross Section object data features.
     """
 
     def __init__(self, obj):
@@ -52,27 +52,23 @@ class GuideLines(GLFunc):
         Set data properties.
         '''
 
-        self.Type = 'Trails::Guidelines'
+        self.Type = 'Trails::CrossSections'
 
         obj.addProperty(
-            'App::PropertyLink', "Alignment", "Base",
-            "Parent alignment").Alignment = None
+            'App::PropertyVector', "Position", "Base",
+            "Section creation origin").Position = FreeCAD.Vector()
 
         obj.addProperty(
-            "App::PropertyFloatList", "StationList", "Base",
-            "List of stations").StationList = []
+            'App::PropertyLink', "Guidelines", "Base",
+            "Base guidelines").Guidelines = None
+
+        obj.addProperty(
+            'App::PropertyLinkList', "Surfaces", "Base",
+            "Projection surfaces").Surfaces = []
 
         obj.addProperty(
             "Part::PropertyPartShape", "Shape", "Base",
             "Object shape").Shape = Part.Shape()
-
-        obj.addProperty(
-            "App::PropertyLength", "RightOffset", "Offset",
-            "Length of right offset").RightOffset = 20000
-
-        obj.addProperty(
-            "App::PropertyLength", "LeftOffset", "Offset",
-            "Length of left offset").LeftOffset = 20000
 
         obj.Proxy = self
 
@@ -86,27 +82,15 @@ class GuideLines(GLFunc):
         '''
         Do something when doing a recomputation. 
         '''
-        if not obj.InList: return
+        position = obj.getPropertyByName("Position")
+        gl = obj.getPropertyByName("Guidelines")
+        surfaces = obj.getPropertyByName("Surfaces")
 
-        obj.StationList = obj.InList[0].StationList
-        alignment = obj.getPropertyByName("Alignment")
-        stations = obj.getPropertyByName("StationList")
-
-        if alignment and stations:
-            left_offset = obj.getPropertyByName("LeftOffset")
-            right_offset = obj.getPropertyByName("RightOffset")
-
-            offsets = [left_offset, right_offset]
-
-            # Get GeoOrigin.
-            origin = geo_origin.get()
-            base = copy.deepcopy(origin.Origin)
-            base.z = 0
-
-            obj.Shape = self.get_lines(base, alignment, offsets, stations)
+        if surfaces and position:
+            obj.Shape = self.draw_sections(position, gl, surfaces)
 
 
-class ViewProviderGuideLines:
+class ViewProviderCrossSections:
     """
     This class is about Point Group Object view features.
     """
@@ -179,7 +163,7 @@ class ViewProviderGuideLines:
                 location = coin.SoTranslation()
                 text = coin.SoAsciiText()
 
-                label = str(round(obj.StationList[i], 2))
+                label = str(round(obj.Guidelines.StationList[i], 2))
                 location.translation = wire.Vertexes[-1].Point
                 text.string.setValues([label])
                 gl_label.addChild(font)
@@ -221,7 +205,7 @@ class ViewProviderGuideLines:
         '''
         Return object treeview icon.
         '''
-        return ICONPATH + '/icons/GuideLines.svg'
+        return ICONPATH + '/icons/CreateSections.svg'
 
     def __getstate__(self):
         """
