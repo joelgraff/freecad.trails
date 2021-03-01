@@ -37,99 +37,109 @@ class CSFunc:
         pass
 
     @staticmethod
-    def convert2View(section, origin=None):
-        import math
-        sectionView = []
+    def section_converter(section_3d, origin):
+        section_2d = []
+        section_2d.append(FreeCAD.Vector(0, 0, 0))
 
-        if origin: section.insert(0, origin)
-        sectionView.append(FreeCAD.Vector(0, 0, 0))
+        prev_vector = origin
+        for i in section_3d:
+            reduced_vector = copy.deepcopy(i)
+            reduced_vector.z = prev_vector.z
 
-        for i in range(0, len(section)-1):
-            virtual_point = FreeCAD.Vector(section[i+1].x, section[i+1].y, section[i].z)
+            vector = prev_vector.sub(i)
+            x_vector = prev_vector.sub(reduced_vector)
+            length = vector.Length
+            angle = x_vector.getAngle(vector)
 
-            real_vector = section[i].sub(section[i+1])
-            virtual_vector = section[i].sub(virtual_point)
-            _length = real_vector.Length
-            _angle = virtual_vector.getAngle(real_vector)
+            dx = length * math.cos(angle)
+            dy = length * math.sin(angle)
 
-            dx = _length * math.cos(_angle)
-            dy = _length * math.sin(_angle)
+            if x_vector.z < vector.z: dy = -dy
+            vector_2d = section_2d[-1].add(FreeCAD.Vector(dx, dy, 0))
+            section_2d.append(vector_2d)
+            prev_vector = i
 
-            if i == 0 and origin:
-                side_point = FreeCAD.Vector(section[-1].x, section[-1].y, section[0].z)
-                first_vector = section[0].sub(virtual_point)
-                second_vector = virtual_point.sub(side_point)
-                second_vector = first_vector.add(second_vector.normalize())
-                if first_vector.Length > second_vector.Length: dx = -dx
+        section_2d.pop(0)
+        return section_2d
 
-            if virtual_vector.z < real_vector.z: dy = -dy
-            sectionView.append(sectionView[-1].add(FreeCAD.Vector(dx, dy, 0)))
+    def create_3d_sections(self, gl, surface):
+        wire_list = []
+        for wire in gl.Shape.Wires:
 
-        sectionView.pop(0)
-        return sectionView
+            points = []
+            for edge in wire.Edges:
+                params = MeshPart.findSectionParameters(
+                    edge, surface.Mesh, FreeCAD.Vector(0, 0, 1))
+                params.insert(0, edge.FirstParameter+1)
+                params.append(edge.LastParameter-1)
 
-    def draw_sections(self, position, guidelines, surfaces):
-        _counter = 0
-        _buffer = 50000
+                values = [edge.valueAt(i) for i in params]
+                points += values
+
+            section_3d = MeshPart.projectPointsOnMesh(
+                points, surface.Mesh, FreeCAD.Vector(0, 0, 1))
+
+            line_segments = []
+            for i in range(0, len(section_3d)-1):
+                if section_3d[i] == section_3d[i+1]: continue
+                line_segments.append(Part.LineSegment(section_3d[i], section_3d[i+1]))
+
+            shape = Part.Shape(line_segments)
+            wire = Part.Wire(shape.Edges)
+            wire_list.append(wire)
+
+        sections3d = Part.makeCompound(wire_list)
+        return sections3d
+
+    def draw_2d_sections(self, position, gl, surface, geometry, gaps):
+        counter = 0
+        buffer = 50000
         pos = position
 
-        multi_views_nor = math.ceil(len(guidelines.Shape.Wires)**0.5)
+        multi_views_nor = math.ceil(len(gl.Shape.Wires)**0.5)
 
-        view_width =[]
-        view_heigth =[]
-        wire_list = []
-        for wire in guidelines.Shape.Wires:
-            _origin = None
-            for surface in surfaces:
-                _points = []
+        section_list = []
+        for wire in gl.Shape.Wires:
 
-                for _edge in wire.Edges:
-                    _params = MeshPart.findSectionParameters(
-                        _edge, surface.Mesh, FreeCAD.Vector(0, 0, 1))
-                    _params.insert(0, _edge.FirstParameter+1)
-                    _params.append(_edge.LastParameter-1)
+            points = []
+            origin = wire.Vertexes[0].Point
+            for edge in wire.Edges:
+                params = MeshPart.findSectionParameters(
+                    edge, surface.Mesh, FreeCAD.Vector(0, 0, 1))
+                params.insert(0, edge.FirstParameter+1)
+                params.append(edge.LastParameter-1)
 
-                    _values = [_edge.valueAt(i) for i in _params]
-                    _points += _values
+                values = [edge.valueAt(i) for i in params]
+                points += values
 
-                section_points = MeshPart.projectPointsOnMesh(
-                    _points, surface.Mesh, FreeCAD.Vector(0, 0, 1))
+            section_3d = MeshPart.projectPointsOnMesh(
+                points, surface.Mesh, FreeCAD.Vector(0, 0, 1))
 
-                sec_points_2d = self.convert2View(section_points, _origin)
+            section_2d = self.section_converter(section_3d, origin)
 
-                view_width.append([min(i.x for i in sec_points_2d),
-                    max(i.x for i in sec_points_2d)])
-                view_heigth.append([min(i.y for i in sec_points_2d),
-                    max(i.y for i in sec_points_2d)])
+            draw_sec = []
+            for i in section_2d:
+                draw_sec.append(i.add(position))
 
-                draw_sec = []
-                for i in sec_points_2d:
-                    draw_sec.append(i.add(position))
+            line_segments = []
+            for i in range(0, len(draw_sec)-1):
+                if draw_sec[i] == draw_sec[i+1]: continue
+                line_segments.append(Part.LineSegment(draw_sec[i], draw_sec[i+1]))
 
-                line_segments = []
-                for i in range(0, len(draw_sec)-1):
-                    if draw_sec[i] == draw_sec[i+1]: continue
-                    line_segments.append(Part.LineSegment(draw_sec[i], draw_sec[i+1]))
+            shape = Part.Shape(line_segments)
+            sec = Part.Wire(shape.Edges)
+            section_list.append(sec)
 
-                shape = Part.Shape(line_segments)
-                wire = Part.Wire(shape.Edges)
-                wire_list.append(wire)
-                _origin = section_points[0]
+            if counter == multi_views_nor:
+                shifting = position.x - pos.x + gaps[1]
+                reposition = FreeCAD.Vector(geometry[1] + shifting, 0, 0)
+                position = pos.add(reposition)
+                counter = 0
 
-            if _counter == multi_views_nor:
-                _dx = max(i[1] for i in view_width) - min(i[0] for i in view_width)
-                _shifting = position.x - pos.x + _buffer
-                _reposition = FreeCAD.Vector(_dx + _shifting, 0, 0)
-                position = pos.add(_reposition)
-                view_width.clear()
-                view_heigth.clear()
-                _counter = 0
             else:
-                _dy = max(i[1] for i in view_heigth) - min(i[0] for i in view_heigth)
-                _reposition = FreeCAD.Vector(0, -(_dy + _buffer), 0)
-                position = position.add(_reposition)
-                view_heigth.clear()
-                _counter += 1
+                reposition = FreeCAD.Vector(0, -(geometry[0] + gaps[0]), 0)
+                position = position.add(reposition)
+                counter += 1
 
-        _section = Part.makeCompound(wire_list)
-        return _section
+        section_draws = Part.makeCompound(section_list)
+        return section_draws

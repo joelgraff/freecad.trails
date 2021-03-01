@@ -21,29 +21,29 @@
 # ***********************************************************************
 
 '''
-Create a Cross Sections object from FPO.
+Create a Cross Section object from FPO.
 '''
 
 import FreeCAD
 import Part
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
-import copy
+from .cs_func import CSFunc
+import copy, random
 
 
-def create(position, guidelines):
-    obj=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython", "CrossSections")
-    obj.Label = "Cross Sections"
-    CrossSections(obj)
-    obj.Position = position
-    obj.Guidelines = guidelines
-    ViewProviderCrossSections(obj.ViewObject)
+def create(surface):
+    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "CrossSection")
+    obj.Label = "Cross Section"
+    cs = CrossSection(obj)
+    cs.Surface = surface
+    ViewProviderCrossSection(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
 
     return obj
 
 
-class CrossSections:
+class CrossSection(CSFunc):
     """
     This class is about Cross Section object data features.
     """
@@ -53,31 +53,15 @@ class CrossSections:
         Set data properties.
         '''
 
-        self.Type = 'Trails::CrossSections'
+        self.Type = 'Trails::CrossSection'
 
         obj.addProperty(
-            'App::PropertyVector', "Position", "Base",
-            "Section creation origin").Position = FreeCAD.Vector()
+            'App::PropertyLink', "Surface", "Base",
+            "Projection surface").Surface = None
 
         obj.addProperty(
-            'App::PropertyLink', "Guidelines", "Base",
-            "Base guidelines").Guidelines = None
-
-        obj.addProperty(
-            "App::PropertyLength", "Heigth", "Geometry",
-            "Heigth of cross section view").Heigth = 50000
-
-        obj.addProperty(
-            "App::PropertyLength", "Width", "Geometry",
-            "Width of cross section view").Width = 100000
-
-        obj.addProperty(
-            "App::PropertyLength", "Vertical", "Gaps",
-            "Vertical gap between cross section view").Vertical = 50000
-
-        obj.addProperty(
-            "App::PropertyLength", "Horizontal", "Gaps",
-            "Horizontal gap between cross section view").Horizontal = 50000
+            "Part::PropertyPartShape", "Shape", "Base",
+            "Object shape").Shape = Part.Shape()
 
         obj.Proxy = self
 
@@ -91,10 +75,23 @@ class CrossSections:
         '''
         Do something when doing a recomputation. 
         '''
-        pass
+        surface = obj.getPropertyByName("Surface")
+
+        if surface and obj.InList:
+            group = obj.InList[0]
+            pos = group.Position
+            gl = group.Guidelines
+            h = group.Heigth.Value
+            w = group.Width.Value
+            ver = group.Vertical.Value
+            hor = group.Horizontal.Value
+            geometry = [h, w]
+            gaps = [ver, hor]
+
+            obj.Shape = self.draw_2d_sections(pos, gl, surface, geometry, gaps)
 
 
-class ViewProviderCrossSections:
+class ViewProviderCrossSection:
     """
     This class is about Point Group Object view features.
     """
@@ -104,6 +101,12 @@ class ViewProviderCrossSections:
         Set view properties.
         '''
         self.Object = vobj.Object
+
+        (r, g, b) = (random.random(), random.random(), random.random())
+
+        vobj.addProperty(
+            "App::PropertyColor", "SectionColor", "Point Style",
+            "Color of the section").SectionColor = (r, g, b)
 
         vobj.Proxy = self
 
@@ -119,8 +122,7 @@ class ViewProviderCrossSections:
         self.gl_labels = coin.SoSeparator()
 
         # Line style.
-        line_color = coin.SoBaseColor()
-        line_color.rgb = (0.0, 1.0, 1.0)
+        self.line_color = coin.SoBaseColor()
         line_style = coin.SoDrawStyle()
         line_style.style = coin.SoDrawStyle.LINES
         line_style.lineWidth = 2
@@ -135,7 +137,7 @@ class ViewProviderCrossSections:
         # Surface root.
         guidelines_root = coin.SoSeparator()
         guidelines_root.addChild(self.gl_labels)
-        guidelines_root.addChild(line_color)
+        guidelines_root.addChild(self.line_color)
         guidelines_root.addChild(highlight)
         vobj.addDisplayMode(guidelines_root,"Lines")
 
@@ -143,7 +145,9 @@ class ViewProviderCrossSections:
         '''
         Update Object visuals when a view property changed.
         '''
-        pass
+        if prop == "SectionColor":
+            color = vobj.getPropertyByName("SectionColor")
+            self.line_color.rgb = (color[0],color[1],color[2])
 
     def updateData(self, obj, prop):
         '''
@@ -152,8 +156,6 @@ class ViewProviderCrossSections:
         if prop == "Shape":
             self.gl_labels.removeAllChildren()
             shape = obj.getPropertyByName("Shape")
-            gl = obj.getPropertyByName("Guidelines")
-            if not gl: return
 
             # Get GeoOrigin.
             origin = geo_origin.get()
@@ -166,22 +168,7 @@ class ViewProviderCrossSections:
 
             points = []
             line_vert = []
-            sta_list = obj.Guidelines.StationList
             for i, wire in enumerate(shape.Wires):
-                font = coin.SoFont()
-                font.size = 3000
-                gl_label = coin.SoSeparator()
-                location = coin.SoTranslation()
-                text = coin.SoAsciiText()
-
-                label = str(round(sta_list[i % len(sta_list)], 2))
-                location.translation = wire.Vertexes[-1].Point
-                text.string.setValues([label])
-                gl_label.addChild(font)
-                gl_label.addChild(location)
-                gl_label.addChild(text)
-                self.gl_labels.addChild(gl_label)
-
                 for vertex in wire.Vertexes:
                     points.append(vertex.Point.add(base))
 
@@ -217,42 +204,6 @@ class ViewProviderCrossSections:
         Return object treeview icon.
         '''
         return ICONPATH + '/icons/CreateSections.svg'
-
-    def claimChildren(self):
-        """
-        Provides object grouping
-        """
-        return self.Object.Group
-
-    def setEdit(self, vobj, mode=0):
-        """
-        Enable edit
-        """
-        return True
-
-    def unsetEdit(self, vobj, mode=0):
-        """
-        Disable edit
-        """
-        return False
-
-    def doubleClicked(self, vobj):
-        """
-        Detect double click
-        """
-        pass
-
-    def setupContextMenu(self, vobj, menu):
-        """
-        Context menu construction
-        """
-        pass
-
-    def edit(self):
-        """
-        Edit callback
-        """
-        pass
 
     def __getstate__(self):
         """

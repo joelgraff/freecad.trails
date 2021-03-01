@@ -28,7 +28,6 @@ Define Surface Object functions.
 import FreeCAD
 import Part
 import copy
-from . import guidelines
 
 class GLCFunc:
     """
@@ -36,19 +35,6 @@ class GLCFunc:
     """
     def __init__(self):
         pass
-
-    def guidelines(self, obj):
-        """
-        Find the existing Guide Line Clusters group object
-        """
-        # Return an existing instance of the same name, if found.
-        for child in obj.Group:
-            if child.Proxy.Type == 'Trails::Guidelines':
-                return child
-        gl = guidelines.create()
-        gl.Alignment = obj.Alignment
-        obj.addObject(gl)
-        return gl
 
     def get_alignment_infos(self, alignment):
         if hasattr(alignment.Proxy, 'model'):
