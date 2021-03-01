@@ -102,6 +102,11 @@ class AlignmentModel:
                     if not self.data.get('meta').get('Start'):
                         self.data.get('meta')['Start'] = _geo.get('Start')
 
+                    #if only one line is defined, make sure it gets added to
+                    #the geometry model
+                    if len(self.data.get('geometry')) == 1:
+                        _geometry.append(_geo)
+
                 continue
 
             elif _geo.get('Type') == 'Spiral':
