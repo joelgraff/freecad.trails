@@ -61,6 +61,7 @@ class CurveTracker(ContextTracker, Drag):
         self.curve_tracker = None
         self.param_tracker = None
         self.arc = None
+        self.prev_arc = None
         self.axes = [(), (), ()]
 
         self.drag_refs = SimpleNamespace(
@@ -143,10 +144,18 @@ class CurveTracker(ContextTracker, Drag):
             nodes = None
         )
 
-        self.is_inavlid = False
         self.drag_copy = None
 
-        self.update()
+        if not self.is_invalid:
+            self.update()
+
+        else:
+            self.arc = self.prev_arc
+
+        for _cb in self.after_drag_callbacks:
+            _cb(user_data)
+
+        self.is_invalid = False
 
     def _setup_for_drag(self, user_data):
         """
@@ -200,7 +209,7 @@ class CurveTracker(ContextTracker, Drag):
             return
 
         #determine the element-wise direction of drag w.r.t the PI
-        _dir = TupleMath.signs(TupleMath.subtract(self.arc.pi, _mod_point))
+        _dir = TupleMath.signs(TupleMath.subtract(self.arc.pi, _mod_point[1]))
 
         if not self.drag_refs.direction:
             self.drag_refs.direction = _dir
@@ -228,12 +237,17 @@ class CurveTracker(ContextTracker, Drag):
         if self.drag_copy:
             return
 
+        #create a copy of the current arc in case dragging op fails
+        self.prev_arc = arc.Arc(self.arc)
         self.drag_copy = self.copy()
 
         #add the root node to the drag tracker for representation only
         Drag.drag_tracker.insert_no_drag(self.drag_copy)
 
         todo.delay(self._setup_for_drag, user_data)
+
+        for _cb in self.before_drag_callbacks:
+            _cb(user_data)
 
     def setup_drag_references(self, obj):
         """
