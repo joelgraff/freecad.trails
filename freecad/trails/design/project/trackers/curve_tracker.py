@@ -200,7 +200,7 @@ class CurveTracker(ContextTracker, Drag):
             return
 
         #determine the element-wise direction of drag w.r.t the PI
-        _dir = TupleMath.signs(TupleMath.subtract(self.arc.pi, _mod_point[-1]))
+        _dir = TupleMath.signs(TupleMath.subtract(self.arc.pi, _mod_point))
 
         if not self.drag_refs.direction:
             self.drag_refs.direction = _dir
