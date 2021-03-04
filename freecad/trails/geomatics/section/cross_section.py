@@ -141,12 +141,15 @@ class ViewProviderCrossSection:
         guidelines_root.addChild(highlight)
         vobj.addDisplayMode(guidelines_root,"Lines")
 
+        # Take features from properties.
+        self.onChanged(vobj,"SectionColor")
+
     def onChanged(self, vobj, prop):
         '''
         Update Object visuals when a view property changed.
         '''
-        if prop == "SectionColor":
-            color = vobj.getPropertyByName("SectionColor")
+        if prop == "SectionColor" and hasattr(vobj, prop):
+            color = vobj.getPropertyByName(prop)
             self.line_color.rgb = (color[0],color[1],color[2])
 
     def updateData(self, obj, prop):
