@@ -43,8 +43,6 @@ class VolumeFunc:
         bb_upper = upper.BoundBox
 
         # Find the coords for the 'limits' box:
-        area_minX = max(bb_lower.XMin, bb_upper.XMin) - 1.0
-        area_maxX = min(bb_lower.XMax, bb_upper.XMax) + 1.0
         area_minY = min(bb_lower.YMin, bb_upper.YMin) - 1.0
         area_maxY = max(bb_lower.YMax, bb_upper.YMax) + 1.0
 
@@ -64,19 +62,10 @@ class VolumeFunc:
                                 Part.makeLine((fp_upper[0], area_minY, 0.0), (lp_upper[0], area_minY, 0.0)),
                                 Part.makeLine((lp_upper[0], area_minY, 0.0), lp_upper)]
 
-        ## Determine 4 edges for the 'limits' box:
-        edgesLim = [Part.makeLine((area_minX, area_minY, 0.0), (area_maxX, area_minY, 0.0)),
-                    Part.makeLine((area_maxX, area_minY, 0.0), (area_maxX, area_maxY, 0.0)),
-                    Part.makeLine((area_maxX, area_maxY, 0.0), (area_minX, area_maxY, 0.0)),
-                    Part.makeLine((area_minX, area_maxY, 0.0), (area_minX, area_minY, 0.0))]
-
         face_lower = Part.Face(Part.Wire(edgesA))
         face_upper = Part.Face(Part.Wire(edgesB))
-        face_limit = Part.Face(Part.Wire(edgesLim))
 
-        area_lower = face_lower.common(face_limit)
-        area_upper = face_upper.common(face_limit)
-        face_area  = area_lower.common(area_upper)
+        face_area  = face_lower.common(face_upper)
 
         return face_area
 
