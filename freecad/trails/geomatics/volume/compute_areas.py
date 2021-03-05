@@ -23,10 +23,10 @@
 import FreeCAD
 import FreeCADGui
 from freecad.trails import ICONPATH
-from .volume_func import VolumeFunc
+from . import volume
 
 
-class ComputeAreas(VolumeFunc):
+class ComputeAreas:
     """
     Command to compute areas between surface sections
     """
@@ -62,6 +62,6 @@ class ComputeAreas(VolumeFunc):
         """
         # Check for selected object
         selection = FreeCADGui.Selection.getSelection()
-        self.test(selection)
+        volume.create(selection)
         
 FreeCADGui.addCommand('Compute Areas', ComputeAreas())
