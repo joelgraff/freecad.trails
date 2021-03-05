@@ -69,7 +69,7 @@ class VolumeFunc:
 
         return face_area
 
-    def test(self, selection):
+    def get_areas(self, selection):
         shapes = []
 
         project = selection[0]
@@ -81,4 +81,4 @@ class VolumeFunc:
             result = self.area_between(prj, grd)
             shapes.append(result)
 
-        Part.show(Part.makeCompound(shapes))
+        return Part.makeCompound(shapes)
