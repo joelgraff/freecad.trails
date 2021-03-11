@@ -63,10 +63,10 @@ def create(geometry, object_name='', parent=None, no_visual=False, zero_referenc
     _obj = None
 
     if not parent:
-        _obj = App.ActiveDocument.addObject("App::FeaturePython", _name)
+        _obj = App.ActiveDocument.addObject("App::DocumentObjectGroupPython", _name)
 
     else:
-        _obj = parent.newObject("App::FeaturePython", _name)
+        _obj = parent.newObject("App::DocumentObjectGroupPython", _name)
 
     HorizontalAlignment(_obj, _name)
 
