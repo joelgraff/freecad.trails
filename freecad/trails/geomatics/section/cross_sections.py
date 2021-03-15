@@ -36,8 +36,11 @@ def create(position, guidelines):
     obj.Label = "Cross Sections"
     CrossSections(obj)
     obj.Position = position
-    obj.Guidelines = guidelines
     ViewProviderCrossSections(obj.ViewObject)
+
+    cluster = guidelines.getParentGroup()
+    cluster.addObject(obj)
+
     FreeCAD.ActiveDocument.recompute()
 
     return obj
@@ -58,10 +61,6 @@ class CrossSections:
         obj.addProperty(
             'App::PropertyVector', "Position", "Base",
             "Section creation origin").Position = FreeCAD.Vector()
-
-        obj.addProperty(
-            'App::PropertyLink', "Guidelines", "Base",
-            "Base guidelines").Guidelines = None
 
         obj.addProperty(
             "App::PropertyLength", "Heigth", "Geometry",
