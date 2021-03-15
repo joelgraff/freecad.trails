@@ -53,10 +53,8 @@ def create(alignment, name='GL Cluster'):
     """
     # Add Cross Sections group.
     cs = cross_sections.create()
-    cs.Guidelines = gl
     obj.addObject(cs)
     """
-    #obj.CrossSections = cs
 
     ViewProviderGLCluster(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
@@ -75,10 +73,6 @@ class GLCluster(GLCFunc):
         Set data properties.
         '''
         self.Type = 'Trails::GLCluster'
-
-        obj.addProperty(
-            'App::PropertyLink', "CrossSections", "Base",
-            "Parent alignment").CrossSections = None
 
         obj.addProperty(
             "App::PropertyBool", "AtHorizontalAlignmentPoints", "Base",
