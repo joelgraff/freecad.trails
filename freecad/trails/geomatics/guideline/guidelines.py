@@ -55,10 +55,6 @@ class GuideLines(GLFunc):
         self.Type = 'Trails::Guidelines'
 
         obj.addProperty(
-            'App::PropertyLink', "Alignment", "Base",
-            "Parent alignment").Alignment = None
-
-        obj.addProperty(
             "App::PropertyFloatList", "StationList", "Base",
             "List of stations").StationList = []
 
@@ -89,7 +85,7 @@ class GuideLines(GLFunc):
         if not obj.InList: return
 
         obj.StationList = obj.InList[0].StationList
-        alignment = obj.getPropertyByName("Alignment")
+        alignment = obj.InList[0].InList[0].InList[0]
         stations = obj.getPropertyByName("StationList")
 
         if alignment and stations:
