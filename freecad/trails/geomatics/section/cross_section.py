@@ -78,9 +78,15 @@ class CrossSection(CSFunc):
         surface = obj.getPropertyByName("Surface")
 
         if surface and obj.InList:
-            group = obj.InList[0]
+            group = obj.getParentGroup()
+            cluster = group.getParentGroup()
+
+            for item in cluster.Group:
+                if item.Proxy.Type == 'Trails::Guidelines':
+                    gl = item
+                    break
+
             pos = group.Position
-            gl = group.Guidelines
             h = group.Heigth.Value
             w = group.Width.Value
             ver = group.Vertical.Value
