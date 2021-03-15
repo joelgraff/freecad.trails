@@ -84,8 +84,9 @@ class GuideLines(GLFunc):
         '''
         if not obj.InList: return
 
-        obj.StationList = obj.InList[0].StationList
-        alignment = obj.InList[0].InList[0].InList[0]
+        cluster = obj.InList[0]
+        obj.StationList = cluster.StationList
+        alignment = cluster.InList[0].InList[0]
         stations = obj.getPropertyByName("StationList")
 
         if alignment and stations:
