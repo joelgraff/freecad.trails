@@ -39,6 +39,8 @@ from . import alignment_group, alignment_model
 from .alignment import Alignment
 from .alignment_registrar import AlignmentRegistrar
 
+from ...geomatics.guideline import gl_clusters
+
 __title__ = 'horizontal_alignment.py'
 __author__ = 'Joel Graff'
 __url__ = "https://www.freecadweb.org"
@@ -69,10 +71,11 @@ def create(geometry, object_name='', parent=None, no_visual=False, zero_referenc
         _obj = parent.newObject("App::DocumentObjectGroupPython", _name)
 
     HorizontalAlignment(_obj, _name)
-
     _obj.Proxy.set_geometry(geometry, zero_reference)
-
     ViewProviderHorizontalAlignment(_obj.ViewObject)
+
+    clusters = gl_clusters.create()
+    _obj.addObject(clusters)
 
     App.ActiveDocument.recompute()
 
@@ -492,7 +495,7 @@ class ViewProviderHorizontalAlignment():
         View provider scene graph initialization
         """
 
-        self.Object = vobj
+        self.Object = vobj.Object
 
         # Lines root.
         self.line_coords = coin.SoGeoCoordinate()
@@ -635,6 +638,41 @@ class ViewProviderHorizontalAlignment():
         '''
         return ICONPATH + '/icons/Alignment.svg'
 
+    def claimChildren(self):
+        """
+        Provides object grouping
+        """
+        return self.Object.Group
+
+    def setEdit(self, vobj, mode=0):
+        """
+        Enable edit
+        """
+        return True
+
+    def unsetEdit(self, vobj, mode=0):
+        """
+        Disable edit
+        """
+        return False
+
+    def doubleClicked(self, vobj):
+        """
+        Detect double click
+        """
+        pass
+
+    def setupContextMenu(self, obj, menu):
+        """
+        Context menu construction
+        """
+        pass
+
+    def edit(self):
+        """
+        Edit callback
+        """
+        pass
     def __getstate__(self):
         return None
 
