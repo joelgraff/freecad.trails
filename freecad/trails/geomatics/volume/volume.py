@@ -21,34 +21,33 @@
 # ***********************************************************************
 
 '''
-Create a Volume Object from FPO.
+Create a Volume Areas Object from FPO.
 '''
 
 import FreeCAD
 import Part
 from pivy import coin
-#from . import volumes
 from .volume_func import VolumeFunc
 from freecad.trails import ICONPATH, geo_origin
 import random, copy
 
 
 
-def create(sections, name='Volume'):
-    #group = volumes.get()
-    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "Volume")
+def create(sections, name='Volume Areas'):
+    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "VolumeAreas")
     obj.Label = name
-    Volume(obj)
+
+    VolumeAreas(obj)
     obj.TopSections = sections[0]
     obj.BottomSections = sections[1]
-    ViewProviderVolume(obj.ViewObject)
-    #group.addObject(obj)
+    ViewProviderVolumeAreas(obj.ViewObject)
+
     FreeCAD.ActiveDocument.recompute()
 
     return obj
 
 
-class Volume(VolumeFunc):
+class VolumeAreas(VolumeFunc):
     """
     This class is about Volume Object data features.
     """
@@ -89,7 +88,7 @@ class Volume(VolumeFunc):
         if top and bottom:
             obj.Shape = self.get_areas([top[0], bottom[0]])
 
-class ViewProviderVolume:
+class ViewProviderVolumeAreas:
     """
     This class is about Volume Object view features.
     """
