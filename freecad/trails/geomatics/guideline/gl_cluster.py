@@ -27,7 +27,8 @@ Create a GL Cluster group object from FPO.
 import FreeCAD
 from freecad.trails import ICONPATH, geo_origin
 from . import gl_clusters, guidelines
-#from ..section import cross_sections
+from ..section import cross_sections
+from ..volume import volumes
 from .glc_func import GLCFunc
 
 
@@ -50,11 +51,14 @@ def create(alignment, name='GL Cluster'):
     # Add Guidelines group.
     gl = guidelines.create()
     obj.addObject(gl)
-    """
+
     # Add Cross Sections group.
     cs = cross_sections.create()
     obj.addObject(cs)
-    """
+
+    # Add Volumes group.
+    vol_areas = volumes.create()
+    obj.addObject(vol_areas)
 
     ViewProviderGLCluster(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
