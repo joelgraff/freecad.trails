@@ -31,15 +31,14 @@ from freecad.trails import ICONPATH, geo_origin
 import copy
 
 
-def create(position, guidelines):
-    obj=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython", "CrossSections")
+def create(position=FreeCAD.Vector(0, 0, 0)):
+    obj=FreeCAD.ActiveDocument.addObject(
+        "App::DocumentObjectGroupPython", "CrossSections")
+
     obj.Label = "Cross Sections"
     CrossSections(obj)
     obj.Position = position
     ViewProviderCrossSections(obj.ViewObject)
-
-    cluster = guidelines.getParentGroup()
-    cluster.addObject(obj)
 
     FreeCAD.ActiveDocument.recompute()
 
