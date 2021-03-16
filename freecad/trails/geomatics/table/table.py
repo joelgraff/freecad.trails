@@ -21,24 +21,27 @@
 # ***********************************************************************
 
 '''
-Create a Point Group Object from FPO.
+Create a Table Object from FPO.
 '''
 
 import FreeCAD
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
+import copy
 
 
 
 def create(pos, gl, volume, name='Table'):
-    group = point_groups.get()
-    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "Table")
+    obj=FreeCAD.ActiveDocument.addObject(
+        "App::FeaturePython", "Table")
+
     obj.Label = name
     Table(obj)
     obj.Position = pos
     obj.Guidelines = gl
     obj.VolumeAreas = volume
     ViewProviderTable(obj.ViewObject)
+
     FreeCAD.ActiveDocument.recompute()
 
     return obj
@@ -46,7 +49,7 @@ def create(pos, gl, volume, name='Table'):
 
 class Table:
     """
-    This class is about Point Group Object data features.
+    This class is about Table Object data features.
     """
 
     def __init__(self, obj):
@@ -89,7 +92,7 @@ class Table:
 
 class ViewProviderTable:
     """
-    This class is about Point Group Object view features.
+    This class is about Table Object view features.
     """
 
     def __init__(self, vobj):
@@ -136,16 +139,16 @@ class ViewProviderTable:
             pos = obj.getPropertyByName("Position")
             if prop == "Guidelines" or prop == "VolumeAreas":
                 origin = geo_origin.get()
-                base = copy.deepcopy(origin)
+                base = copy.deepcopy(origin.Origin)
                 base.z = 0
 
                 column_titles = ["KM", "Area", "Volume", "Cumulative Volume"]
 
-                table_title = vobj.getPropertyByName("TableTitle")
+                table_title = obj.getPropertyByName("TableTitle")
                 offset = 5000
 
                 # Stations column
-                sta_list = map(str, obj.Guidelines.StationList)
+                sta_list = [str(round(i,2)) for i in obj.Guidelines.StationList]
                 sta_list.insert(0,column_titles[0])
                 font = coin.SoFont()
                 font.size = 1000
@@ -154,7 +157,7 @@ class ViewProviderTable:
                 location = coin.SoTranslation()
                 text = coin.SoAsciiText()
 
-                location.translation = pos.sub(base)
+                location.translation = pos
                 text.string.setValues(sta_list)
 
                 sta_column.addChild(font)
@@ -166,7 +169,7 @@ class ViewProviderTable:
                 for face in obj.VolumeAreas.Shape.Faces:
                     face_areas.append(face.Area)
 
-                area_list = map(str, face_areas)
+                area_list = [str(round(i/1000000,3)) for i in face_areas]
                 area_list.insert(0,column_titles[1])
                 font = coin.SoFont()
                 font.size = 1000
@@ -175,7 +178,7 @@ class ViewProviderTable:
                 location = coin.SoTranslation()
                 text = coin.SoAsciiText()
 
-                location.translation = pos.sub(base).add(offset, 0, 0)
+                location.translation = pos.add(FreeCAD.Vector(offset, 0, 0))
                 text.string.setValues(area_list)
 
                 area_column.addChild(font)
@@ -184,19 +187,19 @@ class ViewProviderTable:
 
                 # Volume column
                 volumes = []
-                for count in [1:len(obj.Guidelines.StationList)]:
+                volumes.append(0)
+                for count in range(1,len(face_areas)):
                     prev_area = float(face_areas[count-1])
                     next_area = float(face_areas[count])
-                    
-                    prev_km = float(sta_list[count-1])
-                    next_km = float(sta_list[count])
+
+                    prev_km = float(sta_list[count])
+                    next_km = float(sta_list[count+1])
 
                     volume = ((next_area + prev_area)/2)*(next_km-prev_km)
                     volumes.append(volume)
 
-                volume_list = map(str, volumes)
+                volume_list = [str(round(i/1000000,3)) for i in volumes]
                 volume_list.insert(0,column_titles[2])
-                volume_list.insert(1,"0.000")
                 font = coin.SoFont()
                 font.size = 1000
 
@@ -204,7 +207,7 @@ class ViewProviderTable:
                 location = coin.SoTranslation()
                 text = coin.SoAsciiText()
 
-                location.translation = pos.sub(base).add(offset*2, 0, 0)
+                location.translation = pos.add(FreeCAD.Vector(offset*2, 0, 0))
                 text.string.setValues(volume_list)
 
                 volume_column.addChild(font)
@@ -213,16 +216,17 @@ class ViewProviderTable:
 
                 # Cumulative volume column
                 cum_vols = []
-                for count in [1:len(obj.Guidelines.StationList)]:
-                    prev_cumvol = float(volume_column[count-1])
-                    next_vol = float(volume_column[count])
-                    
+                cum_vols.append(0)
+
+                for count in range(1,len(volumes)):
+                    prev_cumvol = float(cum_vols[-1])
+                    next_vol = float(volumes[count])
+
                     cum_vol = prev_cumvol + next_vol
                     cum_vols.append(cum_vol)
 
-                cumvol_list = map(str, cum_vols)
-                cumvol_list.insert(0,column_titles[2])
-                cumvol_list.insert(1,"0.000")
+                cumvol_list = [str(round(i/1000000,3)) for i in cum_vols]
+                cumvol_list.insert(0,column_titles[3])
                 font = coin.SoFont()
                 font.size = 1000
 
@@ -230,7 +234,7 @@ class ViewProviderTable:
                 location = coin.SoTranslation()
                 text = coin.SoAsciiText()
 
-                location.translation = pos.sub(base).add(offset*2, 0, 0)
+                location.translation = pos.add(FreeCAD.Vector(offset*3, 0, 0))
                 text.string.setValues(cumvol_list)
 
                 cumvol_column.addChild(font)
