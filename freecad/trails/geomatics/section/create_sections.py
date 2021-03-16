@@ -108,12 +108,20 @@ class CreateSections:
                 pos = event.getPosition().getValue()
                 position = self.view.getPoint(pos[0], pos[1])
                 position.z = 0
-                cs = cross_sections.create(position, self.selection[-1])
+
+                cluster = self.selection[-1].getParentGroup()
+
+                for item in cluster.Group:
+                    if item.Proxy.Type == 'Trails::CrossSections':
+                        cs = item
+                        cs.Position = position
+                        break
 
                 for item in self.IPFui.SelectSurfacesLW.selectedItems():
                     surface = self.surface_list[item.text()]
                     sections = cross_section.create(surface)
                     cs.addObject(sections)
+
                 FreeCAD.ActiveDocument.recompute()
 
 FreeCADGui.addCommand('Create Sections', CreateSections())
