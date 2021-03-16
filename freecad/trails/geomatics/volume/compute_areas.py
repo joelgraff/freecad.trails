@@ -23,7 +23,7 @@
 import FreeCAD
 import FreeCADGui
 from freecad.trails import ICONPATH
-from . import volume
+from . import volumes, volume
 
 
 class ComputeAreas:
@@ -62,6 +62,16 @@ class ComputeAreas:
         """
         # Check for selected object
         selection = FreeCADGui.Selection.getSelection()
-        volume.create(selection)
+        cs = selection[-1].getParentGroup()
+        cluster = cs.getParentGroup()
+
+        for item in cluster.Group:
+            if item.Proxy.Type == 'Trails::Volumes':
+                vol = item
+                break
+
+        vol_areas = volume.create(selection)
+        vol.addObject(vol_areas)
+
         
 FreeCADGui.addCommand('Compute Areas', ComputeAreas())
