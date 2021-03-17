@@ -272,7 +272,7 @@ class ViewProviderTable:
         '''
         Return object treeview icon.
         '''
-        return ICONPATH + '/icons/PointGroup.svg'
+        return ICONPATH + '/icons/table.svg'
 
     def __getstate__(self):
         """
