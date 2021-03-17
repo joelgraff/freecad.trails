@@ -39,7 +39,7 @@ class CreateTable:
         Return the command resources dictionary
         """
         return {
-            #'Pixmap': ICONPATH + '/icons/CreateSections.svg',
+            'Pixmap': ICONPATH + '/icons/table.svg',
             'MenuText': "Create Volume Table",
             'ToolTip': "Create Volume Table"
             }
