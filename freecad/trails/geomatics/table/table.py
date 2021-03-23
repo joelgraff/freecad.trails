@@ -133,11 +133,11 @@ class ViewProviderTable:
         '''
         guidelines = obj.getPropertyByName("Guidelines")
         volume_areas = obj.getPropertyByName("VolumeAreas")
-        self.table_columns.removeAllChildren()
 
         if guidelines and volume_areas:
             pos = obj.getPropertyByName("Position")
             if prop == "Guidelines" or prop == "VolumeAreas":
+                self.table_columns.removeAllChildren()
                 origin = geo_origin.get()
                 base = copy.deepcopy(origin.Origin)
                 base.z = 0
