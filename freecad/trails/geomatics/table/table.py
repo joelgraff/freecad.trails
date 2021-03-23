@@ -166,8 +166,8 @@ class ViewProviderTable:
 
                 # Area column
                 face_areas = []
-                for face in obj.VolumeAreas.Shape.Faces:
-                    face_areas.append(face.Area)
+                for sub in obj.VolumeAreas.Shape.SubShapes:
+                    face_areas.append(sub.Area)
 
                 area_list = [str(round(i/1000000,3)) for i in face_areas]
                 area_list.insert(0,column_titles[1])
