@@ -231,7 +231,7 @@ class DeleteTriangle:
 
         # If mouse left button pressed get picked point
         if event.getTypeId().isDerivedFrom(coin.SoKeyboardEvent.getClassTypeId()):
-            if event.getKey() == coin.SoKeyboardEvent.DELETE \
+            if event.getKey() == coin.SoKeyboardEvent.R \
                 and event.getState() == coin.SoKeyboardEvent.DOWN:
 
                 surface = FreeCADGui.Selection.getSelection()[-1]
