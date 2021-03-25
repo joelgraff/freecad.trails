@@ -166,6 +166,8 @@ class ViewProviderCrossSections:
             geo_system = ["UTM", origin.UtmZone, "FLAT"]
             self.line_coords.geoSystem.setValues(geo_system)
 
+            counter = 0
+            pos = position
             cluster = obj.getParentGroup()
 
             for item in cluster.Group:
@@ -173,14 +175,11 @@ class ViewProviderCrossSections:
                     gl = item
                     break
 
-            counter = 0
-            pos = position
-
-            multi_views_nor = math.ceil(len(gl.Shape.Wires)**0.5)
-
             points = []
             line_vert = []
             sta_list = gl.StationList
+            multi_views_nor = math.ceil(len(gl.Shape.Wires)**0.5)
+
             for sta in sta_list:
                 font = coin.SoFont()
                 font.size = 3000
@@ -196,6 +195,14 @@ class ViewProviderCrossSections:
                 gl_label.addChild(text)
                 self.gl_labels.addChild(gl_label)
 
+                org = position.add(base)
+                up_left = org.add(FreeCAD.Vector(0, h, 0))
+                up_right = org.add(FreeCAD.Vector(w, h, 0))
+                down_right = org.add(FreeCAD.Vector(w, 0, 0))
+
+                points.extend([org, up_left, up_right, down_right, org])
+                line_vert.append(5)
+
                 if counter == multi_views_nor:
                     shifting = position.x - pos.x + gaps[1]
                     reposition = FreeCAD.Vector(geometry[1] + shifting, 0, 0)
@@ -206,6 +213,9 @@ class ViewProviderCrossSections:
                     reposition = FreeCAD.Vector(0, -(geometry[0] + gaps[0]), 0)
                     position = position.add(reposition)
                     counter += 1
+
+            self.line_coords.point.values = points
+            self.lines.numVertices.values = line_vert
 
     def getDisplayModes(self, vobj):
         '''
