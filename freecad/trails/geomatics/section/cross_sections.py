@@ -182,12 +182,12 @@ class ViewProviderCrossSections:
 
             for sta in sta_list:
                 font = coin.SoFont()
-                font.size = 3000
+                font.size = 5000
                 gl_label = coin.SoSeparator()
                 location = coin.SoTranslation()
                 text = coin.SoAsciiText()
 
-                header = FreeCAD.Vector(w/2, h, 0)
+                header = FreeCAD.Vector(w/2, h+1000, 0)
                 location.translation = position.add(header)
                 text.string.setValues([str(round(sta, 3))])
                 gl_label.addChild(font)
