@@ -28,7 +28,7 @@ import FreeCAD
 import Part
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
-import copy
+import copy, math
 
 
 def create(position=FreeCAD.Vector(0, 0, 0)):
@@ -147,11 +147,15 @@ class ViewProviderCrossSections:
         '''
         Update Object visuals when a data property changed.
         '''
-        if prop == "Shape":
+        if prop == "Position":
             self.gl_labels.removeAllChildren()
-            shape = obj.getPropertyByName("Shape")
-            gl = obj.getPropertyByName("Guidelines")
-            if not gl: return
+            position = obj.getPropertyByName("Position")
+            h = obj.Heigth.Value
+            w = obj.Width.Value
+            ver = obj.Vertical.Value
+            hor = obj.Horizontal.Value
+            geometry = [h, w]
+            gaps = [ver, hor]
 
             # Get GeoOrigin.
             origin = geo_origin.get()
@@ -162,31 +166,46 @@ class ViewProviderCrossSections:
             geo_system = ["UTM", origin.UtmZone, "FLAT"]
             self.line_coords.geoSystem.setValues(geo_system)
 
+            cluster = obj.getParentGroup()
+
+            for item in cluster.Group:
+                if item.Proxy.Type == 'Trails::Guidelines':
+                    gl = item
+                    break
+
+            counter = 0
+            pos = position
+
+            multi_views_nor = math.ceil(len(gl.Shape.Wires)**0.5)
+
             points = []
             line_vert = []
-            sta_list = obj.Guidelines.StationList
-            for i, wire in enumerate(shape.Wires):
+            sta_list = gl.StationList
+            for sta in sta_list:
                 font = coin.SoFont()
                 font.size = 3000
                 gl_label = coin.SoSeparator()
                 location = coin.SoTranslation()
                 text = coin.SoAsciiText()
 
-                label = str(round(sta_list[i % len(sta_list)], 2))
-                location.translation = wire.Vertexes[-1].Point
-                text.string.setValues([label])
+                header = FreeCAD.Vector(w/2, h, 0)
+                location.translation = position.add(header)
+                text.string.setValues([str(round(sta, 3))])
                 gl_label.addChild(font)
                 gl_label.addChild(location)
                 gl_label.addChild(text)
                 self.gl_labels.addChild(gl_label)
 
-                for vertex in wire.Vertexes:
-                    points.append(vertex.Point.add(base))
+                if counter == multi_views_nor:
+                    shifting = position.x - pos.x + gaps[1]
+                    reposition = FreeCAD.Vector(geometry[1] + shifting, 0, 0)
+                    position = pos.add(reposition)
+                    counter = 0
 
-                line_vert.append(len(wire.Vertexes))
-
-            self.line_coords.point.values = points
-            self.lines.numVertices.values = line_vert
+                else:
+                    reposition = FreeCAD.Vector(0, -(geometry[0] + gaps[0]), 0)
+                    position = position.add(reposition)
+                    counter += 1
 
     def getDisplayModes(self, vobj):
         '''
