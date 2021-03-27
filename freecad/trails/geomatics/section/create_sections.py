@@ -119,7 +119,8 @@ class CreateSections:
 
                 for item in self.IPFui.SelectSurfacesLW.selectedItems():
                     surface = self.surface_list[item.text()]
-                    sections = cross_section.create(surface)
+                    sections = cross_section.create()
+                    sections.Surface = surface
                     cs.addObject(sections)
 
                 FreeCAD.ActiveDocument.recompute()
