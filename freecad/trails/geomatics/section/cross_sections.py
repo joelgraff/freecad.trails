@@ -31,13 +31,12 @@ from freecad.trails import ICONPATH, geo_origin
 import copy, math
 
 
-def create(position=FreeCAD.Vector(0, 0, 0)):
+def create():
     obj=FreeCAD.ActiveDocument.addObject(
         "App::DocumentObjectGroupPython", "CrossSections")
 
     obj.Label = "Cross Sections"
     CrossSections(obj)
-    obj.Position = position
     ViewProviderCrossSections(obj.ViewObject)
 
     FreeCAD.ActiveDocument.recompute()
@@ -147,8 +146,10 @@ class ViewProviderCrossSections:
         '''
         Update Object visuals when a data property changed.
         '''
-        if prop == "Position":
+        if prop == "Position" or prop == "Group":
             self.gl_labels.removeAllChildren()
+            if not obj.Group: return
+
             position = obj.getPropertyByName("Position")
             h = obj.Heigth.Value
             w = obj.Width.Value
