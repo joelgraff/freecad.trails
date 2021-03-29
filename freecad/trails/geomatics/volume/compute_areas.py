@@ -68,10 +68,11 @@ class ComputeAreas:
         for item in cluster.Group:
             if item.Proxy.Type == 'Trails::Volumes':
                 vol = item
-                break
+            if item.Proxy.Type == 'Trails::Guidelines':
+                gl = item
 
-        vol_areas = volume.create(selection)
+        vol_areas = volume.create(gl, selection)
         vol.addObject(vol_areas)
 
-        
+
 FreeCADGui.addCommand('Compute Areas', ComputeAreas())
