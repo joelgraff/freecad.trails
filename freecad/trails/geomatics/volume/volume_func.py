@@ -35,50 +35,67 @@ class VolumeFunc:
     def __init__(self):
         pass
 
-    def area_between(self, lower, upper):
+    def area_between(self, tops, bottoms, i):
         """
         Calculate the areas above lower and below upper
         """
-        bb_lower = lower.BoundBox
-        bb_upper = upper.BoundBox
+        bb_ymins = []
+        bb_ymaxs = []
+        bb_xmins = []
+        bb_xmaxs = []
+        for sec in tops + bottoms:
+            sec_wire = sec.Shape.Wires[i]
+            bb_ymins.append(sec_wire.BoundBox.YMin)
+            bb_ymaxs.append(sec_wire.BoundBox.YMax)
+            bb_xmins.append(sec_wire.BoundBox.XMin)
+            bb_xmaxs.append(sec_wire.BoundBox.XMax)
 
         # Find the coords for the 'limits' box:
-        area_minY = min(bb_lower.YMin, bb_upper.YMin) - 1.0
-        area_maxY = max(bb_lower.YMax, bb_upper.YMax) + 1.0
+        area_minY = min(bb_ymins) - 1.0
+        area_maxY = max(bb_ymaxs) + 1.0
+        area_minX = min(bb_xmins) - 1.0
+        area_maxX = max(bb_xmaxs) + 1.0
 
-        fp_lower = lower.Vertexes[0].Point
-        lp_lower = lower.Vertexes[-1].Point
+        ## Determine 4 edges for the 'limits' box:
+        limit = [Part.makeLine((area_minX, area_minY, 0.0), (area_maxX, area_minY, 0.0)),
+                Part.makeLine((area_maxX, area_minY, 0.0), (area_maxX, area_maxY, 0.0)),
+                Part.makeLine((area_maxX, area_maxY, 0.0), (area_minX, area_maxY, 0.0)),
+                Part.makeLine((area_minX, area_maxY, 0.0), (area_minX, area_minY, 0.0))]
 
-        fp_upper = upper.Vertexes[0].Point
-        lp_upper = upper.Vertexes[-1].Point
+        face_area = Part.Face(Part.Wire(limit))
 
-        ## Add 3 edges to A to get a closed boundary:
-        edgesA = lower.Edges + [Part.makeLine(fp_lower, (fp_lower[0], area_maxY, 0.0)),
-                                Part.makeLine((fp_lower[0], area_maxY, 0.0), (lp_lower[0], area_maxY, 0.0)),
-                                Part.makeLine((lp_lower[0], area_maxY, 0.0), lp_lower)]
+        for top in tops:
+            top_wire = top.Shape.Wires[i]
+            fp_upper = top_wire.Vertexes[0].Point
+            lp_upper = top_wire.Vertexes[-1].Point
 
-        ## Add 3 edges to B to get a closed boundary:
-        edgesB = upper.Edges + [Part.makeLine(fp_upper, (fp_upper[0], area_minY, 0.0)),
-                                Part.makeLine((fp_upper[0], area_minY, 0.0), (lp_upper[0], area_minY, 0.0)),
-                                Part.makeLine((lp_upper[0], area_minY, 0.0), lp_upper)]
+            ## Add 3 edges to B to get a closed boundary:
+            edges_top = top_wire.Edges + [Part.makeLine(fp_upper, (fp_upper[0], area_minY, 0.0)),
+                                        Part.makeLine((fp_upper[0], area_minY, 0.0), (lp_upper[0], area_minY, 0.0)),
+                                        Part.makeLine((lp_upper[0], area_minY, 0.0), lp_upper)]
 
-        face_lower = Part.Face(Part.Wire(edgesA))
-        face_upper = Part.Face(Part.Wire(edgesB))
+            face_upper = Part.Face(Part.Wire(edges_top))
+            face_area  = face_area.common(face_upper)
 
-        face_area  = face_lower.common(face_upper)
+        for bottom in bottoms:
+            bottom_wire = bottom.Shape.Wires[i]
+            fp_lower = bottom_wire.Vertexes[0].Point
+            lp_lower = bottom_wire.Vertexes[-1].Point
+
+            ## Add 3 edges to A to get a closed boundary:
+            edges_bottom = bottom_wire.Edges + [Part.makeLine(fp_lower, (fp_lower[0], area_maxY, 0.0)),
+                                        Part.makeLine((fp_lower[0], area_maxY, 0.0), (lp_lower[0], area_maxY, 0.0)),
+                                        Part.makeLine((lp_lower[0], area_maxY, 0.0), lp_lower)]
+
+            face_lower = Part.Face(Part.Wire(edges_bottom))
+            face_area  = face_area.common(face_lower)
 
         return face_area
 
-    def get_areas(self, selection):
+    def get_areas(self, gl, tops, bottoms):
         shapes = []
-
-        project = selection[0]
-        ground = selection[1]
-
-        for i in range(len(project.Shape.Wires)):
-            prj = project.Shape.Wires[i]
-            grd = ground.Shape.Wires[i]
-            result = self.area_between(prj, grd)
+        for i in range(len(gl.Shape.Wires)):
+            result = self.area_between(tops, bottoms, i)
             shapes.append(result)
 
         return Part.makeCompound(shapes)
