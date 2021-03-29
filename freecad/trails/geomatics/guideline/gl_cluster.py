@@ -29,6 +29,7 @@ from freecad.trails import ICONPATH, geo_origin
 from . import gl_clusters, guidelines
 from ..section import cross_sections
 from ..volume import volumes
+from ..table import tables
 from .glc_func import GLCFunc
 
 
@@ -59,6 +60,10 @@ def create(alignment, name='GL Cluster'):
     # Add Volumes group.
     vol_areas = volumes.create()
     obj.addObject(vol_areas)
+
+    # Add Tables group.
+    tabs = tables.create()
+    obj.addObject(tabs)
 
     ViewProviderGLCluster(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
