@@ -92,9 +92,12 @@ class CreateTable:
                 for item in cluster.Group:
                     if item.Proxy.Type == 'Trails::Guidelines':
                         gl = item
-                        break
+                    if item.Proxy.Type == 'Trails::Tables':
+                        tables = item
 
-                table.create(position, gl, self.selection[-1])
+                tab = table.create(position, gl, self.selection[-1])
+                
+                tables.addObject(tab)
 
                 FreeCAD.ActiveDocument.recompute()
 
