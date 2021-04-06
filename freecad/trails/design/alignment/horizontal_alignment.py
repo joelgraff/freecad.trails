@@ -27,6 +27,8 @@ Class for managing 2D Horizontal Alignments
 from copy import deepcopy
 
 import FreeCAD as App
+from FreeCAD import Vector
+from math import inf
 import Draft
 import Part
 
@@ -71,6 +73,7 @@ def create(geometry, object_name='', parent=None, no_visual=False, zero_referenc
         _obj = parent.newObject("App::DocumentObjectGroupPython", _name)
 
     HorizontalAlignment(_obj, _name)
+    _obj.ModelKeeper = str(geometry)
     _obj.Proxy.set_geometry(geometry, zero_reference)
     ViewProviderHorizontalAlignment(_obj.ViewObject)
 
@@ -147,6 +150,10 @@ class HorizontalAlignment(Alignment):
             'App::PropertyEnumeration', 'Method', 'Segment', subdivision_desc
         ).Method = ['Tolerance', 'Interval', 'Segment']
 
+        obj.addProperty(
+            'App::PropertyString', 'ModelKeeper', 'Base', "ModelKeeper"
+        ).ModelKeeper = ''
+
         properties.add(obj, 'Float', 'Segment.Seg_Value',
                        'Set the curve segments to control accuracy',
                        int(1000.0 / units.scale_factor()) / 100.0
@@ -192,11 +199,13 @@ class HorizontalAlignment(Alignment):
         """
         Restore object references on reload
         """
-
         super().__init__()
 
         self.init_class_members(obj)
+        self.set_geometry(eval(obj.ModelKeeper))
+        """
         self.registrar.register_alignment(obj)
+        """
 
     def initialize_model(self, model, obj):
         """
