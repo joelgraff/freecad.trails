@@ -59,6 +59,10 @@ class CrossSection(CSFunc):
             "Projection surface").Surface = None
 
         obj.addProperty(
+            'App::PropertyFloatList', "MinZ", "Base",
+            "Minimum elevations").MinZ = []
+
+        obj.addProperty(
             "Part::PropertyPartShape", "Shape", "Base",
             "Object shape").Shape = Part.Shape()
 
@@ -68,7 +72,29 @@ class CrossSection(CSFunc):
         '''
         Do something when a data property has changed.
         '''
-        return
+        if prop == "Surface":
+            surface = obj.getPropertyByName("Surface")
+
+            if surface and obj.InList:
+                cs = obj.getParentGroup()
+                cluster = cs.getParentGroup()
+
+                for item in cluster.Group:
+                    if item.Proxy.Type == 'Trails::Guidelines':
+                        gl = item
+                        break
+
+                pos = cs.Position
+                h = cs.Heigth.Value
+                w = cs.Width.Value
+                ver = cs.Vertical.Value
+                hor = cs.Horizontal.Value
+                geometry = [h, w]
+                gaps = [ver, hor]
+                horizons = cs.Horizons
+
+                wires, obj.MinZ = self.draw_2d_sections(pos, gl, surface, geometry, gaps, horizons)
+
 
     def execute(self, obj):
         '''
@@ -92,8 +118,10 @@ class CrossSection(CSFunc):
             hor = cs.Horizontal.Value
             geometry = [h, w]
             gaps = [ver, hor]
+            horizons = cs.Horizons
 
-            obj.Shape = self.draw_2d_sections(pos, gl, surface, geometry, gaps)
+            obj.Shape, elevations = self.draw_2d_sections(pos, gl, surface, geometry, gaps, horizons)
+
 
 
 class ViewProviderCrossSection:
