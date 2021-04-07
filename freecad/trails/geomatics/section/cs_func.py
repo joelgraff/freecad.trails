@@ -91,15 +91,16 @@ class CSFunc:
         sections3d = Part.makeCompound(wire_list)
         return sections3d
 
-    def draw_2d_sections(self, position, gl, surface, geometry, gaps):
+    def draw_2d_sections(self, position, gl, surface, geometry, gaps, horizons):
         counter = 0
         buffer = 50000
         pos = position
+        minz = []
 
         multi_views_nor = math.ceil(len(gl.Shape.Wires)**0.5)
 
         section_list = []
-        for wire in gl.Shape.Wires:
+        for i, wire in enumerate(gl.Shape.Wires):
 
             points = []
             origin = wire.Vertexes[0].Point
@@ -109,7 +110,7 @@ class CSFunc:
                 params.insert(0, edge.FirstParameter+1)
                 params.append(edge.LastParameter-1)
 
-                values = [edge.valueAt(i) for i in params]
+                values = [edge.valueAt(glp) for glp in params]
                 points += values
 
             section_3d = MeshPart.projectPointsOnMesh(
@@ -118,17 +119,23 @@ class CSFunc:
             section_2d = self.section_converter(section_3d, origin)
 
             draw_sec = []
-            for i in section_2d:
-                draw_sec.append(i.add(position))
+            for pnt in section_2d:
+                draw_sec.append(pnt.add(position))
 
             line_segments = []
-            for i in range(0, len(draw_sec)-1):
-                if draw_sec[i] == draw_sec[i+1]: continue
-                line_segments.append(Part.LineSegment(draw_sec[i], draw_sec[i+1]))
+            for c in range(0, len(draw_sec)-1):
+                if draw_sec[c] == draw_sec[c+1]: continue
+                line_segments.append(Part.LineSegment(draw_sec[c], draw_sec[c+1]))
 
             shape = Part.Shape(line_segments)
             sec = Part.Wire(shape.Edges)
+
+            if horizons:
+                reduce_vector = FreeCAD.Vector(0, horizons[i]-1000, 0)
+                sec.Placement.move(reduce_vector.negative())
+
             section_list.append(sec)
+            minz.append(sec.BoundBox.YMin - position.y)
 
             if counter == multi_views_nor:
                 shifting = position.x - pos.x + gaps[1]
@@ -142,4 +149,4 @@ class CSFunc:
                 counter += 1
 
         section_draws = Part.makeCompound(section_list)
-        return section_draws
+        return section_draws, minz
