@@ -61,6 +61,10 @@ class CrossSections:
             "Section creation origin").Position = FreeCAD.Vector()
 
         obj.addProperty(
+            'App::PropertyFloatList', "Horizons", "Base",
+            "Horizons").Horizons = []
+
+        obj.addProperty(
             "App::PropertyLength", "Heigth", "Geometry",
             "Heigth of cross section view").Heigth = 50000
 
@@ -88,7 +92,16 @@ class CrossSections:
         '''
         Do something when doing a recomputation. 
         '''
-        pass
+        minz_lists = []
+        for sec in obj.Group:
+            minz_lists.append(sec.MinZ)
+
+        horizons = []
+        for i in zip(*minz_lists):
+            horizons.append(min(i))
+
+        obj.Horizons = horizons
+
 
 
 class ViewProviderCrossSections:
