@@ -62,40 +62,30 @@ class CSFunc:
         section_2d.pop(0)
         return section_2d
 
-    def create_3d_sections(self, gl, surface):
-        wire_list = []
+    def minimum_elevations(self, gl, surface):
+        minel = []
+        mesh = surface.Mesh.copy()
         for wire in gl.Shape.Wires:
 
             points = []
             for edge in wire.Edges:
-                params = MeshPart.findSectionParameters(
-                    edge, surface.Mesh, FreeCAD.Vector(0, 0, 1))
-                params.insert(0, edge.FirstParameter+1)
-                params.append(edge.LastParameter-1)
+                cs = mesh.crossSections(
+                    [(edge.Vertexes[0].Point, edge.Vertexes[-1].Point)], 0.000001)
 
-                values = [edge.valueAt(i) for i in params]
-                points += values
+                minz = math.inf
+                for l in cs[0]:
+                    for i in l:
+                        if  i.z < minz:
+                            minz = i.z
 
-            section_3d = MeshPart.projectPointsOnMesh(
-                points, surface.Mesh, FreeCAD.Vector(0, 0, 1))
+            minel.append(minz)
 
-            line_segments = []
-            for i in range(0, len(section_3d)-1):
-                if section_3d[i] == section_3d[i+1]: continue
-                line_segments.append(Part.LineSegment(section_3d[i], section_3d[i+1]))
-
-            shape = Part.Shape(line_segments)
-            wire = Part.Wire(shape.Edges)
-            wire_list.append(wire)
-
-        sections3d = Part.makeCompound(wire_list)
-        return sections3d
+        return minel
 
     def draw_2d_sections(self, position, gl, surface, geometry, gaps, horizons):
         counter = 0
         buffer = 50000
         pos = position
-        minz = []
 
         multi_views_nor = math.ceil(len(gl.Shape.Wires)**0.5)
 
@@ -135,7 +125,6 @@ class CSFunc:
                 sec.Placement.move(reduce_vector.negative())
 
             section_list.append(sec)
-            minz.append(sec.BoundBox.YMin - position.y)
 
             if counter == multi_views_nor:
                 shifting = position.x - pos.x + gaps[1]
@@ -149,4 +138,4 @@ class CSFunc:
                 counter += 1
 
         section_draws = Part.makeCompound(section_list)
-        return section_draws, minz
+        return section_draws
