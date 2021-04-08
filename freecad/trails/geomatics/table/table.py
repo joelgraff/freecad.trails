@@ -136,7 +136,7 @@ class ViewProviderTable:
 
         if guidelines and volume_areas:
             pos = obj.getPropertyByName("Position")
-            if prop == "Guidelines" or prop == "VolumeAreas":
+            if prop == "Guidelines" or prop == "VolumeAreas" or prop == "TableTitle":
                 self.table_columns.removeAllChildren()
                 origin = geo_origin.get()
                 base = copy.deepcopy(origin.Origin)
@@ -148,6 +148,18 @@ class ViewProviderTable:
                 offset = 50000
                 font = coin.SoFont()
                 font.size = 10000
+
+                # Table title
+                title = coin.SoSeparator()
+                location = coin.SoTranslation()
+                text = coin.SoAsciiText()
+
+                location.translation = pos + FreeCAD.Vector(0, font.size.getValue(), 0)
+                text.string.setValues([table_title])
+
+                title.addChild(font)
+                title.addChild(location)
+                title.addChild(text)
 
                 # Stations column
                 sta_list = [str(round(i,2)) for i in obj.Guidelines.StationList]
@@ -235,6 +247,7 @@ class ViewProviderTable:
                 cumvol_column.addChild(location)
                 cumvol_column.addChild(text)
 
+                self.table_columns.addChild(title)
                 self.table_columns.addChild(sta_column)
                 self.table_columns.addChild(area_column)
                 self.table_columns.addChild(volume_column)
