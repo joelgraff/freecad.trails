@@ -145,13 +145,13 @@ class ViewProviderTable:
                 column_titles = ["KM", "Area", "Volume", "Cumulative Volume"]
 
                 table_title = obj.getPropertyByName("TableTitle")
-                offset = 5000
+                offset = 50000
+                font = coin.SoFont()
+                font.size = 10000
 
                 # Stations column
                 sta_list = [str(round(i,2)) for i in obj.Guidelines.StationList]
                 sta_list.insert(0,column_titles[0])
-                font = coin.SoFont()
-                font.size = 1000
 
                 sta_column = coin.SoSeparator()
                 location = coin.SoTranslation()
@@ -171,8 +171,6 @@ class ViewProviderTable:
 
                 area_list = [str(round(i/1000000,3)) for i in face_areas]
                 area_list.insert(0,column_titles[1])
-                font = coin.SoFont()
-                font.size = 1000
 
                 area_column = coin.SoSeparator()
                 location = coin.SoTranslation()
@@ -200,8 +198,6 @@ class ViewProviderTable:
 
                 volume_list = [str(round(i/1000000,3)) for i in volumes]
                 volume_list.insert(0,column_titles[2])
-                font = coin.SoFont()
-                font.size = 1000
 
                 volume_column = coin.SoSeparator()
                 location = coin.SoTranslation()
@@ -227,8 +223,6 @@ class ViewProviderTable:
 
                 cumvol_list = [str(round(i/1000000,3)) for i in cum_vols]
                 cumvol_list.insert(0,column_titles[3])
-                font = coin.SoFont()
-                font.size = 1000
 
                 cumvol_column = coin.SoSeparator()
                 location = coin.SoTranslation()
