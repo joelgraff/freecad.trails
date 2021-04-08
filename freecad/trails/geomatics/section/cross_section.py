@@ -37,7 +37,7 @@ def create():
     obj.Label = "Cross Section"
     cs = CrossSection(obj)
     ViewProviderCrossSection(obj.ViewObject)
-    FreeCAD.ActiveDocument.recompute()
+    obj.touch()
 
     return obj
 
@@ -75,7 +75,7 @@ class CrossSection(CSFunc):
         if prop == "Surface":
             surface = obj.getPropertyByName("Surface")
 
-            if surface and obj.InList:
+            if surface:
                 cs = obj.getParentGroup()
                 cluster = cs.getParentGroup()
 
@@ -84,17 +84,7 @@ class CrossSection(CSFunc):
                         gl = item
                         break
 
-                pos = cs.Position
-                h = cs.Heigth.Value
-                w = cs.Width.Value
-                ver = cs.Vertical.Value
-                hor = cs.Horizontal.Value
-                geometry = [h, w]
-                gaps = [ver, hor]
-                horizons = cs.Horizons
-
-                wires, obj.MinZ = self.draw_2d_sections(pos, gl, surface, geometry, gaps, horizons)
-
+                obj.MinZ = self.minimum_elevations(gl, surface)
 
     def execute(self, obj):
         '''
@@ -105,6 +95,9 @@ class CrossSection(CSFunc):
         if surface and obj.InList:
             cs = obj.getParentGroup()
             cluster = cs.getParentGroup()
+
+            horizons = cs.Horizons
+            if not horizons: return
 
             for item in cluster.Group:
                 if item.Proxy.Type == 'Trails::Guidelines':
@@ -118,9 +111,8 @@ class CrossSection(CSFunc):
             hor = cs.Horizontal.Value
             geometry = [h, w]
             gaps = [ver, hor]
-            horizons = cs.Horizons
 
-            obj.Shape, elevations = self.draw_2d_sections(pos, gl, surface, geometry, gaps, horizons)
+            obj.Shape = self.draw_2d_sections(pos, gl, surface, geometry, gaps, horizons)
 
 
 
