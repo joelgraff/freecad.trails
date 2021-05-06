@@ -39,27 +39,27 @@ from ..project.xml.alignment_importer import AlignmentImporter
 from freecad.trails import ICONPATH, geo_origin, resources
 from .alignment_registrar import AlignmentRegistrar
 
-def get(align_name):
+def get():
     """
     Find the existing alignments object
     """
+    obj = App.ActiveDocument.getObject('Alignments')
 
-    return App.ActiveDocument.getObject(align_name)
+    if obj:
+        return obj
 
-def create(align_name):
+    obj = create()
+
+    return obj
+
+
+def create():
     """
     Factory method for alignment group
     """
-
-    #return an existing instance of the same name, if found
-    obj = App.ActiveDocument.getObject(align_name)
-
-    if obj:
-        return obj.Proxy
-
     main = geo_origin.get()
     obj = App.ActiveDocument.addObject(
-        "App::DocumentObjectGroupPython", align_name
+        "App::DocumentObjectGroupPython", 'Alignments'
         )
 
     _AlignmentGroup(obj)

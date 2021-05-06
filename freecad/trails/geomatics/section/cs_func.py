@@ -62,36 +62,27 @@ class CSFunc:
         section_2d.pop(0)
         return section_2d
 
-    def create_3d_sections(self, gl, surface):
-        wire_list = []
+    def minimum_elevations(self, gl, surface):
+        minel = []
+        mesh = surface.Mesh.copy()
         for wire in gl.Shape.Wires:
 
             points = []
             for edge in wire.Edges:
-                params = MeshPart.findSectionParameters(
-                    edge, surface.Mesh, FreeCAD.Vector(0, 0, 1))
-                params.insert(0, edge.FirstParameter+1)
-                params.append(edge.LastParameter-1)
+                cs = mesh.crossSections(
+                    [(edge.Vertexes[0].Point, edge.Vertexes[-1].Point)], 0.000001)
 
-                values = [edge.valueAt(i) for i in params]
-                points += values
+                minz = math.inf
+                for l in cs[0]:
+                    for i in l:
+                        if  i.z < minz:
+                            minz = i.z
 
-            section_3d = MeshPart.projectPointsOnMesh(
-                points, surface.Mesh, FreeCAD.Vector(0, 0, 1))
+            minel.append(minz)
 
-            line_segments = []
-            for i in range(0, len(section_3d)-1):
-                if section_3d[i] == section_3d[i+1]: continue
-                line_segments.append(Part.LineSegment(section_3d[i], section_3d[i+1]))
+        return minel
 
-            shape = Part.Shape(line_segments)
-            wire = Part.Wire(shape.Edges)
-            wire_list.append(wire)
-
-        sections3d = Part.makeCompound(wire_list)
-        return sections3d
-
-    def draw_2d_sections(self, position, gl, surface, geometry, gaps):
+    def draw_2d_sections(self, position, gl, surface, geometry, gaps, horizons):
         counter = 0
         buffer = 50000
         pos = position
@@ -99,7 +90,7 @@ class CSFunc:
         multi_views_nor = math.ceil(len(gl.Shape.Wires)**0.5)
 
         section_list = []
-        for wire in gl.Shape.Wires:
+        for i, wire in enumerate(gl.Shape.Wires):
 
             points = []
             origin = wire.Vertexes[0].Point
@@ -109,7 +100,7 @@ class CSFunc:
                 params.insert(0, edge.FirstParameter+1)
                 params.append(edge.LastParameter-1)
 
-                values = [edge.valueAt(i) for i in params]
+                values = [edge.valueAt(glp) for glp in params]
                 points += values
 
             section_3d = MeshPart.projectPointsOnMesh(
@@ -118,16 +109,21 @@ class CSFunc:
             section_2d = self.section_converter(section_3d, origin)
 
             draw_sec = []
-            for i in section_2d:
-                draw_sec.append(i.add(position))
+            for pnt in section_2d:
+                draw_sec.append(pnt.add(position))
 
             line_segments = []
-            for i in range(0, len(draw_sec)-1):
-                if draw_sec[i] == draw_sec[i+1]: continue
-                line_segments.append(Part.LineSegment(draw_sec[i], draw_sec[i+1]))
+            for c in range(0, len(draw_sec)-1):
+                if draw_sec[c] == draw_sec[c+1]: continue
+                line_segments.append(Part.LineSegment(draw_sec[c], draw_sec[c+1]))
 
             shape = Part.Shape(line_segments)
             sec = Part.Wire(shape.Edges)
+
+            if horizons:
+                reduce_vector = FreeCAD.Vector(0, horizons[i]-1000, 0)
+                sec.Placement.move(reduce_vector.negative())
+
             section_list.append(sec)
 
             if counter == multi_views_nor:

@@ -1,6 +1,6 @@
 # /**********************************************************************
 # *                                                                     *
-# * Copyright (c) 2019 Hakan Seven <hakanseven12@gmail.com>             *
+# * Copyright (c) 2021 Hakan Seven <hakanseven12@gmail.com>             *
 # *                                                                     *
 # * This program is free software; you can redistribute it and/or modify*
 # * it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -24,33 +24,24 @@ import FreeCAD, FreeCADGui
 from pivy import coin
 from PySide2 import QtCore
 from freecad.trails import ICONPATH
-from ..surface import surfaces
-from . import cross_sections, cross_section
+from . import table
 import os
 
-class CreateSections:
+class CreateTable:
 
     def __init__(self):
 
         # Command to create sections for every selected surfaces.
-        self.Path = os.path.dirname(__file__)
-
-        # Import *.ui file(s)
-        self.IPFui = FreeCADGui.PySideUic.loadUi(
-            self.Path + "/create_sections.ui")
-
-        # Set button functions
-        self.IPFui.CreateB.clicked.connect(self.start_event)
-        self.IPFui.CancelB.clicked.connect(self.IPFui.close)
+        self.path = os.path.dirname(__file__)
 
     def GetResources(self):
         """
         Return the command resources dictionary
         """
         return {
-            'Pixmap': ICONPATH + '/icons/CreateSections.svg',
-            'MenuText': "Create Section Views",
-            'ToolTip': "Create Section Views"
+            'Pixmap': ICONPATH + '/icons/table.svg',
+            'MenuText': "Create Volume Table",
+            'ToolTip': "Create Volume Table"
             }
 
     def IsActive(self):
@@ -62,7 +53,7 @@ class CreateSections:
             # Check for selected object
             self.selection = FreeCADGui.Selection.getSelection()
             if self.selection:
-                if self.selection[-1].Proxy.Type == 'Trails::Guidelines':
+                if self.selection[-1].Proxy.Type == 'Trails::Volume':
                     return True
         return False
 
@@ -70,22 +61,8 @@ class CreateSections:
         """
         Command activation method
         """
+        #Start event to detect mouse click
         self.view = FreeCADGui.ActiveDocument.ActiveView
-        self.IPFui.setParent(FreeCADGui.getMainWindow())
-        self.IPFui.setWindowFlags(QtCore.Qt.Window)
-        self.IPFui.SelectSurfacesLW.clear()
-        self.IPFui.show()
-
-        self.surface_list = {}
-        surface_group = surfaces.get()
-        for surface in surface_group.Group:
-            self.surface_list[surface.Label] = surface
-            self.IPFui.SelectSurfacesLW.addItem(surface.Label)
-
-    def start_event(self):
-        """
-        Start event to detect mouse click
-        """
         self.callback = self.view.addEventCallbackPivy(
             coin.SoButtonEvent.getClassTypeId(), self.select_position)
 
@@ -109,20 +86,19 @@ class CreateSections:
                 position = self.view.getPoint(pos[0], pos[1])
                 position.z = 0
 
-                cluster = self.selection[-1].getParentGroup()
+                vol_group = self.selection[-1].getParentGroup()
+                cluster = vol_group.getParentGroup()
 
                 for item in cluster.Group:
-                    if item.Proxy.Type == 'Trails::CrossSections':
-                        cs = item
-                        cs.Position = position
-                        break
+                    if item.Proxy.Type == 'Trails::Guidelines':
+                        gl = item
+                    if item.Proxy.Type == 'Trails::Tables':
+                        tables = item
 
-                for item in self.IPFui.SelectSurfacesLW.selectedItems():
-                    surface = self.surface_list[item.text()]
-                    sections = cross_section.create()
-                    cs.addObject(sections)
-                    sections.Surface = surface
+                tab = table.create(position, gl, self.selection[-1])
+                
+                tables.addObject(tab)
 
                 FreeCAD.ActiveDocument.recompute()
 
-FreeCADGui.addCommand('Create Sections', CreateSections())
+FreeCADGui.addCommand('Create Table', CreateTable())

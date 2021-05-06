@@ -21,54 +21,59 @@
 # ***********************************************************************
 
 '''
-Create a Guide Lines object from FPO.
+Create a Volume Areas Object from FPO.
 '''
 
 import FreeCAD
 import Part
 from pivy import coin
+from .volume_func import VolumeFunc
 from freecad.trails import ICONPATH, geo_origin
-from .gl_func import GLFunc
-import copy
+import random, copy
 
 
-def create():
-    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "Guidelines")
-    obj.Label = "Guidelines"
-    GuideLines(obj)
-    ViewProviderGuideLines(obj.ViewObject)
+
+def create(gl, sections, name='Volume Areas'):
+    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "VolumeAreas")
+    obj.Label = name
+
+    VolumeAreas(obj)
+    obj.Guidelines = gl
+    obj.TopSections = sections[0]
+    obj.BottomSections = sections[1]
+    ViewProviderVolumeAreas(obj.ViewObject)
+
     FreeCAD.ActiveDocument.recompute()
 
     return obj
 
 
-class GuideLines(GLFunc):
+class VolumeAreas(VolumeFunc):
     """
-    This class is about Guide Lines object data features.
+    This class is about Volume Object data features.
     """
 
     def __init__(self, obj):
         '''
         Set data properties.
         '''
-
-        self.Type = 'Trails::Guidelines'
+        self.Type = 'Trails::Volume'
 
         obj.addProperty(
-            "App::PropertyFloatList", "StationList", "Base",
-            "List of stations").StationList = []
+            'App::PropertyLink', "Guidelines", "Base",
+            "Guidelines").Guidelines = None
+
+        obj.addProperty(
+            'App::PropertyLinkList', "TopSections", "Base",
+            "Top section list").TopSections = []
+
+        obj.addProperty(
+            'App::PropertyLinkList', "BottomSections", "Base",
+            "Bottom section list").BottomSections = []
 
         obj.addProperty(
             "Part::PropertyPartShape", "Shape", "Base",
-            "Object shape").Shape = Part.Shape()
-
-        obj.addProperty(
-            "App::PropertyLength", "RightOffset", "Offset",
-            "Length of right offset").RightOffset = 20000
-
-        obj.addProperty(
-            "App::PropertyLength", "LeftOffset", "Offset",
-            "Length of left offset").LeftOffset = 20000
+            "Volume areas shape").Shape = Part.Shape()
 
         obj.Proxy = self
 
@@ -82,80 +87,67 @@ class GuideLines(GLFunc):
         '''
         Do something when doing a recomputation. 
         '''
-        if not obj.InList: return
+        gl = obj.getPropertyByName("Guidelines")
+        tops = obj.getPropertyByName("TopSections")
+        bottoms = obj.getPropertyByName("BottomSections")
 
-        cluster = obj.InList[0]
-        obj.StationList = cluster.StationList
-        alignment = cluster.InList[0].InList[0]
-        stations = obj.getPropertyByName("StationList")
+        if gl and tops and bottoms:
+            obj.Shape = self.get_areas(gl, tops, bottoms)
 
-        if alignment and stations:
-            left_offset = obj.getPropertyByName("LeftOffset")
-            right_offset = obj.getPropertyByName("RightOffset")
-
-            offsets = [left_offset, right_offset]
-
-            # Get GeoOrigin.
-            origin = geo_origin.get()
-            base = copy.deepcopy(origin.Origin)
-            base.z = 0
-
-            obj.Shape = self.get_lines(base, alignment, offsets, stations)
-
-
-class ViewProviderGuideLines:
+class ViewProviderVolumeAreas:
     """
-    This class is about Point Group Object view features.
+    This class is about Volume Object view features.
     """
 
     def __init__(self, vobj):
         '''
         Set view properties.
         '''
+        (r, g, b) = (random.random(), random.random(), random.random())
+
+        vobj.addProperty(
+            "App::PropertyColor", "AreaColor", "Base",
+            "Color of the volume areas").AreaColor = (r, g, b)
+
         vobj.Proxy = self
 
     def attach(self, vobj):
         '''
         Create Object visuals in 3D view.
         '''
-        # Lines root.
-        self.line_coords = coin.SoGeoCoordinate()
-        self.lines = coin.SoLineSet()
-        self.gl_labels = coin.SoSeparator()
-
-        # Line style.
-        line_color = coin.SoBaseColor()
-        line_color.rgb = (0.0, 1.0, 1.0)
-        line_style = coin.SoDrawStyle()
-        line_style.style = coin.SoDrawStyle.LINES
-        line_style.lineWidth = 2
+        # Face root.
+        self.face_coords = coin.SoGeoCoordinate()
+        self.faces = coin.SoIndexedFaceSet()
+        self.area_color = coin.SoBaseColor()
 
         # Highlight for selection.
         highlight = coin.SoType.fromName('SoFCSelection').createInstance()
         highlight.style = 'EMISSIVE_DIFFUSE'
-        highlight.addChild(line_style)
-        highlight.addChild(self.line_coords)
-        highlight.addChild(self.lines)
+        highlight.addChild(self.face_coords)
+        highlight.addChild(self.faces)
 
-        # Surface root.
-        guidelines_root = coin.SoSeparator()
-        guidelines_root.addChild(self.gl_labels)
-        guidelines_root.addChild(line_color)
-        guidelines_root.addChild(highlight)
-        vobj.addDisplayMode(guidelines_root,"Lines")
+        # Volume root.
+        volume_root = coin.SoSeparator()
+        volume_root.addChild(self.area_color)
+        volume_root.addChild(highlight)
+        vobj.addDisplayMode(volume_root,"Volume")
+
+        # Take features from properties.
+        self.onChanged(vobj,"AreaColor")
 
     def onChanged(self, vobj, prop):
         '''
         Update Object visuals when a view property changed.
         '''
-        pass
+        if prop == "AreaColor":
+            color = vobj.getPropertyByName("AreaColor")
+            self.area_color.rgb = (color[0],color[1],color[2])
 
     def updateData(self, obj, prop):
         '''
         Update Object visuals when a data property changed.
         '''
         if prop == "Shape":
-            self.gl_labels.removeAllChildren()
             shape = obj.getPropertyByName("Shape")
 
             # Get GeoOrigin.
@@ -165,39 +157,29 @@ class ViewProviderGuideLines:
 
             # Set GeoCoords.
             geo_system = ["UTM", origin.UtmZone, "FLAT"]
-            self.line_coords.geoSystem.setValues(geo_system)
+            self.face_coords.geoSystem.setValues(geo_system)
 
+            idx = 0
             points = []
-            line_vert = []
-            for i, wire in enumerate(shape.Wires):
-                font = coin.SoFont()
-                font.size = 3000
-                gl_label = coin.SoSeparator()
-                location = coin.SoTranslation()
-                text = coin.SoAsciiText()
+            face_vert = []
+            for face in shape.Faces:
+                tri = face.tessellate(1)
+                for v in tri[0]:
+                    points.append(v.add(base))
+                for f in tri[1]:
+                    face_vert.extend([f[0]+idx,f[1]+idx,f[2]+idx,-1])
+                idx += len(tri[0])
 
-                label = str(round(obj.StationList[i], 2))
-                location.translation = wire.Vertexes[-1].Point
-                text.string.setValues([label])
-                gl_label.addChild(font)
-                gl_label.addChild(location)
-                gl_label.addChild(text)
-                self.gl_labels.addChild(gl_label)
+            #Set contour system.
+            self.face_coords.point.values = points
+            self.faces.coordIndex.values = face_vert
 
-                for vertex in wire.Vertexes:
-                    points.append(vertex.Point.add(base))
-
-                line_vert.append(len(wire.Vertexes))
-
-            self.line_coords.point.values = points
-            self.lines.numVertices.values = line_vert
-
-    def getDisplayModes(self, vobj):
+    def getDisplayModes(self,vobj):
         '''
         Return a list of display modes.
         '''
         modes=[]
-        modes.append("Lines")
+        modes.append("Volume")
 
         return modes
 
@@ -205,7 +187,7 @@ class ViewProviderGuideLines:
         '''
         Return the name of the default display mode.
         '''
-        return "Lines"
+        return "Volume"
 
     def setDisplayMode(self,mode):
         '''
@@ -218,7 +200,7 @@ class ViewProviderGuideLines:
         '''
         Return object treeview icon.
         '''
-        return ICONPATH + '/icons/GuideLines.svg'
+        return ICONPATH + '/icons/volume.svg'
 
     def __getstate__(self):
         """

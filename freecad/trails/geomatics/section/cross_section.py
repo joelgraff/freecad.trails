@@ -32,13 +32,12 @@ from .cs_func import CSFunc
 import copy, random
 
 
-def create(surface):
+def create():
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "CrossSection")
     obj.Label = "Cross Section"
     cs = CrossSection(obj)
-    cs.Surface = surface
     ViewProviderCrossSection(obj.ViewObject)
-    FreeCAD.ActiveDocument.recompute()
+    obj.touch()
 
     return obj
 
@@ -60,6 +59,10 @@ class CrossSection(CSFunc):
             "Projection surface").Surface = None
 
         obj.addProperty(
+            'App::PropertyFloatList', "MinZ", "Base",
+            "Minimum elevations").MinZ = []
+
+        obj.addProperty(
             "Part::PropertyPartShape", "Shape", "Base",
             "Object shape").Shape = Part.Shape()
 
@@ -69,7 +72,19 @@ class CrossSection(CSFunc):
         '''
         Do something when a data property has changed.
         '''
-        return
+        if prop == "Surface":
+            surface = obj.getPropertyByName("Surface")
+
+            if surface:
+                cs = obj.getParentGroup()
+                cluster = cs.getParentGroup()
+
+                for item in cluster.Group:
+                    if item.Proxy.Type == 'Trails::Guidelines':
+                        gl = item
+                        break
+
+                obj.MinZ = self.minimum_elevations(gl, surface)
 
     def execute(self, obj):
         '''
@@ -78,17 +93,27 @@ class CrossSection(CSFunc):
         surface = obj.getPropertyByName("Surface")
 
         if surface and obj.InList:
-            group = obj.InList[0]
-            pos = group.Position
-            gl = group.Guidelines
-            h = group.Heigth.Value
-            w = group.Width.Value
-            ver = group.Vertical.Value
-            hor = group.Horizontal.Value
+            cs = obj.getParentGroup()
+            cluster = cs.getParentGroup()
+
+            horizons = cs.Horizons
+            if not horizons: return
+
+            for item in cluster.Group:
+                if item.Proxy.Type == 'Trails::Guidelines':
+                    gl = item
+                    break
+
+            pos = cs.Position
+            h = cs.Heigth.Value
+            w = cs.Width.Value
+            ver = cs.Vertical.Value
+            hor = cs.Horizontal.Value
             geometry = [h, w]
             gaps = [ver, hor]
 
-            obj.Shape = self.draw_2d_sections(pos, gl, surface, geometry, gaps)
+            obj.Shape = self.draw_2d_sections(pos, gl, surface, geometry, gaps, horizons)
+
 
 
 class ViewProviderCrossSection:
@@ -141,12 +166,15 @@ class ViewProviderCrossSection:
         guidelines_root.addChild(highlight)
         vobj.addDisplayMode(guidelines_root,"Lines")
 
+        # Take features from properties.
+        self.onChanged(vobj,"SectionColor")
+
     def onChanged(self, vobj, prop):
         '''
         Update Object visuals when a view property changed.
         '''
-        if prop == "SectionColor":
-            color = vobj.getPropertyByName("SectionColor")
+        if prop == "SectionColor" and hasattr(vobj, prop):
+            color = vobj.getPropertyByName(prop)
             self.line_color.rgb = (color[0],color[1],color[2])
 
     def updateData(self, obj, prop):

@@ -27,7 +27,9 @@ Create a GL Cluster group object from FPO.
 import FreeCAD
 from freecad.trails import ICONPATH, geo_origin
 from . import gl_clusters, guidelines
-#from ..section import cross_sections
+from ..section import cross_sections
+from ..volume import volumes
+from ..table import tables
 from .glc_func import GLCFunc
 
 
@@ -35,9 +37,10 @@ def create(alignment, name='GL Cluster'):
     """
     Factory method for GL Cluster.
     """
-    clusters = gl_clusters.get()
-    parent = alignment.InList[0]
-    parent.addObject(clusters)
+    for item in alignment.Group:
+        if item.Proxy.Type == 'Trails::GLClusters':
+            clusters = item
+            break
 
     obj = FreeCAD.ActiveDocument.addObject(
         "App::DocumentObjectGroupPython", 'GLCluster')
@@ -48,17 +51,19 @@ def create(alignment, name='GL Cluster'):
 
     # Add Guidelines group.
     gl = guidelines.create()
-    gl.Alignment = alignment
     obj.addObject(gl)
-    """
+
     # Add Cross Sections group.
     cs = cross_sections.create()
-    cs.Guidelines = gl
     obj.addObject(cs)
-    """
-    obj.Alignment = alignment
-    obj.Guidelines = gl
-    #obj.CrossSections = cs
+
+    # Add Volumes group.
+    vol_areas = volumes.create()
+    obj.addObject(vol_areas)
+
+    # Add Tables group.
+    tabs = tables.create()
+    obj.addObject(tabs)
 
     ViewProviderGLCluster(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
@@ -77,18 +82,6 @@ class GLCluster(GLCFunc):
         Set data properties.
         '''
         self.Type = 'Trails::GLCluster'
-
-        obj.addProperty(
-            'App::PropertyLink', "Alignment", "Base",
-            "Parent alignment").Alignment = None
-
-        obj.addProperty(
-            'App::PropertyLink', "Guidelines", "Base",
-            "Parent alignment").Guidelines = None
-
-        obj.addProperty(
-            'App::PropertyLink', "CrossSections", "Base",
-            "Parent alignment").CrossSections = None
 
         obj.addProperty(
             "App::PropertyBool", "AtHorizontalAlignmentPoints", "Base",
@@ -134,8 +127,8 @@ class GLCluster(GLCFunc):
         '''
         Do something when a data property has changed.
         '''
-        alignment = obj.getPropertyByName("Alignment")
-        if not alignment: return
+        alignment = obj.InList[0].InList[0]
+        if not hasattr(alignment.Proxy, 'model'): return
         start, end = self.get_alignment_infos(alignment)
 
         if prop == "Alignment":
@@ -162,8 +155,9 @@ class GLCluster(GLCFunc):
         '''
         Do something when doing a recomputation.
         '''
-        alignment = obj.getPropertyByName("Alignment")
-        if not alignment: return
+        alignment = obj.InList[0].InList[0]
+
+        if not hasattr(alignment.Proxy, 'model'): return
 
         horiz_pnts = obj.getPropertyByName("AtHorizontalAlignmentPoints")
         start = obj.getPropertyByName("StartStation")
