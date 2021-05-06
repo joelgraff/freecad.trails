@@ -158,6 +158,8 @@ class AlignmentExporter(object):
 
             _node = None
 
+
+
             if _geo.get('Type') == 'Line':
 
                 _node = landxml.add_child(_coord_geo_node, 'Line')
@@ -167,6 +169,11 @@ class AlignmentExporter(object):
 
                 _node = landxml.add_child(_coord_geo_node, 'Curve')
                 self._write_tree_data(_geo, _node, Maps.XML_ATTRIBS['Curve'])
+
+            elif _geo.get('Type') == 'Spiral':
+
+                _node = landxml.add_child(_coord_geo_node, 'Spiral')
+                self._write_tree_data(_geo, _node, Maps.XML_ATTRIBS['Spiral'])
 
             if _node is not None:
                 self._write_coordinates(_geo, _node)
@@ -181,6 +188,7 @@ class AlignmentExporter(object):
         _parent = landxml.add_child(root, 'Alignments')
 
         for _align in data:
+            print('\n\tWriting', _align)
             self._write_alignment_data(_align, _parent)
 
         landxml.write_to_file(root, target_path)

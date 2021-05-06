@@ -670,7 +670,7 @@ class AlignmentModel:
 
         return prev_geo
 
-    def get_orthogonal(self, station, side):
+    def get_orthogonal(self, station, side,verbose=False):
         """
         Return the orthogonal vector to a station along the alignment
         """
@@ -678,7 +678,11 @@ class AlignmentModel:
         curve = self.locate_curve(station)
         int_sta = self.get_internal_station(station)
 
+        if verbose:
+            print (f'\ncurve = {str(curve)}\nsta={str(int_sta)}')
+
         if (curve is None) or (int_sta is None):
+
             print('unable to locate station ', station, 'on curve ', curve)
             return None
 
@@ -692,6 +696,7 @@ class AlignmentModel:
 
         #return orthogonal for valid curve types
         if curve.get('Type') in _fn:
+
             return _fn[curve.get('Type')].get_ortho_vector(
                 curve, distance, side)
 

@@ -530,10 +530,14 @@ class ViewProviderHorizontalAlignment():
         """
         Handle individual property changes
         """
+
         if prop == "Labels":
+
             self.labels.removeAllChildren()
             labels = vobj.getPropertyByName("Labels")
+
             if labels:
+
                 # Get GeoOrigin.
                 origin = geo_origin.get()
                 base = deepcopy(origin.Origin)
@@ -546,6 +550,7 @@ class ViewProviderHorizontalAlignment():
                 stations = self.get_stations(vobj.Object)
 
                 for label, tick in stations.items():
+
                     font = coin.SoFont()
                     font.size = 3000
                     sta_label = coin.SoSeparator()
@@ -554,6 +559,7 @@ class ViewProviderHorizontalAlignment():
 
                     location.translation = deepcopy(tick[1]).sub(base)
                     text.string.setValues([str(label)])
+
                     sta_label.addChild(font)
                     sta_label.addChild(location)
                     sta_label.addChild(text)
@@ -591,14 +597,24 @@ class ViewProviderHorizontalAlignment():
                 self.line_coords.point.values = points
 
     def get_stations(self, obj):
+        """
+        Retrieve the coordinates of the start and end points of the station
+        tick mark orthogonal to the alignment
+        """
+
         start = obj.Proxy.model.data['meta']['StartStation']
         length = obj.Proxy.model.data['meta']['Length']
         end = start + length/1000
 
         stations = {}
+
         for sta in range(int(start), int(end)):
+
             if sta % 10 == 0:
-                tuple_coord, tuple_vec = obj.Proxy.model.get_orthogonal( sta, "Left")
+
+                tuple_coord, tuple_vec =\
+                    obj.Proxy.model.get_orthogonal( sta, "Left", True)
+
                 coord = App.Vector(tuple_coord)
                 vec = App.Vector(tuple_vec)
 
@@ -607,6 +623,7 @@ class ViewProviderHorizontalAlignment():
 
                 left_side = coord.add(left_vec.multiply(1500))
                 right_side = coord.add(right_vec.negative().multiply(1500))
+
                 stations[sta] = [left_side, right_side]
 
         return stations

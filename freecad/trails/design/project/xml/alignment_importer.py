@@ -126,6 +126,9 @@ class AlignmentImporter(object):
         """
         Build dictionary keyed to the internal attribute names from XML
         """
+
+        print ('Parsing tags for geometry ', attrib)
+
         result = {}
 
         #test to ensure all required tags are in the imported XML data
@@ -145,6 +148,7 @@ class AlignmentImporter(object):
         #merge the required / optional tag lists and iterate them
         for _tag in tags[0] + tags[1]:
 
+            print (_tag)
             attr_val = landxml.convert_token(_tag, attrib.get(_tag))
 
             if attr_val is None:
@@ -250,9 +254,12 @@ class AlignmentImporter(object):
 
             node_tag = geo_node.tag.split('}')[1]
 
+            print(node_tag)
+
             if not node_tag in ['Curve', 'Spiral', 'Line']:
                 continue
 
+            print (f'\n\tParsing Geo type: {node_tag}...')
             points = []
 
             for _tag in ['Start', 'End', 'Center', 'PI']:
