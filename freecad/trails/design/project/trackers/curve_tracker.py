@@ -130,6 +130,15 @@ class CurveTracker(ContextTracker, Drag):
 
         self.param_tracker.set_visibility()
 
+    def invalidate(self):
+        """
+        Invalidate the curve geometry to prevent updates
+        """
+
+        self.is_invalid = True
+        self.param_tracker.invalidate()
+        self.c_tracker.invalidate()
+
     def after_drag(self, user_data):
         """
         End-of-drag operations
@@ -167,10 +176,6 @@ class CurveTracker(ContextTracker, Drag):
             self.setup_drag_references(user_data.obj)
 
     def on_drag(self, user_data):
-
-#        if not self.drag_refs.nodes:
-#            self.setup_drag_tracker_geometry()
-#            self.setup_drag_references(user_data.obj)
 
         _xlate = user_data.matrix.getValue()[3]
         _point = Drag.drag_tracker.drag_position

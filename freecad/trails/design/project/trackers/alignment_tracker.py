@@ -58,9 +58,11 @@ class AlignmentTracker(ContextTracker):
         self.drag_refs = SimpleNamespace(
             pi_list = (),       #list of PI's for bearing calcs
             curve_list = (),    #list of curves to update
-            selected_pi = (),   #list of pi's actually selected
-            start_points = None,#list of PI points in their initial state
-            drag_points = None, #list of PI points as they're dragged
+            selected = SimpleNamespace(
+                pi = None,   #list of pi's actually selected
+                indices = None), #list of PI indices
+
+            points = None, #list of PI points
             last_update = None  #last translation update
         )
 
@@ -165,46 +167,64 @@ class AlignmentTracker(ContextTracker):
         #lengths =  distances between n curves
 
         #get distances between PI's except first and last
-        _pp = self.drag_refs.drag_points[0]
-        _lines = []
 
-        for _p in self.drag_refs.drag_points[1:]:
+        _pp = self.drag_refs.points[0]
+        _lines = []
+        _curves = self.curve_trackers[
+            self.drag_refs.curve_list[0]:self.drag_refs.curve_list[-1] +1]
+
+        for _p in self.drag_refs.points[1:]:
             _lines.append(TupleMath.length(_p, _pp))
             _pp = _p
 
-        _prev = self.curve_trackers[0]
+        _prev = _curves[0]
         _prev.is_invalid = False
+        _any_viz_invalid = False
 
-        for _i, _c in enumerate(self.curve_trackers[1:]):
+        for _i, _c in enumerate(_curves[1:]):
 
             _c.is_invalid = False
 
-            _prev.is_invalid =\
-                _prev.is_invalid or _prev.arc.tangent > _lines[_i]
+            _invalid = [
+                _prev.is_invalid or _prev.arc.tangent > _lines[_i],
+                (_prev.arc.tangent + _c.arc.tangent) > _lines[_i + 1]
+            ]
 
-            if (_prev.arc.tangent + _c.arc.tangent) > _lines[_i + 1]:
+            if not _any_viz_invalid:
+                _any_vizinvalid = any(_invalid)
 
-                _prev.is_invalid = True
-                _c.is_invalid = True
+            _prev.is_invalid = any(_invalid)
+            _c.is_invalid = _invalid[1]
 
             _prev = _c
 
-        #test lat curve tangent length against the end tangent
-        _prev.is_invalid = _prev.is_invalid or _prev.arc.tangent > _lines[-1]
+        #test last curve tangent length against the end tangent
+        _prev.is_invalid = _prev.is_invalid\
+            or _prev.arc.tangent > _lines[-1]
+
+        if _prev.is_invalid:
+            _any_viz_invalid = True
+
+        #if *any* curve was invalidated at any point, all curves need to be
+        #invalidated for final update
+        if _any_viz_invalid:
+            for _c in _curves:
+                #print('\n\tinvalid', _c.name)
+                _c.is_invalid = True
 
     def before_drag_tracker(self, user_data):
         """
         Callback to set alignment behaviors for the DragTracker
         """
 
-        self.drag_refs.start_points = self.alignment_tracker.get_coordinates()
+        self.drag_refs.points = self.alignment_tracker.get_coordinates()
 
         Drag.drag_tracker.set_constraint_geometry()
 
         _num = int(''.join(
             [_v for _v in user_data.obj.name if str.isdigit(_v)]))
 
-        _count = len(self.drag_refs.start_points)
+        _count = len(self.drag_refs.points)
 
         _sel_pi = (_num,)
 
@@ -214,8 +234,11 @@ class AlignmentTracker(ContextTracker):
         elif 'Curve'  in user_data.obj.type_name:
             _sel_pi = (_num + 1,)
 
-        #boolean flags for selected PIs
-        self.drag_refs.selected_pi = [_v in _sel_pi for _v in range(0, _count)]
+        #references to selected points
+        self.drag_refs.selected.pi = [self.drag_refs.points[_v] \
+                for _v in range(0, _count) if _v in _sel_pi]
+
+        self.drag_refs.selected.indices = _sel_pi
 
         _curve_list = [set(range(_v-3, _v+2)) for _v in _sel_pi]
         _pi_list = [set(range(_v, _v+3)) for _v in _curve_list[0]]
@@ -233,13 +256,11 @@ class AlignmentTracker(ContextTracker):
         _pi = (tuple(
             self.drag_refs.pi_list)[0], tuple(self.drag_refs.pi_list)[-1]+1)
 
-        self.drag_refs.start_points =\
-            self.drag_refs.start_points[_pi[0]:_pi[1]]
+        self.drag_refs.points =\
+            self.drag_refs.points[_pi[0]:_pi[1]]
 
-        self.drag_refs.selected_pi =\
-            self.drag_refs.selected_pi[_pi[0]:_pi[1]]
-
-        self.drag_refs.drag_points = self.drag_refs.start_points
+        self.drag_refs.selected.indices =\
+            [_v - _pi[0] for _v in self.drag_refs.selected.indices]
 
     def on_drag_tracker(self, user_data):
         """
@@ -260,28 +281,32 @@ class AlignmentTracker(ContextTracker):
         the conclusion of a drag operation.
         """
 
+        #if the drag refs have been destroyed, abort - we've been here before
+        if not self.drag_refs.points:
+            return
+
+        _curves = self.curve_trackers[
+            self.drag_refs.curve_list[0]:self.drag_refs.curve_list[-1] + 1]
+
         #abort if any curves were invalidated during dragging
-        if any([_c.is_invalid for _c in self.curve_trackers]):
+        if any([_c.is_invalid for _c in _curves]):
 
-            for _c in self.curve_trackers:
-                _c.is_invalid = True
+            for _c in _curves:
+                _c.invalidate()
 
-            if self.drag_refs.start_points:
-                self.alignment_tracker.update(self.drag_refs.start_points)
+            self.alignment_tracker.invalidate()
 
-        else:
-            for _l in self.alignment_tracker.lines:
-                _l.update()
-
-        self.drag_copy = None
-        self.start_points = None
+        #print('updating lines!')
+        #for _l in self.alignment_tracker.lines:
+        #    _l.update()
 
         self.drag_refs = SimpleNamespace(
             pi_list = (),
             curve_list = (),
-            selected_pi = (),
-            start_points = None,
-            drag_points = None,
+            selected = SimpleNamespace(
+                pi = None,
+                indices = None),
+            points = None,
             last_update = None
         )
 
@@ -299,25 +324,17 @@ class AlignmentTracker(ContextTracker):
 
         self.drag_refs.last_update = _xlate
 
-        #get the points and transform the selected points by current translation
-        _p = [_v for _i, _v in enumerate(self.drag_refs.start_points)\
-            if self.drag_refs.selected_pi[_i]]
+        _p = self.view_state.transform_points(
+            self.drag_refs.selected.pi, matrix)
 
-        _p = self.view_state.transform_points(_p, matrix)
-
-        _points = []
+        _points = self.drag_refs.points
         _j = 0
 
         #update translated points
-        for _i, _v in enumerate(self.drag_refs.start_points):
+        for _i in self.drag_refs.selected.indices:
 
-            if self.drag_refs.selected_pi[_i]:
-
-                _points.append(_p[_j])
-                _j += 1
-
-            else:
-                _points.append(_v)
+            _points[_i] = _p[_j]
+            _j += 1
 
         #precalcualte bearings
         _bearings = [TupleMath.bearing(
@@ -326,14 +343,15 @@ class AlignmentTracker(ContextTracker):
 
         #iterate curves setting the bearing inbound / outbound pairs
         #drop the outermost curves as they are not being changed
-        for _i, _c in enumerate(self.curve_trackers):
+        _curves = [self.curve_trackers[_c] for _c in self.drag_refs.curve_list]
+
+        for _i, _c in enumerate(_curves):
 
             _c.set_pi(_points[_i + 1])
             _c.set_bearings(_bearings[_i], _bearings[_i + 1])
-
             _c.update()
 
-        self.drag_refs.drag_points = _points
+        self.drag_refs.points = _points
 
     #------------
     # LEGACY
