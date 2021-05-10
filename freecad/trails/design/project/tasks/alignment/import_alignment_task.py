@@ -67,6 +67,11 @@ class ImportAlignmentTask:
 
         errors = []
 
+        #create a new document if one does not exist
+        if not App.ActiveDocument:
+            App.newDocument()
+            Gui.activeDocument().activeView().viewDefaultOrientation()
+
         parent = alignment_group.get()
 
         for _v in data['Alignments'].values():

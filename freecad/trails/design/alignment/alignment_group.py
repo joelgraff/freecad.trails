@@ -43,6 +43,9 @@ def get():
     """
     Find the existing alignments object
     """
+    if not App.ActiveDocument:
+        return None
+
     obj = App.ActiveDocument.getObject('Alignments')
 
     if obj:
