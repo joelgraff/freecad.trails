@@ -525,7 +525,6 @@ class AlignmentModel:
                 if not geo_coord:
                     geo_coord = prev_coord
 
-                print(geo_coord, prev_coord)
                 delta = TupleMath.length(
                     TupleMath.subtract(tuple(geo_coord), tuple(prev_coord)))
 

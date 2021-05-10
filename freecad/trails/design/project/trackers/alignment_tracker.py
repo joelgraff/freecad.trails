@@ -209,7 +209,6 @@ class AlignmentTracker(ContextTracker):
         #invalidated for final update
         if _any_viz_invalid:
             for _c in _curves:
-                #print('\n\tinvalid', _c.name)
                 _c.is_invalid = True
 
     def before_drag_tracker(self, user_data):
@@ -295,10 +294,6 @@ class AlignmentTracker(ContextTracker):
                 _c.invalidate()
 
             self.alignment_tracker.invalidate()
-
-        #print('updating lines!')
-        #for _l in self.alignment_tracker.lines:
-        #    _l.update()
 
         self.drag_refs = SimpleNamespace(
             pi_list = (),

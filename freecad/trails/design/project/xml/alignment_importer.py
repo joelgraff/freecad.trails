@@ -254,12 +254,9 @@ class AlignmentImporter(object):
 
             node_tag = geo_node.tag.split('}')[1]
 
-            print(node_tag)
-
             if not node_tag in ['Curve', 'Spiral', 'Line']:
                 continue
 
-            print (f'\n\tParsing Geo type: {node_tag}...')
             points = []
 
             for _tag in ['Start', 'End', 'Center', 'PI']:
