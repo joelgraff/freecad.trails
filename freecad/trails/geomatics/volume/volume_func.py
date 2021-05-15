@@ -69,6 +69,9 @@ class VolumeFunc:
             fp_upper = top_wire.Vertexes[0].Point
             lp_upper = top_wire.Vertexes[-1].Point
 
+            if fp_upper.x == lp_upper.x:
+                return Part.Face()
+
             ## Add 3 edges to B to get a closed boundary:
             edges_top = top_wire.Edges + [Part.makeLine(fp_upper, (fp_upper[0], area_minY, 0.0)),
                                         Part.makeLine((fp_upper[0], area_minY, 0.0), (lp_upper[0], area_minY, 0.0)),
@@ -81,6 +84,9 @@ class VolumeFunc:
             bottom_wire = bottom.Shape.Wires[i]
             fp_lower = bottom_wire.Vertexes[0].Point
             lp_lower = bottom_wire.Vertexes[-1].Point
+
+            if fp_lower.x == lp_lower.x:
+                return Part.Face()
 
             ## Add 3 edges to A to get a closed boundary:
             edges_bottom = bottom_wire.Edges + [Part.makeLine(fp_lower, (fp_lower[0], area_maxY, 0.0)),
