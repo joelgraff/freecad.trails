@@ -107,6 +107,8 @@ class CSFunc:
                 points, surface.Mesh, FreeCAD.Vector(0, 0, 1))
 
             section_2d = self.section_converter(section_3d, origin)
+            if not section_2d:
+                section_2d = [FreeCAD.Vector(0,0,0),FreeCAD.Vector(0,1,0)]
 
             draw_sec = []
             for pnt in section_2d:
@@ -118,11 +120,7 @@ class CSFunc:
                 line_segments.append(Part.LineSegment(draw_sec[c], draw_sec[c+1]))
 
             shape = Part.Shape(line_segments)
-
-            if shape.isNull():
-                sec = Part.Wire()
-            else:
-                sec = Part.Wire(shape.Edges)
+            sec = Part.Wire(shape.Edges)
 
             if horizons:
                 reduce_vector = FreeCAD.Vector(0, horizons[i]-1000, 0)
