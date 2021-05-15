@@ -101,7 +101,7 @@ class CSFunc:
                 params.append(edge.LastParameter-1)
 
                 values = [edge.valueAt(glp) for glp in params]
-                points += values
+                points.extend(values)
 
             section_3d = MeshPart.projectPointsOnMesh(
                 points, surface.Mesh, FreeCAD.Vector(0, 0, 1))
@@ -118,7 +118,11 @@ class CSFunc:
                 line_segments.append(Part.LineSegment(draw_sec[c], draw_sec[c+1]))
 
             shape = Part.Shape(line_segments)
-            sec = Part.Wire(shape.Edges)
+
+            if shape.isNull():
+                sec = Part.Wire()
+            else:
+                sec = Part.Wire(shape.Edges)
 
             if horizons:
                 reduce_vector = FreeCAD.Vector(0, horizons[i]-1000, 0)
