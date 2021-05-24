@@ -517,6 +517,18 @@ class ViewProviderHorizontalAlignment():
         line_style.style = coin.SoDrawStyle.LINES
         line_style.lineWidth = 2
 
+        # Curve root.
+        self.curve_coords = coin.SoGeoCoordinate()
+        self.curves = coin.SoLineSet()
+        curve_color = coin.SoBaseColor()
+        curve_color.rgb = (1.0, 1.0, 0.0)
+
+        # Spiral root.
+        self.spiral_coords = coin.SoGeoCoordinate()
+        self.spirals = coin.SoLineSet()
+        spiral_color = coin.SoBaseColor()
+        spiral_color.rgb = (0.0, 0.33, 1.0)
+
         # Labels root.
         self.tick_coords = coin.SoGeoCoordinate()
         self.ticks = coin.SoLineSet()
@@ -526,6 +538,13 @@ class ViewProviderHorizontalAlignment():
         highlight = coin.SoType.fromName('SoFCSelection').createInstance()
         highlight.style = 'EMISSIVE_DIFFUSE'
         highlight.addChild(line_style)
+        highlight.addChild(curve_color)
+        highlight.addChild(self.curve_coords)
+        highlight.addChild(self.curves)
+        highlight.addChild(spiral_color)
+        highlight.addChild(self.spiral_coords)
+        highlight.addChild(self.spirals)
+        highlight.addChild(line_color)
         highlight.addChild(self.line_coords)
         highlight.addChild(self.lines)
         highlight.addChild(self.tick_coords)
@@ -533,7 +552,6 @@ class ViewProviderHorizontalAlignment():
 
         # Alignment root.
         lines_root = coin.SoSeparator()
-        lines_root.addChild(line_color)
         lines_root.addChild(self.labels)
         lines_root.addChild(highlight)
         vobj.addDisplayMode(lines_root,"Wireframe")
@@ -589,25 +607,56 @@ class ViewProviderHorizontalAlignment():
         Update Object visuals when a data property changed.
         '''
 
+        if not hasattr(obj.Proxy, 'model'): return
         if prop == "Shape":
-            shape = obj.getPropertyByName("Shape")
+            curves, spirals, lines = obj.Proxy.model.discretize_geometry(
+                [0.0], obj.Method, obj.Seg_Value, types=True)
 
-            if shape.Vertexes:
-                points = []
+            # Get GeoOrigin.
+            origin = geo_origin.get(curves[0][0])
+            base = deepcopy(origin.Origin)
+            base.z = 0
 
-                for vertex in shape.Vertexes:
-                    points.append(vertex.Point)
+            geo_system = ["UTM", origin.UtmZone, "FLAT"]
+            self.curve_coords.geoSystem.setValues(geo_system)
+            self.spiral_coords.geoSystem.setValues(geo_system)
+            self.line_coords.geoSystem.setValues(geo_system)
 
-                # Get GeoOrigin.
-                origin = geo_origin.get(points[0])
-                base = deepcopy(origin.Origin)
-                base.z = 0
+            curve_points = []
+            spiral_points = []
+            line_points = []
 
-                # Set GeoCoords.
-                geo_system = ["UTM", origin.UtmZone, "FLAT"]
-                self.line_coords.geoSystem.setValues(geo_system)
-                self.line_coords.point.values = points
+            curve_vert = []
+            spiral_vert = []
+            line_vert = []
 
+            for i in curves:
+                curve_points.extend(i)
+                curve_vert.append(len(i))
+
+            for i in spirals:
+                spiral_points.extend(i)
+                spiral_vert.append(len(i))
+
+            for i in lines:
+                line_points.extend(i)
+                line_vert.append(len(i))
+
+            self.curve_coords.point.values = curve_points
+            self.curves.numVertices.values = curve_vert
+
+            self.spiral_coords.point.values = spiral_points
+            self.spirals.numVertices.values = spiral_vert
+
+            self.line_coords.point.values = line_points
+            self.lines.numVertices.values = line_vert
+
+            print(curve_points)
+            print(curve_vert)
+            print(spiral_points)
+            print(spiral_vert)
+            print(line_points)
+            print(line_vert)
     def get_stations(self, obj):
         """
         Retrieve the coordinates of the start and end points of the station
