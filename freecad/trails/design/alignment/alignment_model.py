@@ -726,7 +726,7 @@ class AlignmentModel:
 
         return None
 
-    def discretize_geometry(self, interval=None, method='Segment', delta=10.0):
+    def discretize_geometry(self, interval=None, method='Segment', delta=10.0, types=False):
         """
         Discretizes the alignment geometry to a series of vector points
         interval - the starting internal station and length of curve
@@ -737,6 +737,9 @@ class AlignmentModel:
         geometry = self.data.get('geometry')
 
         points = []
+        curves = []
+        spirals = []
+        lines = []
         last_curve = None
 
         #undefined = entire length
@@ -791,6 +794,7 @@ class AlignmentModel:
 
                 if _pts:
                     points.append(_pts)
+                    curves.append([(i.x, i.y, i.z) for i in _pts])
 
             elif curve.get('Type') == 'Spiral':
 
@@ -798,20 +802,17 @@ class AlignmentModel:
 
                 if _pts:
                     points.append(_pts)
+                    spirals.append([(i.x, i.y, i.z) for i in _pts])
 
             else:
 
                 _start_coord = line.get_coordinate(
-                    curve.get('Start'), curve.get('BearingIn'), _arc_int[0]
-                )
+                    curve.get('Start'), curve.get('BearingIn'), _arc_int[0])
 
-                points.append(
-                    [
-                        _start_coord,
-                        line.get_coordinate(
-                            _start_coord, curve.get('BearingIn'), _arc_int[1])
-                    ]
-                )
+                _pts = [_start_coord, line.get_coordinate(
+                    _start_coord, curve.get('BearingIn'), _arc_int[1])]
+                points.append(_pts)
+                lines.append(_pts)
 
             last_curve = curve
 
@@ -858,4 +859,5 @@ class AlignmentModel:
         if not self.data.get('meta').get('End'):
             self.data.get('meta')['End'] = result[-1]
 
+        if types: return curves, spirals, lines
         return result
