@@ -531,10 +531,7 @@ class AlignmentModel:
                 if not support.within_tolerance(delta):
                     geo_station += delta / units.scale_factor()
 
-                if _geo.get('Type') == 'Line':
-                    _geo.start_station = geo_station
-                else:
-                    _geo['StartStation'] = geo_station
+                _geo['StartStation'] = geo_station
 
             prev_coord = _geo.get('End')
             prev_station = _geo.get('StartStation') \
@@ -859,5 +856,5 @@ class AlignmentModel:
         if not self.data.get('meta').get('End'):
             self.data.get('meta')['End'] = result[-1]
 
-        if types: return curves, spirals, lines
+        if types: return curves, spirals, lines, result
         return result
