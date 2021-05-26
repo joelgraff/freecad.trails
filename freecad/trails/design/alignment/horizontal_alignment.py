@@ -609,11 +609,11 @@ class ViewProviderHorizontalAlignment():
 
         if not hasattr(obj.Proxy, 'model'): return
         if prop == "Shape":
-            curves, spirals, lines = obj.Proxy.model.discretize_geometry(
+            curves, spirals, lines, points = obj.Proxy.model.discretize_geometry(
                 [0.0], obj.Method, obj.Seg_Value, types=True)
 
             # Get GeoOrigin.
-            origin = geo_origin.get(curves[0][0])
+            origin = geo_origin.get(points[0])
             base = deepcopy(origin.Origin)
             base.z = 0
 
