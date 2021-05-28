@@ -459,32 +459,50 @@ class HorizontalAlignment(Alignment):
         """
         Recompute callback
         """
-
-        #if not super().execute(obj):
-        #    return
-
-        points = None
-
         if hasattr(self.model, 'discretize_geometry'):
-            points = self.model.discretize_geometry(
-                [0.0], self.Object.Method, self.Object.Seg_Value)
+            curves, spirals, lines, points = obj.Proxy.model.discretize_geometry(
+                [0.0], obj.Method, obj.Seg_Value, types=True)
 
-        if not points:
-            return
+            # Get GeoOrigin.
+            origin = geo_origin.get(points[0])
+            base = deepcopy(origin.Origin)
+            base.z = 0
 
-        _wires = []
-        _prev = App.Vector(points[0])
+            line_obj = []
+            curve_obj = []
+            spiral_obj = []
 
-        for _p in points[1:]:
-            _q = App.Vector(_p)
+            for i in lines:
+                cpnt = App.Vector(i[0]).sub(base)
+                npnt = App.Vector(i[1]).sub(base)
+                line = Part.makeLine(cpnt, npnt)
+                line_obj.append(line)
 
-            _wires.append(Part.LineSegment(_prev, _q))
-            _prev = _q
+            for i in curves:
+                segments = []
+                for index in range(len(i)-1):
+                    cpnt = App.Vector(i[index]).sub(base)
+                    npnt = App.Vector(i[index+1]).sub(base)
+                    segments.append(Part.LineSegment(cpnt, npnt))
+                    shape = Part.Shape(segments)
+                    wire = Part.Wire(shape.Edges)
+                curve_obj.append(wire)
 
-        _shape = Part.Shape(_wires)
-        _wire = Part.Wire(_shape.Edges)
+            for i in spirals:
+                segments = []
+                for index in range(len(i)-1):
+                    cpnt = App.Vector(i[index]).sub(base)
+                    npnt = App.Vector(i[index+1]).sub(base)
+                    segments.append(Part.LineSegment(cpnt, npnt))
+                    shape = Part.Shape(segments)
+                    wire = Part.Wire(shape.Edges)
+                spiral_obj.append(wire)
 
-        obj.Shape = Part.makeCompound(_wire)
+            line_comp = Part.makeCompound(line_obj)
+            curve_comp = Part.makeCompound(curve_obj)
+            spiral_comp = Part.makeCompound(spiral_obj)
+
+            obj.Shape = Part.makeCompound([line_comp, curve_comp, spiral_comp])
 
 class ViewProviderHorizontalAlignment():
 
@@ -564,10 +582,9 @@ class ViewProviderHorizontalAlignment():
         if prop == "Labels":
 
             self.labels.removeAllChildren()
-            labels = vobj.getPropertyByName("Labels")
+            labels = vobj.getPropertyByName(prop)
 
             if labels:
-
                 # Get GeoOrigin.
                 origin = geo_origin.get()
                 base = deepcopy(origin.Origin)
@@ -606,41 +623,58 @@ class ViewProviderHorizontalAlignment():
         '''
         Update Object visuals when a data property changed.
         '''
-
-        if not hasattr(obj.Proxy, 'model'): return
         if prop == "Shape":
-            curves, spirals, lines, points = obj.Proxy.model.discretize_geometry(
-                [0.0], obj.Method, obj.Seg_Value, types=True)
+            shape = obj.getPropertyByName(prop)
+            if not shape.SubShapes: return
 
             # Get GeoOrigin.
-            origin = geo_origin.get(points[0])
+            origin = geo_origin.get()
             base = deepcopy(origin.Origin)
             base.z = 0
 
             geo_system = ["UTM", origin.UtmZone, "FLAT"]
+            self.line_coords.geoSystem.setValues(geo_system)
             self.curve_coords.geoSystem.setValues(geo_system)
             self.spiral_coords.geoSystem.setValues(geo_system)
-            self.line_coords.geoSystem.setValues(geo_system)
 
+            lines = shape.SubShapes[0]
+            curves = shape.SubShapes[1]
+            spirals = shape.SubShapes[2]
+
+            line_points = []
             curve_points = []
             spiral_points = []
-            line_points = []
 
+            line_vert = []
             curve_vert = []
             spiral_vert = []
-            line_vert = []
 
-            for i in curves:
-                curve_points.extend(i)
-                curve_vert.append(len(i))
+            for i in lines.SubShapes:
+                points = []
+                for vertex in i.Vertexes:
+                    pnt = vertex.Point.add(base)
+                    points.append((pnt[0], pnt[1], pnt[2]))
 
-            for i in spirals:
-                spiral_points.extend(i)
-                spiral_vert.append(len(i))
+                line_points.extend(points)
+                line_vert.append(len(points))
 
-            for i in lines:
-                line_points.extend(i)
-                line_vert.append(len(i))
+            for i in curves.SubShapes:
+                points = []
+                for vertex in i.Vertexes:
+                    pnt = vertex.Point.add(base)
+                    points.append((pnt[0], pnt[1], pnt[2]))
+
+                curve_points.extend(points)
+                curve_vert.append(len(points))
+
+            for i in spirals.SubShapes:
+                points = []
+                for vertex in i.Vertexes:
+                    pnt = vertex.Point.add(base)
+                    points.append((pnt[0], pnt[1], pnt[2]))
+
+                spiral_points.extend(points)
+                spiral_vert.append(len(points))
 
             self.curve_coords.point.values = curve_points
             self.curves.numVertices.values = curve_vert
@@ -651,12 +685,6 @@ class ViewProviderHorizontalAlignment():
             self.line_coords.point.values = line_points
             self.lines.numVertices.values = line_vert
 
-            print(curve_points)
-            print(curve_vert)
-            print(spiral_points)
-            print(spiral_vert)
-            print(line_points)
-            print(line_vert)
     def get_stations(self, obj):
         """
         Retrieve the coordinates of the start and end points of the station
