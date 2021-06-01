@@ -225,6 +225,7 @@ class ViewProviderSurface:
             if prop == "TriangleColor":
                 color = vobj.getPropertyByName("TriangleColor")
                 self.mat_color.diffuseColor = (color[0],color[1],color[2])
+                self.mat_color.transparency = 0.8
         except Exception: pass
 
     def updateData(self, obj, prop):
