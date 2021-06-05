@@ -122,6 +122,7 @@ class TrailsWorkbench(Gui.Workbench):
                 'cmd': [
                     'ImportAlignmentCmd',
                     'EditAlignmentCmd',
+                    'CreateAlignmentFromLine'
                     ]
             },
 
@@ -213,6 +214,7 @@ class TrailsWorkbench(Gui.Workbench):
         from .geomatics.table import create_table
         from .geomatics import geoimport_gui
 
+        from .design.project.commands import create_alignment_from_line
         from .design.project.commands import import_alignment_cmd
         from .design.project.commands import edit_alignment_cmd
         from .design.project.commands import trails_guide_cmd
