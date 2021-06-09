@@ -478,24 +478,18 @@ class HorizontalAlignment(Alignment):
                 line = Part.makeLine(cpnt, npnt)
                 line_obj.append(line)
 
-            for i in curves:
-                segments = []
-                for index in range(len(i)-1):
-                    cpnt = App.Vector(i[index]).sub(base)
-                    npnt = App.Vector(i[index+1]).sub(base)
-                    segments.append(Part.LineSegment(cpnt, npnt))
-                    shape = Part.Shape(segments)
-                    wire = Part.Wire(shape.Edges)
+            for curve in curves:
+                points = []
+                for pnt in curve:
+                    points.append(App.Vector(pnt).sub(base))
+                wire = Part.makePolygon(points)
                 curve_obj.append(wire)
 
-            for i in spirals:
-                segments = []
-                for index in range(len(i)-1):
-                    cpnt = App.Vector(i[index]).sub(base)
-                    npnt = App.Vector(i[index+1]).sub(base)
-                    segments.append(Part.LineSegment(cpnt, npnt))
-                    shape = Part.Shape(segments)
-                    wire = Part.Wire(shape.Edges)
+            for spiral in spirals:
+                points = []
+                for pnt in spiral:
+                    points.append(App.Vector(pnt).sub(base))
+                wire = Part.makePolygon(points)
                 spiral_obj.append(wire)
 
             line_comp = Part.makeCompound(line_obj)
@@ -597,7 +591,6 @@ class ViewProviderHorizontalAlignment():
                 stations = self.get_stations(vobj.Object)
 
                 for label, tick in stations.items():
-
                     font = coin.SoFont()
                     font.size = 3000
                     sta_label = coin.SoSeparator()
@@ -698,9 +691,7 @@ class ViewProviderHorizontalAlignment():
         stations = {}
 
         for sta in range(int(start), int(end)):
-
             if sta % 10 == 0:
-
                 tuple_coord, tuple_vec =\
                     obj.Proxy.model.get_orthogonal( sta, "Left", True)
 
