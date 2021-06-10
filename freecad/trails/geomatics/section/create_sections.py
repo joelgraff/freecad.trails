@@ -25,7 +25,7 @@ from pivy import coin
 from PySide2 import QtCore
 from freecad.trails import ICONPATH
 from ..surface import surfaces
-from . import cross_sections, cross_section
+from . import section
 
 class CreateSections:
 
@@ -118,9 +118,9 @@ class CreateSections:
 
                 for item in self.IPFui.SelectSurfacesLW.selectedItems():
                     surface = self.surface_list[item.text()]
-                    sections = cross_section.create()
-                    cs.addObject(sections)
-                    sections.Surface = surface
+                    sec = section.create()
+                    cs.addObject(sec)
+                    sec.Surface = surface
 
                 FreeCAD.ActiveDocument.recompute()
 
