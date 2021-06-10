@@ -28,7 +28,7 @@ import FreeCAD, Part, copy
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
 from .region_func import RegionFunc
-from ..section import cross_sections
+from ..section import sections
 from ..volume import volumes
 from ..table import tables
 
@@ -50,8 +50,8 @@ def create(alignment, name='Region'):
     Region(obj)
 
     # Add Cross Sections group.
-    cs = cross_sections.create()
-    obj.addObject(cs)
+    secs = sections.create()
+    obj.addObject(secs)
 
     # Add Volumes group.
     vol_areas = volumes.create()
