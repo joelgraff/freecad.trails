@@ -45,7 +45,7 @@ class CreateAlignmentFromLine():
         """
 
         return {
-            'Pixmap'  : ICONPATH + '/icons/xml.svg',
+            'Pixmap'  : ICONPATH + '/icons/Object2Alignment.svg',
             'MenuText': 'Create Alignment From Line',
             'ToolTip' : 'Create alignment objects from Draft lines',
             }
