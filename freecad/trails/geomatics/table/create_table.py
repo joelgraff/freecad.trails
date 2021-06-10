@@ -87,15 +87,14 @@ class CreateTable:
                 position.z = 0
 
                 vol_group = self.selection[-1].getParentGroup()
-                cluster = vol_group.getParentGroup()
+                region = vol_group.getParentGroup()
 
-                for item in cluster.Group:
-                    if item.Proxy.Type == 'Trails::Guidelines':
-                        gl = item
+                for item in region.Group:
                     if item.Proxy.Type == 'Trails::Tables':
                         tables = item
+                        break
 
-                tab = table.create(position, gl, self.selection[-1])
+                tab = table.create(position, region, self.selection[-1])
                 
                 tables.addObject(tab)
 
