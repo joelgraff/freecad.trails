@@ -21,11 +21,10 @@
 # ***********************************************************************
 
 '''
-Create a Cross Sections object from FPO.
+Create a Sections object from FPO.
 '''
 
-import FreeCAD
-import Part
+import FreeCAD, Part
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
 import copy, math
@@ -33,20 +32,18 @@ import copy, math
 
 def create():
     obj=FreeCAD.ActiveDocument.addObject(
-        "App::DocumentObjectGroupPython", "CrossSections")
+        "App::DocumentObjectGroupPython", "Sections")
 
-    obj.Label = "Cross Sections"
-    CrossSections(obj)
-    ViewProviderCrossSections(obj.ViewObject)
-
+    Sections(obj)
+    ViewProviderSections(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
 
     return obj
 
 
-class CrossSections:
+class Sections:
     """
-    This class is about Cross Section object data features.
+    This class is about Section object data features.
     """
 
     def __init__(self, obj):
@@ -54,7 +51,7 @@ class CrossSections:
         Set data properties.
         '''
 
-        self.Type = 'Trails::CrossSections'
+        self.Type = 'Trails::Sections'
 
         obj.addProperty(
             'App::PropertyVector', "Position", "Base",
@@ -66,19 +63,19 @@ class CrossSections:
 
         obj.addProperty(
             "App::PropertyLength", "Heigth", "Geometry",
-            "Heigth of cross section view").Heigth = 50000
+            "Heigth of section view").Heigth = 50000
 
         obj.addProperty(
             "App::PropertyLength", "Width", "Geometry",
-            "Width of cross section view").Width = 100000
+            "Width of section view").Width = 100000
 
         obj.addProperty(
             "App::PropertyLength", "Vertical", "Gaps",
-            "Vertical gap between cross section view").Vertical = 50000
+            "Vertical gap between section view").Vertical = 50000
 
         obj.addProperty(
             "App::PropertyLength", "Horizontal", "Gaps",
-            "Horizontal gap between cross section view").Horizontal = 50000
+            "Horizontal gap between section view").Horizontal = 50000
 
         obj.Proxy = self
 
@@ -104,7 +101,7 @@ class CrossSections:
 
 
 
-class ViewProviderCrossSections:
+class ViewProviderSections:
     """
     This class is about Point Group Object view features.
     """
@@ -182,17 +179,12 @@ class ViewProviderCrossSections:
 
             counter = 0
             pos = position
-            cluster = obj.getParentGroup()
-
-            for item in cluster.Group:
-                if item.Proxy.Type == 'Trails::Guidelines':
-                    gl = item
-                    break
+            region = obj.getParentGroup()
 
             points = []
             line_vert = []
-            sta_list = gl.StationList
-            multi_views_nor = math.ceil(len(gl.Shape.Wires)**0.5)
+            sta_list = region.StationList
+            multi_views_nor = math.ceil(len(region.Shape.Wires)**0.5)
 
             for sta in sta_list:
                 font = coin.SoFont()
