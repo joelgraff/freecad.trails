@@ -41,7 +41,7 @@ from . import alignment_group, alignment_model
 from .alignment import Alignment
 from .alignment_registrar import AlignmentRegistrar
 
-from ...geomatics.guideline import gl_clusters
+from ...geomatics.region import regions
 
 __title__ = 'horizontal_alignment.py'
 __author__ = 'Joel Graff'
@@ -77,8 +77,8 @@ def create(geometry, object_name='', parent=None, no_visual=False, zero_referenc
     _obj.Proxy.set_geometry(geometry, zero_reference)
     ViewProviderHorizontalAlignment(_obj.ViewObject)
 
-    clusters = gl_clusters.create()
-    _obj.addObject(clusters)
+    regs = regions.create()
+    _obj.addObject(regs)
 
     App.ActiveDocument.recompute()
 
