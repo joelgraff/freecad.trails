@@ -110,7 +110,7 @@ class TrailsWorkbench(Gui.Workbench):
             'Section Tools': {
                 'gui': self.menu + self.toolbar,
                 'cmd': [
-                    'Create Guidelines',
+                    'Create Region',
                     'Create Sections',
                     'Compute Areas',
                     'Create Table'
@@ -208,7 +208,7 @@ class TrailsWorkbench(Gui.Workbench):
         """
         from .geomatics.point import import_points, export_points, create_pointgroup
         from .geomatics.surface import create_surface, edit_surface
-        from .geomatics.guideline import create_guidelines
+        from .geomatics.region import create_region
         from .geomatics.section import create_sections
         from .geomatics.volume import compute_areas
         from .geomatics.table import create_table
