@@ -22,16 +22,16 @@
 # ***********************************************************************
 
 '''
-Define Surface Object functions.
+Define Section object functions.
 '''
 
 import FreeCAD
 import Part, MeshPart
 import copy, math
 
-class CSFunc:
+class SectionFunc:
     """
-    This class is contain Surface Object functions.
+    This class is contain Section object functions.
     """
     def __init__(self):
         pass
