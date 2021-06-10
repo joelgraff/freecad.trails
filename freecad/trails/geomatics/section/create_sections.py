@@ -20,13 +20,12 @@
 # *                                                                     *
 # ***********************************************************************
 
-import FreeCAD, FreeCADGui
+import FreeCAD, FreeCADGui, os
 from pivy import coin
 from PySide2 import QtCore
 from freecad.trails import ICONPATH
 from ..surface import surfaces
 from . import cross_sections, cross_section
-import os
 
 class CreateSections:
 
@@ -62,7 +61,7 @@ class CreateSections:
             # Check for selected object
             self.selection = FreeCADGui.Selection.getSelection()
             if self.selection:
-                if self.selection[-1].Proxy.Type == 'Trails::Guidelines':
+                if self.selection[-1].Proxy.Type == 'Trails::Region':
                     return True
         return False
 
@@ -109,9 +108,9 @@ class CreateSections:
                 position = self.view.getPoint(pos[0], pos[1])
                 position.z = 0
 
-                cluster = self.selection[-1].getParentGroup()
+                region = self.selection[-1]
 
-                for item in cluster.Group:
+                for item in region.Group:
                     if item.Proxy.Type == 'Trails::CrossSections':
                         cs = item
                         cs.Position = position
