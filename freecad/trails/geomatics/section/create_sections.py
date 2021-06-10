@@ -111,7 +111,7 @@ class CreateSections:
                 region = self.selection[-1]
 
                 for item in region.Group:
-                    if item.Proxy.Type == 'Trails::CrossSections':
+                    if item.Proxy.Type == 'Trails::Sections':
                         cs = item
                         cs.Position = position
                         break
