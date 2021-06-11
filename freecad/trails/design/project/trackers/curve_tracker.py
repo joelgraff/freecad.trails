@@ -411,7 +411,7 @@ class CurveTracker(ContextTracker, Drag):
         groups - an itearable of vertex groupings
         """
 
-        assert(sum(groups) == len(self.pionts)),\
+        assert(sum(groups) == len(self.points)),\
             'LineTracker.set_vertex_groups: group count does not match number of points'
 
         self.line.numVertices.setValues(0, len(groups), groups)
