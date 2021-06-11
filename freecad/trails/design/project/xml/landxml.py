@@ -98,7 +98,7 @@ def get_tag_default(tag):
 
 def write_to_file(node, target, pretty_print=True):
     """
-    Write the node to the target file, prettyprinting if desrired
+    Write the node to the target file, prettyprinting if desired
     """
 
     etree.register_namespace(_C.VERSION, _C.NAMESPACE[_C.VERSION])

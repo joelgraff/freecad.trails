@@ -165,7 +165,7 @@ class HorizontalAlignment(Alignment):
         self.init_class_members(obj)
 
         #create property to indicate object is fully initialized
-        #done to prevent premature event excution
+        #done to prevent premature event execution
         obj.addProperty('App::PropertyBool', 'Initialized', 'Base', 'Is Initialized').Initialized = True
 
     def init_class_members(self, obj):

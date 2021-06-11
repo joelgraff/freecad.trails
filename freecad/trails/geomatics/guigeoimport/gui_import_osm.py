@@ -72,7 +72,7 @@ class MyApp(object):
         self.run(52.508, 13.18)
 
     def run_co2(self):
-        """imports  Coburg Univerity and School"""
+        """imports Coburg University and School"""
         self.run(50.2631171, 10.9483)
 
     def run_sternwarte(self):

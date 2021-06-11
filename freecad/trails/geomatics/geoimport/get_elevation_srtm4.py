@@ -33,9 +33,9 @@ another project I did not test so far
 https://pypi.org/project/srtm4/
 downloaded tiffs from area will be saved locally
 download ca 35 MB, the half of switzerland
-height not abov sea level
+height not above sea level
 https://github.com/cmla/srtm4/issues/10
-important note ... method parameters are swaped
+important note ... method parameters are swapped
 the longitude as first argument, the latitude as second argument
 
 import srtm4
