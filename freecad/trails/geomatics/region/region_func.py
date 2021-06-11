@@ -128,7 +128,7 @@ class RegionFunc:
             # Add the end station
             stations.append(round(end,3))
 
-        # Create guide lines from standart line object
+        # Create guide lines from standard line object
         else:
             length = alignment.Length.Value
             for sta in range(0, int(length/1000)):

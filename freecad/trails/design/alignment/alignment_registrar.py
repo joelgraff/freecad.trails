@@ -60,7 +60,7 @@ class AlignmentRegistrar(metaclass=Singleton):
         Add the alignment object
         """
 
-        #intialize alignment if group is defined
+        #initialize alignment if group is defined
         if self.group:
             self.group.initialize_alignment(obj)
 

@@ -238,7 +238,7 @@ class CurveTracker(ContextTracker, Drag):
         """
         Start of drag operations
         """
-        #abort as the drag has alredy been set up.
+        #abort as the drag has already been set up.
         if self.drag_copy:
             return
 
@@ -399,7 +399,7 @@ class CurveTracker(ContextTracker, Drag):
 
     def hide_markers(self):
         """
-        hide the SoMarkerSet
+        Hide the SoMarkerSet
         """
 
         self.markers.set_visibility(False)

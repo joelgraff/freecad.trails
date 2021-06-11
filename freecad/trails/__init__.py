@@ -85,7 +85,7 @@ def import_module(path, name=None):
 
 def import_class(path, name):
     """
-    Return a refence to the class specified by path and module name
+    Return a reference to the class specified by path and module name
     """
 
     return getattr(import_module(path, name), name)

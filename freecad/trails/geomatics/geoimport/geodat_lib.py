@@ -153,7 +153,7 @@ def addImageTexture(obj,fn,scale=(1,1)):
 	cl=rootnode.getChildren()
 
 	'''
-	print ("childeren",cl.getLength())
+	print ("children", cl.getLength())
 	for c in cl:
 		print(c)
 	'''
