@@ -138,10 +138,12 @@ class ViewProviderSurface:
         Set view properties.
         '''
         (r, g, b) = (random.random(), random.random(), random.random())
+        material = FreeCAD.Material()
+        material.DiffuseColor = (r, g, b, 0.8)
 
         vobj.addProperty(
             "App::PropertyMaterial", "TriangleColor", "Surface Style",
-            "Color of the point group").TriangleColor
+            "Color of the point group").TriangleColor=material
 
         vobj.Proxy = self
 
@@ -216,8 +218,9 @@ class ViewProviderSurface:
         try:
             if prop == "TriangleColor":
                 color = vobj.getPropertyByName("TriangleColor")
-                self.mat_color.diffuseColor = (color[0],color[1],color[2])
-                self.mat_color.transparency = 0.8
+                print(color.DiffuseColor)
+                self.mat_color.diffuseColor = color.DiffuseColor[:3]
+                self.mat_color.transparency = color.DiffuseColor[3]
         except Exception: pass
 
     def updateData(self, obj, prop):
