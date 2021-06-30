@@ -117,6 +117,13 @@ class TrailsWorkbench(Gui.Workbench):
                     ]
             },
 
+            'Pad Tools': {
+                'gui': self.menu + self.toolbar,
+                'cmd': [
+                    'Create Pad'
+                    ]
+            },
+
             'Alignment': {
                 'gui': self.menu + self.toolbar + self.context,
                 'cmd': [
@@ -212,6 +219,7 @@ class TrailsWorkbench(Gui.Workbench):
         from .geomatics.section import create_sections
         from .geomatics.volume import compute_areas
         from .geomatics.table import create_table
+        from .geomatics.pad import create_pad
         from .geomatics import geoimport_gui
 
         from .design.project.commands import create_alignment_from_line
