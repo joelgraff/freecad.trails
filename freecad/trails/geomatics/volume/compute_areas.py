@@ -70,7 +70,7 @@ class ComputeAreas:
                 vol = item
                 break
 
-        vol_areas = volume.create(region, selection)
+        vol_areas = volume.create(selection)
         vol.addObject(vol_areas)
 
 
