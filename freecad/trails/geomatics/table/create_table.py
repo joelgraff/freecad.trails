@@ -94,7 +94,7 @@ class CreateTable:
                         tables = item
                         break
 
-                tab = table.create(position, region, self.selection[-1])
+                tab = table.create(position, self.selection[-1])
                 
                 tables.addObject(tab)
 
