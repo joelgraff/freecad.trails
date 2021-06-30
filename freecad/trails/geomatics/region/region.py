@@ -24,7 +24,7 @@
 Create a Region group object from FPO.
 '''
 
-import FreeCAD, Part, copy
+import FreeCAD, Part, copy, math
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
 from .region_func import RegionFunc
@@ -263,12 +263,22 @@ class ViewProviderRegion:
                 font = coin.SoFont()
                 font.size = 3000
                 gl_label = coin.SoSeparator()
-                location = coin.SoTranslation()
+                location = coin.SoTransform()
                 text = coin.SoAsciiText()
 
                 label = str(round(obj.StationList[i], 2))
-                location.translation = wire.Vertexes[-1].Point
+                start = wire.Vertexes[0].Point
+                end = wire.Vertexes[-1].Point
+
+                if start.y>end.y:
+                    angle = start.sub(end).getAngle(FreeCAD.Vector(1,0,0))-math.pi
+                else:
+                    angle = end.sub(start).getAngle(FreeCAD.Vector(1,0,0))
+
+                location.translation = end
+                location.rotation.setValue(coin.SbVec3f(0, 0, 1), angle)
                 text.string.setValues([label])
+
                 gl_label.addChild(font)
                 gl_label.addChild(location)
                 gl_label.addChild(text)
