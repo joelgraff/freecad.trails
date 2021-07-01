@@ -43,7 +43,7 @@ class CreatePad:
         Return the command resources dictionary
         """
         return {
-            'Pixmap': ICONPATH + '/icons/CreateSurface.svg',
+            'Pixmap': ICONPATH + '/icons/CreatePad.svg',
             'MenuText': "Create Pad",
             'ToolTip': "Create pad from selected closed polyline."
             }
