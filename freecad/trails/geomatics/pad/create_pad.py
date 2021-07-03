@@ -69,7 +69,7 @@ class CreatePad:
 
         polyline = FreeCADGui.Selection.getSelection()[-2]
         target = FreeCADGui.Selection.getSelection()[-1]
-        points = polyline.Shape.discretize(Angular=1,Curvature=100,Minimum=2)
+        points = polyline.Shape.discretize(Distance=5000)
 
         shp = polyline.Shape.copy()
         shp.Placement.move(FreeCAD.Vector(0,0, slope*lenght))
@@ -82,7 +82,7 @@ class CreatePad:
         pg = point_group.create()
         pg.Points = result
         surf = surface.create()
-        surf.MaxLength = 1000000
+        surf.MaxLength = 100000
         surf.PointGroups = [pg]
 
         intersec = surf.Mesh.intersect(target.Mesh)
@@ -100,12 +100,16 @@ class CreatePad:
             ref_pt = wire_pts[-1]
             dist = tuple((pt.distanceToPoint(ref_pt) for pt in border))
             idx = dist.index(min(dist))
-            # would need to handle orientation if more than one hit for dist
             wire_pts.append(border.pop(idx))
 
-        Part.show(Part.makePolygon(wire_pts))
-        pad = target.Mesh.copy()
-        pad.trim(wire_pts, 1)
-        target.Mesh = pad
+        intsec = Part.makePolygon(wire_pts)
+        intpts = intsec.discretize(Distance=5000)
+
+        result =[]
+        for pt in intpts+points:
+            result.append(pt.add(base))
+
+        pg.Points = result
+        surf.PointGroups = [pg]
 
 FreeCADGui.addCommand('Create Pad', CreatePad())
