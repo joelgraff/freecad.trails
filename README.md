@@ -2,8 +2,6 @@
 
 Hakan Seven is a Geomatics Engineer and Joel_graff is a Transportation Engineer. We decide to create a workbench for our own needs. So this workbench is being developed to provide functionality specific to Transportation and Geomatics engineering.
 
-You can fallow our progress from bellow links:
-
 ## Features
 
 * Geodata Tools
