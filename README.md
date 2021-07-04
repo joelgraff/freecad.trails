@@ -1,50 +1,58 @@
-# FreeCAD-Trails Transportation Engineering Workbench
+# FreeCAD Trails Workbench (Transportation and Geomatics)
 
-This workbench is being developed to provide functionality specific to Transportation engineering (road and rail) and Geomatics/Survey engineering.
+Hakan Seven is a Geomatics Engineer and Joel_graff is a Transportation Engineer. We decide to create a workbench for our own needs. So this workbench is being developed to provide functionality specific to Transportation and Geomatics engineering.
 
-## Functions
+You can fallow our progress from bellow links:
 
-* Import Point Files  
-* Export Points  
-* GeoData Tools
-* Create Surface  
+## Features
+
+* Geodata Tools
+* Import Survey Data Files
+* Export Point Groups to File
+* Create Surface
 * Edit Surface  
-* Create Contours  
-* Create Guide Lines
-* Create Sections (WIP)
+* Create Regions
+* Create Sections
+* Calculate Volume Areas
+* Create Volume Tables
+* Create Building Pads
 * Import Alignment LandXML files.
 
 ## Usage & Screenshots
-![IPF](https://user-images.githubusercontent.com/3831435/59975941-f9e35800-95c6-11e9-9afc-05f5a5d0bf2d.gif)
-![EP](https://user-images.githubusercontent.com/3831435/59975942-f9e35800-95c6-11e9-995d-4263f34f6f87.gif)
-![CS](https://user-images.githubusercontent.com/3831435/59975943-f9e35800-95c6-11e9-99d3-65282669817b.gif)
-![ES](https://user-images.githubusercontent.com/3831435/59975944-fa7bee80-95c6-11e9-8b47-a2f583fa25a6.gif)
-![CC](https://user-images.githubusercontent.com/3831435/59975946-fa7bee80-95c6-11e9-8e2f-7bdffac13d01.gif)
-![CGL](https://user-images.githubusercontent.com/3831435/58638005-76eb1c80-82fc-11e9-83bd-49dbb06d9202.png)
-![GeoData](https://user-images.githubusercontent.com/3831435/59973802-212d2b80-95ad-11e9-919f-8cf3f75cb375.png)
-![OSM](https://user-images.githubusercontent.com/3831435/59843173-ad96de80-9360-11e9-9c6a-153449516a7f.png)
-![Surface](https://user-images.githubusercontent.com/3831435/59920075-fff40000-9431-11e9-8411-b13032364f28.gif)
+
+![](https://community.osarch.org/uploads/editor/ii/jmi2oo80pbt8.png "")
+![](https://community.osarch.org/uploads/editor/9l/01m40i4on158.png "")
+![](https://community.osarch.org/uploads/editor/n3/gqbzauel9gnz.png "")
+![](https://community.osarch.org/uploads/editor/mq/t3fkzt6q51nr.png "")
+![](https://community.osarch.org/uploads/editor/hn/66wuqmutn9o7.png "")
+![](https://community.osarch.org/uploads/editor/z6/b3hupo69epaw.png "")
+![](https://community.osarch.org/uploads/editor/sv/epkb70fifwg2.png "")
+![](https://community.osarch.org/uploads/editor/8m/y4n02o7kdep4.png "")
+![](https://community.osarch.org/uploads/editor/kp/pxsgaezkvhhg.png "")
+![](https://community.osarch.org/uploads/editor/5g/t7b741rit6fy.gif "")
+![](https://community.osarch.org/uploads/editor/mg/92t6nyg6vst0.png "")
+![](https://community.osarch.org/uploads/editor/fm/zogcrzsmfe4y.png "")
+![](https://community.osarch.org/uploads/editor/qx/zdqum123doe4.png "")
 
 ## Installation
 
-Download and extract the ZIP file into the `.FreeCAD/Mod` folder or use git to clone into `.FreeCAD/Mod`
+### Easy
+Go to releases: https://github.com/joelgraff/freecad.trails/releases
 
-### Dependencies
+Download and extract the ZIP file into the `.FreeCAD/Mod` folder.
+
+**Note:** This releases are not up to date. So maybe you can't find the newly added features.
+
+### Hard
 FreeCAD-Trails depends on the [pivy_trackers 2D geometry library] https://github.com/joelgraff/pivy_trackers and my own [FreeCAD_python_support] https://github.com/joelgraff/freecad_python_support repo to run.  Pivy_trackers provides low-level 2D rendering support through Python for FreeCAD.  FreeCAD_python_support is a collection of python support functions.  Both are included in the FreeCAD Trails project as submodules.
 
 In order to clone the repo with the complete supporting submodules, invoke git from the /Mod folder at the commandline as follows:
 
 `git clone --recursive https://github.com/joelgraff/freecad.trails.git`
 
-### For GeoData Functions
-* cv2
-* gdal
-* gdalconst
-* requests (urllib, chardet, certifi, idna)
-
-**Note:** `.FreeCAD/Ext` is also a valid file path and may eventually become the target path for external workbenches
-
 ## Feedback 
+Get help: [FreeCAD Trails Workbench (Transportation and Geomatics)](https://forum.freecadweb.org/viewtopic.php?f=8&t=34371)
+
 Discuss this Workbench on the FreeCAD forum thread dedicated to this topic: 
 [Civil engineering feature implementation (Transportation Engineering)](https://forum.freecadweb.org/viewtopic.php?f=8&t=22277). 
 
