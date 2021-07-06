@@ -127,8 +127,6 @@ class AlignmentImporter(object):
         Build dictionary keyed to the internal attribute names from XML
         """
 
-        print ('Parsing tags for geometry ', attrib)
-
         result = {}
 
         #test to ensure all required tags are in the imported XML data

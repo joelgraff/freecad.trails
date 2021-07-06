@@ -63,7 +63,7 @@ class Arc():
         self.bearing_out = math.nan
         self.length = 0.0
         self.start_station = 0.0
-        self.internal_station = 0.0
+        self.internal_station = (0.0, 0.0)
         self.delta = 0.0
         self.direction = 0.0
         self.tangent = 0.0

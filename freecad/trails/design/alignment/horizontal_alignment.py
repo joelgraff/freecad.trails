@@ -37,7 +37,8 @@ from pivy import coin
 
 from ..project.support import properties, units
 from ..geometry import support
-from . import alignment_group, alignment_model
+from . import alignment_group
+from .alignment_model import AlignmentModel
 from .alignment import Alignment
 from .alignment_registrar import AlignmentRegistrar
 
@@ -73,6 +74,7 @@ def create(geometry, object_name='', parent=None, no_visual=False, zero_referenc
         _obj = parent.newObject("App::DocumentObjectGroupPython", _name)
 
     HorizontalAlignment(_obj, _name)
+    print('\n\t\t-=-=-=-=-= HORIZONTAL ALIGNMENT GEOMETRY -=-=-=-=-=\n', geometry)
     _obj.ModelKeeper = str(geometry)
     _obj.Proxy.set_geometry(geometry, zero_reference)
     ViewProviderHorizontalAlignment(_obj.ViewObject)
@@ -183,8 +185,6 @@ class HorizontalAlignment(Alignment):
         self.meta = {}
         self.hashes = None
 
-        self.registrar = AlignmentRegistrar()
-
         self.Type = 'Trails::HorizontalAlignment'
         self.Object = obj
 
@@ -203,16 +203,19 @@ class HorizontalAlignment(Alignment):
 
         self.init_class_members(obj)
         self.set_geometry(eval(obj.ModelKeeper))
-        """
-        self.registrar.register_alignment(obj)
-        """
+
 
     def initialize_model(self, model, obj):
         """
         Callback triggered from the parent group to force model update
+        model - the alignment model
+        obj - the alignment object
         """
 
-        self.model = alignment_model.AlignmentModel(model)
+        if isinstance(model, AlignmentModel):
+            model = model.data
+
+        self.model = AlignmentModel(model)
         self.build_curve_edge_dict(obj)
 
     def _plot_vectors(self, stations, interval=1.0, is_ortho=True):
@@ -269,9 +272,12 @@ class HorizontalAlignment(Alignment):
         curve_dict = {}
         curves = self.model.data.get('geometry')
 
+        print('\n\t[][][][[] CURVES!!! [][][][][]\n\t',curves)
         #iterate the curves, creating the dictionary for each curve
         #that lists it's wire edges keyed by it's Edge index
-        for curve in curves:
+        for _i, curve in enumerate(curves):
+
+            #curve.set('ObjectID', f'{curve.get('Type')}{str(_i)}')
 
             if curve.get('Type') == 'Line':
                 continue
@@ -386,7 +392,10 @@ class HorizontalAlignment(Alignment):
         """
         Assign geometry to the alignment object
         """
-        self.model = alignment_model.AlignmentModel(geometry, zero_reference)
+        print('CREATE ALIGNMENT MODEL')
+        self.model = AlignmentModel(geometry, zero_reference)
+
+        print ('MODEL DATA=',self.model.data)
 
         if self.model.errors:
             for _err in self.model.errors:

@@ -88,23 +88,19 @@ class EditAlignmentCmd(Modifier):
         Command activation method
         """
 
-        self.doc = App.ActiveDocument
-
         #create working, non-visual copy of horizontal alignment
         obj = Gui.Selection.getSelection()[0]
         data = obj.Proxy.get_data_copy()
 
-        self.doc = App.ActiveDocument
         ViewState().view = Gui.ActiveDocument.ActiveView
 
         #create alignment editing task
-
-        self.task = edit_alignment_task.create(self.doc, data, obj)
+        _task = edit_alignment_task.create(App.ActiveDocument, data, obj)
 
         #cz._zoom_camera(cz.Camera())
 
-        Gui.Control.showDialog(self.task)
-        self.task.setup()
+        Gui.Control.showDialog(_task)
+        _task.setup()
 
         Modifier.Activated(self, 'EditAlignmentCommand')
 

@@ -79,6 +79,9 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         self.alignment = horizontal_alignment.create(
             alignment_data, 'TEMP', None, True, False).Proxy
 
+        self.alignment.initialize_model(
+            self.alignment.model, self.alignment.Object)
+
         #self.alignment = self.alignment.Proxy
 
         self.alignment_tracker = None
