@@ -25,7 +25,7 @@ Define Surface Object functions.
 '''
 
 import FreeCAD
-import Mesh
+import Mesh, Part
 import numpy as np
 import copy, math
 import scipy.spatial
@@ -120,7 +120,7 @@ class SurfaceFunc:
                 return False
         return True
 
-    def contour_points(self, fpoint, mesh, deltaH):
+    def get_contours(self, fpoint, mesh, deltaH):
         """
         Create contour lines for selected surface
         """
@@ -131,8 +131,7 @@ class SurfaceFunc:
 
         # Get point list and create contour points
         cont_points = []
-        coords = []
-        num_vert = []
+        cont_obj = []
         base = copy.deepcopy(fpoint)
         base.z = 0
         for H in range(int(round(zmin)), int(round(zmax))):
@@ -143,10 +142,7 @@ class SurfaceFunc:
 
             if cont_points:
                 for cont in cont_points[0]:
-                    cont_up = []
-                    for i in cont:
-                        cont_up.append(i.add(base))
-                    coords.extend(cont_up)
-                    num_vert.append(len(cont_up))
+                    wire = Part.makePolygon(cont)
+                    cont_obj.append(wire)
 
-        return coords, num_vert
+        return Part.makeCompound(cont_obj)

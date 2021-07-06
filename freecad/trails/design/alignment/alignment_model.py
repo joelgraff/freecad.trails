@@ -249,10 +249,7 @@ class AlignmentModel:
                 if not support.within_tolerance(delta):
                     geo_station += delta / units.scale_factor()
 
-                if _geo.get('Type') == 'Line':
-                    _geo.start_station = geo_station
-                else:
-                    _geo['StartStation'] = geo_station
+                _geo['StartStation'] = geo_station
 
             prev_coord = _geo.get('End')
             prev_station = _geo.get('StartStation') \
@@ -389,16 +386,28 @@ class AlignmentModel:
 
                 _prev_geo = _geo
 
-    def _validate_alignment(self):
+    def discretize_geometry(self, interval=None, method='Segment', delta=10.0, types=False):
         """
         Ensure the alignment geometry is continuous.
         Any discontinuities (gaps between end / start coordinates)
         must be filled by a completely defined line
         """
 
-        _prev_sta = 0.0
-        _prev_coord = self.data['meta']['Start']
-        _geo_list = []
+        geometry = self.data.get('geometry')
+
+        points = []
+        curves = []
+        spirals = []
+        lines = []
+        last_curve = None
+
+        #undefined = entire length
+        if not interval:
+            interval = [0.0, self.data.get('meta').get('Length')]
+
+        #only one element = starting position
+        if len(interval) == 1:
+            interval.append(self.data.get('meta').get('Length'))
 
         #iterate through all geometry, looking for coordinate gaps
         #and filling them with line segments.
@@ -456,7 +465,9 @@ class AlignmentModel:
                     }).to_dict()
                 )
 
-            self.data.get('meta')['Length'] = 0.0
+                if _pts:
+                    points.append(_pts)
+                    curves.append([(i.x, i.y, i.z) for i in _pts])
 
         #accumulate length across individual geometry and test against
         #total alignment length
@@ -465,28 +476,21 @@ class AlignmentModel:
 
         align_length = self.data.get('meta').get('Length')
 
-        if not support.within_tolerance(_length, align_length):
-
-            if  _length > align_length:
-                self.data.get('meta')['Length'] = align_length
+                if _pts:
+                    points.append(_pts)
+                    spirals.append([(i.x, i.y, i.z) for i in _pts])
 
             else:
                 _start = _geo_list[-1].get('End')
                 bearing = _geo_list[-1].get('BearingOut')
 
-                _end = line.get_coordinate(
-                    _start, bearing, align_length - _length
-                    )
+                _start_coord = line.get_coordinate(
+                    curve.get('Start'), curve.get('BearingIn'), _arc_int[0])
 
-                _geo_list.append(
-                    line.get_parameters({
-                        'Start': _start,
-                        'End': _end,
-                        'StartStation': self.get_alignment_station(
-                            _geo['InternalStation'][1]),
-                        'BearingOut': bearing
-                    }).to_dict()
-                )
+                _pts = [_start_coord, line.get_coordinate(
+                    _start_coord, curve.get('BearingIn'), _arc_int[1])]
+                points.append(_pts)
+                lines.append(_pts)
 
         self.data['geometry'] = _geo_list
 
@@ -509,6 +513,5 @@ class AlignmentModel:
 
                 _geo[_key] = TupleMath.subtract(_geo[_key], datum)
 
-        if self.data.get('meta').get('End'):
-            self.data.get('meta')['End'] = \
-                TupleMath.subtract(self.data.get('meta').get('End'), datum)
+        if types: return curves, spirals, lines, result
+        return result

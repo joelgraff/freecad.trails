@@ -236,7 +236,7 @@ class AlignmentImporter(object):
 
     def _parse_coord_geo_data(self, align_name, alignment):
         """
-        Parse the alignment coorinate geometry data to get curve
+        Parse the alignment coordinate geometry data to get curve
         information and return as a dictionary
         """
 

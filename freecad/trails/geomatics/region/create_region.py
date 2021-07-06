@@ -20,20 +20,19 @@
 # *                                                                     *
 # ***********************************************************************
 
-import FreeCAD
-import FreeCADGui
+import FreeCAD, FreeCADGui
 from freecad.trails import ICONPATH
-from . import gl_cluster
+from . import region
 
 
-class CreateGuidelines:
+class CreateRegion:
     """
-    Command to create a new Guidelines
+    Command to create a new Region object for selected alignment
     """
 
     def __init__(self):
         """
-        Command to create guide lines for selected alignment.
+        Constructor
         """
         pass
 
@@ -42,9 +41,9 @@ class CreateGuidelines:
         Return the command resources dictionary
         """
         return {
-            'Pixmap': ICONPATH + '/icons/CreateGuideLines.svg',
-            'MenuText': "Create Guidelines",
-            'ToolTip': "Create guidelines for selected alignment"
+            'Pixmap': ICONPATH + '/icons/CreateRegion.svg',
+            'MenuText': "Create Region",
+            'ToolTip': "Create Region for selected alignment"
             }
 
     def IsActive(self):
@@ -66,6 +65,6 @@ class CreateGuidelines:
         """
         # Check for selected object
         selection = FreeCADGui.Selection.getSelection()
-        gl_cluster.create(selection[-1])
+        region.create(selection[-1])
 
-FreeCADGui.addCommand('Create Guidelines', CreateGuidelines())
+FreeCADGui.addCommand('Create Region', CreateRegion())

@@ -21,7 +21,7 @@
 # ***********************************************************************
 
 '''
-Create a Guide Line Clusters group object from FPO.
+Create a Regions object from FPO.
 '''
 
 import FreeCAD
@@ -31,44 +31,39 @@ from freecad.trails import ICONPATH, geo_origin
 
 def get():
     """
-    Find the existing Guide Line Clusters group object
+    Find the existing Regions object
     """
     # Return an existing instance of the same name, if found.
-    obj = FreeCAD.ActiveDocument.getObject('GuideLineClusters')
+    obj = FreeCAD.ActiveDocument.getObject('Regions')
+    if obj: return obj
 
-    if obj:
-        return obj
-
-    obj = create()
-
-    return obj
+    return create()
 
 def create():
     """
-    Factory method for Guide Line Clusters.
+    Factory method for Regions group.
     """
 
     obj = FreeCAD.ActiveDocument.addObject(
-        "App::DocumentObjectGroupPython", 'GuideLineClusters')
-    obj.Label = "Guide Line Clusters"
+        "App::DocumentObjectGroupPython", 'Regions')
 
-    GuideLineClusters(obj)
-    ViewProviderGuideLineClusters(obj.ViewObject)
+    Regions(obj)
+    ViewProviderRegions(obj.ViewObject)
     FreeCAD.ActiveDocument.recompute()
 
     return obj
 
 
-class GuideLineClusters:
+class Regions:
     """
-    This class is about Guide Line Clusters object data features.
+    This class is about Regions data features.
     """
 
     def __init__(self, obj):
         '''
         Set data properties.
         '''
-        self.Type = 'Trails::GLClusters'
+        self.Type = 'Trails::Regions'
         obj.Proxy = self
 
     def onChanged(self, fp, prop):
@@ -84,9 +79,9 @@ class GuideLineClusters:
         return
 
 
-class ViewProviderGuideLineClusters:
+class ViewProviderRegions:
     """
-    This class is about Guide Line Clusters object view features.
+    This class is about Regions view features.
     """
 
     def __init__(self, vobj):

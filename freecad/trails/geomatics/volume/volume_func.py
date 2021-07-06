@@ -62,12 +62,21 @@ class VolumeFunc:
                 Part.makeLine((area_maxX, area_maxY, 0.0), (area_minX, area_maxY, 0.0)),
                 Part.makeLine((area_minX, area_maxY, 0.0), (area_minX, area_minY, 0.0))]
 
+        dellim = [Part.makeLine((area_minX, area_minY, 0.0), (area_minX+1, area_minY, 0.0)),
+                Part.makeLine((area_minX+1, area_minY, 0.0), (area_minX+1, area_minY+1, 0.0)),
+                Part.makeLine((area_minX+1, area_minY+1, 0.0), (area_minX, area_minY+1, 0.0)),
+                Part.makeLine((area_minX, area_minY+1, 0.0), (area_minX, area_minY, 0.0))]
+
         face_area = Part.Face(Part.Wire(limit))
+        del_area = Part.Face(Part.Wire(dellim))
 
         for top in tops:
             top_wire = top.Shape.Wires[i]
             fp_upper = top_wire.Vertexes[0].Point
             lp_upper = top_wire.Vertexes[-1].Point
+
+            if fp_upper.x == lp_upper.x:
+                return face_area.common(del_area)
 
             ## Add 3 edges to B to get a closed boundary:
             edges_top = top_wire.Edges + [Part.makeLine(fp_upper, (fp_upper[0], area_minY, 0.0)),
@@ -81,6 +90,9 @@ class VolumeFunc:
             bottom_wire = bottom.Shape.Wires[i]
             fp_lower = bottom_wire.Vertexes[0].Point
             lp_lower = bottom_wire.Vertexes[-1].Point
+
+            if fp_lower.x == lp_lower.x:
+                return face_area.common(del_area)
 
             ## Add 3 edges to A to get a closed boundary:
             edges_bottom = bottom_wire.Edges + [Part.makeLine(fp_lower, (fp_lower[0], area_maxY, 0.0)),

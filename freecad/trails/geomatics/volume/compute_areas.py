@@ -63,15 +63,14 @@ class ComputeAreas:
         # Check for selected object
         selection = FreeCADGui.Selection.getSelection()
         cs = selection[-1].getParentGroup()
-        cluster = cs.getParentGroup()
+        region = cs.getParentGroup()
 
-        for item in cluster.Group:
+        for item in region.Group:
             if item.Proxy.Type == 'Trails::Volumes':
                 vol = item
-            if item.Proxy.Type == 'Trails::Guidelines':
-                gl = item
+                break
 
-        vol_areas = volume.create(gl, selection)
+        vol_areas = volume.create(selection)
         vol.addObject(vol_areas)
 
 

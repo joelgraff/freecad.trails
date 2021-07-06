@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #***********************************************************************
 #*                                                                     *
-#* Copyright (c) 2021, Joel Graff <monograff76@gmail.com               *
+#* Copyright (c) 2019 Joel Graff <monograff76@gmail.com>               *
 #*                                                                     *
 #* This program is free software; you can redistribute it and/or modify*
 #* it under the terms of the GNU Lesser General Public License (LGPL)  *
@@ -20,50 +20,54 @@
 #* USA                                                                 *
 #*                                                                     *
 #***********************************************************************
-
 """
-Class for restoring alignment data after a document has loaded
+Command to being alignment importing
 """
 
-from freecad_python_support.singleton import Singleton
+import FreeCAD, FreeCADGui
+from ...alignment import horizontal_alignment
+from freecad.trails import ICONPATH, geo_origin
+import math,copy
 
-class AlignmentRegistrar(metaclass=Singleton):
+class CreateAlignmentFromLine():
     """
-    Registrar class for managing object data restoration
+    Create alignment objects from Draft lines.
     """
-
     def __init__(self):
         """
         Constructor
         """
+        pass
 
-        self.alignments = []
-        self.group = None
-
-    def set_group(self, obj):
+    def GetResources(self):
         """
-        Set the AlignmentGroup object
+        Icon resources.
         """
 
-        self.group = obj
+        return {
+            'Pixmap'  : ICONPATH + '/icons/Object2Alignment.svg',
+            'MenuText': 'Create Alignment From Line',
+            'ToolTip' : 'Create alignment objects from Draft lines',
+            }
 
-        #force initizliation if alignments are defined:
-        if self.alignments:
-
-            for _a in self.alignments:
-                self.group.initialize_alignment(_a)
-
-            self.alignments = []
-
-    def register_alignment(self, obj):
+    def Activated(self):
         """
-        Add the alignment object
+        Command activation method
         """
+        obj = FreeCADGui.Selection.getSelection()[-1]
 
-        #initialize alignment if group is defined
-        if self.group:
-            self.group.initialize_alignment(obj)
+        origin = geo_origin.get(obj.Start)
+        base = copy.deepcopy(origin.Origin)
+        base.z = 0
 
-        #save to list until group is defined
-        else:
-            self.alignments.append(obj)
+        geometry = {'meta': {'ID': 'Alignment', 'Length': obj.Length.Value, 
+        'StartStation': 0.0, 'Description': None, 'ObjectID': None, 'Status': None, 'Start': None},
+        'station': [], 'geometry': [{'Hash': None, 'Type': 'Line', 'Start': obj.Start.add(base),
+        'End': obj.End.add(base), 'Center': None, 'PI': None, 'Description': None,
+        'BearingIn': obj.Start.sub(obj.End).getAngle(FreeCAD.Vector(1,0,0))-math.pi/2,
+        'Length': obj.Length.Value, 'ID': None, 'StartStation': None, 'Status': None, 'ObjectID': None, 'Note': None}]}
+
+        horizontal_alignment.create(geometry)
+
+
+FreeCADGui.addCommand('CreateAlignmentFromLine', CreateAlignmentFromLine())

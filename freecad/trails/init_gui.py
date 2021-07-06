@@ -110,10 +110,17 @@ class TrailsWorkbench(Gui.Workbench):
             'Section Tools': {
                 'gui': self.menu + self.toolbar,
                 'cmd': [
-                    'Create Guidelines',
+                    'Create Region',
                     'Create Sections',
                     'Compute Areas',
                     'Create Table'
+                    ]
+            },
+
+            'Pad Tools': {
+                'gui': self.menu + self.toolbar,
+                'cmd': [
+                    'Create Pad'
                     ]
             },
 
@@ -122,6 +129,7 @@ class TrailsWorkbench(Gui.Workbench):
                 'cmd': [
                     'ImportAlignmentCmd',
                     'EditAlignmentCmd',
+                    'CreateAlignmentFromLine'
                     ]
             },
 
@@ -207,12 +215,14 @@ class TrailsWorkbench(Gui.Workbench):
         """
         from .geomatics.point import import_points, export_points, create_pointgroup
         from .geomatics.surface import create_surface, edit_surface
-        from .geomatics.guideline import create_guidelines
+        from .geomatics.region import create_region
         from .geomatics.section import create_sections
         from .geomatics.volume import compute_areas
         from .geomatics.table import create_table
+        from .geomatics.pad import create_pad
         from .geomatics import geoimport_gui
 
+        from .design.project.commands import create_alignment_from_line
         from .design.project.commands import import_alignment_cmd
         from .design.project.commands import edit_alignment_cmd
         from .design.project.commands import trails_guide_cmd

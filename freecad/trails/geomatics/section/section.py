@@ -21,30 +21,28 @@
 # ***********************************************************************
 
 '''
-Create a Cross Section object from FPO.
+Create a Section object from FPO.
 '''
 
-import FreeCAD
-import Part
+import FreeCAD, Part
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
-from .cs_func import CSFunc
+from .section_func import SectionFunc
 import copy, random
 
 
 def create():
-    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "CrossSection")
-    obj.Label = "Cross Section"
-    cs = CrossSection(obj)
-    ViewProviderCrossSection(obj.ViewObject)
+    obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "Section")
+    Section(obj)
+    ViewProviderSection(obj.ViewObject)
     obj.touch()
 
     return obj
 
 
-class CrossSection(CSFunc):
+class Section(SectionFunc):
     """
-    This class is about Cross Section object data features.
+    This class is about Section object data features.
     """
 
     def __init__(self, obj):
@@ -52,7 +50,7 @@ class CrossSection(CSFunc):
         Set data properties.
         '''
 
-        self.Type = 'Trails::CrossSection'
+        self.Type = 'Trails::Section'
 
         obj.addProperty(
             'App::PropertyLink', "Surface", "Base",
@@ -77,14 +75,9 @@ class CrossSection(CSFunc):
 
             if surface:
                 cs = obj.getParentGroup()
-                cluster = cs.getParentGroup()
+                region = cs.getParentGroup()
 
-                for item in cluster.Group:
-                    if item.Proxy.Type == 'Trails::Guidelines':
-                        gl = item
-                        break
-
-                obj.MinZ = self.minimum_elevations(gl, surface)
+                obj.MinZ = self.minimum_elevations(region, surface)
 
     def execute(self, obj):
         '''
@@ -94,15 +87,10 @@ class CrossSection(CSFunc):
 
         if surface and obj.InList:
             cs = obj.getParentGroup()
-            cluster = cs.getParentGroup()
+            region = cs.getParentGroup()
 
             horizons = cs.Horizons
             if not horizons: return
-
-            for item in cluster.Group:
-                if item.Proxy.Type == 'Trails::Guidelines':
-                    gl = item
-                    break
 
             pos = cs.Position
             h = cs.Heigth.Value
@@ -112,11 +100,11 @@ class CrossSection(CSFunc):
             geometry = [h, w]
             gaps = [ver, hor]
 
-            obj.Shape = self.draw_2d_sections(pos, gl, surface, geometry, gaps, horizons)
+            obj.Shape = self.draw_2d_sections(pos, region, surface, geometry, gaps, horizons)
 
 
 
-class ViewProviderCrossSection:
+class ViewProviderSection:
     """
     This class is about Point Group Object view features.
     """

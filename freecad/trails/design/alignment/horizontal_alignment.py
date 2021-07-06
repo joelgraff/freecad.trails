@@ -42,7 +42,7 @@ from .alignment_model import AlignmentModel
 from .alignment import Alignment
 from .alignment_registrar import AlignmentRegistrar
 
-from ...geomatics.guideline import gl_clusters
+from ...geomatics.region import regions
 
 __title__ = 'horizontal_alignment.py'
 __author__ = 'Joel Graff'
@@ -79,8 +79,8 @@ def create(geometry, object_name='', parent=None, no_visual=False, zero_referenc
     _obj.Proxy.set_geometry(geometry, zero_reference)
     ViewProviderHorizontalAlignment(_obj.ViewObject)
 
-    clusters = gl_clusters.create()
-    _obj.addObject(clusters)
+    regs = regions.create()
+    _obj.addObject(regs)
 
     App.ActiveDocument.recompute()
 
@@ -167,7 +167,7 @@ class HorizontalAlignment(Alignment):
         self.init_class_members(obj)
 
         #create property to indicate object is fully initialized
-        #done to prevent premature event excution
+        #done to prevent premature event execution
         obj.addProperty('App::PropertyBool', 'Initialized', 'Base', 'Is Initialized').Initialized = True
 
     def init_class_members(self, obj):
@@ -468,32 +468,44 @@ class HorizontalAlignment(Alignment):
         """
         Recompute callback
         """
-
-        #if not super().execute(obj):
-        #    return
-
-        points = None
-
         if hasattr(self.model, 'discretize_geometry'):
-            points = self.model.discretize_geometry(
-                [0.0], self.Object.Method, self.Object.Seg_Value)
+            curves, spirals, lines, points = obj.Proxy.model.discretize_geometry(
+                [0.0], obj.Method, obj.Seg_Value, types=True)
 
-        if not points:
-            return
+            # Get GeoOrigin.
+            origin = geo_origin.get(points[0])
+            base = deepcopy(origin.Origin)
+            base.z = 0
 
-        _wires = []
-        _prev = App.Vector(points[0])
+            line_obj = []
+            curve_obj = []
+            spiral_obj = []
 
-        for _p in points[1:]:
-            _q = App.Vector(_p)
+            for i in lines:
+                cpnt = App.Vector(i[0]).sub(base)
+                npnt = App.Vector(i[1]).sub(base)
+                line = Part.makeLine(cpnt, npnt)
+                line_obj.append(line)
 
-            _wires.append(Part.LineSegment(_prev, _q))
-            _prev = _q
+            for curve in curves:
+                points = []
+                for pnt in curve:
+                    points.append(App.Vector(pnt).sub(base))
+                wire = Part.makePolygon(points)
+                curve_obj.append(wire)
 
-        _shape = Part.Shape(_wires)
-        _wire = Part.Wire(_shape.Edges)
+            for spiral in spirals:
+                points = []
+                for pnt in spiral:
+                    points.append(App.Vector(pnt).sub(base))
+                wire = Part.makePolygon(points)
+                spiral_obj.append(wire)
 
-        obj.Shape = Part.makeCompound(_wire)
+            line_comp = Part.makeCompound(line_obj)
+            curve_comp = Part.makeCompound(curve_obj)
+            spiral_comp = Part.makeCompound(spiral_obj)
+
+            obj.Shape = Part.makeCompound([line_comp, curve_comp, spiral_comp])
 
 class ViewProviderHorizontalAlignment():
 
@@ -526,6 +538,18 @@ class ViewProviderHorizontalAlignment():
         line_style.style = coin.SoDrawStyle.LINES
         line_style.lineWidth = 2
 
+        # Curve root.
+        self.curve_coords = coin.SoGeoCoordinate()
+        self.curves = coin.SoLineSet()
+        curve_color = coin.SoBaseColor()
+        curve_color.rgb = (1.0, 1.0, 0.0)
+
+        # Spiral root.
+        self.spiral_coords = coin.SoGeoCoordinate()
+        self.spirals = coin.SoLineSet()
+        spiral_color = coin.SoBaseColor()
+        spiral_color.rgb = (0.0, 0.33, 1.0)
+
         # Labels root.
         self.tick_coords = coin.SoGeoCoordinate()
         self.ticks = coin.SoLineSet()
@@ -535,6 +559,13 @@ class ViewProviderHorizontalAlignment():
         highlight = coin.SoType.fromName('SoFCSelection').createInstance()
         highlight.style = 'EMISSIVE_DIFFUSE'
         highlight.addChild(line_style)
+        highlight.addChild(curve_color)
+        highlight.addChild(self.curve_coords)
+        highlight.addChild(self.curves)
+        highlight.addChild(spiral_color)
+        highlight.addChild(self.spiral_coords)
+        highlight.addChild(self.spirals)
+        highlight.addChild(line_color)
         highlight.addChild(self.line_coords)
         highlight.addChild(self.lines)
         highlight.addChild(self.tick_coords)
@@ -542,7 +573,6 @@ class ViewProviderHorizontalAlignment():
 
         # Alignment root.
         lines_root = coin.SoSeparator()
-        lines_root.addChild(line_color)
         lines_root.addChild(self.labels)
         lines_root.addChild(highlight)
         vobj.addDisplayMode(lines_root,"Wireframe")
@@ -555,10 +585,9 @@ class ViewProviderHorizontalAlignment():
         if prop == "Labels":
 
             self.labels.removeAllChildren()
-            labels = vobj.getPropertyByName("Labels")
+            labels = vobj.getPropertyByName(prop)
 
             if labels:
-
                 # Get GeoOrigin.
                 origin = geo_origin.get()
                 base = deepcopy(origin.Origin)
@@ -571,7 +600,6 @@ class ViewProviderHorizontalAlignment():
                 stations = self.get_stations(vobj.Object)
 
                 for label, tick in stations.items():
-
                     font = coin.SoFont()
                     font.size = 3000
                     sta_label = coin.SoSeparator()
@@ -597,25 +625,67 @@ class ViewProviderHorizontalAlignment():
         '''
         Update Object visuals when a data property changed.
         '''
-
         if prop == "Shape":
-            shape = obj.getPropertyByName("Shape")
+            shape = obj.getPropertyByName(prop)
+            if not shape.SubShapes: return
 
-            if shape.Vertexes:
+            # Get GeoOrigin.
+            origin = geo_origin.get()
+            base = deepcopy(origin.Origin)
+            base.z = 0
+
+            geo_system = ["UTM", origin.UtmZone, "FLAT"]
+            self.line_coords.geoSystem.setValues(geo_system)
+            self.curve_coords.geoSystem.setValues(geo_system)
+            self.spiral_coords.geoSystem.setValues(geo_system)
+
+            lines = shape.SubShapes[0]
+            curves = shape.SubShapes[1]
+            spirals = shape.SubShapes[2]
+
+            line_points = []
+            curve_points = []
+            spiral_points = []
+
+            line_vert = []
+            curve_vert = []
+            spiral_vert = []
+
+            for i in lines.SubShapes:
                 points = []
+                for vertex in i.Vertexes:
+                    pnt = vertex.Point.add(base)
+                    points.append((pnt[0], pnt[1], pnt[2]))
 
-                for vertex in shape.Vertexes:
-                    points.append(vertex.Point)
+                line_points.extend(points)
+                line_vert.append(len(points))
 
-                # Get GeoOrigin.
-                origin = geo_origin.get(points[0])
-                base = deepcopy(origin.Origin)
-                base.z = 0
+            for i in curves.SubShapes:
+                points = []
+                for vertex in i.Vertexes:
+                    pnt = vertex.Point.add(base)
+                    points.append((pnt[0], pnt[1], pnt[2]))
 
-                # Set GeoCoords.
-                geo_system = ["UTM", origin.UtmZone, "FLAT"]
-                self.line_coords.geoSystem.setValues(geo_system)
-                self.line_coords.point.values = points
+                curve_points.extend(points)
+                curve_vert.append(len(points))
+
+            for i in spirals.SubShapes:
+                points = []
+                for vertex in i.Vertexes:
+                    pnt = vertex.Point.add(base)
+                    points.append((pnt[0], pnt[1], pnt[2]))
+
+                spiral_points.extend(points)
+                spiral_vert.append(len(points))
+
+            self.curve_coords.point.values = curve_points
+            self.curves.numVertices.values = curve_vert
+
+            self.spiral_coords.point.values = spiral_points
+            self.spirals.numVertices.values = spiral_vert
+
+            self.line_coords.point.values = line_points
+            self.lines.numVertices.values = line_vert
 
     def get_stations(self, obj):
         """
@@ -630,9 +700,7 @@ class ViewProviderHorizontalAlignment():
         stations = {}
 
         for sta in range(int(start), int(end)):
-
             if sta % 10 == 0:
-
                 tuple_coord, tuple_vec =\
                     obj.Proxy.model.get_orthogonal( sta, "Left", True)
 

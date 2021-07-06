@@ -33,12 +33,11 @@ import random, copy
 
 
 
-def create(gl, sections, name='Volume Areas'):
+def create(sections, name='Volume Areas'):
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "VolumeAreas")
     obj.Label = name
 
     VolumeAreas(obj)
-    obj.Guidelines = gl
     obj.TopSections = sections[0]
     obj.BottomSections = sections[1]
     ViewProviderVolumeAreas(obj.ViewObject)
@@ -58,10 +57,6 @@ class VolumeAreas(VolumeFunc):
         Set data properties.
         '''
         self.Type = 'Trails::Volume'
-
-        obj.addProperty(
-            'App::PropertyLink', "Guidelines", "Base",
-            "Guidelines").Guidelines = None
 
         obj.addProperty(
             'App::PropertyLinkList', "TopSections", "Base",
@@ -87,12 +82,13 @@ class VolumeAreas(VolumeFunc):
         '''
         Do something when doing a recomputation. 
         '''
-        gl = obj.getPropertyByName("Guidelines")
+        volumes = obj.getParentGroup()
+        region = volumes.getParentGroup()
         tops = obj.getPropertyByName("TopSections")
         bottoms = obj.getPropertyByName("BottomSections")
 
-        if gl and tops and bottoms:
-            obj.Shape = self.get_areas(gl, tops, bottoms)
+        if tops and bottoms:
+            obj.Shape = self.get_areas(region, tops, bottoms)
 
 class ViewProviderVolumeAreas:
     """

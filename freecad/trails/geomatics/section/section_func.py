@@ -22,16 +22,16 @@
 # ***********************************************************************
 
 '''
-Define Surface Object functions.
+Define Section object functions.
 '''
 
 import FreeCAD
 import Part, MeshPart
 import copy, math
 
-class CSFunc:
+class SectionFunc:
     """
-    This class is contain Surface Object functions.
+    This class is contain Section object functions.
     """
     def __init__(self):
         pass
@@ -101,24 +101,24 @@ class CSFunc:
                 params.append(edge.LastParameter-1)
 
                 values = [edge.valueAt(glp) for glp in params]
-                points += values
+                points.extend(values)
 
             section_3d = MeshPart.projectPointsOnMesh(
                 points, surface.Mesh, FreeCAD.Vector(0, 0, 1))
 
             section_2d = self.section_converter(section_3d, origin)
+            if not section_2d:
+                section_2d = [FreeCAD.Vector(0,0,0),FreeCAD.Vector(0,1,0)]
 
             draw_sec = []
-            for pnt in section_2d:
-                draw_sec.append(pnt.add(position))
+            for idx in range(0, len(section_2d)-1):
+                if section_2d[idx] == section_2d[idx+1]: continue
+                draw_sec.append(section_2d[idx].add(position))
 
-            line_segments = []
-            for c in range(0, len(draw_sec)-1):
-                if draw_sec[c] == draw_sec[c+1]: continue
-                line_segments.append(Part.LineSegment(draw_sec[c], draw_sec[c+1]))
-
-            shape = Part.Shape(line_segments)
-            sec = Part.Wire(shape.Edges)
+            if len(draw_sec) > 2:
+                sec = Part.makePolygon(draw_sec)
+            else:
+                sec = Part.makePolygon([position, position.add(FreeCAD.Vector(0, 1, 0))])
 
             if horizons:
                 reduce_vector = FreeCAD.Vector(0, horizons[i]-1000, 0)

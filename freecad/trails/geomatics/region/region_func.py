@@ -22,19 +22,46 @@
 # ***********************************************************************
 
 '''
-Define Surface Object functions.
+Define Region Object functions.
 '''
 
 import FreeCAD
 import Part
 import copy
 
-class GLCFunc:
+class RegionFunc:
     """
-    This class is contain Surface Object functions.
+    This class is contain Region Object functions.
     """
     def __init__(self):
         pass
+
+    def get_lines(self, fpoint, alignment, offsets, stations):
+        """
+        Create Region guide lines
+        """
+        gls = []
+
+        # Get left and right offsets from centerline
+        left_offset = offsets[0]
+        right_offset = offsets[1]
+
+        # Computing coordinates and orthoginals for guidelines
+        for sta in stations:
+            tuple_coord, tuple_vec = alignment.Proxy.model.get_orthogonal( sta, "Left")
+            coord = FreeCAD.Vector(tuple_coord).sub(fpoint)
+            vec = FreeCAD.Vector(tuple_vec)
+
+            left_vec = copy.deepcopy(vec)
+            right_vec = copy.deepcopy(vec)
+
+            left_side = coord.add(left_vec.multiply(left_offset))
+            right_side = coord.add(right_vec.negative().multiply(right_offset))
+
+            # Generate guide line object and add to cluster
+            gls.append(Part.makePolygon([left_side, coord, right_side]))
+
+        return Part.makeCompound(gls)
 
     def get_alignment_infos(self, alignment):
         if hasattr(alignment.Proxy, 'model'):
@@ -49,7 +76,7 @@ class GLCFunc:
 
     def generate(self, alignment, increments, region, horiz_pnts = True):
         """
-        Generates guidelines along a selected alignment
+        get guideline stations along an alignment
         """
         # Guideline intervals
         tangent_increment = increments[0]/1000
@@ -101,7 +128,7 @@ class GLCFunc:
             # Add the end station
             stations.append(round(end,3))
 
-        # Create guide lines from standart line object
+        # Create guide lines from standard line object
         else:
             length = alignment.Length.Value
             for sta in range(0, int(length/1000)):

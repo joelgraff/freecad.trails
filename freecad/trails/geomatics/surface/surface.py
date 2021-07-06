@@ -25,7 +25,7 @@ Create a Surface Object from FPO.
 '''
 
 import FreeCAD
-import Mesh
+import Mesh, Part
 from pivy import coin
 from .surface_func import SurfaceFunc
 from freecad.trails import ICONPATH, geo_origin
@@ -83,13 +83,8 @@ class Surface(SurfaceFunc):
             "App::PropertyFloatConstraint", "ContourInterval", "Contour",
             "Size of the point group").ContourInterval = (1.0, 0.0, 100.0, 1.0)
 
-        obj.addProperty(
-            "App::PropertyVectorList", "ContourPoints", "Contour",
-            "Points of contours", 4).ContourPoints = []
-
-        obj.addProperty(
-            "App::PropertyIntegerList", "ContourVertices", "Contour",
-            "Vertices of contours.", 4).ContourVertices = []
+        obj.addProperty("Part::PropertyPartShape", "ContourShapes", "Base",
+            "Contour Shapes").ContourShapes = Part.Shape()
 
         obj.Proxy = self
 
@@ -125,10 +120,7 @@ class Surface(SurfaceFunc):
             deltaH = obj.getPropertyByName("ContourInterval")
             mesh = obj.getPropertyByName("Mesh")
 
-            coords, num_vert = self.contour_points(origin.Origin, mesh, deltaH)
-
-            obj.ContourPoints = coords
-            obj.ContourVertices = num_vert
+            obj.ContourShapes = self.get_contours(origin.Origin, mesh, deltaH)
 
     def execute(self, obj):
         '''
@@ -146,10 +138,12 @@ class ViewProviderSurface:
         Set view properties.
         '''
         (r, g, b) = (random.random(), random.random(), random.random())
+        material = FreeCAD.Material()
+        material.DiffuseColor = (r, g, b, 0.8)
 
         vobj.addProperty(
-            "App::PropertyColor", "TriangleColor", "Surface Style",
-            "Color of the point group").TriangleColor = (r, g, b)
+            "App::PropertyMaterial", "TriangleColor", "Surface Style",
+            "Color of the point group").TriangleColor=material
 
         vobj.Proxy = self
 
@@ -224,13 +218,19 @@ class ViewProviderSurface:
         try:
             if prop == "TriangleColor":
                 color = vobj.getPropertyByName("TriangleColor")
-                self.mat_color.diffuseColor = (color[0],color[1],color[2])
+                print(color.DiffuseColor)
+                self.mat_color.diffuseColor = color.DiffuseColor[:3]
+                self.mat_color.transparency = color.DiffuseColor[3]
         except Exception: pass
 
     def updateData(self, obj, prop):
         '''
         Update Object visuals when a data property changed.
         '''
+        origin = geo_origin.get()
+        base = copy.deepcopy(origin.Origin)
+        base.z = 0
+
         if prop == "Mesh":
             mesh = obj.getPropertyByName("Mesh")
             topo_points = mesh.Topology[0]
@@ -239,9 +239,6 @@ class ViewProviderSurface:
             # Get GeoOrigin.
             points = []
             triangles = []
-            origin = geo_origin.get()
-            base = copy.deepcopy(origin.Origin)
-            base.z = 0
 
             for i in topo_points:
                 point = copy.deepcopy(i)
@@ -260,11 +257,21 @@ class ViewProviderSurface:
             self.cont_coords.geoSystem.setValues(geo_system)
             self.triangles.coordIndex.values = triangles
 
-        if prop == "Mesh" or prop == "ContourInterval":
-            cont_points = obj.getPropertyByName("ContourPoints")
-            cont_vert = obj.getPropertyByName("ContourVertices")
+        if prop == "ContourShapes":
+            cont_shps = obj.getPropertyByName(prop)
+            cont_pnts = []
+            cont_vert = []
 
-            self.cont_coords.point.values = cont_points
+            for i in cont_shps.Wires:
+                points = []
+                for vertex in i.Vertexes:
+                    pnt = vertex.Point.add(base)
+                    points.append((pnt[0], pnt[1], pnt[2]))
+
+                cont_pnts.extend(points)
+                cont_vert.append(len(points))
+
+            self.cont_coords.point.values = cont_pnts
             self.cont_lines.numVertices.values = cont_vert
 
     def getDisplayModes(self,vobj):

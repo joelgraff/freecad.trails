@@ -31,14 +31,13 @@ import copy
 
 
 
-def create(pos, gl, volume, name='Table'):
+def create(pos, volume, name='Table'):
     obj=FreeCAD.ActiveDocument.addObject(
         "App::FeaturePython", "Table")
 
     obj.Label = name
     Table(obj)
     obj.Position = pos
-    obj.Guidelines = gl
     obj.VolumeAreas = volume
     ViewProviderTable(obj.ViewObject)
 
@@ -68,12 +67,8 @@ class Table:
             "Section creation origin").Position = FreeCAD.Vector()
 
         obj.addProperty(
-            'App::PropertyLink', "Guidelines", "Base",
-            "Guidelines").Guidelines = None
-
-        obj.addProperty(
             'App::PropertyLink', "VolumeAreas", "Base",
-            "Guidelines").VolumeAreas = None
+            "Volume Areas").VolumeAreas = None
 
         obj.Proxy = self
 
@@ -131,12 +126,13 @@ class ViewProviderTable:
         '''
         Update Object visuals when a data property changed.
         '''
-        guidelines = obj.getPropertyByName("Guidelines")
+        tables = obj.getParentGroup()
+        region = tables.getParentGroup()
         volume_areas = obj.getPropertyByName("VolumeAreas")
 
-        if guidelines and volume_areas:
+        if volume_areas:
             pos = obj.getPropertyByName("Position")
-            if prop == "Guidelines" or prop == "VolumeAreas" or prop == "TableTitle":
+            if prop == "VolumeAreas" or prop == "TableTitle":
                 self.table_columns.removeAllChildren()
                 origin = geo_origin.get()
                 base = copy.deepcopy(origin.Origin)
@@ -162,7 +158,7 @@ class ViewProviderTable:
                 title.addChild(text)
 
                 # Stations column
-                sta_list = [str(round(i,2)) for i in obj.Guidelines.StationList]
+                sta_list = [str(round(i,2)) for i in region.StationList]
                 sta_list.insert(0,column_titles[0])
 
                 sta_column = coin.SoSeparator()
