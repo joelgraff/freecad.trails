@@ -59,12 +59,10 @@ class SurfaceFunc:
 
         return delaunay
 
-    def test_delaunay(self, origin, points, delaunay, lmax, amax):
+    def test_delaunay(self, points, delaunay, lmax, amax):
         """
         Test delaunay for max length and max angle.
         """
-        base = copy.deepcopy(origin)
-        base.z = 0
         index = []
         mesh_index = []
 
@@ -82,7 +80,7 @@ class SurfaceFunc:
                 index.extend([first, second, third])
 
         for i in index:
-            mesh_index.append(points[i].sub(base))
+            mesh_index.append(points[i])
 
         return Mesh.Mesh(mesh_index)
 
@@ -120,7 +118,7 @@ class SurfaceFunc:
                 return False
         return True
 
-    def get_contours(self, fpoint, mesh, deltaH):
+    def get_contours(self, mesh, deltaH):
         """
         Create contour lines for selected surface
         """
@@ -132,8 +130,6 @@ class SurfaceFunc:
         # Get point list and create contour points
         cont_points = []
         cont_obj = []
-        base = copy.deepcopy(fpoint)
-        base.z = 0
         for H in range(int(round(zmin)), int(round(zmax))):
             if deltaH == 0: break
             if H % deltaH == 0:
