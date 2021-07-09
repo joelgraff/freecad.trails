@@ -95,11 +95,7 @@ class Surface(SurfaceFunc):
         points = []
         pgs = obj.getPropertyByName("PointGroups")
         for pg in pgs:
-            points.extend(pg.Points)
-        if points:
-            origin = geo_origin.get(points[0])
-        else:
-            origin = geo_origin.get()
+            points.extend(pg.Points.Points)
 
         if prop =="PointGroups":
             if len(points) > 2:
@@ -114,13 +110,13 @@ class Surface(SurfaceFunc):
 
             if delaunay:
                 obj.Mesh = self.test_delaunay(
-                    origin.Origin, points, delaunay, lmax, amax)
+                    points, delaunay, lmax, amax)
 
         if prop == "Mesh" or prop == "ContourInterval":
             deltaH = obj.getPropertyByName("ContourInterval")
             mesh = obj.getPropertyByName("Mesh")
 
-            obj.ContourShapes = self.get_contours(origin.Origin, mesh, deltaH)
+            obj.ContourShapes = self.get_contours(mesh, deltaH)
 
     def execute(self, obj):
         '''
