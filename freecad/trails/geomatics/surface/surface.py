@@ -134,14 +134,22 @@ class ViewProviderSurface:
         Set view properties.
         '''
         (r, g, b) = (random.random(), random.random(), random.random())
-        material = FreeCAD.Material()
-        material.DiffuseColor = (r, g, b, 0.8)
 
         vobj.addProperty(
-            "App::PropertyMaterial", "TriangleColor", "Surface Style",
-            "Color of the point group").TriangleColor=material
+            "App::PropertyIntegerConstraint", "Transparency", "Surface Style",
+            "Color of the point group").Transparency = (80,0,100,1)
+
+        vobj.addProperty(
+            "App::PropertyColor", "ShapeColor", "Surface Style",
+            "Color of the point group").ShapeColor = (r, g, b, vobj.Transparency/100)
+
+        vobj.addProperty(
+            "App::PropertyMaterial", "ShapeMaterial", "Surface Style",
+            "Color of the point group").ShapeMaterial = FreeCAD.Material()
 
         vobj.Proxy = self
+
+        vobj.ShapeMaterial.DiffuseColor = vobj.ShapeColor
 
     def attach(self, vobj):
         '''
@@ -205,19 +213,24 @@ class ViewProviderSurface:
         vobj.addDisplayMode(surface_root,"Surface")
 
         # Take features from properties.
-        self.onChanged(vobj,"TriangleColor")
+        self.onChanged(vobj,"ShapeColor")
 
     def onChanged(self, vobj, prop):
         '''
         Update Object visuals when a view property changed.
         '''
-        try:
-            if prop == "TriangleColor":
-                color = vobj.getPropertyByName("TriangleColor")
-                print(color.DiffuseColor)
+        if prop == "ShapeColor" or prop == "Transparency":
+            color = vobj.getPropertyByName("ShapeColor")
+            transparency = vobj.getPropertyByName("Transparency")
+            color = (color[0], color[1], color[2], transparency/100)
+            vobj.ShapeMaterial.DiffuseColor = color
+
+        if prop == "ShapeMaterial":
+            color = vobj.getPropertyByName(prop)
+            try:
                 self.mat_color.diffuseColor = color.DiffuseColor[:3]
                 self.mat_color.transparency = color.DiffuseColor[3]
-        except Exception: pass
+            except Exception: pass
 
     def updateData(self, obj, prop):
         '''
