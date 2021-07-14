@@ -57,25 +57,29 @@ class Surface(SurfaceFunc):
         '''
         self.Type = 'Trails::Surface'
 
+        obj.addProperty(
+            'App::PropertyPlacement', "Placement", "Base",
+            "Placement").Placement = FreeCAD.Placement()
+
         # Triangulation properties.
         obj.addProperty(
-            'App::PropertyLinkList', "PointGroups", "Base",
+            'App::PropertyLinkList', "PointGroups", "Triangulation",
             "List of Point Groups").PointGroups = []
 
         obj.addProperty(
-            "App::PropertyIntegerList", "Delaunay", "Base",
+            "App::PropertyIntegerList", "Delaunay", "Triangulation",
             "Index of Delaunay vertices", 4).Delaunay = []
 
         obj.addProperty(
-            "Mesh::PropertyMeshKernel", "Mesh", "Base",
+            "Mesh::PropertyMeshKernel", "Mesh", "Triangulation",
             "Mesh object of triangulation").Mesh = Mesh.Mesh()
 
         obj.addProperty(
-            "App::PropertyLength", "MaxLength", "Base",
+            "App::PropertyLength", "MaxLength", "Triangulation",
             "Maximum length of triangle edge").MaxLength = 50000
 
         obj.addProperty(
-            "App::PropertyAngle","MaxAngle","Base",
+            "App::PropertyAngle","MaxAngle","Triangulation",
             "Maximum angle of triangle edge").MaxAngle = 170
 
         # Contour properties.
@@ -118,6 +122,12 @@ class Surface(SurfaceFunc):
 
             obj.ContourShapes = self.get_contours(mesh, deltaH)
 
+        if prop == "Placement":
+            placement = obj.getPropertyByName(prop)
+            copy_mesh = obj.Mesh.copy()
+            copy_mesh.Placement = placement
+            obj.Mesh = copy_mesh
+
     def execute(self, obj):
         '''
         Do something when doing a recomputation. 
@@ -137,15 +147,15 @@ class ViewProviderSurface:
 
         vobj.addProperty(
             "App::PropertyIntegerConstraint", "Transparency", "Surface Style",
-            "Color of the point group").Transparency = (80,0,100,1)
+            "Set triangle face transparency").Transparency = (80,0,100,1)
 
         vobj.addProperty(
             "App::PropertyColor", "ShapeColor", "Surface Style",
-            "Color of the point group").ShapeColor = (r, g, b, vobj.Transparency/100)
+            "Set triangle face color").ShapeColor = (r, g, b, vobj.Transparency/100)
 
         vobj.addProperty(
             "App::PropertyMaterial", "ShapeMaterial", "Surface Style",
-            "Color of the point group").ShapeMaterial = FreeCAD.Material()
+            "Triangle face material").ShapeMaterial = FreeCAD.Material()
 
         vobj.Proxy = self
 
