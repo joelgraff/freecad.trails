@@ -476,21 +476,21 @@ class AlignmentModel:
 
         align_length = self.data.get('meta').get('Length')
 
-                if _pts:
-                    points.append(_pts)
-                    spirals.append([(i.x, i.y, i.z) for i in _pts])
+        if _pts:
+            points.append(_pts)
+            spirals.append([(i.x, i.y, i.z) for i in _pts])
 
-            else:
-                _start = _geo_list[-1].get('End')
-                bearing = _geo_list[-1].get('BearingOut')
+        else:
+            _start = _geo_list[-1].get('End')
+            bearing = _geo_list[-1].get('BearingOut')
 
-                _start_coord = line.get_coordinate(
-                    curve.get('Start'), curve.get('BearingIn'), _arc_int[0])
+            _start_coord = line.get_coordinate(
+                curve.get('Start'), curve.get('BearingIn'), _arc_int[0])
 
-                _pts = [_start_coord, line.get_coordinate(
-                    _start_coord, curve.get('BearingIn'), _arc_int[1])]
-                points.append(_pts)
-                lines.append(_pts)
+            _pts = [_start_coord, line.get_coordinate(
+                _start_coord, curve.get('BearingIn'), _arc_int[1])]
+            points.append(_pts)
+            lines.append(_pts)
 
         self.data['geometry'] = _geo_list
 
