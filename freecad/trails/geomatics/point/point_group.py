@@ -25,10 +25,11 @@ Create a Point Group Object from FPO.
 '''
 
 import FreeCAD
+import Points
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin, marker_dict
 from . import  point_groups
-import random
+import random, copy
 
 
 
@@ -51,7 +52,7 @@ def create(points=[], name='Point Group'):
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "PointGroup")
     obj.Label = name
     PointGroup(obj)
-    obj.Points = points
+    obj.Vectors = points
     ViewProviderPointGroup(obj.ViewObject)
     group.addObject(obj)
     FreeCAD.ActiveDocument.recompute()
@@ -76,8 +77,8 @@ class PointGroup:
             "List of group points").PointNames = []
 
         obj.addProperty(
-            "App::PropertyVectorList", "Points", "Base",
-            "List of group points").Points = []
+            "App::PropertyVectorList", "Vectors", "Base",
+            "List of group points").Vectors = []
 
         obj.addProperty(
             "App::PropertyStringList", "Descriptions", "Base",
@@ -87,16 +88,29 @@ class PointGroup:
             "App::PropertyEnumeration", "Marker", "Base",
             "List of point markers").Marker = [*marker_dict]
 
+        obj.addProperty(
+            "Points::PropertyPointKernel", "Points", "Base",
+            "Point Kernel").Points = Points.Points()
+
         obj.Proxy = self
 
     def onChanged(self, obj, prop):
         '''
         Do something when a data property has changed.
         '''
-        if prop == "Points":
-            points = obj.getPropertyByName("Points")
-            if points:
-                origin = geo_origin.get(points[0])
+        if prop == "Vectors":
+            vectors = obj.getPropertyByName(prop)
+            if vectors:
+                origin = geo_origin.get(vectors[0])
+                base = copy.deepcopy(origin.Origin)
+                base.z = 0
+
+                points = []
+                for i in vectors:
+                    point = copy.deepcopy(i)
+                    points.append(point.sub(base))
+
+                obj.Points = Points.Points(points)
 
     def execute(self, obj):
         '''
@@ -225,11 +239,11 @@ class ViewProviderPointGroup:
                     self.point_labels.addChild(point_label)
 
         if prop == "PointSize":
-            size = vobj.getPropertyByName("PointSize")
+            size = vobj.getPropertyByName(prop)
             self.point_style.pointSize = size
 
         if prop == "PointColor":
-            color = vobj.getPropertyByName("PointColor")
+            color = vobj.getPropertyByName(prop)
             self.color_mat.diffuseColor = (color[0],color[1],color[2])
 
     def updateData(self, obj, prop):
@@ -237,16 +251,23 @@ class ViewProviderPointGroup:
         Update Object visuals when a data property changed.
         '''
         if prop == "Points":
-            points = obj.getPropertyByName("Points")
-            if points:
-                origin = geo_origin.get(points[0])
+            points = obj.getPropertyByName(prop)
+            if points.Points:
+                origin = geo_origin.get()
+                base = copy.deepcopy(origin.Origin)
+                base.z = 0
+
+                pts = []
+                for i in points.Points:
+                    point = copy.deepcopy(i)
+                    pts.append(point.add(base))
 
                 geo_system = ["UTM", origin.UtmZone, "FLAT"]
                 self.geo_coords.geoSystem.setValues(geo_system)
-                self.geo_coords.point.values = points
+                self.geo_coords.point.values = pts
 
         if prop == "Marker":
-            marker = obj.getPropertyByName("Marker")
+            marker = obj.getPropertyByName(prop)
             self.markers.markerIndex = marker_dict[marker]
 
     def getDisplayModes(self, vobj):

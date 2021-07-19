@@ -59,12 +59,10 @@ class SurfaceFunc:
 
         return delaunay
 
-    def test_delaunay(self, origin, points, delaunay, lmax, amax):
+    def test_delaunay(self, points, delaunay, lmax, amax):
         """
         Test delaunay for max length and max angle.
         """
-        base = copy.deepcopy(origin)
-        base.z = 0
         index = []
         mesh_index = []
 
@@ -82,7 +80,7 @@ class SurfaceFunc:
                 index.extend([first, second, third])
 
         for i in index:
-            mesh_index.append(points[i].sub(base))
+            mesh_index.append(points[i])
 
         return Mesh.Mesh(mesh_index)
 
@@ -120,29 +118,39 @@ class SurfaceFunc:
                 return False
         return True
 
-    def get_contours(self, fpoint, mesh, deltaH):
+    def get_contours(self, mesh, major, minor):
         """
         Create contour lines for selected surface
         """
-
         # Find max and min elevation of mesh
         zmax = mesh.BoundBox.ZMax/1000
         zmin = mesh.BoundBox.ZMin/1000
 
         # Get point list and create contour points
-        cont_points = []
-        cont_obj = []
-        base = copy.deepcopy(fpoint)
-        base.z = 0
-        for H in range(int(round(zmin)), int(round(zmax))):
-            if deltaH == 0: break
-            if H % deltaH == 0:
-                cont_points = mesh.crossSections(
-                    [((0, 0, H*1000), (0, 0, 1))], 0.000001)
+        minor_contours = []
+        major_contours = []
 
-            if cont_points:
-                for cont in cont_points[0]:
-                    wire = Part.makePolygon(cont)
-                    cont_obj.append(wire)
+        delta = minor
+        while delta < zmax:
+            if minor == 0: break
+            cross_sections = mesh.crossSections([((0, 0, delta*1000), (0, 0, 1))], 0.000001)
 
-        return Part.makeCompound(cont_obj)
+            for point_list in cross_sections[0]:
+                wire = Part.makePolygon(point_list)
+
+                if delta % major == 0:
+                    major_contours.append(wire)
+                else:
+                    minor_contours.append(wire)
+
+                del point_list
+
+            del cross_sections
+            delta += minor
+
+        majors = Part.makeCompound(major_contours)
+        minors = Part.makeCompound(minor_contours)
+
+        del major_contours, minor_contours
+
+        return Part.makeCompound([majors, minors])

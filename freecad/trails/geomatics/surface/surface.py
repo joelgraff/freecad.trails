@@ -57,31 +57,39 @@ class Surface(SurfaceFunc):
         '''
         self.Type = 'Trails::Surface'
 
+        obj.addProperty(
+            'App::PropertyPlacement', "Placement", "Base",
+            "Placement").Placement = FreeCAD.Placement()
+
         # Triangulation properties.
         obj.addProperty(
-            'App::PropertyLinkList', "PointGroups", "Base",
+            'App::PropertyLinkList', "PointGroups", "Triangulation",
             "List of Point Groups").PointGroups = []
 
         obj.addProperty(
-            "App::PropertyIntegerList", "Delaunay", "Base",
+            "App::PropertyIntegerList", "Delaunay", "Triangulation",
             "Index of Delaunay vertices", 4).Delaunay = []
 
         obj.addProperty(
-            "Mesh::PropertyMeshKernel", "Mesh", "Base",
+            "Mesh::PropertyMeshKernel", "Mesh", "Triangulation",
             "Mesh object of triangulation").Mesh = Mesh.Mesh()
 
         obj.addProperty(
-            "App::PropertyLength", "MaxLength", "Base",
+            "App::PropertyLength", "MaxLength", "Triangulation",
             "Maximum length of triangle edge").MaxLength = 50000
 
         obj.addProperty(
-            "App::PropertyAngle","MaxAngle","Base",
+            "App::PropertyAngle","MaxAngle","Triangulation",
             "Maximum angle of triangle edge").MaxAngle = 170
 
         # Contour properties.
         obj.addProperty(
-            "App::PropertyFloatConstraint", "ContourInterval", "Contour",
-            "Size of the point group").ContourInterval = (1.0, 0.0, 100.0, 1.0)
+            "App::PropertyFloatConstraint", "MajorInterval", "Contour",
+            "Major contour interval").MajorInterval = (5.0, 0.0, 100.0, 1.0)
+
+        obj.addProperty(
+            "App::PropertyFloatConstraint", "MinorInterval", "Contour",
+            "Minor contour interval").MinorInterval = (1.0, 0.0, 100.0, 1.0)
 
         obj.addProperty("Part::PropertyPartShape", "ContourShapes", "Base",
             "Contour Shapes").ContourShapes = Part.Shape()
@@ -95,11 +103,11 @@ class Surface(SurfaceFunc):
         points = []
         pgs = obj.getPropertyByName("PointGroups")
         for pg in pgs:
-            points.extend(pg.Points)
-        if points:
-            origin = geo_origin.get(points[0])
-        else:
-            origin = geo_origin.get()
+            points.extend(pg.Points.Points)
+
+        if prop == "MinorInterval":
+            min_int = obj.getPropertyByName(prop)
+            obj.MajorInterval = min_int*5
 
         if prop =="PointGroups":
             if len(points) > 2:
@@ -114,13 +122,20 @@ class Surface(SurfaceFunc):
 
             if delaunay:
                 obj.Mesh = self.test_delaunay(
-                    origin.Origin, points, delaunay, lmax, amax)
+                    points, delaunay, lmax, amax)
 
-        if prop == "Mesh" or prop == "ContourInterval":
-            deltaH = obj.getPropertyByName("ContourInterval")
+        if prop == "Mesh" or prop == "MajorInterval" or prop == "MinorInterval":
+            major = obj.getPropertyByName("MajorInterval")
+            minor = obj.getPropertyByName("MinorInterval")
             mesh = obj.getPropertyByName("Mesh")
 
-            obj.ContourShapes = self.get_contours(origin.Origin, mesh, deltaH)
+            obj.ContourShapes = self.get_contours(mesh, major, minor)
+
+        if prop == "Placement":
+            placement = obj.getPropertyByName(prop)
+            copy_mesh = obj.Mesh.copy()
+            copy_mesh.Placement = placement
+            obj.Mesh = copy_mesh
 
     def execute(self, obj):
         '''
@@ -138,14 +153,48 @@ class ViewProviderSurface:
         Set view properties.
         '''
         (r, g, b) = (random.random(), random.random(), random.random())
-        material = FreeCAD.Material()
-        material.DiffuseColor = (r, g, b, 0.8)
+
+        # Triangulation properties.
+        vobj.addProperty(
+            "App::PropertyIntegerConstraint", "Transparency", "Surface Style",
+            "Set triangle face transparency").Transparency = (50, 0, 100, 1)
 
         vobj.addProperty(
-            "App::PropertyMaterial", "TriangleColor", "Surface Style",
-            "Color of the point group").TriangleColor=material
+            "App::PropertyColor", "ShapeColor", "Surface Style",
+            "Set triangle face color").ShapeColor = (r, g, b, vobj.Transparency/100)
+
+        vobj.addProperty(
+            "App::PropertyMaterial", "ShapeMaterial", "Surface Style",
+            "Triangle face material").ShapeMaterial = FreeCAD.Material()
+
+        vobj.addProperty(
+            "App::PropertyColor", "LineColor", "Surface Style",
+            "Set triangle edge color").LineColor = (0.5, 0.5, 0.5, 0.0)
+
+        vobj.addProperty(
+            "App::PropertyFloatConstraint", "LineWidth", "Surface Style",
+            "Set triangle edge line width").LineWidth = (0.0, 1.0, 20.0, 1.0)
+
+        # Contour properties.
+        vobj.addProperty(
+            "App::PropertyColor", "MajorColor", "Contour Style",
+            "Set major contour color").MajorColor = (1.0, 0.0, 0.0, 0.0)
+
+        vobj.addProperty(
+            "App::PropertyColor", "MinorColor", "Contour Style",
+            "Set minor contour color").MinorColor = (1.0, 1.0, 0.0, 0.0)
+
+        vobj.addProperty(
+            "App::PropertyFloatConstraint", "MajorWidth", "Contour Style",
+            "Set major contour line width").MajorWidth = (5.0, 1.0, 20.0, 1.0)
+
+        vobj.addProperty(
+            "App::PropertyFloatConstraint", "MinorWidth", "Contour Style",
+            "Set major contour line width").MinorWidth = (2.0, 1.0, 20.0, 1.0)
 
         vobj.Proxy = self
+
+        vobj.ShapeMaterial.DiffuseColor = vobj.ShapeColor
 
     def attach(self, vobj):
         '''
@@ -156,37 +205,49 @@ class ViewProviderSurface:
 
         # Surface features.
         self.triangles = coin.SoIndexedFaceSet()
+        self.face_material = coin.SoMaterial()
+        self.edge_color = coin.SoBaseColor()
+        self.edge_style = coin.SoDrawStyle()
+        self.edge_style.style = coin.SoDrawStyle.LINES
+
         shape_hints = coin.SoShapeHints()
         shape_hints.vertex_ordering = coin.SoShapeHints.COUNTERCLOCKWISE
-        self.mat_color = coin.SoMaterial()
         mat_binding = coin.SoMaterialBinding()
         mat_binding.value = coin.SoMaterialBinding.OVERALL
-        edge_color = coin.SoBaseColor()
-        edge_color.rgb = (0.5, 0.5, 0.5)
         offset = coin.SoPolygonOffset()
 
-        # Line style.
-        line_style = coin.SoDrawStyle()
-        line_style.style = coin.SoDrawStyle.LINES
-        line_style.lineWidth = 2
+        # Major Contour features.
+        self.major_color = coin.SoBaseColor()
+        self.major_coords = coin.SoGeoCoordinate()
+        self.major_lines = coin.SoLineSet()
+        self.major_style = coin.SoDrawStyle()
+        self.major_style.style = coin.SoDrawStyle.LINES
 
-        # Contour features.
-        cont_color = coin.SoBaseColor()
-        cont_color.rgb = (1, 1, 0)
-        self.cont_coords = coin.SoGeoCoordinate()
-        self.cont_lines = coin.SoLineSet()
+        # Major Contour root.
+        major_contours = coin.SoSeparator()
+        major_contours.addChild(self.major_color)
+        major_contours.addChild(self.major_style)
+        major_contours.addChild(self.major_coords)
+        major_contours.addChild(self.major_lines)
 
-        # Contour root.
-        contours = coin.SoSeparator()
-        contours.addChild(cont_color)
-        contours.addChild(line_style)
-        contours.addChild(self.cont_coords)
-        contours.addChild(self.cont_lines)
+        # Minor Contour features.
+        self.minor_color = coin.SoBaseColor()
+        self.minor_coords = coin.SoGeoCoordinate()
+        self.minor_lines = coin.SoLineSet()
+        self.minor_style = coin.SoDrawStyle()
+        self.minor_style.style = coin.SoDrawStyle.LINES
+
+        # Minor Contour root.
+        minor_contours = coin.SoSeparator()
+        minor_contours.addChild(self.minor_color)
+        minor_contours.addChild(self.minor_style)
+        minor_contours.addChild(self.minor_coords)
+        minor_contours.addChild(self.minor_lines)
 
         # Face root.
         faces = coin.SoSeparator()
         faces.addChild(shape_hints)
-        faces.addChild(self.mat_color)
+        faces.addChild(self.face_material)
         faces.addChild(mat_binding)
         faces.addChild(self.geo_coords)
         faces.addChild(self.triangles)
@@ -194,14 +255,15 @@ class ViewProviderSurface:
         # Highlight for selection.
         highlight = coin.SoType.fromName('SoFCSelection').createInstance()
         highlight.style = 'EMISSIVE_DIFFUSE'
-        highlight.addChild(edge_color)
-        highlight.addChild(line_style)
+        highlight.addChild(self.edge_color)
+        highlight.addChild(self.edge_style)
         highlight.addChild(self.geo_coords)
         highlight.addChild(self.triangles)
 
         # Surface root.
         surface_root = coin.SoSeparator()
-        surface_root.addChild(contours)
+        surface_root.addChild(major_contours)
+        surface_root.addChild(minor_contours)
         surface_root.addChild(offset)
         surface_root.addChild(faces)
         surface_root.addChild(offset)
@@ -209,19 +271,53 @@ class ViewProviderSurface:
         vobj.addDisplayMode(surface_root,"Surface")
 
         # Take features from properties.
-        self.onChanged(vobj,"TriangleColor")
+        self.onChanged(vobj,"ShapeColor")
+        self.onChanged(vobj,"EdgeColor")
+        self.onChanged(vobj,"EdgeWidth")
+        self.onChanged(vobj,"MajorColor")
+        self.onChanged(vobj,"MajorWidth")
+        self.onChanged(vobj,"MinorColor")
+        self.onChanged(vobj,"MinorWidth")
 
     def onChanged(self, vobj, prop):
         '''
         Update Object visuals when a view property changed.
         '''
-        try:
-            if prop == "TriangleColor":
-                color = vobj.getPropertyByName("TriangleColor")
-                print(color.DiffuseColor)
-                self.mat_color.diffuseColor = color.DiffuseColor[:3]
-                self.mat_color.transparency = color.DiffuseColor[3]
-        except Exception: pass
+        if prop == "ShapeColor" or prop == "Transparency":
+            if hasattr(vobj, "ShapeColor") and hasattr(vobj, "Transparency"):
+                color = vobj.getPropertyByName("ShapeColor")
+                transparency = vobj.getPropertyByName("Transparency")
+                color = (color[0], color[1], color[2], transparency/100)
+                vobj.ShapeMaterial.DiffuseColor = color
+
+        if prop == "ShapeMaterial":
+            material = vobj.getPropertyByName(prop)
+            self.face_material.diffuseColor = material.DiffuseColor[:3]
+            self.face_material.transparency = material.DiffuseColor[3]
+
+        if prop == "LineColor":
+            color = vobj.getPropertyByName(prop)
+            self.edge_color.rgb = color[:3]
+
+        if prop == "LineWidth":
+            width = vobj.getPropertyByName(prop)
+            self.edge_style.lineWidth = width
+
+        if prop == "MajorColor":
+            color = vobj.getPropertyByName(prop)
+            self.major_color.rgb = color[:3]
+
+        if prop == "MajorWidth":
+            width = vobj.getPropertyByName(prop)
+            self.major_style.lineWidth = width
+
+        if prop == "MinorColor":
+            color = vobj.getPropertyByName(prop)
+            self.minor_color.rgb = color[:3]
+
+        if prop == "MinorWidth":
+            width = vobj.getPropertyByName(prop)
+            self.minor_style.lineWidth = width
 
     def updateData(self, obj, prop):
         '''
@@ -254,25 +350,43 @@ class ViewProviderSurface:
             self.geo_coords.point.values = points
 
             #Set contour system.
-            self.cont_coords.geoSystem.setValues(geo_system)
+            self.major_coords.geoSystem.setValues(geo_system)
+            self.minor_coords.geoSystem.setValues(geo_system)
             self.triangles.coordIndex.values = triangles
 
         if prop == "ContourShapes":
-            cont_shps = obj.getPropertyByName(prop)
-            cont_pnts = []
-            cont_vert = []
+            contour_shape = obj.getPropertyByName(prop)
 
-            for i in cont_shps.Wires:
-                points = []
-                for vertex in i.Vertexes:
-                    pnt = vertex.Point.add(base)
-                    points.append((pnt[0], pnt[1], pnt[2]))
+            if contour_shape.SubShapes:
+                major_pnts = []
+                major_vert = []
+                major_shape = contour_shape.SubShapes[0]
+                for i in major_shape.Wires:
+                    points = []
+                    for vertex in i.Vertexes:
+                        pnt = vertex.Point.add(base)
+                        points.append((pnt[0], pnt[1], pnt[2]))
 
-                cont_pnts.extend(points)
-                cont_vert.append(len(points))
+                    major_pnts.extend(points)
+                    major_vert.append(len(points))
 
-            self.cont_coords.point.values = cont_pnts
-            self.cont_lines.numVertices.values = cont_vert
+                self.major_coords.point.values = major_pnts
+                self.major_lines.numVertices.values = major_vert
+
+                minor_pnts = []
+                minor_vert = []
+                minor_shape = contour_shape.SubShapes[1]
+                for i in minor_shape.Wires:
+                    points = []
+                    for vertex in i.Vertexes:
+                        pnt = vertex.Point.add(base)
+                        points.append((pnt[0], pnt[1], pnt[2]))
+
+                    minor_pnts.extend(points)
+                    minor_vert.append(len(points))
+
+                self.minor_coords.point.values = minor_pnts
+                self.minor_lines.numVertices.values = minor_vert
 
     def getDisplayModes(self,vobj):
         '''

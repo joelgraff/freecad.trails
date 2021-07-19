@@ -298,7 +298,7 @@ class ImportPointFile:
             items.append(list_widget.item(i))
         file_paths = [i.text() for i in items]
         names = group.PointNames.copy()
-        points = group.Points.copy()
+        points = group.Vectors.copy()
         descriptions = group.Descriptions.copy()
 
         for path in file_paths:
@@ -309,7 +309,7 @@ class ImportPointFile:
             descriptions.extend(descriptions)
 
         group.PointNames = names
-        group.Points = points
+        group.Vectors = points
         group.Descriptions = descriptions
         group.recompute()
 
