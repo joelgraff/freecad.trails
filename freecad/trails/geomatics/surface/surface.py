@@ -41,7 +41,6 @@ def create(name='Surface'):
     Surface(obj)
     ViewProviderSurface(obj.ViewObject)
     group.addObject(obj)
-    FreeCAD.ActiveDocument.recompute()
 
     return obj
 
@@ -83,16 +82,16 @@ class Surface(SurfaceFunc):
             "Maximum angle of triangle edge").MaxAngle = 170
 
         # Contour properties.
-        obj.addProperty(
-            "App::PropertyFloatConstraint", "MajorInterval", "Contour",
-            "Major contour interval").MajorInterval = (5.0, 0.0, 100.0, 1.0)
-
-        obj.addProperty(
-            "App::PropertyFloatConstraint", "MinorInterval", "Contour",
-            "Minor contour interval").MinorInterval = (1.0, 0.0, 100.0, 1.0)
-
-        obj.addProperty("Part::PropertyPartShape", "ContourShapes", "Base",
+        obj.addProperty("Part::PropertyPartShape", "ContourShapes", "Contour",
             "Contour Shapes").ContourShapes = Part.Shape()
+
+        obj.addProperty(
+            "App::PropertyLength", "MajorInterval", "Contour",
+            "Major contour interval").MajorInterval = 5000
+
+        obj.addProperty(
+            "App::PropertyLength", "MinorInterval", "Contour",
+            "Minor contour interval").MinorInterval = 1000
 
         obj.Proxy = self
 
@@ -110,6 +109,12 @@ class Surface(SurfaceFunc):
             obj.MajorInterval = min_int*5
 
         if prop =="PointGroups":
+            pgs = obj.getPropertyByName(prop)
+
+            points = []
+            for pg in pgs:
+                points.extend(pg.Points.Points)
+
             if len(points) > 2:
                 obj.Delaunay = self.triangulate(points)
             else:
@@ -124,13 +129,6 @@ class Surface(SurfaceFunc):
                 obj.Mesh = self.test_delaunay(
                     points, delaunay, lmax, amax)
 
-        if prop == "Mesh" or prop == "MajorInterval" or prop == "MinorInterval":
-            major = obj.getPropertyByName("MajorInterval")
-            minor = obj.getPropertyByName("MinorInterval")
-            mesh = obj.getPropertyByName("Mesh")
-
-            obj.ContourShapes = self.get_contours(mesh, major, minor)
-
         if prop == "Placement":
             placement = obj.getPropertyByName(prop)
             copy_mesh = obj.Mesh.copy()
@@ -141,7 +139,12 @@ class Surface(SurfaceFunc):
         '''
         Do something when doing a recomputation. 
         '''
-        pass
+        major = obj.MajorInterval
+        minor = obj.MinorInterval
+
+        obj.ContourShapes = self.get_contours(
+            obj.Mesh, major.Value/1000, minor.Value/1000)
+
 
 class ViewProviderSurface:
     """
@@ -168,8 +171,16 @@ class ViewProviderSurface:
             "Triangle face material").ShapeMaterial = FreeCAD.Material()
 
         vobj.addProperty(
+            "App::PropertyIntegerConstraint", "LineTransparency", "Surface Style",
+            "Set triangle edge transparency").LineTransparency = (50, 0, 100, 1)
+
+        vobj.addProperty(
             "App::PropertyColor", "LineColor", "Surface Style",
-            "Set triangle edge color").LineColor = (0.5, 0.5, 0.5, 0.0)
+            "Set triangle face color").LineColor = (0.5, 0.5, 0.5, vobj.LineTransparency/100)
+
+        vobj.addProperty(
+            "App::PropertyMaterial", "LineMaterial", "Surface Style",
+            "Triangle face material").LineMaterial = FreeCAD.Material()
 
         vobj.addProperty(
             "App::PropertyFloatConstraint", "LineWidth", "Surface Style",
@@ -181,12 +192,12 @@ class ViewProviderSurface:
             "Set major contour color").MajorColor = (1.0, 0.0, 0.0, 0.0)
 
         vobj.addProperty(
-            "App::PropertyColor", "MinorColor", "Contour Style",
-            "Set minor contour color").MinorColor = (1.0, 1.0, 0.0, 0.0)
-
-        vobj.addProperty(
             "App::PropertyFloatConstraint", "MajorWidth", "Contour Style",
             "Set major contour line width").MajorWidth = (5.0, 1.0, 20.0, 1.0)
+
+        vobj.addProperty(
+            "App::PropertyColor", "MinorColor", "Contour Style",
+            "Set minor contour color").MinorColor = (1.0, 1.0, 0.0, 0.0)
 
         vobj.addProperty(
             "App::PropertyFloatConstraint", "MinorWidth", "Contour Style",
@@ -206,6 +217,7 @@ class ViewProviderSurface:
         # Surface features.
         self.triangles = coin.SoIndexedFaceSet()
         self.face_material = coin.SoMaterial()
+        self.edge_material = coin.SoMaterial()
         self.edge_color = coin.SoBaseColor()
         self.edge_style = coin.SoDrawStyle()
         self.edge_style.style = coin.SoDrawStyle.LINES
@@ -255,7 +267,9 @@ class ViewProviderSurface:
         # Highlight for selection.
         highlight = coin.SoType.fromName('SoFCSelection').createInstance()
         highlight.style = 'EMISSIVE_DIFFUSE'
-        highlight.addChild(self.edge_color)
+        faces.addChild(shape_hints)
+        highlight.addChild(self.edge_material)
+        highlight.addChild(mat_binding)
         highlight.addChild(self.edge_style)
         highlight.addChild(self.geo_coords)
         highlight.addChild(self.triangles)
@@ -272,8 +286,8 @@ class ViewProviderSurface:
 
         # Take features from properties.
         self.onChanged(vobj,"ShapeColor")
-        self.onChanged(vobj,"EdgeColor")
-        self.onChanged(vobj,"EdgeWidth")
+        self.onChanged(vobj,"LineColor")
+        self.onChanged(vobj,"LineWidth")
         self.onChanged(vobj,"MajorColor")
         self.onChanged(vobj,"MajorWidth")
         self.onChanged(vobj,"MinorColor")
@@ -294,6 +308,18 @@ class ViewProviderSurface:
             material = vobj.getPropertyByName(prop)
             self.face_material.diffuseColor = material.DiffuseColor[:3]
             self.face_material.transparency = material.DiffuseColor[3]
+
+        if prop == "LineColor" or prop == "LineTransparency":
+            if hasattr(vobj, "LineColor") and hasattr(vobj, "LineTransparency"):
+                color = vobj.getPropertyByName("LineColor")
+                transparency = vobj.getPropertyByName("LineTransparency")
+                color = (color[0], color[1], color[2], transparency/100)
+                vobj.LineMaterial.DiffuseColor = color
+
+        if prop == "LineMaterial":
+            material = vobj.getPropertyByName(prop)
+            self.edge_material.diffuseColor = material.DiffuseColor[:3]
+            self.edge_material.transparency = material.DiffuseColor[3]
 
         if prop == "LineColor":
             color = vobj.getPropertyByName(prop)
