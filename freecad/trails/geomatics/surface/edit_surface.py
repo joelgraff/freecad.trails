@@ -333,6 +333,7 @@ class SwapEdge:
 
                             surface.Mesh = copy_mesh
                             self.face_indexes.clear()
+                            FreeCAD.ActiveDocument.recompute()
 
 FreeCADGui.addCommand('Swap Edge', SwapEdge())
 
