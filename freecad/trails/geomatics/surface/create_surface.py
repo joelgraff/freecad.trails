@@ -74,5 +74,6 @@ class CreateSurface:
                     pgs.append(obj)
 
             surf.PointGroups = pgs
+        FreeCAD.ActiveDocument.recompute()
 
 FreeCADGui.addCommand('Create Surface', CreateSurface())
