@@ -21,14 +21,12 @@
 #***********************************************************************
 
 """
-Trails - The FreeCAD Transportation Engineering Workbench
+Trails - The FreeCAD Transportation and Geomatics Workbench
 """
 
 import os
 
 __path__ = __import__('pkgutil').extend_path(__path__, __name__)
-
-geo_test = True
 
 ICONPATH = os.path.join(os.path.dirname(__file__), "resources")
 
