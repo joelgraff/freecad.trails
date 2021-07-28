@@ -284,10 +284,26 @@ class ViewProviderSurface:
         surface_root.addChild(highlight)
         vobj.addDisplayMode(surface_root,"Surface")
 
-        # Elevation root.
-        elevation_root = coin.SoSeparator()
-        elevation_root.addChild(faces)
-        vobj.addDisplayMode(elevation_root,"Elevation")
+        # Elevation/Shaded root.
+        shaded_root = coin.SoSeparator()
+        shaded_root.addChild(faces)
+        vobj.addDisplayMode(shaded_root,"Elevation")
+        vobj.addDisplayMode(shaded_root,"Shaded")
+
+        # Flat Lines root.
+        flatlines_root = coin.SoSeparator()
+        flatlines_root.addChild(faces)
+        flatlines_root.addChild(offset)
+        flatlines_root.addChild(highlight)
+        vobj.addDisplayMode(flatlines_root,"Flat Lines")
+
+        # Wireframe root.
+        wireframe_root = coin.SoSeparator()
+        wireframe_root.addChild(major_contours)
+        wireframe_root.addChild(minor_contours)
+        wireframe_root.addChild(offset)
+        wireframe_root.addChild(highlight)
+        vobj.addDisplayMode(wireframe_root,"Wireframe")
 
         # Take features from properties.
         self.onChanged(vobj,"ShapeColor")
@@ -314,11 +330,7 @@ class ViewProviderSurface:
                 mode = vobj.getPropertyByName("DisplayMode")
                 material = vobj.getPropertyByName("ShapeMaterial")
 
-                if mode == "Surface":
-                    self.face_material.diffuseColor = material.DiffuseColor[:3]
-                    self.face_material.transparency = material.DiffuseColor[3]
-
-                elif mode == "Elevation":
+                if mode == "Elevation":
                     obj=vobj.Object
                     scale = (obj.Mesh.BoundBox.ZMax - obj.Mesh.BoundBox.ZMin) / 100
                     colorlist = []
@@ -339,6 +351,10 @@ class ViewProviderSurface:
                             colorlist.append((1.0, 0.0, 0.0))
 
                     self.face_material.diffuseColor.setValues(0,len(obj.Mesh.Facets),colorlist)
+                    self.face_material.transparency = material.DiffuseColor[3]
+
+                else:
+                    self.face_material.diffuseColor = material.DiffuseColor[:3]
                     self.face_material.transparency = material.DiffuseColor[3]
 
         if prop == "LineColor" or prop == "LineTransparency":
@@ -450,7 +466,7 @@ class ViewProviderSurface:
         '''
         Return a list of display modes.
         '''
-        modes = ["Surface", "Elevation"]
+        modes = ["Surface", "Elevation", "Flat Lines", "Shaded" "Wireframe"]
 
         return modes
 
