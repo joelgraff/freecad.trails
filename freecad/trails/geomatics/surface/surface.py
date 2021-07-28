@@ -225,7 +225,7 @@ class ViewProviderSurface:
         shape_hints = coin.SoShapeHints()
         shape_hints.vertex_ordering = coin.SoShapeHints.COUNTERCLOCKWISE
         mat_binding = coin.SoMaterialBinding()
-        mat_binding.value = coin.SoMaterialBinding.OVERALL
+        mat_binding.value = coin.SoMaterialBinding.PER_FACE
         offset = coin.SoPolygonOffset()
 
         # Major Contour features.
@@ -284,6 +284,11 @@ class ViewProviderSurface:
         surface_root.addChild(highlight)
         vobj.addDisplayMode(surface_root,"Surface")
 
+        # Elevation root.
+        elevation_root = coin.SoSeparator()
+        elevation_root.addChild(faces)
+        vobj.addDisplayMode(elevation_root,"Elevation")
+
         # Take features from properties.
         self.onChanged(vobj,"ShapeColor")
         self.onChanged(vobj,"LineColor")
@@ -304,10 +309,37 @@ class ViewProviderSurface:
                 color = (color[0], color[1], color[2], transparency/100)
                 vobj.ShapeMaterial.DiffuseColor = color
 
-        if prop == "ShapeMaterial":
-            material = vobj.getPropertyByName(prop)
-            self.face_material.diffuseColor = material.DiffuseColor[:3]
-            self.face_material.transparency = material.DiffuseColor[3]
+        if prop == "ShapeMaterial" or prop == "DisplayMode":
+            if hasattr(vobj, "ShapeMaterial"):
+                mode = vobj.getPropertyByName("DisplayMode")
+                material = vobj.getPropertyByName("ShapeMaterial")
+
+                if mode == "Surface":
+                    self.face_material.diffuseColor = material.DiffuseColor[:3]
+                    self.face_material.transparency = material.DiffuseColor[3]
+
+                elif mode == "Elevation":
+                    obj=vobj.Object
+                    scale = (obj.Mesh.BoundBox.ZMax - obj.Mesh.BoundBox.ZMin) / 100
+                    colorlist = []
+
+                    for facet in obj.Mesh.Facets:
+                        z = facet.Points[0][2] + facet.Points[1][2] + facet.Points[2][2]
+                        zz = (z/3 - obj.Mesh.BoundBox.ZMin) / scale
+
+                        if zz < 20:
+                            colorlist.append((0.0, 1.0, 0.0))
+                        elif zz < 40:
+                            colorlist.append((0.0, 1.0, 1.0))
+                        elif zz < 60:
+                            colorlist.append((0.0, 0.0, 1.0))
+                        elif zz < 80:
+                            colorlist.append((1.0, 0.0, 1.0))
+                        else:
+                            colorlist.append((1.0, 0.0, 0.0))
+
+                    self.face_material.diffuseColor.setValues(0,len(obj.Mesh.Facets),colorlist)
+                    self.face_material.transparency = material.DiffuseColor[3]
 
         if prop == "LineColor" or prop == "LineTransparency":
             if hasattr(vobj, "LineColor") and hasattr(vobj, "LineTransparency"):
@@ -418,8 +450,7 @@ class ViewProviderSurface:
         '''
         Return a list of display modes.
         '''
-        modes=[]
-        modes.append("Surface")
+        modes = ["Surface", "Elevation"]
 
         return modes
 
