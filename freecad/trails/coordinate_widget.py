@@ -44,7 +44,7 @@ class CoordinateWidget(QLineEdit):
         Return the command resources dictionary
         """
         return {
-            'Pixmap': ICONPATH + '/icons/CreateSurface.svg',
+            'Pixmap': ICONPATH + '/icons/GeoOrigin.svg',
             'MenuText': "Coordinate Widget",
             'ToolTip': "Show/Hide Geographic Coordinate Widget."
             }
@@ -74,8 +74,7 @@ class CoordinateWidget(QLineEdit):
     def track_position(self, info):
         try:
             obj = self.view.getObjectInfo(self.view.getCursorPos())
-            curpos = FreeCAD.Vector(
-                float(obj["x"]),float(obj["y"]),float(obj["z"]))
+            curpos = FreeCAD.Vector(obj["x"], obj["y"], obj["z"])
 
         except Exception:
             pos = info["Position"]
