@@ -28,7 +28,7 @@ class GeodatTest(unittest.TestCase):
 
 
 	def testDialog(self):
-		FreeCAD.Console.PrintLog ('Checking sole alog...\n')
+        FreeCAD.Console.PrintLog ('Checking console dialog...\n')
 		import geodat
 		import geodat.import_aster
 		reload(geodat.import_aster)
@@ -49,7 +49,7 @@ class GeodatTest(unittest.TestCase):
 		FreeCADGui.activeDocument().activeView().setCameraType("Perspective")
 		FreeCADGui.updateGui() 
 		ef=geodat.navigator.navi()
-		self.failUnless(ef.navi,"navigator dialog dialog")
+        self.failUnless(ef.navi, "navigator dialog")
 		ef.navi.hide()
 		ef.output.hide()
 		geodat.navigator.stop()
