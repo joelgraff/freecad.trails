@@ -1,4 +1,4 @@
-# testfalle
+# test cases
 from importlib import reload
 from os.path import join
 import FreeCAD as App

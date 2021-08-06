@@ -140,11 +140,11 @@ def import_osm2(b, l, bk, progressbar=False, status=False, elevation=False):
         doc.recompute()
         if FreeCAD.GuiUp:
             area.ViewObject.hide()
-            elearea.ViewObject.Transparency = 75       
+            elearea.ViewObject.Transparency = 75
             elearea.ViewObject.Document.activeView().viewAxonometric()
             # elearea.ViewObject.Document.activeView().fitAll()  # the cam was set
             FreeCADGui.updateGui()
-        say("Area with Hights done")
+        say("Area with Height done")
 
     # *************************************************************************
     # ways
@@ -371,7 +371,7 @@ def get_osmdata(b, l, bk):
     say("{}".format(fn))
 
     # TODO: do much less in try/except
-    # use os for file existense etc.
+    # use os for file existence etc.
     tree = None
     try:
         say("Try to read data from a former existing osm data file ... ")
@@ -518,21 +518,21 @@ def get_elebase_sh(corner_min, size, baseheight, tm):
     from MeshPart import meshFromShape
     from Part import makeLine
 
-    # scaled place on orgin
+    # scaled place on origin
     place_for_mesh = FreeCAD.Vector(
         -corner_min.x - size[0],
         -corner_min.y - size[1],
         0.00)
-    
+
     # SRTM data resolution is 30 m = 30'000 mm in the usa
     # rest of the world is 90 m = 90'000 mm
     # it makes no sense to use values smaller than 90'000 mm
     pt_distance = 100000
-    
+
     say(corner_min)
     # y is huge!, but this is ok!
     say(size)
-    
+
     # base area surface mesh with heights
     # Version new
     pn1 = vec(
@@ -605,7 +605,7 @@ def get_ppts_with_heights(way, way_type, points, nodesbyid, baseheight):
     say("    get heights for " + str(len(plg_pts_latlon)))
     heights = get_height_list(plg_pts_latlon)
     # say(heights)
-    
+
     # set the scaled height for each way polygon point
     height = None
     polygon_points = []
@@ -636,7 +636,7 @@ def get_ppts_with_heights(way, way_type, points, nodesbyid, baseheight):
                     sayErr("   ---no height in heights for " + hkey)
                     height = baseheight
         elif way_type == "highway":
-            # use the hight for all points
+            # use the height for all points
             if height is None:
                 say("    Highway")
             if hkey in heights:
@@ -650,7 +650,7 @@ def get_ppts_with_heights(way, way_type, points, nodesbyid, baseheight):
                 sayErr("    ---no height used for landuse ATM")
                 height = baseheight + 1
         else:
-            # use the hight for all points
+            # use the height for all points
             if height is None:
                 say("    Other")
             if hkey in heights:
@@ -663,5 +663,5 @@ def get_ppts_with_heights(way, way_type, points, nodesbyid, baseheight):
         wpt.z = height - baseheight
         # say("    with base: {}".format(wpt.z))
         polygon_points.append(wpt)
-    
+
     return polygon_points

@@ -66,7 +66,7 @@ class Tables:
 
     def execute(self, fp):
         '''
-        Do something when doing a recomputation. 
+        Do something when doing a recomputation.
         '''
         return
 
@@ -137,7 +137,7 @@ class ViewProviderTables:
         Save variables to file.
         """
         return None
- 
+
     def __setstate__(self,state):
         """
         Get variables from file.
