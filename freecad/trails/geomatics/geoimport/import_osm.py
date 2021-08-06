@@ -286,9 +286,9 @@ def organize_doc(doc):
         "App::DocumentObjectGroup",
         "GRP_building"
     )
-    pathes = doc.addObject(
+    paths = doc.addObject(
         "App::DocumentObjectGroup",
-        "GRP_pathes"
+        "GRP_paths"
     )
 
     for obj in doc.Objects:
@@ -302,7 +302,7 @@ def organize_doc(doc):
             landuse.addObject(obj)
             obj.ViewObject.Visibility = False
         if obj.Label.startswith("w_"):
-            pathes.addObject(obj)
+            paths.addObject(obj)
             obj.ViewObject.Visibility = False
 
 
