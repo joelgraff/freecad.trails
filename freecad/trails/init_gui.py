@@ -26,8 +26,6 @@ GUI Initialization module
 import os
 import FreeCADGui as Gui
 from . import draft_init
-
-from .design.corridor.template import ViewTemplateLibrary
 from . import resources
 
 TRAILSWB_VERSION = '(alpha)'
@@ -140,7 +138,7 @@ class TrailsWorkbench(Gui.Workbench):
 
             'Help': {
                 'gui': self.toolbar,
-                'cmd': ['TrailsGuide']
+                'cmd': ['TrailsGuide', 'Coordinate Widget']
             },
 
             'Surface Editor': {
@@ -213,6 +211,12 @@ class TrailsWorkbench(Gui.Workbench):
         """
         Called when the workbench is first activated.
         """
+        from .design.corridor.template import ViewTemplateLibrary
+        from .design.project.commands import create_alignment_from_line
+        from .design.project.commands import import_alignment_cmd
+        from .design.project.commands import edit_alignment_cmd
+        from .design.project.commands import trails_guide_cmd
+
         from .geomatics.point import import_points, export_points, create_pointgroup
         from .geomatics.surface import create_surface, edit_surface
         from .geomatics.region import create_region
@@ -221,11 +225,7 @@ class TrailsWorkbench(Gui.Workbench):
         from .geomatics.table import create_table
         from .geomatics.pad import create_pad
         from .geomatics import geoimport_gui
-
-        from .design.project.commands import create_alignment_from_line
-        from .design.project.commands import import_alignment_cmd
-        from .design.project.commands import edit_alignment_cmd
-        from .design.project.commands import trails_guide_cmd
+        from . import coordinate_widget
 
         for _k, _v in self.command_ui.items():
 
@@ -237,8 +237,7 @@ class TrailsWorkbench(Gui.Workbench):
 
             if _v['gui'] & self.group:
                 Gui.addCommand(_k, CommandGroup(
-                    _v['cmd'], _v['tooltip'], _v.get('type'))
-                )
+                    _v['cmd'], _v['tooltip'], _v.get('type')))
 
     def Activated(self):
         """
