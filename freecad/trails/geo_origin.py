@@ -71,11 +71,11 @@ class GeoOrigin:
         obj.addProperty(
             "App::PropertyEnumeration", "UtmZone", "Base",
             "UTM zone").UtmZone = zone_list
-        
+
         obj.addProperty(
             "App::PropertyVector", "Origin", "Base",
             "Origin point.").Origin = (0, 0, 0)
-        
+
         obj.Proxy = self
 
         self.UtmZone = None
@@ -100,7 +100,7 @@ class GeoOrigin:
 
     def execute(self, fp):
         '''
-        Do something when doing a recomputation. 
+        Do something when doing a recomputation.
         '''
         return
 
@@ -133,7 +133,7 @@ class GeoOrigin:
         if not isinstance(node, coin.SoGeoOrigin):
             node = coin.SoGeoOrigin()
             sg.insertChild(node,0)
-        
+
         return node
 
 
@@ -204,7 +204,7 @@ class ViewProviderGeoOrigin:
         Save variables to file.
         """
         return None
- 
+
     def __setstate__(self,state):
         """
         Get variables from file.

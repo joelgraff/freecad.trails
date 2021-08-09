@@ -145,7 +145,9 @@ def genSizeImage(size=32):
 
 
 def addImageTexture(obj,fn,scale=(1,1)):
-	'''fuegt dem Viewobjekt von obj eine Image-Texture aus der Imagefile fn bei, Skalierung mit Faktoren Scale
+	''' 
+	Adds an image texture from the image file 'fn'
+	to the view object of obj, scaling with scale factors
 	'''
 	
 	rootnode = obj.ViewObject.RootNode

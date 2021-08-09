@@ -1,4 +1,4 @@
-# testfalle
+# test cases
 from importlib import reload
 from os.path import join
 import FreeCAD as App
@@ -50,7 +50,7 @@ def test_import_osm():
     rc= import_osm.import_osm2(float(b),float(l),float(s)/10,progb,status,elevation)
     print  (rc)
     assert len(App.ActiveDocument.GRP_highways.OutList)==1
-    assert len(App.ActiveDocument.GRP_pathes.OutList)==4
+    assert len(App.ActiveDocument.GRP_paths.OutList)==4
     assert len(App.ActiveDocument.Objects)==13
     if cleanup:
         App.closeDocument("OSM_Map")

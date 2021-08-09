@@ -93,7 +93,7 @@ class Section(SectionFunc):
             if not horizons: return
 
             pos = cs.Position
-            h = cs.Heigth.Value
+            h = cs.Height.Value
             w = cs.Width.Value
             ver = cs.Vertical.Value
             hor = cs.Horizontal.Value

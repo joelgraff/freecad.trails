@@ -12,7 +12,7 @@ import FreeCAD
 class node():
 
 	def __init__(self,typ):
-#		print("erzuegen node,type ",typ)
+#		print("create node,type ",typ)
 		self.typ=typ
 		self.params={}
 		self.content=[]
@@ -62,7 +62,7 @@ def parseParams(string):
 			continue
 
 		else:
-			raise Exception("parse Params Fehler:"+ s)
+			raise Exception("parse Params Error:"+ s)
 	return params
 
 
@@ -80,7 +80,7 @@ def getData(fn,pb=None):
 
 	objs=[]
 
-	say("Parse xml data from lokal cached file ...")
+	say("Parse xml data from local cached file ...")
 	say(fn)
 	f=open(fn,"r", encoding="utf8")
 	content=f.readlines()

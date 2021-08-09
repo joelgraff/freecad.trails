@@ -62,8 +62,8 @@ class Sections:
             "Horizons").Horizons = []
 
         obj.addProperty(
-            "App::PropertyLength", "Heigth", "Geometry",
-            "Heigth of section view").Heigth = 50000
+            "App::PropertyLength", "Height", "Geometry",
+            "Height of section view").Height = 50000
 
         obj.addProperty(
             "App::PropertyLength", "Width", "Geometry",
@@ -161,7 +161,7 @@ class ViewProviderSections:
             if not obj.Group: return
 
             position = obj.getPropertyByName("Position")
-            h = obj.Heigth.Value
+            h = obj.Height.Value
             w = obj.Width.Value
             ver = obj.Vertical.Value
             hor = obj.Horizontal.Value
