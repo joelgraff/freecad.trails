@@ -30,6 +30,10 @@ import numpy as np
 import copy, math
 import scipy.spatial
 
+import itertools as itools
+from collections import Counter
+from ast import literal_eval
+
 class SurfaceFunc:
     """
     This class is contain Surface Object functions.
@@ -120,7 +124,7 @@ class SurfaceFunc:
 
     def get_contours(self, mesh, major, minor):
         """
-        Create contour lines for selected surface
+        Create triangulation contour lines
         """
         # Find max and min elevation of mesh
         zmax = mesh.BoundBox.ZMax/1000
@@ -154,3 +158,35 @@ class SurfaceFunc:
         del major_contours, minor_contours
 
         return Part.makeCompound([majors, minors])
+
+    def get_boundary(self, mesh):
+        """
+        Create triangulation boundary
+        """
+        facet_pidx = mesh.Topology[1]
+
+        edges = itools.chain(*(itools.permutations(pidx, 2) for pidx in facet_pidx))
+        count = Counter((str(edge) for edge in edges))
+
+        double_boundary = list((literal_eval(k) for k, v in count.items() if v == 1))
+
+        boundary = double_boundary[:1]
+        for candidate in double_boundary[1:]:
+            if candidate in boundary or candidate[::-1] in boundary:
+                pass
+            else:
+                boundary.append(candidate)
+
+        def mkEdge(p1, p2):
+            return Part.makeLine((p1.x, p1.y, p1.z), (p2.x, p2.y, p2.z))
+
+        points = mesh.Points
+        edges = []
+        for p1, p2 in boundary:
+            edges.append(mkEdge(points[p1], points[p2]))
+
+        wires=[]
+        for opening in Part.sortEdges(edges):
+            wires.append(Part.Wire(opening))
+
+        return Part.makeCompound(wires)
