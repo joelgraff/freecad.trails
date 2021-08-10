@@ -81,6 +81,10 @@ class Surface(SurfaceFunc):
             "App::PropertyAngle","MaxAngle","Triangulation",
             "Maximum angle of triangle edge").MaxAngle = 170
 
+        # Boundary properties.
+        obj.addProperty("Part::PropertyPartShape", "BoundaryShapes", "Boundary",
+            "Boundary Shapes").BoundaryShapes = Part.Shape()
+
         # Contour properties.
         obj.addProperty("Part::PropertyPartShape", "ContourShapes", "Contour",
             "Contour Shapes").ContourShapes = Part.Shape()
@@ -144,6 +148,8 @@ class Surface(SurfaceFunc):
 
         obj.ContourShapes = self.get_contours(
             obj.Mesh, major.Value/1000, minor.Value/1000)
+
+        obj.BoundaryShapes = self.get_boundary(obj.Mesh)
 
 
 class ViewProviderSurface:
@@ -228,6 +234,22 @@ class ViewProviderSurface:
         mat_binding.value = coin.SoMaterialBinding.PER_FACE
         offset = coin.SoPolygonOffset()
 
+        # Boundary features.
+        self.boundary_color = coin.SoBaseColor()
+        self.boundary_coords = coin.SoGeoCoordinate()
+        self.boundary_lines = coin.SoLineSet()
+        self.boundary_style = coin.SoDrawStyle()
+        self.boundary_style.style = coin.SoDrawStyle.LINES
+        self.boundary_style.lineWidth = 5
+        self.boundary_color.rgb = (1,0,0)
+
+        # Boundary root.
+        boundaries = coin.SoSeparator()
+        boundaries.addChild(self.boundary_color)
+        boundaries.addChild(self.boundary_style)
+        boundaries.addChild(self.boundary_coords)
+        boundaries.addChild(self.boundary_lines)
+
         # Major Contour features.
         self.major_color = coin.SoBaseColor()
         self.major_coords = coin.SoGeoCoordinate()
@@ -276,6 +298,8 @@ class ViewProviderSurface:
 
         # Surface root.
         surface_root = coin.SoSeparator()
+        surface_root.addChild(boundaries)
+        surface_root.addChild(offset)
         surface_root.addChild(major_contours)
         surface_root.addChild(minor_contours)
         surface_root.addChild(offset)
@@ -288,6 +312,7 @@ class ViewProviderSurface:
         shaded_root = coin.SoSeparator()
         shaded_root.addChild(faces)
         vobj.addDisplayMode(shaded_root,"Elevation")
+        vobj.addDisplayMode(shaded_root,"Slope")
         vobj.addDisplayMode(shaded_root,"Shaded")
 
         # Flat Lines root.
@@ -329,9 +354,29 @@ class ViewProviderSurface:
             if hasattr(vobj, "ShapeMaterial"):
                 mode = vobj.getPropertyByName("DisplayMode")
                 material = vobj.getPropertyByName("ShapeMaterial")
+                obj=vobj.Object
 
-                if mode == "Elevation":
-                    obj=vobj.Object
+                if mode == "Slope":
+                    import math
+                    colorlist = []
+                    for facet in obj.Mesh.Facets:
+                        normal = facet.Normal
+                        radian = normal.getAngle(FreeCAD.Vector(1, 1, 0))
+                        angle = math.degrees(radian)
+
+                        if angle < 45:
+                            colorlist.append((0.0, 1.0, 0.0))
+                        if angle < 90:
+                            colorlist.append((0.0, 1.0, 1.0))
+                        if angle < 135:
+                            colorlist.append((0.0, 0.0, 1.0))
+                        else:
+                            colorlist.append((1.0, 0.0, 1.0))
+
+                    self.face_material.diffuseColor.setValues(0,len(obj.Mesh.Facets),colorlist)
+                    self.face_material.transparency = material.DiffuseColor[3]
+
+                elif mode == "Elevation":
                     scale = (obj.Mesh.BoundBox.ZMax - obj.Mesh.BoundBox.ZMin) / 100
                     colorlist = []
 
@@ -424,6 +469,7 @@ class ViewProviderSurface:
             self.geo_coords.point.values = points
 
             #Set contour system.
+            self.boundary_coords.geoSystem.setValues(geo_system)
             self.major_coords.geoSystem.setValues(geo_system)
             self.minor_coords.geoSystem.setValues(geo_system)
             self.triangles.coordIndex.values = triangles
@@ -462,11 +508,29 @@ class ViewProviderSurface:
                 self.minor_coords.point.values = minor_pnts
                 self.minor_lines.numVertices.values = minor_vert
 
+        if prop == "BoundaryShapes":
+            boundary_shape = obj.getPropertyByName(prop)
+
+            if boundary_shape.Wires:
+                boundary_pnts = []
+                boundary_vert = []
+                for i in boundary_shape.Wires:
+                    points = []
+                    for vertex in i.Vertexes:
+                        pnt = vertex.Point.add(base)
+                        points.append((pnt[0], pnt[1], pnt[2]))
+
+                    boundary_pnts.extend(points)
+                    boundary_vert.append(len(points))
+
+                self.boundary_coords.point.values = boundary_pnts
+                self.boundary_lines.numVertices.values = boundary_vert
+
     def getDisplayModes(self,vobj):
         '''
         Return a list of display modes.
         '''
-        modes = ["Surface", "Elevation", "Flat Lines", "Shaded" "Wireframe"]
+        modes = ["Surface", "Elevation", "Slope", "Flat Lines", "Shaded" "Wireframe"]
 
         return modes
 
