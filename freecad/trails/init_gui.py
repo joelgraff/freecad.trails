@@ -25,7 +25,6 @@ GUI Initialization module
 
 import os
 import FreeCADGui as Gui
-from . import draft_init
 from . import resources
 
 TRAILSWB_VERSION = '(alpha)'
@@ -211,6 +210,8 @@ class TrailsWorkbench(Gui.Workbench):
         """
         Called when the workbench is first activated.
         """
+        import DraftTools
+
         from .design.corridor.template import ViewTemplateLibrary
         from .design.project.commands import create_alignment_from_line
         from .design.project.commands import import_alignment_cmd
@@ -243,13 +244,19 @@ class TrailsWorkbench(Gui.Workbench):
         """
         Called when switching to this workbench
         """
-        pass
+        if hasattr(Gui, "Snapper"):
+            Gui.Snapper.show()
+            import draftutils.init_draft_statusbar as dsb
+            dsb.show_draft_statusbar()
 
     def Deactivated(self):
         """
         Called when switiching away from this workbench
         """
-        pass
+        if hasattr(Gui, "Snapper"):
+            Gui.Snapper.hide()
+            import draftutils.init_draft_statusbar as dsb
+            dsb.hide_draft_statusbar()
 
     def ContextMenu(self, recipient):
         """
