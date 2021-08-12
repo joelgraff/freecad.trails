@@ -185,7 +185,7 @@ class SurfaceFunc:
         for p1, p2 in boundary:
             edges.append(mkEdge(points[p1], points[p2]))
 
-        wires=[]
+        wires = []
         for opening in Part.sortEdges(edges):
             wires.append(Part.Wire(opening))
 
