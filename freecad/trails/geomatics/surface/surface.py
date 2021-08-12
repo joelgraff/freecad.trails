@@ -199,7 +199,7 @@ class ViewProviderSurface:
 
         vobj.addProperty(
             "App::PropertyFloatConstraint", "MajorWidth", "Contour Style",
-            "Set major contour line width").MajorWidth = (5.0, 1.0, 20.0, 1.0)
+            "Set major contour line width").MajorWidth = (3.0, 1.0, 20.0, 1.0)
 
         vobj.addProperty(
             "App::PropertyColor", "MinorColor", "Contour Style",
@@ -207,7 +207,7 @@ class ViewProviderSurface:
 
         vobj.addProperty(
             "App::PropertyFloatConstraint", "MinorWidth", "Contour Style",
-            "Set major contour line width").MinorWidth = (2.0, 1.0, 20.0, 1.0)
+            "Set major contour line width").MinorWidth = (1.0, 1.0, 20.0, 1.0)
 
         vobj.Proxy = self
 
@@ -240,8 +240,8 @@ class ViewProviderSurface:
         self.boundary_lines = coin.SoLineSet()
         self.boundary_style = coin.SoDrawStyle()
         self.boundary_style.style = coin.SoDrawStyle.LINES
-        self.boundary_style.lineWidth = 5
-        self.boundary_color.rgb = (1,0,0)
+        self.boundary_style.lineWidth = 3
+        self.boundary_color.rgb = (0.0, 0.75, 1.0)
 
         # Boundary root.
         boundaries = coin.SoSeparator()
@@ -307,6 +307,11 @@ class ViewProviderSurface:
         surface_root.addChild(offset)
         surface_root.addChild(highlight)
         vobj.addDisplayMode(surface_root,"Surface")
+
+        # Boundary root.
+        boundary_root = coin.SoSeparator()
+        boundary_root.addChild(boundaries)
+        vobj.addDisplayMode(boundary_root,"Boundary")
 
         # Elevation/Shaded root.
         shaded_root = coin.SoSeparator()
@@ -510,16 +515,18 @@ class ViewProviderSurface:
 
         if prop == "BoundaryShapes":
             boundary_shape = obj.getPropertyByName(prop)
+            copy_shape = boundary_shape.copy()
+            copy_shape.Placement.move(base)
 
-            if boundary_shape.Wires:
+            if copy_shape.Wires:
                 boundary_pnts = []
                 boundary_vert = []
-                for i in boundary_shape.Wires:
+                for i in copy_shape.Wires:
                     points = []
-                    for vertex in i.Vertexes:
-                        pnt = vertex.Point.add(base)
-                        points.append((pnt[0], pnt[1], pnt[2]))
+                    for vertex in i.OrderedVertexes:
+                        points.append(vertex.Point)
 
+                    points.append(i.OrderedVertexes[0].Point)
                     boundary_pnts.extend(points)
                     boundary_vert.append(len(points))
 
@@ -530,7 +537,7 @@ class ViewProviderSurface:
         '''
         Return a list of display modes.
         '''
-        modes = ["Surface", "Elevation", "Slope", "Flat Lines", "Shaded" "Wireframe"]
+        modes = ["Surface", "Boundary", "Elevation", "Slope", "Flat Lines", "Shaded" "Wireframe"]
 
         return modes
 
