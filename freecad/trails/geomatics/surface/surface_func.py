@@ -34,9 +34,9 @@ import itertools as itools
 from collections import Counter
 from ast import literal_eval
 
-class SurfaceFunc:
+class DataFunctions:
     """
-    This class is contain Surface Object functions.
+    This class is contain Surface Data functions.
     """
     def __init__(self):
         pass
@@ -190,3 +190,29 @@ class SurfaceFunc:
             wires.append(Part.Wire(opening))
 
         return Part.makeCompound(wires)
+
+
+class ViewFunctions:
+    """
+    This class is contain Surface Data functions.
+    """
+    def __init__(self):
+        pass
+
+    def wire_view(self, shape, base, closed=False):
+        points = []
+        vertices = []
+        copy_shape = shape.copy()
+        copy_shape.Placement.move(base)
+
+        for i in copy_shape.Wires:
+            vectors = []
+            for vertex in i.OrderedVertexes:
+                vectors.append(vertex.Point)
+
+            if closed:
+                vectors.append(i.OrderedVertexes[0].Point)
+            points.extend(vectors)
+            vertices.append(len(vectors))
+
+        return points, vertices
