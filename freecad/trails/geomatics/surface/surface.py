@@ -27,7 +27,7 @@ Create a Surface Object from FPO.
 import FreeCAD
 import Mesh, Part
 from pivy import coin
-from .surface_func import SurfaceFunc
+from .surface_func import DataFunctions, ViewFunctions
 from freecad.trails import ICONPATH, geo_origin
 from . import surfaces
 import random, copy
@@ -45,7 +45,7 @@ def create(name='Surface'):
     return obj
 
 
-class Surface(SurfaceFunc):
+class Surface(DataFunctions):
     """
     This class is about Surface Object data features.
     """
@@ -75,11 +75,11 @@ class Surface(SurfaceFunc):
 
         obj.addProperty(
             "App::PropertyLength", "MaxLength", "Triangulation",
-            "Maximum length of triangle edge").MaxLength = 50000
+            "Maximum length of triangle edge").MaxLength = 500000
 
         obj.addProperty(
             "App::PropertyAngle","MaxAngle","Triangulation",
-            "Maximum angle of triangle edge").MaxAngle = 170
+            "Maximum angle of triangle edge").MaxAngle = 180
 
         # Boundary properties.
         obj.addProperty("Part::PropertyPartShape", "BoundaryShapes", "Boundary",
@@ -152,7 +152,7 @@ class Surface(SurfaceFunc):
         obj.BoundaryShapes = self.get_boundary(obj.Mesh)
 
 
-class ViewProviderSurface:
+class ViewProviderSurface(ViewFunctions):
     """
     This class is about Surface Object view features.
     """
@@ -210,7 +210,6 @@ class ViewProviderSurface:
             "Set major contour line width").MinorWidth = (1.0, 1.0, 20.0, 1.0)
 
         vobj.Proxy = self
-
         vobj.ShapeMaterial.DiffuseColor = vobj.ShapeColor
 
     def attach(self, vobj):
@@ -356,9 +355,10 @@ class ViewProviderSurface:
                 vobj.ShapeMaterial.DiffuseColor = color
 
         if prop == "ShapeMaterial" or prop == "DisplayMode":
+
             if hasattr(vobj, "ShapeMaterial"):
-                mode = vobj.getPropertyByName("DisplayMode")
                 material = vobj.getPropertyByName("ShapeMaterial")
+                mode = vobj.getPropertyByName("DisplayMode")
                 obj=vobj.Object
 
                 if mode == "Slope":
@@ -447,91 +447,53 @@ class ViewProviderSurface:
         '''
         Update Object visuals when a data property changed.
         '''
+        # Get GeoOrigin.
         origin = geo_origin.get()
         base = copy.deepcopy(origin.Origin)
         base.z = 0
 
+        # Set geosystem.
+        geo_system = ["UTM", origin.UtmZone, "FLAT"]
+        self.geo_coords.geoSystem.setValues(geo_system)
+        self.boundary_coords.geoSystem.setValues(geo_system)
+        self.major_coords.geoSystem.setValues(geo_system)
+        self.minor_coords.geoSystem.setValues(geo_system)
+
         if prop == "Mesh":
             mesh = obj.getPropertyByName("Mesh")
-            topo_points = mesh.Topology[0]
-            topo_tri = mesh.Topology[1]
+            copy_mesh = mesh.copy()
+            copy_mesh.Placement.move(base)
 
-            # Get GeoOrigin.
-            points = []
             triangles = []
-
-            for i in topo_points:
-                point = copy.deepcopy(i)
-                points.append(point.add(base))
-
-            for i in topo_tri:
+            for i in copy_mesh.Topology[1]:
                 triangles.extend(list(i))
                 triangles.append(-1)
 
-            # Set GeoCoords.
-            geo_system = ["UTM", origin.UtmZone, "FLAT"]
-            self.geo_coords.geoSystem.setValues(geo_system)
-            self.geo_coords.point.values = points
-
-            #Set contour system.
-            self.boundary_coords.geoSystem.setValues(geo_system)
-            self.major_coords.geoSystem.setValues(geo_system)
-            self.minor_coords.geoSystem.setValues(geo_system)
+            self.geo_coords.point.values = copy_mesh.Topology[0]
             self.triangles.coordIndex.values = triangles
 
         if prop == "ContourShapes":
             contour_shape = obj.getPropertyByName(prop)
 
             if contour_shape.SubShapes:
-                major_pnts = []
-                major_vert = []
                 major_shape = contour_shape.SubShapes[0]
-                for i in major_shape.Wires:
-                    points = []
-                    for vertex in i.Vertexes:
-                        pnt = vertex.Point.add(base)
-                        points.append((pnt[0], pnt[1], pnt[2]))
+                points, vertices = self.wire_view(major_shape, base)
 
-                    major_pnts.extend(points)
-                    major_vert.append(len(points))
+                self.major_coords.point.values = points
+                self.major_lines.numVertices.values = vertices
 
-                self.major_coords.point.values = major_pnts
-                self.major_lines.numVertices.values = major_vert
-
-                minor_pnts = []
-                minor_vert = []
                 minor_shape = contour_shape.SubShapes[1]
-                for i in minor_shape.Wires:
-                    points = []
-                    for vertex in i.Vertexes:
-                        pnt = vertex.Point.add(base)
-                        points.append((pnt[0], pnt[1], pnt[2]))
+                points, vertices = self.wire_view(minor_shape, base)
 
-                    minor_pnts.extend(points)
-                    minor_vert.append(len(points))
-
-                self.minor_coords.point.values = minor_pnts
-                self.minor_lines.numVertices.values = minor_vert
+                self.minor_coords.point.values = points
+                self.minor_lines.numVertices.values = vertices
 
         if prop == "BoundaryShapes":
             boundary_shape = obj.getPropertyByName(prop)
-            copy_shape = boundary_shape.copy()
-            copy_shape.Placement.move(base)
+            points, vertices = self.wire_view(boundary_shape, base, True)
 
-            if copy_shape.Wires:
-                boundary_pnts = []
-                boundary_vert = []
-                for i in copy_shape.Wires:
-                    points = []
-                    for vertex in i.OrderedVertexes:
-                        points.append(vertex.Point)
-
-                    points.append(i.OrderedVertexes[0].Point)
-                    boundary_pnts.extend(points)
-                    boundary_vert.append(len(points))
-
-                self.boundary_coords.point.values = boundary_pnts
-                self.boundary_lines.numVertices.values = boundary_vert
+            self.boundary_coords.point.values = points
+            self.boundary_lines.numVertices.values = vertices
 
     def getDisplayModes(self,vobj):
         '''
