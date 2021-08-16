@@ -28,7 +28,7 @@ import FreeCAD
 import Mesh, Part
 from pivy import coin
 from .surface_func import DataFunctions, ViewFunctions
-from freecad.trails import ICONPATH, geo_origin
+from freecad.trails import ICONPATH, line_patterns, geo_origin
 from . import surfaces
 import random, copy
 
@@ -192,6 +192,23 @@ class ViewProviderSurface(ViewFunctions):
             "App::PropertyFloatConstraint", "LineWidth", "Surface Style",
             "Set triangle edge line width").LineWidth = (0.0, 1.0, 20.0, 1.0)
 
+        # Boundary properties.
+        vobj.addProperty(
+            "App::PropertyColor", "BoundaryColor", "Boundary Style",
+            "Set boundary contour color").BoundaryColor = (0.0, 0.75, 1.0, 0.0)
+
+        vobj.addProperty(
+            "App::PropertyFloatConstraint", "BoundaryWidth", "Boundary Style",
+            "Set boundary contour line width").BoundaryWidth = (3.0, 1.0, 20.0, 1.0)
+
+        vobj.addProperty(
+            "App::PropertyEnumeration", "BoundaryPattern", "Boundary Style",
+            "Set a line pattern for boundary").BoundaryPattern = [*line_patterns]
+
+        vobj.addProperty(
+            "App::PropertyIntegerConstraint", "PatternScale", "Boundary Style",
+            "Scale the line pattern").PatternScale = (3, 1, 20, 1)
+
         # Contour properties.
         vobj.addProperty(
             "App::PropertyColor", "MajorColor", "Contour Style",
@@ -239,8 +256,6 @@ class ViewProviderSurface(ViewFunctions):
         self.boundary_lines = coin.SoLineSet()
         self.boundary_style = coin.SoDrawStyle()
         self.boundary_style.style = coin.SoDrawStyle.LINES
-        self.boundary_style.lineWidth = 3
-        self.boundary_color.rgb = (0.0, 0.75, 1.0)
 
         # Boundary root.
         boundaries = coin.SoSeparator()
@@ -338,6 +353,10 @@ class ViewProviderSurface(ViewFunctions):
         self.onChanged(vobj,"ShapeColor")
         self.onChanged(vobj,"LineColor")
         self.onChanged(vobj,"LineWidth")
+        self.onChanged(vobj,"BoundaryColor")
+        self.onChanged(vobj,"BoundaryWidth")
+        self.onChanged(vobj,"BoundaryPattern")
+        self.onChanged(vobj,"PatternScale")
         self.onChanged(vobj,"MajorColor")
         self.onChanged(vobj,"MajorWidth")
         self.onChanged(vobj,"MinorColor")
@@ -354,7 +373,7 @@ class ViewProviderSurface(ViewFunctions):
                 color = (color[0], color[1], color[2], transparency/100)
                 vobj.ShapeMaterial.DiffuseColor = color
 
-        if prop == "ShapeMaterial" or prop == "DisplayMode":
+        if prop == "ShapeMaterial":
 
             if hasattr(vobj, "ShapeMaterial"):
                 material = vobj.getPropertyByName("ShapeMaterial")
@@ -426,6 +445,24 @@ class ViewProviderSurface(ViewFunctions):
         if prop == "LineWidth":
             width = vobj.getPropertyByName(prop)
             self.edge_style.lineWidth = width
+
+        if prop == "BoundaryColor":
+            color = vobj.getPropertyByName(prop)
+            self.boundary_color.rgb = color[:3]
+
+        if prop == "BoundaryWidth":
+            width = vobj.getPropertyByName(prop)
+            self.boundary_style.lineWidth = width
+
+        if prop == "BoundaryPattern":
+            if hasattr(vobj, "BoundaryPattern"):
+                pattern = vobj.getPropertyByName(prop)
+                self.boundary_style.linePattern = line_patterns[pattern]
+
+        if prop == "PatternScale":
+            if hasattr(vobj, "PatternScale"):
+                scale = vobj.getPropertyByName(prop)
+                self.boundary_style.linePatternScaleFactor = scale
 
         if prop == "MajorColor":
             color = vobj.getPropertyByName(prop)
