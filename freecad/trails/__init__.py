@@ -36,7 +36,8 @@ zone_list = ["Z1", "Z2", "Z3", "Z4", "Z5", "Z6", "Z7", "Z8", "Z9", "Z10", "Z11",
     "Z37", "Z38", "Z39", "Z40", "Z41", "Z42", "Z43", "Z44", "Z45", "Z46", "Z47", "Z48", 
     "Z49", "Z50", "Z51", "Z52", "Z53", "Z54", "Z55", "Z56", "Z57", "Z58", "Z59", "Z60"]
 
-marker_dict = {'NONE': -1, 'BACKSLASH_5_5': 4, 'BACKSLASH_7_7': 34, 
+marker_dict = {
+    'NONE': -1, 'BACKSLASH_5_5': 4, 'BACKSLASH_7_7': 34, 
     'BACKSLASH_9_9': 64, 'BAR_5_5': 5, 'BAR_7_7': 35, 'BAR_9_9': 65, 
     'CAUTION_FILLED_5_5': 28, 'CAUTION_FILLED_7_7': 58, 'CAUTION_FILLED_9_9': 88, 
     'CAUTION_LINE_5_5': 18, 'CAUTION_LINE_7_7': 48, 'CAUTION_LINE_9_9': 78, 
@@ -68,6 +69,27 @@ marker_dict = {'NONE': -1, 'BACKSLASH_5_5': 4, 'BACKSLASH_7_7': 34,
     'TRIANGLE_LINE_7_7': 43, 'TRIANGLE_LINE_9_9': 73, 'TRIANGLE_STRIP': 0, 
     'VRML1': 1, 'VRML2': 2, 'WELL_5_5': 9, 'WELL_7_7': 39, 'WELL_9_9': 69, 
     'Y_5_5': 7, 'Y_7_7': 37, 'Y_9_9': 67}
+
+line_patterns = {
+    "Continues      _______________________________": 0xFFFF,
+    "Border         __ . __ __ . __ __ . __ __ . __": 0x3CF2,
+    "Border (.5x)   __.__.__.__.__.__.__.__.__.__._": 0x3939,
+    "Border (2x)    ____  ____  .  ____  ____  .  _": 0xFDFA,
+    "Center         ____ _ ____ _ ____ _ ____ _ ___": 0xFF3C,
+    "Center (.5x)   ___ _ ___ _ ___ _ ___ _ ___ _ _": 0xFC78,
+    "Center (2x)    ________  __  ________  __  ___": 0xFFDE,
+    "Dash dot       __ . __ . __ . __ . __ . __ . _": 0xE4E4,
+    "Dash dot (.5x) _._._._._._._._._._._._._._._._": 0xEBAE,
+    "Dash dot (2x)  ____  .  ____  .  ____  .  ____": 0xFF08,
+    "Dashed         __ __ __ __ __ __ __ __ __ __ _": 0x739C,
+    "Dashed (.5x)   _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _": 0xDB6E,
+    "Dashed (2x)    ____  ____  ____  ____  ____  _": 0xFFE0,
+    "Divide         ____ . . ____ . . ____ . . ____": 0xFF24,
+    "Divide (.5x)   __..__..__..__..__..__..__..__.": 0xEAEA,
+    "Divide (2x)    ________  .  .  ________  .  . ": 0xFFEA,
+    "Dot            . . . . . . . . . . . . . . . .": 0x4924,
+    "Dot (.5x)      ...............................": 0x5555,
+    "Dot (2x)       .  .  .  .  .  .  .  .  .  .  .": 0x8888}
 
 def import_module(path, name=None):
     """
