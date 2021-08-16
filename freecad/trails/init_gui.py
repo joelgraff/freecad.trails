@@ -151,10 +151,12 @@ class TrailsWorkbench(Gui.Workbench):
                 'tooltip': 'Edit selected surface',
                 'type': 'Trails::Surface'
             },
-
             'Geo Import Tools': {
                 'gui': self.group,
                 'cmd': [
+                    'Set Geo Location',
+                    'Import TMS',
+                    'Import WMS',
                     'Import OSM Map',
                     'Import CSV',
                     'Import GPX',
