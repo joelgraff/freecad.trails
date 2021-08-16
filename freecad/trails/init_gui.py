@@ -155,9 +155,9 @@ class TrailsWorkbench(Gui.Workbench):
                 'gui': self.group,
                 'cmd': [
                     'Set Geo Location',
-					'Import TMS',
-					'Import WMS',
-					'Import OSM Map',
+                    'Import TMS',
+                    'Import WMS',
+                    'Import OSM Map',
                     'Import CSV',
                     'Import GPX',
                     'Import Heights',
