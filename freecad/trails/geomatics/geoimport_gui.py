@@ -150,9 +150,47 @@ class navigator:
             'Pixmap': 'Std_Tool2',
             'MenuText': 'Navigator',
             'ToolTip': 'Navigator'
+        }	
+				
+class set_geolocation:
+
+    def Activated(self):
+        from .geoimport import set_geolocation
+        set_geolocation.GISLocation_Dialog().exec_()
+
+    def GetResources(self):
+        return {
+            'Pixmap': 'Std_Tool1',
+            'MenuText': 'Set Geo Location',
+            'ToolTip': 'Set Geo Location'
         }
 
+class import_tms:
 
+    def Activated(self):
+        from .geoimport import import_tms
+        import_tms.GIS_TMS_Dialog().exec_()
+
+    def GetResources(self):
+        return {
+            'Pixmap': 'Std_Tool1',
+            'MenuText': 'Import TMS',
+            'ToolTip': 'Import TMS(Tile Map Service)'
+        }
+
+class import_wms:
+
+    def Activated(self):
+        from .geoimport import import_wms
+        import_wms.GISWMS_Dialog().exec_()
+
+    def GetResources(self):
+        return {
+            'Pixmap': 'Std_Tool1',
+            'MenuText': 'Import WMS',
+            'ToolTip': 'Import WMS(Web Map Service)'
+        }
+		
 class import_osm:
 
     def Activated(self):
@@ -223,7 +261,9 @@ class ElevationGrid:
             'ToolTip': 'Create Elevation Grid '
         }
 
-
+FreeCADGui.addCommand('Set Geo Location', set_geolocation())
+FreeCADGui.addCommand('Import TMS', import_tms())
+FreeCADGui.addCommand('Import WMS', import_wms())
 FreeCADGui.addCommand('Import OSM Map', import_osm())
 FreeCADGui.addCommand('Import CSV', import_csv())
 FreeCADGui.addCommand('Import GPX', import_gpx())
