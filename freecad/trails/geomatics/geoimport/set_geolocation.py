@@ -31,7 +31,7 @@ __url__ = "https://github.com/DutchSailor/GIS2BIM"
 
 from PySide2.QtWebEngineWidgets import QWebEngineView
 from PySide2.QtWebEngineWidgets import QWebEnginePage 
-from PySide2 import  QtUiTools, QtNetwork,QtCore, QtGui, QtWidgets, QtWebChannel
+from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import QUrl
 
 import GIS2BIM
@@ -39,7 +39,7 @@ import GIS2BIM_FreeCAD
 import GIS2BIM_CRS 
 import FreeCAD
 
-import sys,os
+import os
 import time
 import re
 
@@ -97,7 +97,7 @@ class GISLocation_Dialog(QtWidgets.QDialog):
 		Newstr = Newstr.replace("FOLDERNAME", self.temptxtPath)
 		Newstr = Newstr.replace("WBBOX",self.bboxWidth)
 		Newstr = Newstr.replace("HBBOX",self.bboxHeight)
-		f1 = open(self.filepathNewMap, "x")
+		open(self.filepathNewMap, "x")
 		f1 = open(self.filepathNewMap, "w")
 		f1.write(Newstr)
 		f1.close()
@@ -137,7 +137,6 @@ class GISLocation_Dialog(QtWidgets.QDialog):
 		self.dropdownCRS.setCurrentIndex(5523)
 		self.dropdownCRS.setFixedWidth(300)
 		self.dropdownCRS.move(200, 730)
-		CRS_EPSG_SRID = GIS2BIM_CRS.inputChars[self.dropdownCRS.currentIndex()]
 
 		# boundingbox width
 		self.bboxWidthLab = QtWidgets.QLineEdit(self)
@@ -200,7 +199,7 @@ class GISLocation_Dialog(QtWidgets.QDialog):
 		searchterm = self.searchline1.toPlainText().split()
 		self.lat = (GIS2BIM.NominatimAPI(searchterm))[0] #Use Nominatim for geocoding
 		self.lon = (GIS2BIM.NominatimAPI(searchterm))[1]
-		if self.lat == None:
+		if self.lat is None:
 			dialog = QtWidgets.QMessageBox()
 			dialog.setText("Address not found")
 			dialog.setWindowTitle("Warning")

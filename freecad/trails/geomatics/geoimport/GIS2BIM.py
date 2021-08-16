@@ -42,18 +42,14 @@ import urllib.request
 import xml.etree.ElementTree as ET
 import json
 import math
-import sys
 import requests
 import re
-import os
-from PySide2 import QtCore, QtWidgets, QtGui
 from PIL import Image
 	
 #Common functions
 def GetWebServerData(servertitle, category, parameter):
 	#Get webserverdata from github repository of GIS2BIM(up to date list of GIS-servers & requests)
 	Serverlocation = "https://raw.githubusercontent.com/DutchSailor/GIS2BIM/master/GIS2BIM_Data.json"
-	import urllib.request, json
 	url = urllib.request.urlopen(Serverlocation)
 	data = json.loads(url.read())['GIS2BIMserversRequests'][category]
 	test = []
@@ -65,7 +61,6 @@ def GetWebServerData(servertitle, category, parameter):
 def GetWebServerDataService(category,service):
 	#Get a list with webserverdata from github repository of GIS2BIM(up to date list of GIS-servers & requests)
 	Serverlocation = "https://raw.githubusercontent.com/DutchSailor/GIS2BIM/master/GIS2BIM_Data.json"
-	import urllib.request, json
 	url = urllib.request.urlopen(Serverlocation)
 	data = json.loads(url.read())['GIS2BIMserversRequests'][category]
 	listOfData = []
@@ -76,14 +71,12 @@ def GetWebServerDataService(category,service):
 	
 def DownloadURL(folder,url,filename):
 	#Download a file to a folder from a given url
-	url = url
 	path = folder + filename
 	urllib.request.urlretrieve(url,path)
 	return path
 	
 def GetDataFiles(folder):
 	Serverlocation = "https://raw.githubusercontent.com/DutchSailor/GIS2BIM/master/datafiles/map.html"
-	import urllib.request, json
 	url = urllib.request.urlopen(Serverlocation)
 	data = json.loads(url.read())['GIS2BIMserversRequests'][category]
 	test = []
@@ -285,7 +278,6 @@ def TMS_WMTSCombinedMapFromLatLonBbox(lat,lon,bboxWidth,bboxHeight,zoomL,pixels,
 	yl1=[]
 	for i in x:
 		yl1.append(y)
-
 	yl2=[]
 	for sublist in yl1:
 		for item in sublist:
@@ -298,7 +290,7 @@ def TMS_WMTSCombinedMapFromLatLonBbox(lat,lon,bboxWidth,bboxHeight,zoomL,pixels,
 	ServerName = ServerName.replace("{z}",str(zoomL))
 	URLlist = []
 
-	for i,j in zip(xl2,yl2):
+	for i,j in zip(tilesX,tileY):
 		URLlist.append(ServerName.replace("{y}",str(j)).replace("{x}",str(i)))
 
 	#Download TileImages
@@ -354,7 +346,6 @@ def TMS_WMTSCombinedMapFromLatLonBbox(lat,lon,bboxWidth,bboxHeight,zoomL,pixels,
 			img.paste(i,(j,k))
 
 	#Crop Image
-	deltaWidth =TotalWidthOfTiles- bboxWidth
 	deltaHeight = TotalHeightOfTiles- bboxHeight
 	dxM = dx
 	dyM = deltaHeight-dy

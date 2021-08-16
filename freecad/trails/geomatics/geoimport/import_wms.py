@@ -29,21 +29,13 @@ __url__ = "https://github.com/DutchSailor/GIS2BIM"
 
 # WMS Importer
 
-import PySide2
-from PySide2 import QtCore, QtGui, QtWidgets
+from PySide2 import QtCore, QtWidgets
 from PySide2.QtGui import*
-from PySide2 import  QtUiTools, QtNetwork
-from PySide2.QtCore import Qt
 
 import FreeCAD
 
 import GIS2BIM
 import GIS2BIM_FreeCAD
-
-import urllib.request
-import urllib
-import xml.etree.ElementTree as ET
-import json
 
 class GISWMS_Dialog(QtWidgets.QDialog):
 
@@ -237,8 +229,6 @@ class GISWMS_Dialog(QtWidgets.QDialog):
 		URL = str(self.webserverName1.toPlainText())
 		X = float(self.numericInput1X.text())
 		Y = float(self.numericInput2Y.text())
-		dx = float(self.dx.text())
-		dy = float(self.dy.text())
 		width = float(self.bboxWidthLab.text())
 		height = float(self.bboxHeightLab.text())
 		fileLocationWMS = str(self.filelocation)
@@ -246,7 +236,7 @@ class GISWMS_Dialog(QtWidgets.QDialog):
 		self.pixHeight = int((pixWidth*height)/width)
 		pixHeight = self.pixHeight
 		Bbox = GIS2BIM.CreateBoundingBox(X,Y,width,height,2)
-		WMSRequest = GIS2BIM.WMSRequest(URL,Bbox,self.tempFileName,pixWidth,pixHeight)
+		GIS2BIM.WMSRequest(URL,Bbox,self.tempFileName,pixWidth,pixHeight)
 		picture = QPixmap(fileLocationWMS)
 		picture = picture.scaledToWidth(800)
 		pictheight = picture.height()
@@ -257,7 +247,6 @@ class GISWMS_Dialog(QtWidgets.QDialog):
 			picture = picture.scaledToWidth(pictwidth)
 		else:
 			pictwidth = 800			
-			pictheight = pictheight
 			picture = picture.scaledToWidth(pictwidth)
 		self.pictlabel.setPixmap(picture)
 		self.pictlabel.setGeometry(QtCore.QRect(40, 40, pictwidth-40, pictheight-40))
@@ -278,13 +267,12 @@ class GISWMS_Dialog(QtWidgets.QDialog):
 		Y = float(self.numericInput2Y.text())
 		dx = float(self.dx.text())*1000
 		dy = float(self.dy.text())*1000
-		fileLocationWMS = str(self.filelocation)
 		Bbox = GIS2BIM.CreateBoundingBox(X,Y,width,height,2)
 		result = GIS2BIM.WMSRequest(URL,Bbox,fileLocationWMS,self.pixelwidth.text(),int(self.pixHeight))
 		ImageAerialPhoto = GIS2BIM_FreeCAD.ImportImage(fileLocationWMS,width,height,1000, str(self.imageName.text()), dx,dy)
 		ImageAerialPhoto.addProperty("App::PropertyString","WMSRequestURL")
 		ImageAerialPhoto.WMSRequestURL = result[2]
-		WMS_layer = GIS2BIM_FreeCAD.CreateLayer("GIS_Raster")
+		GIS2BIM_FreeCAD.CreateLayer("GIS_Raster")
 		FreeCAD.activeDocument().getObject("GIS_Raster").addObject(FreeCAD.activeDocument().getObject(ImageAerialPhoto.Label))
 		FreeCAD.ActiveDocument.recompute()
 		self.result= userOK

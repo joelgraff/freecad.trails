@@ -28,21 +28,13 @@ __author__ = "Maarten Vroegindeweij"
 __url__ = "https://github.com/DutchSailor/GIS2BIM"
 # TMS Importer
 
-from PySide2 import QtCore, QtGui, QtWidgets
+from PySide2 import QtCore, QtWidgets
 from PySide2.QtGui import*
-from PySide2 import  QtUiTools, QtNetwork
-from PySide2.QtCore import Qt
 
 import FreeCAD
 
 import GIS2BIM
 import GIS2BIM_FreeCAD
-
-import urllib.request
-import urllib
-import xml.etree.ElementTree as ET
-import json
-from PIL import Image
 
 class GIS_TMS_Dialog(QtWidgets.QDialog):
 
@@ -197,7 +189,7 @@ class GIS_TMS_Dialog(QtWidgets.QDialog):
 		self.ServerName = self.webserverName1.toPlainText()
 		TMS = GIS2BIM.TMS_WMTSCombinedMapFromLatLonBbox(self.lat,self.lon,self.bboxWidth,self.bboxHeight,int(self.zoomLevel.text()),self.pixels,self.TMS_WMTS,self.ServerName)
 		self.filelocation = self.foldername + "/" + self.imageName.text() + ".jpg"		
-		TMSImage = TMS[0].save(self.filelocation)		
+		TMS[0].save(self.filelocation)		
 		picture = QPixmap(self.filelocation)
 		picture = picture.scaledToWidth(800)
 		pictheight = picture.height()
@@ -208,7 +200,6 @@ class GIS_TMS_Dialog(QtWidgets.QDialog):
 			picture = picture.scaledToWidth(pictwidth)
 		else:
 			pictwidth = 800			
-			pictheight = pictheight
 			picture = picture.scaledToWidth(pictwidth)
 		self.pictlabel.setPixmap(picture)
 		self.pictlabel.setGeometry(QtCore.QRect(40, 40, pictwidth-40, pictheight-40))
@@ -218,15 +209,13 @@ class GIS_TMS_Dialog(QtWidgets.QDialog):
 
 	def onOk(self):
 		self.result= userOK
-		URL = str(self.webserverName1.toPlainText())
 		dx = float(self.dx.text())*1000
 		dy = float(self.dy.text())*1000
 		fileLocationTMS = str(self.filelocation)
-		ServerName = self.webserverName1.toPlainText()
 		TMS = GIS2BIM.TMS_WMTSCombinedMapFromLatLonBbox(self.lat,self.lon,self.bboxWidth,self.bboxHeight,int(self.zoomLevel.text()),self.pixels,self.TMS_WMTS,self.ServerName)
-		TMSImage = TMS[0].save(fileLocationTMS)		
+		TMS[0].save(fileLocationTMS)		
 		ImageMap = GIS2BIM_FreeCAD.ImportImage(fileLocationTMS,self.bboxWidth,self.bboxHeight,1000, str(self.imageName.text()), dx,dy)
-		TMS_layer = GIS2BIM_FreeCAD.CreateLayer("GIS_Raster")
+		GIS2BIM_FreeCAD.CreateLayer("GIS_Raster")
 		FreeCAD.ActiveDocument.recompute()
 		FreeCAD.activeDocument().getObject("GIS_Raster").addObject(FreeCAD.activeDocument().getObject(ImageMap.Label))
 		FreeCAD.ActiveDocument.recompute()

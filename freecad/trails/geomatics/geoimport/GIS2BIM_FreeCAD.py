@@ -33,7 +33,7 @@ import Part
 import FreeCAD
 import Arch
 import os
-from PySide2 import QtCore, QtWidgets, QtGui
+from PySide2 import QtWidgets
 
 SiteName = "Geo-Sitedata"
 TempFolderName = "GIStemp/"
@@ -98,7 +98,7 @@ def PlaceText(textData,fontSize, upper):
         Place1 = FreeCAD.Placement(p1, FreeCAD.Rotation(ZAxis, -float(j)))
         if upper:
            k = k.upper()
-        else: k = k
+        else: k
         Text1 = Draft.makeText(k, point=p1)
         Text1.ViewObject.FontSize = fontSize
         Text1.Placement = Place1
@@ -111,7 +111,7 @@ def CreateLayer(layerName):
 	for obj in FreeCAD.ActiveDocument.Objects: #Check is layername already exists
 		lstObjects.append(obj.Label)
 	if not layerName in lstObjects:
-		layerObj = FreeCAD.activeDocument().addObject("App::DocumentObjectGroup", layerName)
+		FreeCAD.activeDocument().addObject("App::DocumentObjectGroup", layerName)
 	return layerName
 
 def ArchSiteCreateCheck(SiteName):
