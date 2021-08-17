@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 #***************************************************************************
-#*   Copyright (c) 2021 Maarten Vroegindeweij <maarten@3bm.co.nl>              *
+#*   Copyright (c) 2021 Maarten Vroegindeweij <maarten@3bm.co.nl>          *
 #*                                                                         *
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -33,8 +33,8 @@ from PySide2.QtGui import*
 
 import FreeCAD
 
-import GIS2BIM
-import GIS2BIM_FreeCAD
+from . import GIS2BIM
+from . import GIS2BIM_FreeCAD
 
 class GIS_TMS_Dialog(QtWidgets.QDialog):
 
