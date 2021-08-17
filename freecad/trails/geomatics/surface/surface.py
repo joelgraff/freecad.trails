@@ -81,9 +81,17 @@ class Surface(DataFunctions):
             "App::PropertyAngle","MaxAngle","Triangulation",
             "Maximum angle of triangle edge").MaxAngle = 180
 
-        # Boundary properties.
-        obj.addProperty("Part::PropertyPartShape", "BoundaryShapes", "Boundary",
+        obj.addProperty("Part::PropertyPartShape", "BoundaryShapes", "Triangulation",
             "Boundary Shapes").BoundaryShapes = Part.Shape()
+
+        # Analysis properties.
+        obj.addProperty(
+            "App::PropertyEnumeration", "AnalysisType", "Analysis",
+            "Set analysis type").AnalysisType = ["Default", "Elevation", "Slope", "Orientation"]
+
+        obj.addProperty(
+            "App::PropertyInteger", "Ranges", "Analysis",
+            "Ranges").Ranges = 5
 
         # Contour properties.
         obj.addProperty("Part::PropertyPartShape", "ContourShapes", "Contour",
@@ -374,57 +382,10 @@ class ViewProviderSurface(ViewFunctions):
                 vobj.ShapeMaterial.DiffuseColor = color
 
         if prop == "ShapeMaterial":
-
             if hasattr(vobj, "ShapeMaterial"):
                 material = vobj.getPropertyByName("ShapeMaterial")
-                mode = vobj.getPropertyByName("DisplayMode")
-                obj=vobj.Object
-
-                if mode == "Slope":
-                    import math
-                    colorlist = []
-                    for facet in obj.Mesh.Facets:
-                        normal = facet.Normal
-                        radian = normal.getAngle(FreeCAD.Vector(1, 1, 0))
-                        angle = math.degrees(radian)
-
-                        if angle < 45:
-                            colorlist.append((0.0, 1.0, 0.0))
-                        if angle < 90:
-                            colorlist.append((0.0, 1.0, 1.0))
-                        if angle < 135:
-                            colorlist.append((0.0, 0.0, 1.0))
-                        else:
-                            colorlist.append((1.0, 0.0, 1.0))
-
-                    self.face_material.diffuseColor.setValues(0,len(obj.Mesh.Facets),colorlist)
-                    self.face_material.transparency = material.DiffuseColor[3]
-
-                elif mode == "Elevation":
-                    scale = (obj.Mesh.BoundBox.ZMax - obj.Mesh.BoundBox.ZMin) / 100
-                    colorlist = []
-
-                    for facet in obj.Mesh.Facets:
-                        z = facet.Points[0][2] + facet.Points[1][2] + facet.Points[2][2]
-                        zz = (z/3 - obj.Mesh.BoundBox.ZMin) / scale
-
-                        if zz < 20:
-                            colorlist.append((0.0, 1.0, 0.0))
-                        elif zz < 40:
-                            colorlist.append((0.0, 1.0, 1.0))
-                        elif zz < 60:
-                            colorlist.append((0.0, 0.0, 1.0))
-                        elif zz < 80:
-                            colorlist.append((1.0, 0.0, 1.0))
-                        else:
-                            colorlist.append((1.0, 0.0, 0.0))
-
-                    self.face_material.diffuseColor.setValues(0,len(obj.Mesh.Facets),colorlist)
-                    self.face_material.transparency = material.DiffuseColor[3]
-
-                else:
-                    self.face_material.diffuseColor = material.DiffuseColor[:3]
-                    self.face_material.transparency = material.DiffuseColor[3]
+                self.face_material.diffuseColor = material.DiffuseColor[:3]
+                self.face_material.transparency = material.DiffuseColor[3]
 
         if prop == "LineColor" or prop == "LineTransparency":
             if hasattr(vobj, "LineColor") and hasattr(vobj, "LineTransparency"):
@@ -532,11 +493,27 @@ class ViewProviderSurface(ViewFunctions):
             self.boundary_coords.point.values = points
             self.boundary_lines.numVertices.values = vertices
 
+        if prop == "AnalysisType" or prop == "Ranges":
+            analysis_type = obj.getPropertyByName("AnalysisType")
+            ranges = obj.getPropertyByName("Ranges")
+
+            if analysis_type == "Default":
+                material = obj.ViewObject.ShapeMaterial
+                self.face_material.diffuseColor = material.DiffuseColor[:3]
+
+            if analysis_type == "Elevation":
+                colorlist = self.elevation_analysis(obj.Mesh, ranges)
+                self.face_material.diffuseColor.setValues(0,len(colorlist),colorlist)
+
+            elif analysis_type == "Slope":
+                colorlist = self.slope_analysis(obj.Mesh, ranges)
+                self.face_material.diffuseColor.setValues(0,len(colorlist),colorlist)
+
     def getDisplayModes(self,vobj):
         '''
         Return a list of display modes.
         '''
-        modes = ["Surface", "Boundary", "Elevation", "Slope", "Flat Lines", "Shaded" "Wireframe"]
+        modes = ["Surface", "Boundary", "Flat Lines", "Shaded" "Wireframe"]
 
         return modes
 
