@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 #***************************************************************************
-#*   Copyright (c) 2021 Maarten Vroegindeweij <maarten@3bm.co.nl>              *
+#*   Copyright (c) 2021 Maarten Vroegindeweij <maarten@3bm.co.nl>          *
 #*                                                                         *
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -45,7 +45,7 @@ import math
 import requests
 import re
 from PIL import Image
-	
+
 #Common functions
 def GetWebServerData(servertitle, category, parameter):
 	#Get webserverdata from github repository of GIS2BIM(up to date list of GIS-servers & requests)
