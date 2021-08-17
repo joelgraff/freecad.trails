@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 #***************************************************************************
-#*   Copyright (c) 2021 Maarten Vroegindeweij <maarten@3bm.co.nl>              *
+#*   Copyright (c) 2021 Maarten Vroegindeweij <maarten@3bm.co.nl>          *
 #*                                                                         *
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -27,7 +27,7 @@ __title__= "GIS2BIM_NL"
 __author__ = "Maarten Vroegindeweij"
 __url__ = "https://github.com/DutchSailor/GIS2BIM"
 
-import GIS2BIM
+from . import GIS2BIM
 #import urllib.request, json
 
 #jsonpath = "$.GIS2BIMserversRequests.webserverRequests[?(@.title==NetherlandsPDOKServerURL)].serverrequestprefix"
