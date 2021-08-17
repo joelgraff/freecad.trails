@@ -216,3 +216,42 @@ class ViewFunctions:
             vertices.append(len(vectors))
 
         return points, vertices
+
+    def elevation_analysis(self, mesh, ranges):
+        scale = (mesh.BoundBox.ZMax - mesh.BoundBox.ZMin) / 100
+        colorlist = []
+
+        for facet in mesh.Facets:
+            z = facet.Points[0][2] + facet.Points[1][2] + facet.Points[2][2]
+            zz = (z/3 - mesh.BoundBox.ZMin) / scale
+
+            if zz < 20:
+                colorlist.append((0.0, 1.0, 0.0))
+            elif zz < 40:
+                colorlist.append((0.0, 1.0, 1.0))
+            elif zz < 60:
+                colorlist.append((0.0, 0.0, 1.0))
+            elif zz < 80:
+                colorlist.append((1.0, 0.0, 1.0))
+            else:
+                colorlist.append((1.0, 0.0, 0.0))
+
+        return colorlist
+
+    def slope_analysis(self, mesh, ranges):
+        colorlist = []
+        for facet in mesh.Facets:
+            normal = facet.Normal
+            radian = normal.getAngle(FreeCAD.Vector(1, 1, 0))
+            angle = math.degrees(radian)
+
+            if angle < 45:
+                colorlist.append((0.0, 1.0, 0.0))
+            if angle < 90:
+                colorlist.append((0.0, 1.0, 1.0))
+            if angle < 135:
+                colorlist.append((0.0, 0.0, 1.0))
+            else:
+                colorlist.append((1.0, 0.0, 1.0))
+
+        return colorlist
