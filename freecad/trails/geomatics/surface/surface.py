@@ -246,6 +246,7 @@ class ViewProviderSurface(ViewFunctions):
 
         # Surface features.
         self.triangles = coin.SoIndexedFaceSet()
+        self.edges = coin.SoIndexedFaceSet()
         self.face_material = coin.SoMaterial()
         self.edge_material = coin.SoMaterial()
         self.edge_color = coin.SoBaseColor()
@@ -300,23 +301,24 @@ class ViewProviderSurface(ViewFunctions):
         minor_contours.addChild(self.minor_coords)
         minor_contours.addChild(self.minor_lines)
 
-        # Face root.
-        faces = coin.SoSeparator()
-        faces.addChild(shape_hints)
-        faces.addChild(self.face_material)
-        faces.addChild(mat_binding)
-        faces.addChild(self.geo_coords)
-        faces.addChild(self.triangles)
-
         # Highlight for selection.
         highlight = coin.SoType.fromName('SoFCSelection').createInstance()
         highlight.style = 'EMISSIVE_DIFFUSE'
-        faces.addChild(shape_hints)
-        highlight.addChild(self.edge_material)
+        highlight.addChild(shape_hints)
         highlight.addChild(mat_binding)
-        highlight.addChild(self.edge_style)
         highlight.addChild(self.geo_coords)
         highlight.addChild(self.triangles)
+
+        # Face root.
+        face = coin.SoSeparator()
+        face.addChild(self.face_material)
+        face.addChild(highlight)
+
+        # Edge root.
+        edge = coin.SoSeparator()
+        edge.addChild(self.edge_material)
+        edge.addChild(self.edge_style)
+        edge.addChild(highlight)
 
         # Surface root.
         surface_root = coin.SoSeparator()
@@ -325,9 +327,9 @@ class ViewProviderSurface(ViewFunctions):
         surface_root.addChild(major_contours)
         surface_root.addChild(minor_contours)
         surface_root.addChild(offset)
-        surface_root.addChild(faces)
+        surface_root.addChild(edge)
         surface_root.addChild(offset)
-        surface_root.addChild(highlight)
+        surface_root.addChild(face)
         vobj.addDisplayMode(surface_root,"Surface")
 
         # Boundary root.
@@ -337,16 +339,16 @@ class ViewProviderSurface(ViewFunctions):
 
         # Elevation/Shaded root.
         shaded_root = coin.SoSeparator()
-        shaded_root.addChild(faces)
+        shaded_root.addChild(face)
         vobj.addDisplayMode(shaded_root,"Elevation")
         vobj.addDisplayMode(shaded_root,"Slope")
         vobj.addDisplayMode(shaded_root,"Shaded")
 
         # Flat Lines root.
         flatlines_root = coin.SoSeparator()
-        flatlines_root.addChild(faces)
+        flatlines_root.addChild(edge)
         flatlines_root.addChild(offset)
-        flatlines_root.addChild(highlight)
+        flatlines_root.addChild(face)
         vobj.addDisplayMode(flatlines_root,"Flat Lines")
 
         # Wireframe root.
@@ -354,7 +356,7 @@ class ViewProviderSurface(ViewFunctions):
         wireframe_root.addChild(major_contours)
         wireframe_root.addChild(minor_contours)
         wireframe_root.addChild(offset)
-        wireframe_root.addChild(highlight)
+        wireframe_root.addChild(edge)
         vobj.addDisplayMode(wireframe_root,"Wireframe")
 
         # Take features from properties.
@@ -384,7 +386,7 @@ class ViewProviderSurface(ViewFunctions):
         if prop == "ShapeMaterial":
             if hasattr(vobj, "ShapeMaterial"):
                 material = vobj.getPropertyByName("ShapeMaterial")
-                self.face_material.diffuseColor = material.DiffuseColor[:3]
+                self.face_material.diffuseColor.setValue(material.DiffuseColor[:3])
                 self.face_material.transparency = material.DiffuseColor[3]
 
         if prop == "LineColor" or prop == "LineTransparency":
@@ -396,12 +398,8 @@ class ViewProviderSurface(ViewFunctions):
 
         if prop == "LineMaterial":
             material = vobj.getPropertyByName(prop)
-            self.edge_material.diffuseColor = material.DiffuseColor[:3]
+            self.edge_material.diffuseColor.setValue(material.DiffuseColor[:3])
             self.edge_material.transparency = material.DiffuseColor[3]
-
-        if prop == "LineColor":
-            color = vobj.getPropertyByName(prop)
-            self.edge_color.rgb = color[:3]
 
         if prop == "LineWidth":
             width = vobj.getPropertyByName(prop)
@@ -498,8 +496,9 @@ class ViewProviderSurface(ViewFunctions):
             ranges = obj.getPropertyByName("Ranges")
 
             if analysis_type == "Default":
-                material = obj.ViewObject.ShapeMaterial
-                self.face_material.diffuseColor = material.DiffuseColor[:3]
+                if hasattr(obj.ViewObject, "ShapeMaterial"):
+                    material = obj.ViewObject.ShapeMaterial
+                    self.face_material.diffuseColor = material.DiffuseColor[:3]
 
             if analysis_type == "Elevation":
                 colorlist = self.elevation_analysis(obj.Mesh, ranges)
