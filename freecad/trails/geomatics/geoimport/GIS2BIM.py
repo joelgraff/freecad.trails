@@ -42,7 +42,6 @@ import urllib.request
 import xml.etree.ElementTree as ET
 import json
 import math
-import requests
 import re
 from PIL import Image
 
@@ -104,8 +103,9 @@ def TransformCRS_epsg(SourceCRS, TargetCRS, X, Y):
     X = str(X)
     Y = str(Y)
     requestURL = "https://epsg.io/trans?" + "&s_srs=" + SourceCRS + "&t_srs=" + TargetCRS + "&x=" + X + "&y=" + Y + "&format=json"
-    rqst = requests.get(requestURL).content
-    data = json.loads(rqst)
+    req = urllib.request.Request(requestURL, headers={'User-Agent': 'Mozilla/5.0'})
+    webpage = urllib.request.urlopen(req).read()
+    data = json.loads(webpage)
     X = data["x"]
     Y = data["y"]
     return X,Y
