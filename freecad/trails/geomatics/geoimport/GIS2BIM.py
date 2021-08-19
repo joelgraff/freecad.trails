@@ -295,8 +295,11 @@ def TMS_WMTSCombinedMapFromLatLonBbox(lat,lon,bboxWidth,bboxHeight,zoomL,pixels,
 
 	#Download TileImages
 	TileImages = []
+	opener=urllib.request.build_opener()
+	opener.addheaders=[('User-Agent','Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1941.0 Safari/537.36')]
+	urllib.request.install_opener(opener)
 	for i in URLlist:
-		TileImages.append(Image.open(requests.get(i, stream=True).raw))
+		TileImages.append(Image.open(urllib.request.urlopen(i)))
 
 	#Create new image to concatenate the tileimages in.
 	widthImg = len(rangex)*pixels
