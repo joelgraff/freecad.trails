@@ -86,13 +86,24 @@ class TrailsWorkbench(Gui.Workbench):
         #'group' - Tuple containing the subgroup description and type.  None/undefined if no group
         self.command_ui = {
 
-            'Data Tools': {
+            'GIS Tools': {
+                'gui': self.menu + self.toolbar,
+                'cmd': [
+                    'Set Geo Location',
+                    'Import TMS',
+                    'Import WMS',
+                    'Import OSM Map',
+                    'Navigator',
+                    'Geo Import Tools'
+                    ]
+            },
+
+            'Point Tools': {
                 'gui': self.menu + self.toolbar,
                 'cmd': [
                     'Create Point Group',
                     'Import Point File',
-                    'Export Points',
-                    'Geo Import Tools'
+                    'Export Points'
                     ]
             },
 
@@ -154,10 +165,6 @@ class TrailsWorkbench(Gui.Workbench):
             'Geo Import Tools': {
                 'gui': self.group,
                 'cmd': [
-                    'Set Geo Location',
-                    'Import TMS',
-                    'Import WMS',
-                    'Import OSM Map',
                     'Import CSV',
                     'Import GPX',
                     'Import Heights',
@@ -168,7 +175,6 @@ class TrailsWorkbench(Gui.Workbench):
                     'Import ASTER',
                     'Import LIDAR',
                     'Create House',
-                    'Navigator',
                     'ElevationGrid',
                     'Import EMIR',
                ],
