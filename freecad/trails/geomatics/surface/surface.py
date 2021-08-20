@@ -224,7 +224,7 @@ class ViewProviderSurface(ViewFunctions):
 
         vobj.addProperty(
             "App::PropertyFloatConstraint", "MajorWidth", "Contour Style",
-            "Set major contour line width").MajorWidth = (3.0, 1.0, 20.0, 1.0)
+            "Set major contour line width").MajorWidth = (4.0, 1.0, 20.0, 1.0)
 
         vobj.addProperty(
             "App::PropertyColor", "MinorColor", "Contour Style",
@@ -232,7 +232,7 @@ class ViewProviderSurface(ViewFunctions):
 
         vobj.addProperty(
             "App::PropertyFloatConstraint", "MinorWidth", "Contour Style",
-            "Set major contour line width").MinorWidth = (1.0, 1.0, 20.0, 1.0)
+            "Set major contour line width").MinorWidth = (2.0, 1.0, 20.0, 1.0)
 
         vobj.Proxy = self
         vobj.ShapeMaterial.DiffuseColor = vobj.ShapeColor
@@ -246,7 +246,6 @@ class ViewProviderSurface(ViewFunctions):
 
         # Surface features.
         self.triangles = coin.SoIndexedFaceSet()
-        self.edges = coin.SoIndexedFaceSet()
         self.face_material = coin.SoMaterial()
         self.edge_material = coin.SoMaterial()
         self.edge_color = coin.SoBaseColor()
@@ -258,6 +257,8 @@ class ViewProviderSurface(ViewFunctions):
         mat_binding = coin.SoMaterialBinding()
         mat_binding.value = coin.SoMaterialBinding.PER_FACE
         offset = coin.SoPolygonOffset()
+        offset.styles = coin.SoPolygonOffset.LINES
+        offset.factor = -2.0
 
         # Boundary features.
         self.boundary_color = coin.SoBaseColor()
@@ -267,7 +268,8 @@ class ViewProviderSurface(ViewFunctions):
         self.boundary_style.style = coin.SoDrawStyle.LINES
 
         # Boundary root.
-        boundaries = coin.SoSeparator()
+        boundaries = coin.SoType.fromName('SoFCSelection').createInstance()
+        boundaries.style = 'EMISSIVE_DIFFUSE'
         boundaries.addChild(self.boundary_color)
         boundaries.addChild(self.boundary_style)
         boundaries.addChild(self.boundary_coords)
@@ -308,6 +310,7 @@ class ViewProviderSurface(ViewFunctions):
         highlight.addChild(mat_binding)
         highlight.addChild(self.geo_coords)
         highlight.addChild(self.triangles)
+        highlight.addChild(boundaries)
 
         # Face root.
         face = coin.SoSeparator()
@@ -322,14 +325,11 @@ class ViewProviderSurface(ViewFunctions):
 
         # Surface root.
         surface_root = coin.SoSeparator()
-        surface_root.addChild(boundaries)
-        surface_root.addChild(offset)
-        surface_root.addChild(major_contours)
-        surface_root.addChild(minor_contours)
+        surface_root.addChild(face)
         surface_root.addChild(offset)
         surface_root.addChild(edge)
-        surface_root.addChild(offset)
-        surface_root.addChild(face)
+        surface_root.addChild(major_contours)
+        surface_root.addChild(minor_contours)
         vobj.addDisplayMode(surface_root,"Surface")
 
         # Boundary root.
@@ -346,17 +346,16 @@ class ViewProviderSurface(ViewFunctions):
 
         # Flat Lines root.
         flatlines_root = coin.SoSeparator()
-        flatlines_root.addChild(edge)
-        flatlines_root.addChild(offset)
         flatlines_root.addChild(face)
+        flatlines_root.addChild(offset)
+        flatlines_root.addChild(edge)
         vobj.addDisplayMode(flatlines_root,"Flat Lines")
 
         # Wireframe root.
         wireframe_root = coin.SoSeparator()
+        wireframe_root.addChild(edge)
         wireframe_root.addChild(major_contours)
         wireframe_root.addChild(minor_contours)
-        wireframe_root.addChild(offset)
-        wireframe_root.addChild(edge)
         vobj.addDisplayMode(wireframe_root,"Wireframe")
 
         # Take features from properties.
@@ -512,7 +511,7 @@ class ViewProviderSurface(ViewFunctions):
         '''
         Return a list of display modes.
         '''
-        modes = ["Surface", "Boundary", "Flat Lines", "Shaded" "Wireframe"]
+        modes = ["Surface", "Boundary", "Flat Lines", "Shaded", "Wireframe"]
 
         return modes
 
