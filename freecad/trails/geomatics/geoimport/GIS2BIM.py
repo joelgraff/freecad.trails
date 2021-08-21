@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 #***************************************************************************
-#*   Copyright (c) 2021 Maarten Vroegindeweij <maarten@3bm.co.nl>              *
+#*   Copyright (c) 2021 Maarten Vroegindeweij <maarten@3bm.co.nl>          *
 #*                                                                         *
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -44,12 +44,11 @@ import json
 import math
 import re
 from PIL import Image
-	
+
 #Common functions
 def GetWebServerData(servertitle, category, parameter):
 	#Get webserverdata from github repository of GIS2BIM(up to date list of GIS-servers & requests)
 	Serverlocation = "https://raw.githubusercontent.com/DutchSailor/GIS2BIM/master/GIS2BIM_Data.json"
-	#Serverlocation = "C:/Users/mikev/OneDrive/Documenten/GitHub/GIS2BIM/GIS2BIM_Data.json"
 	url = urllib.request.urlopen(Serverlocation)
 	data = json.loads(url.read())['GIS2BIMserversRequests'][category]
 	test = []
@@ -61,7 +60,6 @@ def GetWebServerData(servertitle, category, parameter):
 def GetWebServerDataService(category,service):
 	#Get a list with webserverdata from github repository of GIS2BIM(up to date list of GIS-servers & requests)
 	Serverlocation = "https://raw.githubusercontent.com/DutchSailor/GIS2BIM/master/GIS2BIM_Data.json"
-	#Serverlocation = "C:/Users/mikev/OneDrive/Documenten/GitHub/GIS2BIM/GIS2BIM_Data.json"
 	url = urllib.request.urlopen(Serverlocation)
 	data = json.loads(url.read())['GIS2BIMserversRequests'][category]
 	listOfData = []
