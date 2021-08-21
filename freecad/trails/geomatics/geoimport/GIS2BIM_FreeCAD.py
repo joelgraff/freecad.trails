@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 #***************************************************************************
-#*   Copyright (c) 2021 Maarten Vroegindeweij <maarten@3bm.co.nl>          *
+#*   Copyright (c) 2021 Maarten Vroegindeweij <maarten@3bm.co.nl>              *
 #*                                                                         *
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -27,7 +27,7 @@ __title__= "GIS2BIM_FreeCAD"
 __author__ = "Maarten Vroegindeweij"
 __url__ = "https://github.com/DutchSailor/GIS2BIM"
 
-from . import GIS2BIM
+import GIS2BIM
 import Draft
 import Part
 import FreeCAD
@@ -76,7 +76,7 @@ def Buildings3D(curves3DBAG,heightData3DBAG):
         solids.append(sld)
     return solids
 
-def CurvesFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNumbers,XYZCountDimensions,closedValue,DrawStyle,LineColor):
+def CurvesFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNumbers,XYZCountDimensions,closedValue,Face,DrawStyle,LineColor):
     curves = GIS2BIM.PointsFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNumbers,XYZCountDimensions)
     curvesWFS = []
     for i in curves:
@@ -84,7 +84,7 @@ def CurvesFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNu
         for j in i:
             pointlist.append(FreeCAD.Vector(j[0], j[1], 0))
         a = Draft.makeWire(pointlist, closed=closedValue)
-        a.MakeFace = closedValue
+        a.MakeFace = Face
         a.ViewObject.DrawStyle = DrawStyle
         a.ViewObject.LineColor = LineColor
         curvesWFS.append(a)
