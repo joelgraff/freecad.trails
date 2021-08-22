@@ -76,7 +76,7 @@ def Buildings3D(curves3DBAG,heightData3DBAG):
         solids.append(sld)
     return solids
 
-def CurvesFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNumbers,XYZCountDimensions,closedValue,DrawStyle,LineColor):
+def CurvesFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNumbers,XYZCountDimensions,closedValue,Face,DrawStyle,LineColor):
     curves = GIS2BIM.PointsFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNumbers,XYZCountDimensions)
     curvesWFS = []
     for i in curves:
@@ -84,7 +84,7 @@ def CurvesFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNu
         for j in i:
             pointlist.append(FreeCAD.Vector(j[0], j[1], 0))
         a = Draft.makeWire(pointlist, closed=closedValue)
-        a.MakeFace = closedValue
+        a.MakeFace = Face
         a.ViewObject.DrawStyle = DrawStyle
         a.ViewObject.LineColor = LineColor
         curvesWFS.append(a)

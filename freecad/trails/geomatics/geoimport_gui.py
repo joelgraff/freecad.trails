@@ -190,7 +190,20 @@ class import_wms:
             'MenuText': 'Import WMS',
             'ToolTip': 'Import WMS(Web Map Service)'
         }
-		
+
+class import_wfs:
+
+    def Activated(self):
+        from .geoimport import import_wfs
+        import_wfs.GISWFS_Dialog().exec_()
+
+    def GetResources(self):
+        return {
+            'Pixmap': 'Std_Tool1',
+            'MenuText': 'Import WFS',
+            'ToolTip': 'Import WFS(Web Feature Service)'
+        }	
+
 class import_osm:
 
     def Activated(self):
@@ -264,6 +277,7 @@ class ElevationGrid:
 FreeCADGui.addCommand('Set Geo Location', set_geolocation())
 FreeCADGui.addCommand('Import TMS', import_tms())
 FreeCADGui.addCommand('Import WMS', import_wms())
+FreeCADGui.addCommand('Import WFS', import_wfs())
 FreeCADGui.addCommand('Import OSM Map', import_osm())
 FreeCADGui.addCommand('Import CSV', import_csv())
 FreeCADGui.addCommand('Import GPX', import_gpx())

@@ -97,7 +97,7 @@ def checkIfCoordIsInsideBoundingBox(coord, bounding_box):
         return True
     else:
         return False
-		
+
 def TransformCRS_epsg(SourceCRS, TargetCRS, X, Y):
     # transform coordinates between different Coordinate Reference Systems using EPSG-server
     X = str(X)
