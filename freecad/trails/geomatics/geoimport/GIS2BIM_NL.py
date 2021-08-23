@@ -33,18 +33,18 @@ from . import GIS2BIM
 #jsonpath = "$.GIS2BIMserversRequests.webserverRequests[?(@.title==NetherlandsPDOKServerURL)].serverrequestprefix"
 
 ## Webserverdata NL
-NLPDOKServerURL = GIS2BIM.GetWebServerData('NLPDOKServerURL','webserverRequests','serverrequestprefix')
-NLPDOKCadastreCadastralParcels = GIS2BIM.GetWebServerData('NLPDOKCadastreCadastralParcels','webserverRequests','serverrequestprefix') #For curves of Cadastral Parcels
-NLPDOKCadastreCadastralParcelsNummeraanduiding = GIS2BIM.GetWebServerData('NLPDOKCadastreCadastralParcelsNummeraanduiding','webserverRequests','serverrequestprefix') #For 'nummeraanduidingreeks' of Cadastral Parcels
-NLPDOKCadastreOpenbareruimtenaam = GIS2BIM.GetWebServerData('NLPDOKCadastreOpenbareruimtenaam','webserverRequests','serverrequestprefix')#For 'openbareruimtenaam' of Cadastral Parcels
-NLPDOKBAGBuildingCountour = GIS2BIM.GetWebServerData('NLPDOKBAGBuildingCountour','webserverRequests','serverrequestprefix')  #Building Contour of BAG
-NLTUDelftBAG3DV1 = GIS2BIM.GetWebServerData('NLTUDelftBAG3DV1','webserverRequests','serverrequestprefix')  #3D Buildings of BAG
-NLRuimtelijkeplannenBouwvlak = GIS2BIM.GetWebServerData('NLRuimtelijkeplannenBouwvlak','webserverRequests','serverrequestprefix')
-NLPDOKLuchtfoto2016 = GIS2BIM.GetWebServerData('NL_PDOK_Luchtfoto_2016','webserverRequests','serverrequestprefix')
-NLPDOKLuchtfoto2017 = GIS2BIM.GetWebServerData('NL_PDOK_Luchtfoto_2017','webserverRequests','serverrequestprefix')
-NLPDOKLuchtfoto2018 = GIS2BIM.GetWebServerData('NL_PDOK_Luchtfoto_2018','webserverRequests','serverrequestprefix')
-NLPDOKLuchtfoto2019 = GIS2BIM.GetWebServerData('NL_PDOK_Luchtfoto_2019','webserverRequests','serverrequestprefix')
-NLPDOKLuchtfoto2020 = GIS2BIM.GetWebServerData('NL_PDOK_Luchtfoto_2020','webserverRequests','serverrequestprefix')
+NLPDOKServerURL = GIS2BIM.GetWebServerData('NLPDOKServerURL_28992','webserverRequests','serverrequestprefix')
+NLPDOKCadastreCadastralParcels = GIS2BIM.GetWebServerData('NLPDOKCadastreCadastralParcels_28992','webserverRequests','serverrequestprefix') #For curves of Cadastral Parcels
+NLPDOKCadastreCadastralParcelsNummeraanduiding = GIS2BIM.GetWebServerData('NLPDOKCadastreCadastralParcelsNummeraanduiding_28992','webserverRequests','serverrequestprefix') #For 'nummeraanduidingreeks' of Cadastral Parcels
+NLPDOKCadastreOpenbareruimtenaam = GIS2BIM.GetWebServerData('NLPDOKCadastreOpenbareruimtenaam_28992','webserverRequests','serverrequestprefix')#For 'openbareruimtenaam' of Cadastral Parcels
+NLPDOKBAGBuildingCountour = GIS2BIM.GetWebServerData('NLPDOKBAGBuildingCountour_28992','webserverRequests','serverrequestprefix')  #Building Contour of BAG
+NLTUDelftBAG3DV1 = GIS2BIM.GetWebServerData('NLTUDelftBAG3DV1_28992','webserverRequests','serverrequestprefix')  #3D Buildings of BAG
+NLRuimtelijkeplannenBouwvlak = GIS2BIM.GetWebServerData('NLRuimtelijkeplannenBouwvlak_28992','webserverRequests','serverrequestprefix')
+NLPDOKLuchtfoto2016 = GIS2BIM.GetWebServerData('NL_PDOK_Luchtfoto_2016_28992','webserverRequests','serverrequestprefix')
+NLPDOKLuchtfoto2017 = GIS2BIM.GetWebServerData('NL_PDOK_Luchtfoto_2017_28992','webserverRequests','serverrequestprefix')
+NLPDOKLuchtfoto2018 = GIS2BIM.GetWebServerData('NL_PDOK_Luchtfoto_2018_28992','webserverRequests','serverrequestprefix')
+NLPDOKLuchtfoto2019 = GIS2BIM.GetWebServerData('NL_PDOK_Luchtfoto_2019_28992','webserverRequests','serverrequestprefix')
+NLPDOKLuchtfoto2020 = GIS2BIM.GetWebServerData('NL_PDOK_Luchtfoto_2020_28992','webserverRequests','serverrequestprefix')
 
 ## Xpath for several Web Feature Servers
 NLPDOKxPathOpenGISposList = GIS2BIM.GetWebServerData('NLPDOKxPathOpenGISposList','Querystrings','querystring')
@@ -74,4 +74,5 @@ def NL_GetLocationData(PDOKServer,City,Streetname,Housenumber):
     RDx = float(RD[1])
     RDy = float(RD[2])
     result = [RDx,RDy,requestURL]
+	
     return result

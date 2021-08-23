@@ -279,6 +279,7 @@ class GISWFS_Dialog(QtWidgets.QDialog):
 		JS2 = JS2.replace("WBBOX", self.bboxWidth.text())
 		JS2 = JS2.replace("HBBOX", self.bboxHeight.text())
 		self.webPage.runJavaScript(JS2) # update bboxWidth in mapview
+		self.testWFS()
 
 	def onbboxHeight(self):
 		JS3 = open(self.filepathJSUpdate,"r")
@@ -286,11 +287,13 @@ class GISWFS_Dialog(QtWidgets.QDialog):
 		JS3 = JS3.replace("WBBOX", self.bboxWidth.text())
 		JS3 = JS3.replace("HBBOX", self.bboxHeight.text())
 		self.webPage.runJavaScript(JS3) # update bboxHeight in mapview
+		self.testWFS()
 	
 	def selectionchange(self): 
 		#Update serverRequest
 		self.request.clear()		
 		self.request.setText(self.ServerRequestPrefix[self.cboDefWFS.currentIndex()])
+		self.testWFS()
 
 	def testWFS(self):
 		JS4 = open(self.filepathJSwfs,"r")
@@ -310,13 +313,14 @@ class GISWFS_Dialog(QtWidgets.QDialog):
 		closedValue = self.clsPolygon.isChecked()
 		makeFaceValue = self.clsCreateFace.isChecked()
 		drawStyle = str(self.linePattern.currentText())  
-		Curves = GIS2BIM_FreeCAD.CurvesFromWFS(url,self.bboxString,xpathstr,-float(self.X),-float(self.Y),1000,3,2,closedValue,makeFaceValue,drawStyle,(0.7,0.0,0.0))
+		Curves = GIS2BIM_FreeCAD.CurvesFromWFS(url,self.bboxString,xpathstr,-float(self.X),-float(self.Y),1000,3,closedValue,makeFaceValue,drawStyle,(0.7,0.0,0.0))
 		GIS2BIM_FreeCAD.CreateLayer(self.groupName.text())
 		FreeCAD.activeDocument().getObject(self.groupName.text()).addObjects(Curves)
 		FreeCAD.ActiveDocument.recompute()
+		self.close()
 
 	def onCancel(self):
 		self.close()
-		
+
 #form = GISWFS_Dialog()
 #form.exec_()
