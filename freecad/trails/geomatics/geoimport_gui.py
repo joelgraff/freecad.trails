@@ -22,6 +22,7 @@
 
 import FreeCAD
 import FreeCADGui
+from freecad.trails import ICONPATH
 
 
 class import_csv:
@@ -150,8 +151,9 @@ class navigator:
             'Pixmap': 'Std_Tool2',
             'MenuText': 'Navigator',
             'ToolTip': 'Navigator'
-        }	
-				
+        }
+
+
 class set_geolocation:
 
     def Activated(self):
@@ -160,10 +162,11 @@ class set_geolocation:
 
     def GetResources(self):
         return {
-            'Pixmap': 'Std_Tool1',
+            'Pixmap': ICONPATH + '/icons/SetGeoLocation.svg',
             'MenuText': 'Set Geo Location',
             'ToolTip': 'Set Geo Location'
         }
+
 
 class import_tms:
 
@@ -173,10 +176,11 @@ class import_tms:
 
     def GetResources(self):
         return {
-            'Pixmap': 'Std_Tool1',
+            'Pixmap': ICONPATH + '/icons/ImportWMS.svg',
             'MenuText': 'Import TMS',
             'ToolTip': 'Import TMS(Tile Map Service)'
         }
+
 
 class import_wms:
 
@@ -186,10 +190,11 @@ class import_wms:
 
     def GetResources(self):
         return {
-            'Pixmap': 'Std_Tool1',
+            'Pixmap': ICONPATH + '/icons/ImportWMS.svg',
             'MenuText': 'Import WMS',
             'ToolTip': 'Import WMS(Web Map Service)'
         }
+
 
 class import_wfs:
 
@@ -199,10 +204,11 @@ class import_wfs:
 
     def GetResources(self):
         return {
-            'Pixmap': 'Std_Tool1',
+            'Pixmap': ICONPATH + '/icons/ImportWMS.svg',
             'MenuText': 'Import WFS',
             'ToolTip': 'Import WFS(Web Feature Service)'
-        }	
+        }
+
 
 class import_osm:
 
@@ -212,9 +218,9 @@ class import_osm:
 
     def GetResources(self):
         return {
-            'Pixmap': 'Std_Tool1',
-            'MenuText': 'Import OSM Map',
-            'ToolTip': 'Import OSM Map'
+            'Pixmap': ICONPATH + '/icons/ImportOSM.svg',
+            'MenuText': 'Import OSM',
+            'ToolTip': 'Import OSM'
         }
 
 
@@ -278,7 +284,7 @@ FreeCADGui.addCommand('Set Geo Location', set_geolocation())
 FreeCADGui.addCommand('Import TMS', import_tms())
 FreeCADGui.addCommand('Import WMS', import_wms())
 FreeCADGui.addCommand('Import WFS', import_wfs())
-FreeCADGui.addCommand('Import OSM Map', import_osm())
+FreeCADGui.addCommand('Import OSM', import_osm())
 FreeCADGui.addCommand('Import CSV', import_csv())
 FreeCADGui.addCommand('Import GPX', import_gpx())
 FreeCADGui.addCommand('Import Heights', importheights())
