@@ -93,7 +93,7 @@ class TrailsWorkbench(Gui.Workbench):
                     'Import TMS',
                     'Import WMS',
                     'Import WFS',
-                    'Import OSM Map',
+                    'Import OSM',
                     'Navigator',
                     'Geo Import Tools'
                     ]
