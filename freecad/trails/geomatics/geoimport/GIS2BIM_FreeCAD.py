@@ -76,8 +76,8 @@ def Buildings3D(curves3DBAG,heightData3DBAG):
         solids.append(sld)
     return solids
 
-def CurvesFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNumbers,XYZCountDimensions,closedValue,Face,DrawStyle,LineColor):
-    curves = GIS2BIM.PointsFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNumbers,XYZCountDimensions)
+def CurvesFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNumbers,closedValue,Face,DrawStyle,LineColor):
+    curves = GIS2BIM.PointsFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNumbers)
     curvesWFS = []
     for i in curves:
         pointlist = []

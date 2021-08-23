@@ -44,7 +44,7 @@ import json
 import math
 import re
 from PIL import Image
-
+	
 #Common functions
 def GetWebServerData(servertitle, category, parameter):
 	#Get webserverdata from github repository of GIS2BIM(up to date list of GIS-servers & requests)
@@ -110,13 +110,19 @@ def TransformCRS_epsg(SourceCRS, TargetCRS, X, Y):
     Y = data["y"]
     return X,Y
 
-def GML_poslistData(tree, xPathString,dx,dy,scale,DecimalNumbers,XYZCountDimensions):
+def GML_poslistData(tree, xPathString,dx,dy,scale,DecimalNumbers):
 #group X and Y Coordinates of polylines
     posLists = tree.findall(xPathString)
     xyPosList = []
     for posList in posLists:
         dataPosList = posList.text
         coordSplit = dataPosList.split()
+        try:
+            if float(coordSplit[2]) == 0:
+                XYZCountDimensions = 3
+            else:XYZCountDimensions = 2
+        except:
+            XYZCountDimensions = 2
         x = 0
         coordSplitXY = []
         for j in range(0, int(len(coordSplit) / XYZCountDimensions)):
@@ -135,20 +141,20 @@ def CreateBoundingBox(CoordinateX,CoordinateY,BoxWidth,BoxHeight,DecimalNumbers)
     boundingBoxString = str(XLeft) + "," + str(YBottom) + "," + str(XRight) + "," + str(YTop)
     return boundingBoxString
 
-def PointsFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNumbers,XYZCountDimensions):
+def PointsFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNumbers):
 # group X and Y Coordinates
     myrequesturl = serverName + boundingBoxString
     urlFile = urllib.request.urlopen(myrequesturl)
     tree = ET.parse(urlFile)
-    xyPosList = GML_poslistData(tree,xPathString,dx,dy,scale,DecimalNumbers,XYZCountDimensions)
+    xyPosList = GML_poslistData(tree,xPathString,dx,dy,scale,DecimalNumbers)
     return xyPosList
 
-def DataFromWFS(serverName,boundingBoxString,xPathStringCoord,xPathStrings,dx,dy,scale,DecimalNumbers,XYZCountDimensions):
+def DataFromWFS(serverName,boundingBoxString,xPathStringCoord,xPathStrings,dx,dy,scale,DecimalNumbers):
 # group textdata from WFS
     myrequesturl = serverName + boundingBoxString
     urlFile = urllib.request.urlopen(myrequesturl)
     tree = ET.parse(urlFile)
-    xyPosList = GML_poslistData(tree,xPathStringCoord,dx,dy,scale,DecimalNumbers,XYZCountDimensions)
+    xyPosList = GML_poslistData(tree,xPathStringCoord,dx,dy,scale,DecimalNumbers)
     xPathResults = []
     for xPathString in xPathStrings:
         a = tree.findall(xPathString)
