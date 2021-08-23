@@ -38,9 +38,9 @@ from PySide2.QtCore import QUrl
 import os
 import FreeCAD
 
-import GIS2BIM
-import GIS2BIM_FreeCAD
-import GIS2BIM_CRS 
+from . import GIS2BIM
+from . import GIS2BIM_FreeCAD
+from . import GIS2BIM_CRS 
 
 
 class GISWFS_Dialog(QtWidgets.QDialog):
