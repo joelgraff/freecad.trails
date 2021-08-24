@@ -481,11 +481,12 @@ class HorizontalAlignment(Alignment):
             curve_obj = []
             spiral_obj = []
 
-            for i in lines:
-                cpnt = App.Vector(i[0]).sub(base)
-                npnt = App.Vector(i[1]).sub(base)
-                line = Part.makeLine(cpnt, npnt)
-                line_obj.append(line)
+            for line in lines:
+                points = []
+                for pnt in line:
+                    points.append(App.Vector(pnt).sub(base))
+                wire = Part.makePolygon(points)
+                line_obj.append(wire)
 
             for curve in curves:
                 points = []
@@ -527,54 +528,43 @@ class ViewProviderHorizontalAlignment():
 
         self.Object = vobj.Object
 
-        # Lines root.
-        self.line_coords = coin.SoGeoCoordinate()
-        self.lines = coin.SoLineSet()
-
         # Line style.
-        line_color = coin.SoBaseColor()
-        line_color.rgb = (1.0, 0.0, 0.0)
         line_style = coin.SoDrawStyle()
         line_style.style = coin.SoDrawStyle.LINES
         line_style.lineWidth = 2
 
-        # Curve root.
-        self.curve_coords = coin.SoGeoCoordinate()
-        self.curves = coin.SoLineSet()
-        curve_color = coin.SoBaseColor()
-        curve_color.rgb = (1.0, 1.0, 0.0)
+        # Line geometry keepers.
+        line_color = coin.SoBaseColor()
+        line_color.rgb = (1.0, 0.0, 0.0)
+        self.lines = coin.SoSeparator()
+        self.lines.addChild(line_style)
+        self.lines.addChild(line_color)
 
-        # Spiral root.
-        self.spiral_coords = coin.SoGeoCoordinate()
-        self.spirals = coin.SoLineSet()
+        # Line geometry keepers.
+        curve_color = coin.SoBaseColor()
+        curve_color.rgb = (0.0, 0.5, 0.0)
+        self.curves = coin.SoSeparator()
+        self.curves.addChild(line_style)
+        self.curves.addChild(curve_color)
+
+        # Line geometry keepers.
         spiral_color = coin.SoBaseColor()
         spiral_color.rgb = (0.0, 0.33, 1.0)
+        self.spirals = coin.SoSeparator()
+        self.spirals.addChild(line_style)
+        self.spirals.addChild(spiral_color)
 
         # Labels root.
         self.tick_coords = coin.SoGeoCoordinate()
         self.ticks = coin.SoLineSet()
         self.labels = coin.SoSeparator()
 
-        # Highlight for selection.
-        highlight = coin.SoType.fromName('SoFCSelection').createInstance()
-        highlight.style = 'EMISSIVE_DIFFUSE'
-        highlight.addChild(line_style)
-        highlight.addChild(curve_color)
-        highlight.addChild(self.curve_coords)
-        highlight.addChild(self.curves)
-        highlight.addChild(spiral_color)
-        highlight.addChild(self.spiral_coords)
-        highlight.addChild(self.spirals)
-        highlight.addChild(line_color)
-        highlight.addChild(self.line_coords)
-        highlight.addChild(self.lines)
-        highlight.addChild(self.tick_coords)
-        highlight.addChild(self.ticks)
-
         # Alignment root.
         lines_root = coin.SoSeparator()
         lines_root.addChild(self.labels)
-        lines_root.addChild(highlight)
+        lines_root.addChild(self.lines)
+        lines_root.addChild(self.curves)
+        lines_root.addChild(self.spirals)
         vobj.addDisplayMode(lines_root,"Wireframe")
 
     def onChanged(self, vobj, prop):
@@ -631,61 +621,66 @@ class ViewProviderHorizontalAlignment():
 
             # Get GeoOrigin.
             origin = geo_origin.get()
+            geo_system = ["UTM", origin.UtmZone, "FLAT"]
             base = deepcopy(origin.Origin)
             base.z = 0
 
-            geo_system = ["UTM", origin.UtmZone, "FLAT"]
-            self.line_coords.geoSystem.setValues(geo_system)
-            self.curve_coords.geoSystem.setValues(geo_system)
-            self.spiral_coords.geoSystem.setValues(geo_system)
+            copy_shape = shape.copy()
+            copy_shape.Placement.move(base)
 
-            lines = shape.SubShapes[0]
-            curves = shape.SubShapes[1]
-            spirals = shape.SubShapes[2]
-
-            line_points = []
-            curve_points = []
-            spiral_points = []
-
-            line_vert = []
-            curve_vert = []
-            spiral_vert = []
-
-            for i in lines.SubShapes:
+            lines = copy_shape.SubShapes[0]
+            for wire in lines.Wires:
                 points = []
-                for vertex in i.Vertexes:
-                    pnt = vertex.Point.add(base)
-                    points.append((pnt[0], pnt[1], pnt[2]))
+                for vertex in wire.OrderedVertexes:
+                    points.append(vertex.Point)
 
-                line_points.extend(points)
-                line_vert.append(len(points))
+                line = coin.SoType.fromName('SoFCSelection').createInstance()
+                line.style = 'EMISSIVE_DIFFUSE'
 
-            for i in curves.SubShapes:
+                line_coords = coin.SoGeoCoordinate()
+                line_coords.geoSystem.setValues(geo_system)
+                line_coords.point.values = points
+                line_set = coin.SoLineSet()
+
+                line.addChild(line_coords)
+                line.addChild(line_set)
+                self.lines.addChild(line)
+
+            curves = copy_shape.SubShapes[1]
+            for wire in curves.Wires:
                 points = []
-                for vertex in i.Vertexes:
-                    pnt = vertex.Point.add(base)
-                    points.append((pnt[0], pnt[1], pnt[2]))
+                for vertex in wire.OrderedVertexes:
+                    points.append(vertex.Point)
 
-                curve_points.extend(points)
-                curve_vert.append(len(points))
+                curve = coin.SoType.fromName('SoFCSelection').createInstance()
+                curve.style = 'EMISSIVE_DIFFUSE'
 
-            for i in spirals.SubShapes:
+                curve_coords = coin.SoGeoCoordinate()
+                curve_coords.geoSystem.setValues(geo_system)
+                curve_coords.point.values = points
+                curve_set = coin.SoLineSet()
+
+                curve.addChild(curve_coords)
+                curve.addChild(curve_set)
+                self.curves.addChild(curve)
+
+            spirals = copy_shape.SubShapes[2]
+            for wire in spirals.Wires:
                 points = []
-                for vertex in i.Vertexes:
-                    pnt = vertex.Point.add(base)
-                    points.append((pnt[0], pnt[1], pnt[2]))
+                for vertex in wire.OrderedVertexes:
+                    points.append(vertex.Point)
 
-                spiral_points.extend(points)
-                spiral_vert.append(len(points))
+                spiral = coin.SoType.fromName('SoFCSelection').createInstance()
+                spiral.style = 'EMISSIVE_DIFFUSE'
 
-            self.curve_coords.point.values = curve_points
-            self.curves.numVertices.values = curve_vert
+                spiral_coords = coin.SoGeoCoordinate()
+                spiral_coords.geoSystem.setValues(geo_system)
+                spiral_coords.point.values = points
+                spiral_set = coin.SoLineSet()
 
-            self.spiral_coords.point.values = spiral_points
-            self.spirals.numVertices.values = spiral_vert
-
-            self.line_coords.point.values = line_points
-            self.lines.numVertices.values = line_vert
+                spiral.addChild(spiral_coords)
+                spiral.addChild(spiral_set)
+                self.spirals.addChild(spiral)
 
     def get_stations(self, obj):
         """
