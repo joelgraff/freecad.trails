@@ -955,6 +955,7 @@ def get_points(
     bearing_in = _arc.bearing_in
     radius = _arc.radius
     start = _arc.start
+    end = _arc.end
 
     if not radius:
         return [_arc.pi]
@@ -1003,5 +1004,7 @@ def get_points(
     _arc.points = get_segments(
         _start_angle, segment_deltas, direction, start, radius, _dtype
     )
+
+    _arc.points.append(Vector(end))
 
     return _arc.points
