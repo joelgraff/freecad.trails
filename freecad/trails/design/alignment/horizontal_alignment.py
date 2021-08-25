@@ -28,21 +28,15 @@ from copy import deepcopy
 
 import FreeCAD as App
 from FreeCAD import Vector
-from math import inf
-import Draft
 import Part
 
 from freecad.trails import ICONPATH, geo_origin
-from pivy import coin
-
-from ..project.support import properties, units
-from ..geometry import support
-from . import alignment_group
-from .alignment_model import AlignmentModel
-from .alignment import Alignment
-from .alignment_registrar import AlignmentRegistrar
-
 from ...geomatics.region import regions
+from ..project.support import properties, units
+from .alignment_functions import DataFunctions, ViewFunctions
+
+from pivy import coin
+from math import inf
 
 __title__ = 'horizontal_alignment.py'
 __author__ = 'Joel Graff'
@@ -74,7 +68,7 @@ def create(geometry, object_name='', parent=None, no_visual=False, zero_referenc
         _obj = parent.newObject("App::DocumentObjectGroupPython", _name)
 
     HorizontalAlignment(_obj, _name)
-    print('\n\t\t-=-=-=-=-= HORIZONTAL ALIGNMENT GEOMETRY -=-=-=-=-=\n', geometry)
+    _obj.Label = _name
     _obj.ModelKeeper = str(geometry)
     _obj.Proxy.set_geometry(geometry, zero_reference)
     ViewProviderHorizontalAlignment(_obj.ViewObject)
@@ -86,7 +80,7 @@ def create(geometry, object_name='', parent=None, no_visual=False, zero_referenc
 
     return _obj
 
-class HorizontalAlignment(Alignment):
+class HorizontalAlignment(DataFunctions):
     """
     FeaturePython Alignment class
     """
@@ -162,13 +156,7 @@ class HorizontalAlignment(Alignment):
                       )
 
         #add class members
-        obj.Label = label
-
         self.init_class_members(obj)
-
-        #create property to indicate object is fully initialized
-        #done to prevent premature event execution
-        obj.addProperty('App::PropertyBool', 'Initialized', 'Base', 'Is Initialized').Initialized = True
 
     def init_class_members(self, obj):
         """
@@ -176,6 +164,7 @@ class HorizontalAlignment(Alignment):
         """
 
         obj.Proxy = self
+        self.Type = 'Trails::HorizontalAlignment'
 
         self.errors = []
 
@@ -185,7 +174,6 @@ class HorizontalAlignment(Alignment):
         self.meta = {}
         self.hashes = None
 
-        self.Type = 'Trails::HorizontalAlignment'
         self.Object = obj
 
     def __getstate__(self):
@@ -199,257 +187,13 @@ class HorizontalAlignment(Alignment):
         """
         Restore object references on reload
         """
-        super().__init__()
-
         self.init_class_members(obj)
         self.set_geometry(eval(obj.ModelKeeper))
-
-
-    def initialize_model(self, model, obj):
-        """
-        Callback triggered from the parent group to force model update
-        model - the alignment model
-        obj - the alignment object
-        """
-
-        if isinstance(model, AlignmentModel):
-            model = model.data
-
-        self.model = AlignmentModel(model)
-        self.build_curve_edge_dict(obj)
-
-    def _plot_vectors(self, stations, interval=1.0, is_ortho=True):
-        """
-        Testing function to plot coordinates and vectors between specified
-        stations.
-
-        stations - tuple / list of starting / ending stations
-        is_ortho - bool, False plots tangent, True plots orthogonal
-        """
-
-        if not stations:
-            stations = [
-                self.model.data.get('meta').get('StartStation'),
-                self.model.data.get('meta').get('StartStation') \
-                    + self.model.data.get('meta').get('Length') / 1000.0
-            ]
-
-        _pos = stations[0]
-        _items = []
-
-        while _pos < stations[1]:
-
-            if is_ortho:
-                _items.append(tuple(self.model.get_orthogonal(_pos, 'Left')))
-
-            else:
-                _items.append(tuple(self.model.get_tangent(_pos)))
-
-            _pos += interval
-
-        for _v in _items:
-
-            _start = _v[0]
-            _end = _start + _v[1] * 100000.0
-
-            _pt = [self.model.data.get('meta').get('Start')]*2
-            _pt[0] = _pt[0].add(_start)
-            _pt[1] = _pt[1].add(_end)
-
-            line = Draft.makeWire(_pt, closed=False, face=False, support=None)
-
-            Draft.autogroup(line)
-
-        App.ActiveDocument.recompute()
-
-
-    def build_curve_edge_dict(self, obj):
-        """
-        Build the dictionary which correlates edges to their corresponding
-        curves for quick lookup when curve editing
-        """
-
-        curve_dict = {}
-        curves = self.model.data.get('geometry')
-
-        print('\n\t[][][][[] CURVES!!! [][][][][]\n\t',curves)
-        #iterate the curves, creating the dictionary for each curve
-        #that lists it's wire edges keyed by it's Edge index
-        for _i, curve in enumerate(curves):
-
-            #curve.set('ObjectID', f'{curve.get('Type')}{str(_i)}')
-
-            if curve.get('Type') == 'Line':
-                continue
-
-            curve_edges = obj.Shape.Edges
-            curve_pts = [curve.get('Start'), curve.get('End')]
-            edge_dict = {}
-
-            #iterate edge list, add edges that fall within curve limits
-            for _i, edge in enumerate(curve_edges):
-
-                edge_pts = [edge.Vertexes[0].Point, edge.Vertexes[1].Point]
-
-                #empty list means we haven't found the start yet
-                if not edge_dict:
-
-                    if not support.within_tolerance(curve_pts[0], edge_pts[0]):
-                        continue
-
-                #still here?  then we're within the geometry
-                edge_dict['Edge' + str(_i + 1)] = edge
-
-                #if this edge fits the end, we're done
-                if support.within_tolerance(curve_pts[1], edge_pts[1]):
-                    break
-
-            #calculate a unique hash based on the curve start and end points
-            #and save the edge list to it
-
-            curve_dict[curve['Hash']] = edge_dict
-
-        self.curve_edges = curve_dict
-
-    def get_pi_coords(self):
-        """
-        Convenience function to get PI coordinates from the model
-        """
-
-        return self.model.get_pi_coords()
-
-    def get_edges(self):
-        """
-        Return the dictionary of curve edges
-        """
-
-        return self.curve_edges
-
-    def get_data(self):
-        """
-        Return the complete dataset for the alignment
-        """
-
-        return self.model.data
-
-    def get_data_copy(self):
-        """
-        Returns a deep copy of the alignment dataset
-        """
-
-        return deepcopy(self.model.data)
-
-    def get_length(self):
-        """
-        Return the alignment length
-        """
-
-        return self.model.data.get('meta').get('Length')
-
-    def get_curves(self):
-        """
-        Return a list of only the curves
-        """
-
-        return [_v for _v in self.model.data.get('geometry') \
-            if _v.get('Type') != 'Line']
-
-    def get_geometry(self, curve_hash=None):
-        """
-        Return the geometry of the curve matching the specified hash
-        value.  If no match, return all of the geometry
-        """
-
-        if not curve_hash:
-            return self.model.data.get('geometry')
-
-        for _geo in self.model.data.get('geometry'):
-
-            if _geo['Hash'] == curve_hash:
-                return _geo
-
-        return None
-
-    def update_curves(self, curves, pi_list, zero_reference=False):
-        """
-        Assign updated alignment curves to the model.
-        """
-
-        _model = {
-            'meta': {
-                'Start': pi_list[0],
-                'StartStation':
-                    self.model.data.get('meta').get('StartStation'),
-                'End': pi_list[-1],
-            },
-            'geometry': curves,
-            'station': self.model.data.get('station')
-        }
-
-        self.set_geometry(_model, zero_reference)
-
-    def set_geometry(self, geometry, zero_reference=False):
-        """
-        Assign geometry to the alignment object
-        """
-        print('CREATE ALIGNMENT MODEL')
-        self.model = AlignmentModel(geometry, zero_reference)
-
-        print ('MODEL DATA=',self.model.data)
-
-        if self.model.errors:
-            for _err in self.model.errors:
-                print('Error in alignment {0}: {1}'\
-                    .format(self.Object.Label, _err)
-                     )
-
-            self.model.errors.clear()
-
-        self.assign_meta_data()
-
-        return self.model.errors
-
-    def assign_meta_data(self, model=None):
-        """
-        Extract the meta data for the alignment from the data set
-        Check it for errors
-        Assign properties
-        """
-
-        obj = self.Object
-
-        meta = self.model.data.get('meta')
-
-        if meta.get('ID'):
-            obj.ID = meta.get('ID')
-
-        if meta.get('Description'):
-            obj.Description = meta.get('Description')
-
-        if meta.get('ObjectID'):
-            obj.ObjectID = meta.get('ObjectID')
-
-        if meta.get('Length'):
-            obj.Length = meta.get('Length')
-
-        if meta.get('Status'):
-            obj.Status = meta.get('Status')
-
-        if meta.get('StartStation'):
-            obj.Start_Station = str(meta.get('StartStation')) + ' ft'
 
     def onChanged(self, obj, prop):
         """
         Property change callback
         """
-
-        #if not super().onChanged(obj, prop):
-        #    return
-
-        #dodge onChanged calls during initialization
-        #if hasattr(self, 'no_execute'):
-        #    return
-
         if prop == "Method":
 
             _prop = obj.getPropertyByName(prop)
@@ -477,38 +221,10 @@ class HorizontalAlignment(Alignment):
             base = deepcopy(origin.Origin)
             base.z = 0
 
-            line_obj = []
-            curve_obj = []
-            spiral_obj = []
+            obj.Shape = self.get_shape(lines, curves, spirals, base)
 
-            for line in lines:
-                points = []
-                for pnt in line:
-                    points.append(App.Vector(pnt).sub(base))
-                wire = Part.makePolygon(points)
-                line_obj.append(wire)
 
-            for curve in curves:
-                points = []
-                for pnt in curve:
-                    points.append(App.Vector(pnt).sub(base))
-                wire = Part.makePolygon(points)
-                curve_obj.append(wire)
-
-            for spiral in spirals:
-                points = []
-                for pnt in spiral:
-                    points.append(App.Vector(pnt).sub(base))
-                wire = Part.makePolygon(points)
-                spiral_obj.append(wire)
-
-            line_comp = Part.makeCompound(line_obj)
-            curve_comp = Part.makeCompound(curve_obj)
-            spiral_comp = Part.makeCompound(spiral_obj)
-
-            obj.Shape = Part.makeCompound([line_comp, curve_comp, spiral_comp])
-
-class ViewProviderHorizontalAlignment():
+class ViewProviderHorizontalAlignment(ViewFunctions):
 
     def __init__(self, vobj):
         """
@@ -561,10 +277,11 @@ class ViewProviderHorizontalAlignment():
 
         # Alignment root.
         lines_root = coin.SoSeparator()
-        lines_root.addChild(self.labels)
         lines_root.addChild(self.lines)
         lines_root.addChild(self.curves)
         lines_root.addChild(self.spirals)
+        lines_root.addChild(self.ticks)
+        lines_root.addChild(self.labels)
         vobj.addDisplayMode(lines_root,"Wireframe")
 
     def onChanged(self, vobj, prop):
@@ -681,36 +398,6 @@ class ViewProviderHorizontalAlignment():
                 spiral.addChild(spiral_coords)
                 spiral.addChild(spiral_set)
                 self.spirals.addChild(spiral)
-
-    def get_stations(self, obj):
-        """
-        Retrieve the coordinates of the start and end points of the station
-        tick mark orthogonal to the alignment
-        """
-
-        start = obj.Proxy.model.data['meta']['StartStation']
-        length = obj.Proxy.model.data['meta']['Length']
-        end = start + length/1000
-
-        stations = {}
-
-        for sta in range(int(start), int(end)):
-            if sta % 10 == 0:
-                tuple_coord, tuple_vec =\
-                    obj.Proxy.model.get_orthogonal( sta, "Left", True)
-
-                coord = App.Vector(tuple_coord)
-                vec = App.Vector(tuple_vec)
-
-                left_vec = deepcopy(vec)
-                right_vec = deepcopy(vec)
-
-                left_side = coord.add(left_vec.multiply(1500))
-                right_side = coord.add(right_vec.negative().multiply(1500))
-
-                stations[sta] = [left_side, right_side]
-
-        return stations
 
     def getDisplayMode(self, obj):
         """
