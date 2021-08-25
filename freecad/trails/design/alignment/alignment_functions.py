@@ -25,15 +25,61 @@
 Define Alignment Object functions.
 '''
 
-import FreeCAD as App
+import FreeCAD
+import Draft, Part
 
-from . import alignment_model
+from .alignment_model import AlignmentModel
+
 from copy import deepcopy
 
-from Draft import _Wire
 
 
-class AlignmentFunc(_Wire):
+class DataFunctions:
+    def get_shape(self, lines, curves, spirals, base):
+        line_obj = []
+        for line in lines:
+            points = []
+            for pnt in line:
+                points.append(FreeCAD.Vector(pnt).sub(base))
+            wire = Part.makePolygon(points)
+            line_obj.append(wire)
+
+        line_comp = Part.makeCompound(line_obj)
+
+        curve_obj = []
+        for curve in curves:
+            points = []
+            for pnt in curve:
+                points.append(FreeCAD.Vector(pnt).sub(base))
+            wire = Part.makePolygon(points)
+            curve_obj.append(wire)
+
+        curve_comp = Part.makeCompound(curve_obj)
+
+        spiral_obj = []
+        for spiral in spirals:
+            points = []
+            for pnt in spiral:
+                points.append(FreeCAD.Vector(pnt).sub(base))
+            wire = Part.makePolygon(points)
+            spiral_obj.append(wire)
+
+        spiral_comp = Part.makeCompound(spiral_obj)
+
+        return Part.makeCompound([line_comp, curve_comp, spiral_comp])
+
+    def initialize_model(self, model, obj):
+        """
+        Callback triggered from the parent group to force model update
+        model - the alignment model
+        obj - the alignment object
+        """
+
+        if isinstance(model, AlignmentModel):
+            model = model.data
+
+        self.model = AlignmentModel(model)
+        self.build_curve_edge_dict(obj)
 
     def _plot_vectors(self, stations, interval=1.0, is_ortho=True):
         """
@@ -77,10 +123,10 @@ class AlignmentFunc(_Wire):
 
             Draft.autogroup(line)
 
-        App.ActiveDocument.recompute()
+        FreeCAD.ActiveDocument.recompute()
 
 
-    def build_curve_edge_dict(self):
+    def build_curve_edge_dict(self, obj):
         """
         Build the dictionary which correlates edges to their corresponding
         curves for quick lookup when curve editing
@@ -91,12 +137,14 @@ class AlignmentFunc(_Wire):
 
         #iterate the curves, creating the dictionary for each curve
         #that lists it's wire edges keyed by it's Edge index
-        for curve in curves:
+        for _i, curve in enumerate(curves):
+
+            #curve.set('ObjectID', f'{curve.get('Type')}{str(_i)}')
 
             if curve.get('Type') == 'Line':
                 continue
 
-            curve_edges = self.Object.Shape.Edges
+            curve_edges = obj.Shape.Edges
             curve_pts = [curve.get('Start'), curve.get('End')]
             edge_dict = {}
 
@@ -206,7 +254,7 @@ class AlignmentFunc(_Wire):
         """
         Assign geometry to the alignment object
         """
-        self.model = alignment_model.AlignmentModel(geometry, zero_reference)
+        self.model = AlignmentModel(geometry, zero_reference)
 
         if self.model.errors:
             for _err in self.model.errors:
@@ -248,3 +296,35 @@ class AlignmentFunc(_Wire):
 
         if meta.get('StartStation'):
             obj.Start_Station = str(meta.get('StartStation')) + ' ft'
+
+
+class ViewFunctions:
+    def get_stations(self, obj):
+        """
+        Retrieve the coordinates of the start and end points of the station
+        tick mark orthogonal to the alignment
+        """
+
+        start = obj.Proxy.model.data['meta']['StartStation']
+        length = obj.Proxy.model.data['meta']['Length']
+        end = start + length/1000
+
+        stations = {}
+
+        for sta in range(int(start), int(end)):
+            if sta % 10 == 0:
+                tuple_coord, tuple_vec =\
+                    obj.Proxy.model.get_orthogonal( sta, "Left", True)
+
+                coord = App.Vector(tuple_coord)
+                vec = App.Vector(tuple_vec)
+
+                left_vec = deepcopy(vec)
+                right_vec = deepcopy(vec)
+
+                left_side = coord.add(left_vec.multiply(1500))
+                right_side = coord.add(right_vec.negative().multiply(1500))
+
+                stations[sta] = [left_side, right_side]
+
+        return stations
