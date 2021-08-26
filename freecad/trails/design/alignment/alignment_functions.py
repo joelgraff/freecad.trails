@@ -316,8 +316,8 @@ class ViewFunctions:
                 tuple_coord, tuple_vec =\
                     obj.Proxy.model.get_orthogonal( sta, "Left", True)
 
-                coord = App.Vector(tuple_coord)
-                vec = App.Vector(tuple_vec)
+                coord = FreeCAD.Vector(tuple_coord)
+                vec = FreeCAD.Vector(tuple_vec)
 
                 left_vec = deepcopy(vec)
                 right_vec = deepcopy(vec)
