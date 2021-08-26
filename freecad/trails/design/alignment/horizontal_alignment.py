@@ -82,15 +82,14 @@ def create(geometry, object_name='', parent=None, no_visual=False, zero_referenc
 
 class HorizontalAlignment(DataFunctions):
     """
-    FeaturePython Alignment class
+    This class is about Alignment Object data features.
     """
 
     def __init__(self, obj, label=''):
-        """
-        Default Constructor
-        """
-
-        #metadata
+        '''
+        Set data properties.
+        '''
+        # Metadata properties.
         properties.add(obj, 'String', 'ID', 'ID of alignment', label)
         properties.add(obj, 'String', 'oID', 'Object ID', '')
 
@@ -123,7 +122,7 @@ class HorizontalAlignment(DataFunctions):
             obj, 'FloatList', 'Hashes', 'Coordiante hashes', []
         )
 
-        #geometry
+        # Geometry properties.
         properties.add(
             obj, 'VectorList', 'PIs', """
             Discretization of Points of Intersection (PIs) as a list of
@@ -155,12 +154,12 @@ class HorizontalAlignment(DataFunctions):
                        int(1000.0 / units.scale_factor()) / 100.0
                       )
 
-        #add class members
+        # Initialize class members.
         self.init_class_members(obj)
 
     def init_class_members(self, obj):
         """
-        Separate function for initialization on creation / reload
+        Separate function for initialization on creation / reload.
         """
 
         obj.Proxy = self
@@ -177,23 +176,29 @@ class HorizontalAlignment(DataFunctions):
         self.Object = obj
 
     def __getstate__(self):
+        """
+        Save variables to file.
+        """
         return self.Type
 
     def __setstate__(self, state):
+        """
+        Set variables from file.
+        """
         if state:
             self.Type = state
 
     def onDocumentRestored(self, obj):
         """
-        Restore object references on reload
+        Restore Object references on reload.
         """
         self.init_class_members(obj)
         self.set_geometry(eval(obj.ModelKeeper))
 
     def onChanged(self, obj, prop):
-        """
-        Property change callback
-        """
+        '''
+        Update Object when a property changed.
+        '''
         if prop == "Method":
 
             _prop = obj.getPropertyByName(prop)
@@ -209,9 +214,9 @@ class HorizontalAlignment(DataFunctions):
                     int(1000.0 / units.scale_factor()) / 100.0
 
     def execute(self, obj):
-        """
-        Recompute callback
-        """
+        '''
+        Update Object when doing a recomputation. 
+        '''
         if hasattr(self.model, 'discretize_geometry'):
             curves, spirals, lines, points = obj.Proxy.model.discretize_geometry(
                 [0.0], obj.Method, obj.Seg_Value, types=True)
@@ -225,12 +230,14 @@ class HorizontalAlignment(DataFunctions):
 
 
 class ViewProviderHorizontalAlignment(ViewFunctions):
+    """
+    This class is about Alignment Object view features.
+    """
 
     def __init__(self, vobj):
-        """
-        Initialize the view provider
-        """
-
+        '''
+        Set view properties.
+        '''
         vobj.addProperty(
             "App::PropertyBool", "Labels", "Base",
             "Show/hide labels").Labels = False
@@ -238,10 +245,9 @@ class ViewProviderHorizontalAlignment(ViewFunctions):
         vobj.Proxy = self
 
     def attach(self, vobj):
-        """
-        View provider scene graph initialization
-        """
-
+        '''
+        Create Object visuals in 3D view.
+        '''
         self.Object = vobj.Object
 
         # Line style.
@@ -256,14 +262,14 @@ class ViewProviderHorizontalAlignment(ViewFunctions):
         self.lines.addChild(line_style)
         self.lines.addChild(line_color)
 
-        # Line geometry keepers.
+        # Curve geometry keepers.
         curve_color = coin.SoBaseColor()
         curve_color.rgb = (0.0, 0.5, 0.0)
         self.curves = coin.SoSeparator()
         self.curves.addChild(line_style)
         self.curves.addChild(curve_color)
 
-        # Line geometry keepers.
+        # Spiral geometry keepers.
         spiral_color = coin.SoBaseColor()
         spiral_color.rgb = (0.0, 0.33, 1.0)
         self.spirals = coin.SoSeparator()
@@ -271,8 +277,11 @@ class ViewProviderHorizontalAlignment(ViewFunctions):
         self.spirals.addChild(spiral_color)
 
         # Labels root.
+        ticks = coin.SoSeparator()
         self.tick_coords = coin.SoGeoCoordinate()
-        self.ticks = coin.SoLineSet()
+        self.tick_lines = coin.SoLineSet()
+        ticks.addChild(self.tick_coords)
+        ticks.addChild(self.tick_lines)
         self.labels = coin.SoSeparator()
 
         # Alignment root.
@@ -280,28 +289,28 @@ class ViewProviderHorizontalAlignment(ViewFunctions):
         lines_root.addChild(self.lines)
         lines_root.addChild(self.curves)
         lines_root.addChild(self.spirals)
-        lines_root.addChild(self.ticks)
+        lines_root.addChild(ticks)
         lines_root.addChild(self.labels)
         vobj.addDisplayMode(lines_root,"Wireframe")
 
     def onChanged(self, vobj, prop):
-        """
-        Handle individual property changes
-        """
-
+        '''
+        Update Object visuals when a view property changed.
+        '''
         if prop == "Labels":
 
             self.labels.removeAllChildren()
             labels = vobj.getPropertyByName(prop)
 
+            # Get GeoOrigin.
+            origin = geo_origin.get()
+            base = deepcopy(origin.Origin)
+            base.z = 0
+
+            geo_system = ["UTM", origin.UtmZone, "FLAT"]
+            self.tick_coords.geoSystem.setValues(geo_system)
+
             if labels:
-                # Get GeoOrigin.
-                origin = geo_origin.get()
-                base = deepcopy(origin.Origin)
-                base.z = 0
-
-                geo_system = ["UTM", origin.UtmZone, "FLAT"]
-
                 points = []
                 line_vert = []
                 stations = self.get_stations(vobj.Object)
@@ -324,9 +333,8 @@ class ViewProviderHorizontalAlignment(ViewFunctions):
                     points.extend(tick)
                     line_vert.append(len(tick))
 
-                self.tick_coords.geoSystem.setValues(geo_system)
                 self.tick_coords.point.values = points
-                self.ticks.numVertices.values = line_vert
+                self.tick_lines.numVertices.values = line_vert
 
     def updateData(self, obj, prop):
         '''
@@ -400,21 +408,22 @@ class ViewProviderHorizontalAlignment(ViewFunctions):
                 self.spirals.addChild(spiral)
 
     def getDisplayMode(self, obj):
-        """
-        Valid display modes
-        """
+        '''
+        Return a list of display modes.
+        '''
         return ["Wireframe"]
 
     def getDefaultDisplayMode(self):
-        """
-        Return default display mode
-        """
+        '''
+        Return the name of the default display mode.
+        '''
         return "Wireframe"
 
     def setDisplayMode(self, mode):
-        """
-        Set mode - wireframe only
-        """
+        '''
+        Map the display mode defined in attach with 
+        those defined in getDisplayModes.
+        '''
         return "Wireframe"
 
     def getIcon(self):
@@ -459,7 +468,13 @@ class ViewProviderHorizontalAlignment(ViewFunctions):
         """
         pass
     def __getstate__(self):
+        """
+        Save variables to file.
+        """
         return None
 
     def __setstate__(self, state):
+        """
+        Get variables from file.
+        """
         return None
