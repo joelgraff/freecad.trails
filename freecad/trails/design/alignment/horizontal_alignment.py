@@ -36,6 +36,7 @@ from ..project.support import properties, units
 from .alignment_functions import DataFunctions, ViewFunctions
 
 from pivy import coin
+import math
 from math import inf
 
 __title__ = 'horizontal_alignment.py'
@@ -319,11 +320,21 @@ class ViewProviderHorizontalAlignment(ViewFunctions):
                     font = coin.SoFont()
                     font.size = 3000
                     sta_label = coin.SoSeparator()
-                    location = coin.SoTranslation()
+                    location = coin.SoTransform()
                     text = coin.SoAsciiText()
 
-                    location.translation = deepcopy(tick[1]).sub(base)
                     text.string.setValues([str(label)])
+                    start = deepcopy(tick[0]).sub(base)
+                    end = deepcopy(tick[-1]).sub(base)
+
+                    if start.y>end.y:
+                        angle = start.sub(end).getAngle(App.Vector(1,0,0))-math.pi
+                    else:
+                        angle = end.sub(start).getAngle(App.Vector(1,0,0))
+                    print(angle)
+
+                    location.translation = end
+                    location.rotation.setValue(coin.SbVec3f(0, 0, 1), angle)
 
                     sta_label.addChild(font)
                     sta_label.addChild(location)
