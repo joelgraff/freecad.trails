@@ -29,6 +29,7 @@ import FreeCAD
 import Draft, Part
 
 from .alignment_model import AlignmentModel
+from ..geometry import support
 
 from copy import deepcopy
 
