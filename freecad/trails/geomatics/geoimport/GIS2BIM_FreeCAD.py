@@ -27,15 +27,21 @@ __title__= "GIS2BIM_FreeCAD"
 __author__ = "Maarten Vroegindeweij"
 __url__ = "https://github.com/DutchSailor/GIS2BIM"
 
-from . import GIS2BIM
+import GIS2BIM
+import importlib
+importlib.reload(GIS2BIM)
+
 import Draft
 import Part
-import FreeCAD
 import Arch
 import os
+import re
+
+import FreeCAD
+
 from PySide2 import QtWidgets
 
-SiteName = "Geo-Sitedata"
+SiteName = "GIS"
 TempFolderName = "GIStemp/"
 
 def CreateTempFolder(Name):
@@ -78,7 +84,7 @@ def Buildings3D(curves3DBAG,heightData3DBAG):
 
 def CurvesFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNumbers,closedValue,Face,DrawStyle,LineColor):
     curves = GIS2BIM.PointsFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNumbers)
-    curvesWFS = []
+    FCcurves = []
     for i in curves:
         pointlist = []
         for j in i:
@@ -87,8 +93,70 @@ def CurvesFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNu
         a.MakeFace = Face
         a.ViewObject.DrawStyle = DrawStyle
         a.ViewObject.LineColor = LineColor
-        curvesWFS.append(a)
-    return curvesWFS
+        FCcurves.append(a)
+    return FCcurves
+
+def checkIfCoordIsInsideBoundingBox(coord, min_x, min_y, max_x, max_y):
+	if re.match(r'^-?\d+(?:\.\d+)$', coord[0]) is None or re.match(r'^-?\d+(?:\.\d+)$', coord[1]) is None:
+		return False
+	else:
+		if min_x <= float(coord[0]) <= max_x and min_y <= float(coord[1]) <= max_y:
+			return True
+		else:
+		    return False
+			
+def CurvesFromGML(tree,xPathString,dx,dy,BoxWidth,BoxHeight,scale,DecimalNumbers,closedValue,Face,DrawStyle,LineColor):
+    bbx = -dx
+    bby = -dy
+	
+    # Bounding box definition
+    bounding_box = [bbx, bby, BoxWidth,BoxHeight]
+    min_x = bounding_box[0] - (bounding_box[2]/2)
+    min_y = bounding_box[1] - (bounding_box[3]/2)
+    max_x = bounding_box[0] + (bounding_box[2]/2)
+    max_y = bounding_box[1] + (bounding_box[3]/2)
+
+    # get data from xml
+    root = tree.getroot()
+
+    # for loop to get each element in an array
+    XMLelements = []
+    for elem in root.iter():
+        XMLelements.append(elem)
+
+    xpathfound = root.findall(xPathString)
+
+    # for loop to get all polygons in an array
+    FCcurves = []
+    for x in xpathfound:
+        if x.text:
+            try:
+                newPolygon = x.text.split(" ")
+                polygon_is_inside_bounding_box = False
+                x = 0
+                xyPolygon = []
+                for i in range(0, int(len(newPolygon) / 2)):
+                    xy_coord = [newPolygon[x], newPolygon[x + 1]]
+                    xy_coord_trans = [round((float(newPolygon[x])-bbx)*scale), round((float(newPolygon[x + 1])-bby)*scale)]
+                    xyPolygon.append(xy_coord_trans)
+                    x += 2
+                    if checkIfCoordIsInsideBoundingBox(xy_coord, min_x, min_y, max_x, max_y):
+                        polygon_is_inside_bounding_box = True
+                if polygon_is_inside_bounding_box:
+                   # xyPolygons.append(xyPolygon)
+                    pointlist = []
+                    for j in xyPolygon:
+                        pointlist.append(FreeCAD.Vector(j[0], j[1], 0))
+                    a = Draft.makeWire(pointlist, closed=closedValue)
+                    a.MakeFace = Face
+                    a.ViewObject.DrawStyle = DrawStyle
+                    a.ViewObject.LineColor = LineColor
+                    FCcurves.append(a)
+            except:
+                FCcurves.append("_none_")
+        else:
+            FCcurves.append("_none_")
+    return FCcurves
 
 def PlaceText(textData,fontSize, upper):
     Texts = []
@@ -111,7 +179,7 @@ def CreateLayer(layerName):
 	for obj in FreeCAD.ActiveDocument.Objects: #Check is layername already exists
 		lstObjects.append(obj.Label)
 	if not layerName in lstObjects:
-		FreeCAD.activeDocument().addObject("App::DocumentObjectGroup", layerName)
+		FreeCAD.activeDocument().addObject("App::DocumentObjectGroupPython", layerName)
 	return layerName
 
 def ArchSiteCreateCheck(SiteName):

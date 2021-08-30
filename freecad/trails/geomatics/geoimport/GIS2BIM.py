@@ -43,7 +43,9 @@ import xml.etree.ElementTree as ET
 import json
 import math
 import re
+import zipfile
 from PIL import Image
+import PyPackages.requests
 	
 #Common functions
 def GetWebServerData(servertitle, category, parameter):
@@ -84,6 +86,16 @@ def GetDataFiles(folder):
 	result = data[test.index(servertitle)][parameter]
 	return result
 
+def downloadUnzip(downloadURL,filepathZIP,folder):
+	req = PyPackages.requests.get(downloadURL, allow_redirects=True)
+	
+	with open(filepathZIP, 'wb') as f:
+		f.write(req.content)
+	
+	with zipfile.ZipFile(filepathZIP, 'r') as zip_ref:
+	    zip_ref.extractall(folder)
+	return folder
+	
 #GIS2BIM functions
 
 def checkIfCoordIsInsideBoundingBox(coord, bounding_box):
@@ -110,7 +122,7 @@ def TransformCRS_epsg(SourceCRS, TargetCRS, X, Y):
     Y = data["y"]
     return X,Y
 
-def GML_poslistData(tree, xPathString,dx,dy,scale,DecimalNumbers):
+def GML_poslistData(tree,xPathString,dx,dy,scale,DecimalNumbers):
 #group X and Y Coordinates of polylines
     posLists = tree.findall(xPathString)
     xyPosList = []
@@ -141,6 +153,15 @@ def CreateBoundingBox(CoordinateX,CoordinateY,BoxWidth,BoxHeight,DecimalNumbers)
     boundingBoxString = str(XLeft) + "," + str(YBottom) + "," + str(XRight) + "," + str(YTop)
     return boundingBoxString
 
+def CreateBoundingBoxPolygon(CoordinateX,CoordinateY,BoxWidth,BoxHeight,DecimalNumbers):
+#Create Boundingboxstring for use in webrequests.
+    XLeft = round(CoordinateX-0.5*BoxWidth,DecimalNumbers)
+    XRight = round(CoordinateX+0.5*BoxWidth,DecimalNumbers)
+    YBottom = round(CoordinateY-0.5*BoxHeight,DecimalNumbers)
+    YTop = round(CoordinateY+0.5*BoxHeight,DecimalNumbers)
+    boundingBoxStringPolygon = "(" + str(XLeft) + ' ' + str(YTop) + ',' + str(XRight) + ' ' + str(YTop) + ',' + str(XRight) + ' ' + str(YBottom) + ',' + str(XLeft) + ' ' + str(YBottom) + ',' + str(XLeft) + ' ' + str(YTop) + ')'
+    return boundingBoxStringPolygon
+		
 def PointsFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNumbers):
 # group X and Y Coordinates
     myrequesturl = serverName + boundingBoxString
@@ -148,6 +169,12 @@ def PointsFromWFS(serverName,boundingBoxString,xPathString,dx,dy,scale,DecimalNu
     tree = ET.parse(urlFile)
     xyPosList = GML_poslistData(tree,xPathString,dx,dy,scale,DecimalNumbers)
     return xyPosList
+	
+def PointsFromGML(filePath,xPathString,dx,dy,scale,DecimalNumbers):
+	# group X and Y Coordinates
+	tree = ET.parse(filePath)
+	xyPosList = GML_poslistData(tree,xPathString,dx,dy,scale,DecimalNumbers)
+	return xyPosList
 
 def DataFromWFS(serverName,boundingBoxString,xPathStringCoord,xPathStrings,dx,dy,scale,DecimalNumbers):
 # group textdata from WFS
@@ -165,6 +192,62 @@ def DataFromWFS(serverName,boundingBoxString,xPathStringCoord,xPathStrings,dx,dy
     xPathResults.insert(0,xyPosList)
     return xPathResults
 
+def checkIfCoordIsInsideBoundingBox(coord, min_x, min_y, max_x, max_y):
+	if re.match(r'^-?\d+(?:\.\d+)$', coord[0]) is None or re.match(r'^-?\d+(?:\.\d+)$', coord[1]) is None:
+		return False
+	else:
+		if min_x <= float(coord[0]) <= max_x and min_y <= float(coord[1]) <= max_y:
+			return True
+		else:
+		    return False
+	
+def filterGMLbbox(tree,xPathString,bbx,bby,BoxWidth,BoxHeight,scale):
+	
+    # Bounding box definition
+    bounding_box = [bbx, bby, BoxWidth,BoxHeight]
+    min_x = bounding_box[0] - (bounding_box[2]/2)
+    min_y = bounding_box[1] - (bounding_box[3]/2)
+    max_x = bounding_box[0] + (bounding_box[2]/2)
+    max_y = bounding_box[1] + (bounding_box[3]/2)
+
+    # get data from xml
+    root = tree.getroot()
+
+    # for loop to get each element in an array
+    XMLelements = []
+    for elem in root.iter():
+        XMLelements.append(elem)
+
+    xpathfound = root.findall(xPathString)
+
+    # for loop to get all polygons in an array
+    polygons = []
+    for x in xpathfound:
+        if x.text:
+            try:
+                polygons.append(x.text.split(" "))
+            except:
+                polygons.append("_none_")
+        else:
+            polygons.append("_none_")
+
+    # for loop to get x,y coords and filter polygons inside Bounding Box
+    xyPolygons = []
+    for newPolygon in polygons:
+        polygon_is_inside_bounding_box = False
+        x = 0
+        xyPolygon = []
+        for i in range(0, int(len(newPolygon) / 2)):
+            xy_coord = [newPolygon[x], newPolygon[x + 1]]
+            xy_coord_trans = [round((float(newPolygon[x])-bbx)*scale), round((float(newPolygon[x + 1])-bby)*scale)]
+            xyPolygon.append(xy_coord_trans)
+            x += 2
+            if checkIfCoordIsInsideBoundingBox(xy_coord, min_x, min_y, max_x, max_y):
+                polygon_is_inside_bounding_box = True
+        if polygon_is_inside_bounding_box:
+            xyPolygons.append(xyPolygon)
+    return xyPolygons
+	
 def WMSRequest(serverName,boundingBoxString,fileLocation,pixWidth,pixHeight):
     # perform a WMS OGC webrequest( Web Map Service). This is loading images.
     myrequestURL = serverName + boundingBoxString

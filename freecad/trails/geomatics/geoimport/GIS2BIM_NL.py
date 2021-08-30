@@ -27,7 +27,13 @@ __title__= "GIS2BIM_NL"
 __author__ = "Maarten Vroegindeweij"
 __url__ = "https://github.com/DutchSailor/GIS2BIM"
 
-from . import GIS2BIM
+import GIS2BIM
+import sys
+import json
+import urllib
+import time
+import PyPackages.requests
+
 #import urllib.request, json
 
 #jsonpath = "$.GIS2BIMserversRequests.webserverRequests[?(@.title==NetherlandsPDOKServerURL)].serverrequestprefix"
@@ -76,3 +82,58 @@ def NL_GetLocationData(PDOKServer,City,Streetname,Housenumber):
     result = [RDx,RDy,requestURL]
 	
     return result
+	
+def bgtDownloadURL(X,Y,bboxWidth,bboxHeight,timeout):
+	polygonString = GIS2BIM.CreateBoundingBoxPolygon(X,Y,bboxWidth,bboxHeight,2)
+	
+	url = "https://api.pdok.nl/lv/bgt/download/v1_0/full/custom"
+	url2= "https://api.pdok.nl"
+	
+	##Define data 
+	qryPart1 = '{"featuretypes":['
+	qryPart2 = '"bak","begroeidterreindeel","bord","buurt","functioneelgebied","gebouwinstallatie","installatie","kast","kunstwerkdeel","mast","onbegroeidterreindeel","ondersteunendwaterdeel","ondersteunendwegdeel","ongeclassificeerdobject","openbareruimte","openbareruimtelabel","overbruggingsdeel","overigbouwwerk","overigescheiding","paal","pand","put","scheiding","sensor","spoor","stadsdeel","straatmeubilair","tunneldeel","vegetatieobject","waterdeel","waterinrichtingselement","waterschap","weginrichtingselement","wijk","wegdeel"'
+	qryPart3 = '],"format":"gmllight","geofilter":"POLYGON('
+	qryPart4 = polygonString
+	qryPart5 = ')"}'
+	
+	data = qryPart1 +  qryPart2 + qryPart3 + qryPart4 + qryPart5
+	dataquery = data
+	
+	headers = PyPackages.requests.structures.CaseInsensitiveDict()
+	headers["accept"] = "application/json"
+	headers["Content-Type"] = "application/json"
+	
+	resp = PyPackages.requests.post(url, headers=headers, data=data)
+	
+	jsondata = json.loads(resp.text)
+	data = jsondata["downloadRequestId"]
+	urlstatus = url + "/" + data + "/status" 
+	
+	# Check URL Status
+	
+	req = urllib.request.urlopen(urlstatus)
+	req2 = req.read().decode('utf-8')
+	progressStatus = int(json.loads(req2)['progress'])
+	
+	timer = 0
+	
+	while timer < timeout:
+	    req = urllib.request.urlopen(urlstatus)
+	    req2 = req.read().decode('utf-8')    
+	    progressStatus = int(json.loads(req2)['progress'])
+	    status = json.loads(req2)['status']
+	    if status == "COMPLETED":
+	        try:
+	            downloadURL = url2 + json.loads(req2)["_links"]["download"]["href"]
+	        except:   
+	            downloadURL = "unable to get downloadlink"        
+	        message = status
+	        break
+	    elif timer > timeout:
+	        downloadURL = "empty"
+	        message = "timeout"
+	        break
+	    else: 
+	        time.sleep(1)
+	    timer = timer + 1
+	return downloadURL

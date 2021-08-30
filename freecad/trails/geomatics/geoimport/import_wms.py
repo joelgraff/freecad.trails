@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 #***************************************************************************
-#*   Copyright (c) 2021 Maarten Vroegindeweij <maarten@3bm.co.nl>          *
+#*   Copyright (c) 2021 Maarten Vroegindeweij <maarten@3bm.co.nl>              *
 #*                                                                         *
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -31,28 +31,40 @@ __url__ = "https://github.com/DutchSailor/GIS2BIM"
 
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtGui import*
+from PIL import Image, ImageOps
 
 import FreeCAD
 
 from . import GIS2BIM
 from . import GIS2BIM_FreeCAD
+from . import GIS2BIM_GUI
+
 
 class GISWMS_Dialog(QtWidgets.QDialog):
 
 	def __init__(self):
 		super(GISWMS_Dialog, self).__init__()
+
+		#Get/set parameters for GIS		
 		self.sitename = "GIS-Sitedata"
 		self.tempFolderName = "GIStemp/"
 		self.X = str(GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).CRS_x)
 		self.Y = str(GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).CRS_y)
+		self.lat = str(GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).WGS84_Latitude)
+		self.lon = str(GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).WGS84_Longitude)
 		self.CRS = str(GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).CRS_EPSG_SRID)
 		self.CRSDescription = str(GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).CRS_EPSG_Description)
-		self.bboxWidth = str(GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).BoundingboxWidth)
-		self.bboxHeight = str(GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).BoundingboxHeight)
+		self.bboxWidthStart = str(GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).BoundingboxWidth)
+		self.bboxHeightStart = str(GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).BoundingboxHeight)
+		self.width = float(self.bboxWidthStart)
+		self.height = float(self.bboxHeightStart)
 		self.tempFolder = GIS2BIM_FreeCAD.CreateTempFolder(self.tempFolderName)
 		self.folderName = self.tempFolder
 		self.tempFileName = self.tempFolder + "initialWMS.jpg" 
 		
+		#Set Style
+		self.setStyleSheet("QWidget {background-color: rgb(68, 68, 68)} QPushButton { background-color: black } QGroupBox {border: 1px solid grey; }") #margin: 2px;
+
 		#Download list of predefined WMS Requests
 		category = "webserverRequests"
 		service = "WMS"
@@ -68,176 +80,147 @@ class GISWMS_Dialog(QtWidgets.QDialog):
 		yx = sorted(zip(TitleList,ServerRequestPrefix))
 		self.TitleList = [x[0] for x in yx]
 		self.ServerRequestPrefix = [x[1] for x in yx]
-		self.initUI()
 		
-	def initUI(self):
-		self.result = userCancelled
+		#Widget Right Bottom Combined
+		gridRB = QtWidgets.QGridLayout()
+		gridRB.addWidget(self.webserverGroup(), 0, 0, QtCore.Qt.AlignTop)
+		gridRB.addWidget(self.freeCADGroup(), 1, 0, QtCore.Qt.AlignTop)
+		
+		#Overall Grid
+		grid = QtWidgets.QGridLayout()
+		grid.addWidget(self.imageGroup(), 0, 0, 1, 2)
+		grid.addWidget(self.locationGroup(), 3, 0, QtCore.Qt.AlignTop)	
+		grid.addLayout(gridRB, 3, 1)
+		grid.addLayout(self.buttonGroup(),4,0,1,2)
+		grid.setRowStretch(0,2)
+		self.setLayout(grid)
+		
 		self.setWindowTitle("Load Raster Data with WMS(Web Map Server)")
-		self.setGeometry(50, 50, 920, 910)
-		self.setFixedSize(self.size())
+		self.resize(920, 910)
 		
-		self.centralwidget = QtWidgets.QWidget(self)
-		self.centralwidget.setObjectName("WMS")
-		self.pictlabel = QtWidgets.QLabel(self)
+	def locationGroup(self):
+		groupBoxx = GIS2BIM_GUI.locationGroup(self)
+		return groupBoxx
+
+	def freeCADGroup(self):
+		groupBox = QtWidgets.QGroupBox("FreeCAD Import Settings")
 		
-		# note set
-		self.labelnote = QtWidgets.QLabel("Note: Use Geographic Location to obtain CRS and coordinates from map", self)
-		self.labelnote.move(40, 620)
-
-		#CRS
-		self.labelCRS = QtWidgets.QLabel("CRS", self)
-		self.labelCRS.move(40, 645)
-		self.CRS = QtWidgets.QLabel(self.CRS + " " + self.CRSDescription, self)
-		self.CRS.move(200, 645)
-
-		#X-coordinate
-		self.numericInput1X = QtWidgets.QLineEdit(self)
-		self.numericInput1X.setInputMask("")
-		self.numericInput1X.setText(self.X)
-		self.numericInput1X.setFixedWidth(100)
-		self.numericInput1X.move(200, 670)
-		self.label2 = QtWidgets.QLabel("X-coordinate", self)
-		self.label2.move(40, 675)
-		
-		#Y-coordinate		
-		self.numericInput2Y = QtWidgets.QLineEdit(self)
-		self.numericInput2Y.setInputMask("")
-		self.numericInput2Y.setText(self.Y)
-		self.numericInput2Y.setFixedWidth(100)
-		self.numericInput2Y.move(200, 700)
-		self.label3 = QtWidgets.QLabel("Y-coordinate", self)
-		self.label3.move(40, 705)
-		
-		# boundingbox width
-		self.bboxWidthLab = QtWidgets.QLineEdit(self)
-		self.bboxWidthLab.setInputMask("")
-		self.bboxWidthLab.setText(self.bboxWidth)
-		self.bboxWidthLab.setFixedWidth(100)
-		self.bboxWidthLab.move(200, 730)
-		self.label4 = QtWidgets.QLabel("Boundingbox Width [m]", self)
-		self.label4.move(40, 735)
-
-		# boundingbox height
-		self.bboxHeightLab = QtWidgets.QLineEdit(self)
-		self.bboxHeightLab.setInputMask("")
-		self.bboxHeightLab.setText(self.bboxHeight)
-		self.bboxHeightLab.setFixedWidth(100)
-		self.bboxHeightLab.move(200, 760)
-		self.label5 = QtWidgets.QLabel("Boundingbox Height [m]", self)
-		self.label5.move(40, 765)
-
-		# dx 
-		self.dx = QtWidgets.QLineEdit(self)
-		self.dx.setInputMask("")
-		self.dx.setText("0")
-		self.dx.setFixedWidth(100)
-		self.dx.move(200, 790)
-		self.label6 = QtWidgets.QLabel("X-Placement from origin[m]", self)
-		self.label6.move(40, 795)
-
-		# dy 
-		self.dy = QtWidgets.QLineEdit(self)
-		self.dy.setInputMask("")
-		self.dy.setText("0")
-		self.dy.setFixedWidth(100)
-		self.dy.move(200, 820)
-		self.label7 = QtWidgets.QLabel("Y-Placement from origin[m]", self)
-		self.label7.move(40, 825)
-
 		#Name of Image
-		self.imageName = QtWidgets.QLineEdit(self)
-		self.imageName.setInputMask("")
+		imageNameLab = QtWidgets.QLabel("Image Name", self)
+		self.imageName= QtWidgets.QLineEdit(self)		
 		self.imageName.setText(self.TitleList[0])
-		self.imageName.setFixedWidth(100)
-		self.imageName.move(520, 670)
-		self.imageNameLabel = QtWidgets.QLabel("Image Name", self)
-		self.imageNameLabel.move(350, 675)
 		self.imageName.editingFinished.connect(self.onimageName)
 
-		#Filelocation 
-		self.filelocation = self.tempFileName
-		def do_file():
-			self.fname = QtWidgets.QFileDialog.getExistingDirectory(self, "Open Directory",self.tempFolder,QtWidgets.QFileDialog.ShowDirsOnly | QtWidgets.QFileDialog.DontResolveSymlinks)
-			self.foldername = fname	
-			self.filelocation = self.foldername + "/" + self.imageName.text() + ".jpg"
-		self.button = QtWidgets.QPushButton("Browse",self)
-		self.button.clicked.connect(do_file)
-		self.button.show()
-		self.button.move(515, 695)
-		self.label8 = QtWidgets.QLabel("Folder for temporary files", self)
-		self.label8.move(350, 705)
-
-		# pixel width
-		self.pixelwidth = QtWidgets.QLineEdit(self)
-		self.pixelwidth.setInputMask("")
+		#Pixel Width
+		pixelwidthLab = QtWidgets.QLabel("Pixels(width)", self)
+		self.pixelwidth= QtWidgets.QLineEdit(self)		
 		self.pixelwidth.setText("3000")
-		self.pixelwidth.setFixedWidth(70)
-		self.pixelwidth.move(520, 730)
-		self.labelpixwidth = QtWidgets.QLabel("Pixels in Width", self)
-		self.labelpixwidth.move(350, 735)
+		
+		# checkbox halftone
+		cbGrayscaleLab = QtWidgets.QLabel("Image Grayscale")
+		self.cbGrayscale = QtWidgets.QCheckBox()
+		self.cbGrayscale.setChecked(0)
+
+		#dx
+		dxLab = QtWidgets.QLabel("X-Placement from origin[m]", self)
+		self.dx= QtWidgets.QLineEdit(self)		
+		self.dx.setText("0")
+
+		#dy
+		dyLab = QtWidgets.QLabel("Y-Placement from origin[m]", self)
+		self.dy= QtWidgets.QLineEdit(self)		
+		self.dy.setText("0")
+
+		grid = QtWidgets.QGridLayout()
+		grid.addWidget(imageNameLab,0,0)
+		grid.addWidget(self.imageName,0,1,1,2)
+		grid.addWidget(pixelwidthLab,1,0)
+		grid.addWidget(self.pixelwidth,1,1)
+		grid.addWidget(cbGrayscaleLab,1,2)
+		grid.addWidget(self.cbGrayscale,1,3)
+		grid.addWidget(dxLab,2,0)
+		grid.addWidget(self.dx,2,1)
+		grid.addWidget(dyLab,2,2)
+		grid.addWidget(self.dy,2,3)
+		groupBox.setLayout(grid)
+		return groupBox
+	
+	def webserverGroup(self):
+		groupBox = QtWidgets.QGroupBox("Input Webserver / Request")
 
 		# combobox with WMS-servers
-		self.cbo = QtWidgets.QComboBox(self)
-		self.cbo.autoCompletion()
-		self.cbo.move(520,760)
-		self.cbo.addItems(self.TitleList)
-		self.labelWMS = QtWidgets.QLabel("Predifined WMS Requests", self)
-		self.labelWMS.move(350, 765)
-		self.cbo.currentIndexChanged.connect(self.selectionchange)
+		cboDefWMSLab = QtWidgets.QLabel("Predifined WMS Requests", self)		
+		self.cboDefWMS = QtWidgets.QComboBox(self)
+		self.cboDefWMS.addItems(self.TitleList)
+		self.cboDefWMS.currentIndexChanged.connect(self.selectionchange)
 		
-		# webservernameAndRequest
-		self.webserverName1 = QtWidgets.QPlainTextEdit(self)
-		self.webserverName1.insertPlainText(self.ServerRequestPrefix[self.cbo.currentIndex()])
-		self.webserverName1.setFixedWidth(300)
-		self.webserverName1.setFixedHeight(80)
-		self.webserverName1.move(515, 790)
-		self.label1 = QtWidgets.QLabel("Webserver Address & Request", self)
-		self.label1.move(350, 795)
+		# Webrequest text
+		requestLab = QtWidgets.QLabel("Webserver Address & Request", self)
+		self.request= QtWidgets.QLineEdit(self)		
+		self.request.setText(self.ServerRequestPrefix[self.cboDefWMS.currentIndex()])
 
-		# test WMS button
-		testWMSButton = QtWidgets.QPushButton('Test WMS-request and show result', self)
-		testWMSButton.clicked.connect(self.testWMS)
-		testWMSButton.move(280, 870)
+		grid = QtWidgets.QGridLayout()
+		grid.addWidget(cboDefWMSLab,0,0)
+		grid.addWidget(self.cboDefWMS,0,1)
+		grid.addWidget(requestLab,1,0)
+		grid.addWidget(self.request,1,1)
+		grid.setRowStretch(1,1)
 
-		# cancel button
-		cancelButton = QtWidgets.QPushButton('Cancel', self)
-		cancelButton.clicked.connect(self.onCancel)
-		cancelButton.setAutoDefault(True)
-		cancelButton.move(190, 870)
+		groupBox.setLayout(grid)
+		
+		return groupBox
 
-		# Ok WMS button
-		okButton = QtWidgets.QPushButton('OK and import image', self)
-		okButton.clicked.connect(self.onOk)
-		okButton.move(35, 870)
-		self.show()
-		self.testWMS()
+	def imageGroup(self):
+		groupBox = QtWidgets.QGroupBox("Example: Note: Use 'Geographic Location' to obtain CRS and coordinates from map")
+		
+		self.pictlabel = QtWidgets.QLabel(self)
+		grid = QtWidgets.QGridLayout()
+		grid.addWidget(self.pictlabel,0,0)
 
-	def onCancel(self):
-		self.result= userCancelled
-		self.close()
-	
+		groupBox.setLayout(grid)
+		
+		return groupBox
+
+	def buttonGroup(self):
+		hbox = GIS2BIM_GUI.buttonGroup(self)
+		return hbox
+
+		# note set
+		self.labelnote = QtWidgets.QLabel("Note: Use 'Geographic Location' to obtain CRS and coordinates from map", self)
+		self.labelnote.move(40, 620)
+			
 	def onimageName(self): 
-		self.filelocation = self.foldername + "/" + self.imageName.text() + ".jpg"
+		self.filelocation = self.folderName + "/" + self.imageName.text() + ".jpg"
 
 	def selectionchange(self): 
-		self.webserverName1.clear()		
-		self.webserverName1.insertPlainText(self.ServerRequestPrefix[self.cbo.currentIndex()])
+		self.request.clear()		
+		self.request.setText(self.ServerRequestPrefix[self.cboDefWMS.currentIndex()])
 		self.imageName.clear()
-		self.imageName.setText(self.cbo.currentText())
+		self.imageName.setText(self.cboDefWMS.currentText())
 
-	def testWMS(self):
-		URL = str(self.webserverName1.toPlainText())
-		X = float(self.numericInput1X.text())
-		Y = float(self.numericInput2Y.text())
-		width = float(self.bboxWidthLab.text())
-		height = float(self.bboxHeightLab.text())
-		fileLocationWMS = str(self.filelocation)
+	def onbboxHeight(self):
+		test = "test"
+
+	def onbboxWidth(self):
+		test = "test"
+
+	def onTest(self):
+		URL = self.request.text()
+		width = float(self.bboxWidth.text())
+		height = float(self.bboxHeight.text())
+		fileLocationWMS = self.tempFolder + self.imageName.text() + '.jpg'
 		pixWidth = float(self.pixelwidth.text())
 		self.pixHeight = int((pixWidth*height)/width)
 		pixHeight = self.pixHeight
-		Bbox = GIS2BIM.CreateBoundingBox(X,Y,width,height,2)
+		Bbox = GIS2BIM.CreateBoundingBox(float(self.X),float(self.Y),width,height,2)
 		GIS2BIM.WMSRequest(URL,Bbox,self.tempFileName,pixWidth,pixHeight)
-		picture = QPixmap(fileLocationWMS)
+		if self.cbGrayscale.checkState():
+			img = Image.open(fileLocationWMS)
+			fileLocationWMS2 = self.tempFolder + self.imageName.text() + '_gray.jpg'
+			gray_image = ImageOps.grayscale(img)
+			gray_image.save(fileLocationWMS2)
+		else: fileLocationWMS2 = fileLocationWMS
+		picture = QPixmap(fileLocationWMS2)
 		picture = picture.scaledToWidth(800)
 		pictheight = picture.height()
 		if pictheight > 600:
@@ -252,36 +235,37 @@ class GISWMS_Dialog(QtWidgets.QDialog):
 		self.pictlabel.setGeometry(QtCore.QRect(40, 40, pictwidth-40, pictheight-40))
 		self.pictlabel.hide()
 		self.pictlabel.show()
-		self.result= userTest
 
-	def onOk(self):
-		self.result= userOK
-		width = float(self.bboxWidthLab.text())
-		height = float(self.bboxHeightLab.text())
-		fileLocationWMS = str(self.filelocation)
+	def onImport(self):
+		width = float(self.bboxWidth.text())
+		height = float(self.bboxHeight.text())
 		pixWidth = float(self.pixelwidth.text())
 		self.pixHeight = (pixWidth*height)/width
 		pixHeight = self.pixHeight		
-		URL = str(self.webserverName1.toPlainText())
-		X = float(self.numericInput1X.text())
-		Y = float(self.numericInput2Y.text())
+		URL = self.request.text()
+		X = float(self.X)
+		Y = float(self.Y)
 		dx = float(self.dx.text())*1000
 		dy = float(self.dy.text())*1000
+		fileLocationWMS = self.tempFolder + self.imageName.text() + '.jpg'
 		Bbox = GIS2BIM.CreateBoundingBox(X,Y,width,height,2)
 		result = GIS2BIM.WMSRequest(URL,Bbox,fileLocationWMS,self.pixelwidth.text(),int(self.pixHeight))
-		ImageAerialPhoto = GIS2BIM_FreeCAD.ImportImage(fileLocationWMS,width,height,1000, str(self.imageName.text()), dx,dy)
+		if self.cbGrayscale.checkState():
+			img = Image.open(fileLocationWMS)
+			fileLocationWMS2 = self.tempFolder + self.imageName.text() + '_gray.jpg'
+			gray_image = ImageOps.grayscale(img)
+			gray_image.save(fileLocationWMS2)
+		else: fileLocationWMS2 = fileLocationWMS
+		ImageAerialPhoto = GIS2BIM_FreeCAD.ImportImage(fileLocationWMS2,width,height,1000, str(self.imageName.text()), dx,dy)
 		ImageAerialPhoto.addProperty("App::PropertyString","WMSRequestURL")
 		ImageAerialPhoto.WMSRequestURL = result[2]
 		GIS2BIM_FreeCAD.CreateLayer("GIS_Raster")
 		FreeCAD.activeDocument().getObject("GIS_Raster").addObject(FreeCAD.activeDocument().getObject(ImageAerialPhoto.Label))
 		FreeCAD.ActiveDocument.recompute()
-		self.result= userOK
 		self.close()
 
-# Constant definitions
-userCancelled = "Cancelled"
-userOK = "OK"
-userTest = "TestWMS"
+	def onCancel(self):
+		self.close()
 
 #form = GISWMS_Dialog()
 #form.exec_()
