@@ -45,7 +45,6 @@ import math
 import re
 import zipfile
 from PIL import Image
-import PyPackages.requests
 	
 #Common functions
 def GetWebServerData(servertitle, category, parameter):
