@@ -24,10 +24,10 @@
 Create a Sections object from FPO.
 '''
 
-import FreeCAD, Part
+import FreeCAD
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
-import copy, math
+import math
 
 
 def create():
@@ -168,12 +168,8 @@ class ViewProviderSections:
             geometry = [h, w]
             gaps = [ver, hor]
 
-            # Get GeoOrigin.
+            # Set System.
             origin = geo_origin.get()
-            base = copy.deepcopy(origin.Origin)
-            base.z = 0
-
-            # Set GeoCoords.
             geo_system = ["UTM", origin.UtmZone, "FLAT"]
             self.line_coords.geoSystem.setValues(geo_system)
 
@@ -201,7 +197,7 @@ class ViewProviderSections:
                 gl_label.addChild(text)
                 self.gl_labels.addChild(gl_label)
 
-                org = position.add(base)
+                org = position.add(origin.Origin)
                 up_left = org.add(FreeCAD.Vector(0, h, 0))
                 up_right = org.add(FreeCAD.Vector(w, h, 0))
                 down_right = org.add(FreeCAD.Vector(w, 0, 0))
