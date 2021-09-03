@@ -30,7 +30,7 @@ from pivy import coin
 from .surface_func import DataFunctions, ViewFunctions
 from freecad.trails import ICONPATH, line_patterns, geo_origin
 from . import surfaces
-import random, copy
+import random
 
 
 
@@ -442,12 +442,8 @@ class ViewProviderSurface(ViewFunctions):
         '''
         Update Object visuals when a data property changed.
         '''
-        # Get GeoOrigin.
+        # Set System.
         origin = geo_origin.get()
-        base = copy.deepcopy(origin.Origin)
-        base.z = 0
-
-        # Set geosystem.
         geo_system = ["UTM", origin.UtmZone, "FLAT"]
         self.geo_coords.geoSystem.setValues(geo_system)
         self.boundary_coords.geoSystem.setValues(geo_system)
@@ -457,7 +453,7 @@ class ViewProviderSurface(ViewFunctions):
         if prop == "Mesh":
             mesh = obj.getPropertyByName("Mesh")
             copy_mesh = mesh.copy()
-            copy_mesh.Placement.move(base)
+            copy_mesh.Placement.move(origin.Origin)
 
             triangles = []
             for i in copy_mesh.Topology[1]:
@@ -472,20 +468,20 @@ class ViewProviderSurface(ViewFunctions):
 
             if contour_shape.SubShapes:
                 major_shape = contour_shape.SubShapes[0]
-                points, vertices = self.wire_view(major_shape, base)
+                points, vertices = self.wire_view(major_shape, origin.Origin)
 
                 self.major_coords.point.values = points
                 self.major_lines.numVertices.values = vertices
 
                 minor_shape = contour_shape.SubShapes[1]
-                points, vertices = self.wire_view(minor_shape, base)
+                points, vertices = self.wire_view(minor_shape, origin.Origin)
 
                 self.minor_coords.point.values = points
                 self.minor_lines.numVertices.values = vertices
 
         if prop == "BoundaryShapes":
             boundary_shape = obj.getPropertyByName(prop)
-            points, vertices = self.wire_view(boundary_shape, base, True)
+            points, vertices = self.wire_view(boundary_shape, origin.Origin, True)
 
             self.boundary_coords.point.values = points
             self.boundary_lines.numVertices.values = vertices
