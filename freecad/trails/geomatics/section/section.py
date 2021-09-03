@@ -24,11 +24,12 @@
 Create a Section object from FPO.
 '''
 
-import FreeCAD, Part
+import FreeCAD
+import Part
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
 from .section_func import SectionFunc
-import copy, random
+import random
 
 
 def create():
@@ -173,20 +174,20 @@ class ViewProviderSection:
             self.gl_labels.removeAllChildren()
             shape = obj.getPropertyByName("Shape")
 
-            # Get GeoOrigin.
+            # Create instance.
             origin = geo_origin.get()
-            base = copy.deepcopy(origin.Origin)
-            base.z = 0
+            copy_shape = shape.copy()
+            copy_shape.Placement.move(origin.Origin)
 
-            # Set GeoCoords.
+            # Get coordinate system.
             geo_system = ["UTM", origin.UtmZone, "FLAT"]
             self.line_coords.geoSystem.setValues(geo_system)
 
             points = []
             line_vert = []
-            for i, wire in enumerate(shape.Wires):
+            for wire in copy_shape.Wires:
                 for vertex in wire.Vertexes:
-                    points.append(vertex.Point.add(base))
+                    points.append(vertex.Point)
 
                 line_vert.append(len(wire.Vertexes))
 
