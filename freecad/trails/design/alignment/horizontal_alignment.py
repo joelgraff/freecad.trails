@@ -36,8 +36,8 @@ from ..project.support import properties, units
 from .alignment_functions import DataFunctions, ViewFunctions
 
 from pivy import coin
-import math
 from math import inf
+import math
 
 __title__ = 'horizontal_alignment.py'
 __author__ = 'Joel Graff'
@@ -222,12 +222,9 @@ class HorizontalAlignment(DataFunctions):
             curves, spirals, lines, points = obj.Proxy.model.discretize_geometry(
                 [0.0], obj.Method, obj.Seg_Value, types=True)
 
-            # Get GeoOrigin.
             origin = geo_origin.get(points[0])
-            base = deepcopy(origin.Origin)
-            base.z = 0
 
-            obj.Shape = self.get_shape(lines, curves, spirals, base)
+            obj.Shape = self.get_shape(lines, curves, spirals, origin.Origin)
 
 
 class ViewProviderHorizontalAlignment(ViewFunctions):
@@ -303,11 +300,8 @@ class ViewProviderHorizontalAlignment(ViewFunctions):
             self.labels.removeAllChildren()
             labels = vobj.getPropertyByName(prop)
 
-            # Get GeoOrigin.
+            # Set System.
             origin = geo_origin.get()
-            base = deepcopy(origin.Origin)
-            base.z = 0
-
             geo_system = ["UTM", origin.UtmZone, "FLAT"]
             self.tick_coords.geoSystem.setValues(geo_system)
 
@@ -324,14 +318,13 @@ class ViewProviderHorizontalAlignment(ViewFunctions):
                     text = coin.SoAsciiText()
 
                     text.string.setValues([str(label)])
-                    start = deepcopy(tick[0]).sub(base)
-                    end = deepcopy(tick[-1]).sub(base)
+                    start = deepcopy(tick[0]).sub(origin.Origin)
+                    end = deepcopy(tick[-1]).sub(origin.Origin)
 
                     if start.y>end.y:
                         angle = start.sub(end).getAngle(App.Vector(1,0,0))-math.pi
                     else:
                         angle = end.sub(start).getAngle(App.Vector(1,0,0))
-                    print(angle)
 
                     location.translation = end
                     location.rotation.setValue(coin.SbVec3f(0, 0, 1), angle)
@@ -355,14 +348,12 @@ class ViewProviderHorizontalAlignment(ViewFunctions):
             shape = obj.getPropertyByName(prop)
             if not shape.SubShapes: return
 
-            # Get GeoOrigin.
+            # Set System.
             origin = geo_origin.get()
             geo_system = ["UTM", origin.UtmZone, "FLAT"]
-            base = deepcopy(origin.Origin)
-            base.z = 0
 
             copy_shape = shape.copy()
-            copy_shape.Placement.move(base)
+            copy_shape.Placement.move(origin.Origin)
 
             lines = copy_shape.SubShapes[0]
             for wire in lines.Wires:
