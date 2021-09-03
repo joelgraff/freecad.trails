@@ -27,7 +27,6 @@ Create a Table Object from FPO.
 import FreeCAD
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
-import copy
 
 
 
@@ -135,8 +134,6 @@ class ViewProviderTable:
             if prop == "VolumeAreas" or prop == "TableTitle":
                 self.table_columns.removeAllChildren()
                 origin = geo_origin.get()
-                base = copy.deepcopy(origin.Origin)
-                base.z = 0
 
                 column_titles = ["KM", "Area", "Volume", "Cumulative Volume"]
 
