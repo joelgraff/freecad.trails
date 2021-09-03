@@ -24,13 +24,15 @@
 Create a Region group object from FPO.
 '''
 
-import FreeCAD, Part, copy, math
+import FreeCAD
+import Part
 from pivy import coin
 from freecad.trails import ICONPATH, geo_origin
 from .region_func import RegionFunc
 from ..section import sections
 from ..volume import volumes
 from ..table import tables
+import math
 
 
 def create(alignment, name='Region'):
@@ -180,13 +182,9 @@ class Region(RegionFunc):
         left_offset = obj.getPropertyByName("LeftOffset")
         right_offset = obj.getPropertyByName("RightOffset")
         offsets = [left_offset, right_offset]
-
-        # Get GeoOrigin.
         origin = geo_origin.get()
-        base = copy.deepcopy(origin.Origin)
-        base.z = 0
 
-        obj.Shape = self.get_lines(base, alignment, offsets, obj.StationList)
+        obj.Shape = self.get_lines(origin.Origin, alignment, offsets, obj.StationList)
 
 
 
@@ -248,12 +246,8 @@ class ViewProviderRegion:
             self.gl_labels.removeAllChildren()
             shape = obj.getPropertyByName("Shape")
 
-            # Get GeoOrigin.
+            # Set System.
             origin = geo_origin.get()
-            base = copy.deepcopy(origin.Origin)
-            base.z = 0
-
-            # Set GeoCoords.
             geo_system = ["UTM", origin.UtmZone, "FLAT"]
             self.line_coords.geoSystem.setValues(geo_system)
 
@@ -285,7 +279,7 @@ class ViewProviderRegion:
                 self.gl_labels.addChild(gl_label)
 
                 for vertex in wire.Vertexes:
-                    points.append(vertex.Point.add(base))
+                    points.append(vertex.Point.add(origin.Origin))
 
                 line_vert.append(len(wire.Vertexes))
 
