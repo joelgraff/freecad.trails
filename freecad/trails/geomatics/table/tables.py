@@ -25,10 +25,7 @@ Create a Tables Object from FPO.
 '''
 
 import FreeCAD
-import Part
-from pivy import coin
-from freecad.trails import ICONPATH, geo_origin
-import copy
+from freecad.trails import ICONPATH
 
 
 def create():
