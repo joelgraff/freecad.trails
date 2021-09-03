@@ -40,6 +40,7 @@ def get(origin=(0, 0, 0)):
     if obj:
         if obj.Origin == FreeCAD.Vector(0, 0, 0):
             obj.Origin = origin
+            obj.Origin.z = 0
         return obj
 
     obj = create(origin)
@@ -123,8 +124,7 @@ class GeoOrigin:
             node = self.get_geoorigin()
 
             node.geoSystem.setValues(system)
-            node.geoCoords.setValue(
-                origin[0], origin[1], 0)
+            node.geoCoords.setValue(origin)
 
     def get_geoorigin(self):
         sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
