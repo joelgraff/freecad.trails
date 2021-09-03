@@ -25,7 +25,7 @@ Create a Regions object from FPO.
 '''
 
 import FreeCAD
-from freecad.trails import ICONPATH, geo_origin
+from freecad.trails import ICONPATH
 
 
 
