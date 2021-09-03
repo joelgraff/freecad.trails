@@ -96,8 +96,7 @@ class GeoOrigin:
 
         if prop == "Origin":
             origin = fp.getPropertyByName("Origin")
-            node.geoCoords.setValue(
-                origin.x, origin.y, 0)
+            node.geoCoords.setValue(origin.x, origin.y, 0.0)
 
     def execute(self, fp):
         '''
@@ -124,7 +123,7 @@ class GeoOrigin:
             node = self.get_geoorigin()
 
             node.geoSystem.setValues(system)
-            node.geoCoords.setValue(origin)
+            node.geoCoords.setValue(origin[0], origin[1], 0.0)
 
     def get_geoorigin(self):
         sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
