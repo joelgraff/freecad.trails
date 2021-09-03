@@ -102,13 +102,11 @@ class PointGroup:
             vectors = obj.getPropertyByName(prop)
             if vectors:
                 origin = geo_origin.get(vectors[0])
-                base = copy.deepcopy(origin.Origin)
-                base.z = 0
 
                 points = []
                 for i in vectors:
                     point = copy.deepcopy(i)
-                    points.append(point.sub(base))
+                    points.append(point.sub(origin.Origin))
 
                 obj.Points = Points.Points(points)
 
@@ -231,7 +229,7 @@ class ViewProviderPointGroup:
                     if show_z: labels.append(str(round(vector.z/1000,3)))
                     if show_des and vobj.Object.Descriptions: labels.append(vobj.Object.Descriptions[index])
 
-                    location.translation = vector.sub(FreeCAD.Vector(origin.Origin.x, origin.Origin.y, 0))
+                    location.translation = vector.sub(FreeCAD.Vector(origin.Origin))
                     text.string.setValues(labels)
                     point_label.addChild(font)
                     point_label.addChild(location)
@@ -254,13 +252,11 @@ class ViewProviderPointGroup:
             points = obj.getPropertyByName(prop)
             if points.Points:
                 origin = geo_origin.get()
-                base = copy.deepcopy(origin.Origin)
-                base.z = 0
 
                 pts = []
                 for i in points.Points:
                     point = copy.deepcopy(i)
-                    pts.append(point.add(base))
+                    pts.append(point.add(origin.Origin))
 
                 geo_system = ["UTM", origin.UtmZone, "FLAT"]
                 self.geo_coords.geoSystem.setValues(geo_system)
