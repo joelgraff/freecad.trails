@@ -29,7 +29,7 @@ import Part
 from pivy import coin
 from .volume_func import VolumeFunc
 from freecad.trails import ICONPATH, geo_origin
-import random, copy
+import random
 
 
 
@@ -146,12 +146,8 @@ class ViewProviderVolumeAreas:
         if prop == "Shape":
             shape = obj.getPropertyByName("Shape")
 
-            # Get GeoOrigin.
+            # Set System.
             origin = geo_origin.get()
-            base = copy.deepcopy(origin.Origin)
-            base.z = 0
-
-            # Set GeoCoords.
             geo_system = ["UTM", origin.UtmZone, "FLAT"]
             self.face_coords.geoSystem.setValues(geo_system)
 
@@ -161,7 +157,7 @@ class ViewProviderVolumeAreas:
             for face in shape.Faces:
                 tri = face.tessellate(1)
                 for v in tri[0]:
-                    points.append(v.add(base))
+                    points.append(v.add(origin.Origin))
                 for f in tri[1]:
                     face_vert.extend([f[0]+idx,f[1]+idx,f[2]+idx,-1])
                 idx += len(tri[0])
