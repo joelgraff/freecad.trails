@@ -148,7 +148,7 @@ class navigator:
 
     def GetResources(self):
         return {
-            'Pixmap': 'Std_Tool2',
+            'Pixmap': ICONPATH + '/icons/Navigator.svg',
             'MenuText': 'Navigator',
             'ToolTip': 'Navigator'
         }
@@ -176,7 +176,7 @@ class import_tms:
 
     def GetResources(self):
         return {
-            'Pixmap': ICONPATH + '/icons/ImportWMS.svg',
+            'Pixmap': ICONPATH + '/icons/ImportTMS.svg',
             'MenuText': 'Import TMS',
             'ToolTip': 'Import TMS(Tile Map Service)'
         }
