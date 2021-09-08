@@ -4,7 +4,7 @@ Hakan Seven is a Geomatics Engineer and Joel_graff is a Transportation Engineer.
 
 ## Features
 
-* Geodata Tools
+* GIS Tools
 * Import Survey Data Files
 * Export Point Groups to File
 * Create Surface
