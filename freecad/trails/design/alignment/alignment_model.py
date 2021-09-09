@@ -786,8 +786,7 @@ class AlignmentModel:
             if curve.get('Type') == 'Curve':
 
                 _pts = arc.get_points(
-                    curve, size=delta, method=method, interval=_arc_int
-                )
+                    curve, size=delta, method=method, interval=_arc_int)
 
                 if _pts:
                     points.append(_pts)
@@ -806,10 +805,11 @@ class AlignmentModel:
                 _start_coord = line.get_coordinate(
                     curve.get('Start'), curve.get('BearingIn'), _arc_int[0])
 
-                _pts = [_start_coord, line.get_coordinate(
-                    _start_coord, curve.get('BearingIn'), _arc_int[1])]
-                points.append(_pts)
-                lines.append(_pts)
+                _end_coord = line.get_coordinate(
+                    _start_coord, curve.get('BearingIn'), _arc_int[1])
+
+                points.append([_start_coord, _end_coord])
+                lines.append([_start_coord, _end_coord])
 
             last_curve = curve
 
