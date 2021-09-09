@@ -373,6 +373,8 @@ class ViewProviderHorizontalAlignment(ViewFunctions):
                 line.addChild(line_set)
                 self.lines.addChild(line)
 
+                del points
+
             curves = copy_shape.SubShapes[1]
             for wire in curves.Wires:
                 points = []
@@ -390,6 +392,8 @@ class ViewProviderHorizontalAlignment(ViewFunctions):
                 curve.addChild(curve_coords)
                 curve.addChild(curve_set)
                 self.curves.addChild(curve)
+
+                del points
 
             spirals = copy_shape.SubShapes[2]
             for wire in spirals.Wires:
@@ -409,11 +413,15 @@ class ViewProviderHorizontalAlignment(ViewFunctions):
                 spiral.addChild(spiral_set)
                 self.spirals.addChild(spiral)
 
+                del points
+            del copy_shape
+
     def getDisplayMode(self, obj):
         '''
         Return a list of display modes.
         '''
-        return ["Wireframe"]
+        modes = ["Wireframe"]
+        return modes
 
     def getDefaultDisplayMode(self):
         '''
