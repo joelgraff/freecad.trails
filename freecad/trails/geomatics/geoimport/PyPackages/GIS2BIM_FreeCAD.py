@@ -28,19 +28,39 @@ __author__ = "Maarten Vroegindeweij"
 __url__ = "https://github.com/DutchSailor/GIS2BIM"
 
 from . import GIS2BIM
+import importlib
+importlib.reload(GIS2BIM)
 
 import Draft
 import Part
 import Arch
 import os
 import re
+import json
 
 import FreeCAD
+import Mesh
 
 from PySide2 import QtWidgets
 
-SiteName = "GIS"
+SiteName = "GIS-Sitedata"
 TempFolderName = "GIStemp/"
+
+def getFreeCADGISData(self):
+	self.sitename = SiteName
+
+	#Get/set parameters for GIS
+	self.tempFolderName = "GIStemp/"
+	self.X = GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).CRS_x
+	self.Y = GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).CRS_y
+	self.lat = str(GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).WGS84_Latitude)
+	self.lon = str(GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).WGS84_Longitude)
+	self.bboxWidthStart = GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).BoundingboxWidth
+	self.bboxHeightStart = GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).BoundingboxHeight
+	self.CRS = str(GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).CRS_EPSG_SRID)
+	self.CRSDescription = str(GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).CRS_EPSG_Description)
+	self.bboxString = GIS2BIM.CreateBoundingBox(GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).CRS_x,GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).CRS_y,self.bboxWidthStart,self.bboxHeightStart,0)
+	
 
 def CreateTempFolder(Name):
 #Create a temporary subfolder in the folder of the projectfile to store temporary GIS-files
@@ -103,7 +123,7 @@ def checkIfCoordIsInsideBoundingBox(coord, min_x, min_y, max_x, max_y):
 		else:
 		    return False
 			
-def CurvesFromGML(tree,xPathString,dx,dy,BoxWidth,BoxHeight,scale,DecimalNumbers,closedValue,Face,DrawStyle,LineColor):
+def CurvesFromGML(tree,xPathString,dx,dy,BoxWidth,BoxHeight,scale,DecimalNumbers,closedValue,Face,DrawStyle,LineColor,ShapeColor):
     bbx = -dx
     bby = -dy
 	
@@ -149,6 +169,7 @@ def CurvesFromGML(tree,xPathString,dx,dy,BoxWidth,BoxHeight,scale,DecimalNumbers
                     a.MakeFace = Face
                     a.ViewObject.DrawStyle = DrawStyle
                     a.ViewObject.LineColor = LineColor
+                    a.ViewObject.ShapeColor = ShapeColor
                     FCcurves.append(a)
             except:
                 FCcurves.append("_none_")
@@ -170,7 +191,7 @@ def PlaceText(textData,fontSize, upper):
         Text1.Placement = Place1
         Texts.append(Text1)
     return Texts
-
+	
 def CreateLayer(layerName):
 	layerName = layerName.replace(" ","_")
 	lstObjects = []
@@ -178,7 +199,8 @@ def CreateLayer(layerName):
 		lstObjects.append(obj.Label)
 	if not layerName in lstObjects:
 		FreeCAD.activeDocument().addObject("App::DocumentObjectGroupPython", layerName)
-	return layerName
+	obj2 = FreeCAD.activeDocument().getObject(layerName)
+	return obj2
 
 def ArchSiteCreateCheck(SiteName):
 #Create an ArchSiteobject which is used to store data nessecary for GIS2BIM. 
@@ -193,6 +215,37 @@ def ArchSiteCreateCheck(SiteName):
 		
 	return ArchSiteObject
 
+def CityJSONImport(jsonFile,dX,dY,LODnumber,bboxWidth,bboxHeight):
+	#Import CityJSON File, jsonfilename, dx and dy in string/meters. Proof of Concept, very buggy and incomplete.
+	layer = CreateLayer("CityJSON")	
+	data = json.load(open(jsonFile,))
+	vert = data['vertices']
+	cityobj = data['CityObjects']
+	translate = data['transform']['translate']
+	scaleX = data['transform']['scale'][0]
+	scaleY = data['transform']['scale'][1]
+	scaleZ = data['transform']['scale'][2]
+	translatex = (translate[0] -float(dX))/scaleX
+	translatey = (translate[1] -float(dY))/scaleY
+	translatez = -translate[2]/scaleZ
+	
+	meshes = []
+	for i in cityobj:
+		objName = i
+		for j in data['CityObjects'][objName]['geometry'][2]['boundaries']:	
+			facets = []
+			for k in j:
+				coord = (str(vert[k[0][0]][0]+translatex), str(vert[k[0][0]][1]+translatey))					
+				if checkIfCoordIsInsideBoundingBox(coord,-500*float(bboxWidth),-500*float(bboxHeight),500*float(bboxWidth),500*float(bboxHeight)):				
+					facets.append(((vert[k[0][0]][0]+translatex, vert[k[0][0]][1]+translatey, vert[k[0][0]][2]+translatez),(vert[k[0][1]][0]+translatex, vert[k[0][1]][1]+translatey, vert[k[0][1]][2]+translatez),(vert[k[0][2]][0]+translatex, vert[k[0][2]][1]+translatey, vert[k[0][2]][2]+translatez)))
+				else: pass
+			m = Mesh.Mesh(facets)
+			f = FreeCAD.activeDocument().addObject("Mesh::Feature", objName)
+			f.Mesh = m
+			meshes.append(f)
+			FreeCAD.activeDocument().getObject("CityJSON").addObject(f)
+	return meshes
+	
 def ArchSiteAddparameters(SiteObject):
 	SiteObject.addProperty("App::PropertyString","CRS_EPSG_SRID")
 	SiteObject.addProperty("App::PropertyString","CRS_EPSG_Description")

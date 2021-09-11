@@ -28,10 +28,13 @@ __author__ = "Maarten Vroegindeweij"
 __url__ = "https://github.com/DutchSailor/GIS2BIM"
 
 from . import GIS2BIM
+
 import sys
 import json
 import urllib
 import time
+import xml.etree.ElementTree as ET
+
 import PyPackages.requests
 
 #import urllib.request, json
@@ -51,6 +54,10 @@ NLPDOKLuchtfoto2017 = GIS2BIM.GetWebServerData('NL_PDOK_Luchtfoto_2017_28992','w
 NLPDOKLuchtfoto2018 = GIS2BIM.GetWebServerData('NL_PDOK_Luchtfoto_2018_28992','webserverRequests','serverrequestprefix')
 NLPDOKLuchtfoto2019 = GIS2BIM.GetWebServerData('NL_PDOK_Luchtfoto_2019_28992','webserverRequests','serverrequestprefix')
 NLPDOKLuchtfoto2020 = GIS2BIM.GetWebServerData('NL_PDOK_Luchtfoto_2020_28992','webserverRequests','serverrequestprefix')
+NLTUDelftBAG3DV2 = "https://data.3dbag.nl/api/BAG3D_v2/wfs?&request=GetFeature&typeName=BAG3D_v2:bag_tiles_3k&bbox="
+NLTUDelftBAG3DV2DownloadPrefix = "http://data.3dbag.nl/cityjson/v21031_7425c21b/3dbag_v21031_7425c21b_"
+NLPDOKBGTURL1 = "https://api.pdok.nl/lv/bgt/download/v1_0/full/custom"
+NLPDOKBGTURL2 = "https://api.pdok.nl"
 
 ## Xpath for several Web Feature Servers
 NLPDOKxPathOpenGISposList = GIS2BIM.GetWebServerData('NLPDOKxPathOpenGISposList','Querystrings','querystring')
@@ -62,6 +69,8 @@ NLTUDelftxPathString3DBagGround = GIS2BIM.GetWebServerData('NLTUDelftxPathString
 NLTUDelftxPathString3DBagRoof = GIS2BIM.GetWebServerData('NLTUDelftxPathString3DBagRoof','Querystrings','querystring')
 
 xPathStrings3DBag = [NLTUDelftxPathString3DBagGround, NLTUDelftxPathString3DBagRoof]
+xPathStrings3DBagV2 = [".//{bag3d_v2}tile_id", ".//{http://www.opengis.net/gml/3.2}posList", ".//{bag3d_v2}bag_tiles_3k"]
+
 xPathStringsCadastreTextAngle = [NLPDOKxPathStringsCadastreTextAngle, NLPDOKxPathStringsCadastreTextValue]
 
 #Country specific
@@ -86,9 +95,9 @@ def NL_GetLocationData(PDOKServer,City,Streetname,Housenumber):
 def bgtDownloadURL(X,Y,bboxWidth,bboxHeight,timeout):
 	polygonString = GIS2BIM.CreateBoundingBoxPolygon(X,Y,bboxWidth,bboxHeight,2)
 	
-	url = "https://api.pdok.nl/lv/bgt/download/v1_0/full/custom"
-	url2= "https://api.pdok.nl"
-	
+	url = NLPDOKBGTURL1
+	url2 = NLPDOKBGTURL2
+
 	##Define data 
 	qryPart1 = '{"featuretypes":['
 	qryPart2 = '"bak","begroeidterreindeel","bord","buurt","functioneelgebied","gebouwinstallatie","installatie","kast","kunstwerkdeel","mast","onbegroeidterreindeel","ondersteunendwaterdeel","ondersteunendwegdeel","ongeclassificeerdobject","openbareruimte","openbareruimtelabel","overbruggingsdeel","overigbouwwerk","overigescheiding","paal","pand","put","scheiding","sensor","spoor","stadsdeel","straatmeubilair","tunneldeel","vegetatieobject","waterdeel","waterinrichtingselement","waterschap","weginrichtingselement","wijk","wegdeel"'
@@ -137,3 +146,31 @@ def bgtDownloadURL(X,Y,bboxWidth,bboxHeight,timeout):
 	        time.sleep(1)
 	    timer = timer + 1
 	return downloadURL
+	
+def BAG3DDownload(bboxString, tempFolder):
+	url = NLTUDelftBAG3DV2
+	xPathString1 = xPathStrings3DBagV2[0]
+	xPathString2 = xPathStrings3DBagV2[1]
+	xPathString3 = xPathStrings3DBagV2[2]
+
+	#Webrequest to obtain tilenumbers based on bbox
+	urlreq = url + bboxString
+	urlFile = urllib.request.urlopen(urlreq)
+	tree = ET.parse(urlFile)
+
+	urlDownloadPrefix = NLTUDelftBAG3DV2DownloadPrefix
+
+	#Collect result of webrequest 
+	res = []
+	for i,j,k in zip(tree.findall(xPathString1),tree.findall(xPathString2),tree.findall(xPathString3)):
+		LBcoords = j.text.split()[2], j.text.split()[3]
+		res.append((i.text, LBcoords, k.text, urlDownloadPrefix + i.text + ".json"))
+
+	#Download files
+	jsonFileNames = []
+	for i in res:
+		fileNme = tempFolder + '3dbag_v21031_7425c21b_' + i[0]+ '.json' 	
+		r = PyPackages.requests.get(i[3])
+		open(fileNme, 'wb').write(r.content)	
+		jsonFileNames.append(fileNme)
+	return jsonFileNames

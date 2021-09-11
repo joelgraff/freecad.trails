@@ -175,6 +175,7 @@ class TrailsWorkbench(Gui.Workbench):
                     'Import Image',
                     'Import ASTER',
                     'Import LIDAR',
+                    'Import PDOK',
                     'Create House',
                     'ElevationGrid',
                     'Import EMIR',

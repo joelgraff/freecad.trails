@@ -77,3 +77,14 @@ def buttonGroup(self):
 	hbox.addWidget(cancelbtn)
 			
 	return hbox
+	
+def buttonGroupOKCancel(self):
+	okbtn = QtWidgets.QPushButton("OK")
+	okbtn.clicked.connect(self.onOk)
+	cancelbtn = QtWidgets.QPushButton("Cancel")	
+	cancelbtn.clicked.connect(self.onCancel)
+	hbox = QtWidgets.QHBoxLayout()
+	hbox.addWidget(okbtn)
+	hbox.addWidget(cancelbtn)
+				
+	return hbox

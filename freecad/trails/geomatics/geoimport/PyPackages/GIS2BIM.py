@@ -39,11 +39,12 @@ __url__ = "https://github.com/DutchSailor/GIS2BIM"
 
 import urllib
 import urllib.request
+from urllib.request import urlopen
 import xml.etree.ElementTree as ET
 import json
 import math
 import re
-import zipfile
+from zipfile import ZipFile
 from PIL import Image
 	
 #Common functions
@@ -85,15 +86,15 @@ def GetDataFiles(folder):
 	result = data[test.index(servertitle)][parameter]
 	return result
 
-def downloadUnzip(downloadURL,filepathZIP,folder):
-	req = PyPackages.requests.get(downloadURL, allow_redirects=True)
-	
-	with open(filepathZIP, 'wb') as f:
-		f.write(req.content)
-	
-	with zipfile.ZipFile(filepathZIP, 'r') as zip_ref:
-	    zip_ref.extractall(folder)
-	return folder
+def downloadUnzip(downloadURL,filepathZIP,folderUNZIP):
+	zipresp = urlopen(downloadURL)
+	tempzip = open(filepathZIP, "wb")
+	tempzip.write(zipresp.read())
+	tempzip.close()
+	zf = ZipFile(filepathZIP)
+	zf.extractall(path = folderUNZIP)
+	zf.close()
+	return folderUNZIP
 	
 #GIS2BIM functions
 

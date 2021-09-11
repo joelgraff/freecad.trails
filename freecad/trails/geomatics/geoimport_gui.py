@@ -195,6 +195,19 @@ class import_wms:
             'ToolTip': 'Import WMS(Web Map Service)'
         }
 
+class import_pdok:
+
+    def Activated(self):
+        from .geoimport import import_pdok
+        import_pdok.GIS_NL_Dialog().exec_()
+
+    def GetResources(self):
+        return {
+            'Pixmap': ICONPATH + '/icons/ImportWMS.svg',
+            'MenuText': 'Import PDOK(NL)',
+            'ToolTip': 'GIS importer for PDOK-data'
+        }
+
 
 class import_wfs:
 
@@ -284,6 +297,7 @@ FreeCADGui.addCommand('Set Geo Location', set_geolocation())
 FreeCADGui.addCommand('Import TMS', import_tms())
 FreeCADGui.addCommand('Import WMS', import_wms())
 FreeCADGui.addCommand('Import WFS', import_wfs())
+FreeCADGui.addCommand('Import PDOK', import_pdok())
 FreeCADGui.addCommand('Import OSM', import_osm())
 FreeCADGui.addCommand('Import CSV', import_csv())
 FreeCADGui.addCommand('Import GPX', import_gpx())

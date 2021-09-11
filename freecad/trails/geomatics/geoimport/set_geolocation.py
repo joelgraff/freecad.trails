@@ -34,11 +34,13 @@ from PySide2.QtWebEngineWidgets import QWebEnginePage
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import QUrl
 
-from . import GIS2BIM
-from . import GIS2BIM_FreeCAD
-from . import GIS2BIM_CRS 
-from . import GIS2BIM_GUI
+import importlib
+from PyPackages import GIS2BIM
+from PyPackages import GIS2BIM_FreeCAD
+from PyPackages import GIS2BIM_CRS 
+from PyPackages import GIS2BIM_GUI
 import FreeCAD
+#importlib.reload(GIS2BIM_GUI)
 
 import os
 import time
@@ -53,7 +55,7 @@ class GISLocation_Dialog(QtWidgets.QDialog):
 
 		self.sitename = "GIS-Sitedata"
 
-		self.tempFolderName = "GIStemp"
+		self.tempFolderName = "GIStemp/"
 		
 		#Get/set parameters for GIS
 		self.lat = GIS2BIM_FreeCAD.ArchSiteCreateCheck(self.sitename).WGS84_Latitude
@@ -155,6 +157,9 @@ class GISLocation_Dialog(QtWidgets.QDialog):
 		# checkbox update Geo Origin
 		self.CBGeoOrigin = QtWidgets.QCheckBox("Create/Update GeoOrigin Object", self)
 		self.CBGeoOrigin.toggle()
+
+		# checkbox import map
+		self.CBAerialphoto = QtWidgets.QCheckBox("Import Aerialphoto", self)
 	
 		grid = QtWidgets.QGridLayout()
 		grid.addWidget(searchLab,0,0)
@@ -168,19 +173,13 @@ class GISLocation_Dialog(QtWidgets.QDialog):
 		grid.addWidget(bboxHeightLab,3,0)
 		grid.addWidget(self.bboxHeight,3,1)
 		grid.addWidget(self.CBGeoOrigin,4,1)
+		grid.addWidget(self.CBAerialphoto,4,2)
 
 		groupBox.setLayout(grid)
 		return groupBox
 
 	def buttonGroup(self):
-		okbtn = QtWidgets.QPushButton("OK")
-		okbtn.clicked.connect(self.onOk)
-		cancelbtn = QtWidgets.QPushButton("Cancel")	
-		cancelbtn.clicked.connect(self.onCancel)
-		hbox = QtWidgets.QHBoxLayout()
-		hbox.addWidget(okbtn)
-		hbox.addWidget(cancelbtn)
-						
+		hbox = GIS2BIM_GUI.buttonGroupOKCancel(self)
 		return hbox
 
 	def onbboxWidth(self):
@@ -251,9 +250,17 @@ class GISLocation_Dialog(QtWidgets.QDialog):
 		SiteObject.BoundingboxHeight = float(self.bboxHeight.text())
 		SiteObject.CRS_EPSG_Description = GIS2BIM_CRS.getCRSdata(CRS_EPSG_SRID)
 		#Set GeoOrigin
-		if self.CBGeoOrigin:
+		if self.CBGeoOrigin.isChecked() is True:
 			obj = geo_origin.get()	
 			obj.Origin = FreeCAD.Vector(float(Transformation[0])*1000, float(Transformation[1])*1000, 0)
+		if self.CBAerialphoto.isChecked() is True:
+			fileLocationTMS = self.tempFolderPath + 'ESRI_aerialphoto.jpg'
+			TMS = GIS2BIM.TMS_WMTSCombinedMapFromLatLonBbox(float(self.lat),float(self.lon),float(self.bboxWidth.text()),float(self.bboxHeight.text()),17,256,0,"http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png")
+			TMS[0].save(fileLocationTMS)
+			ImageMap = GIS2BIM_FreeCAD.ImportImage(fileLocationTMS,float(self.bboxWidth.text()),float(self.bboxHeight.text()),1000, "ESRI aerialMap", 0,0)
+			GIS2BIM_FreeCAD.CreateLayer("GIS_Raster")
+			FreeCAD.ActiveDocument.recompute()
+			FreeCAD.activeDocument().getObject("GIS_Raster").addObject(FreeCAD.activeDocument().getObject(ImageMap.Label))
 		self.close()
 			
 #form = GISLocation_Dialog()
