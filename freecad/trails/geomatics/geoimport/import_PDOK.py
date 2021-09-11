@@ -336,7 +336,7 @@ class GIS_NL_Dialog(QtWidgets.QDialog):
 			ImageAerialPhoto = GIS2BIM_FreeCAD.ImportImage(fileLocationWMS,width,height,1000,"Ruimtelijke Plannen",0,0)
 			ImageAerialPhoto.addProperty("App::PropertyString","WMSRequestURL")
 			ImageAerialPhoto.WMSRequestURL = a[2]
-			FreeCAD.activeDocument().getObject("GIS_Raster").addObject(App.activeDocument().getObject(ImageAerialPhoto.Label))
+			FreeCAD.activeDocument().getObject("GIS_Raster").addObject(FreeCAD.activeDocument().getObject(ImageAerialPhoto.Label))
 			FreeCAD.activeDocument().getObject("PDOK").addObject(FreeCAD.activeDocument().getObject("GIS_Raster"))
 
 		FreeCAD.ActiveDocument.recompute()
