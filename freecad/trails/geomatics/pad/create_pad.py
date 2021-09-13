@@ -62,8 +62,6 @@ class CreatePad:
         Command activation method
         """
         origin = geo_origin.get()
-        base = copy.deepcopy(origin.Origin)
-        base.z = 0
         slope = 1
         lenght = 30000
 
@@ -77,12 +75,11 @@ class CreatePad:
 
         result =[]
         for pt in offpoints+points:
-            result.append(pt.add(base))
+            result.append(pt.add(origin.Origin))
 
         pg = point_group.create()
-        pg.Points = result
+        pg.Vectors = result
         surf = surface.create()
-        surf.MaxLength = 100000
         surf.PointGroups = [pg]
 
         intersec = surf.Mesh.intersect(target.Mesh)
@@ -107,9 +104,9 @@ class CreatePad:
 
         result =[]
         for pt in intpts+points:
-            result.append(pt.add(base))
+            result.append(pt.add(origin.Origin))
 
-        pg.Points = result
+        pg.Vectors = result
         surf.PointGroups = [pg]
 
 FreeCADGui.addCommand('Create Pad', CreatePad())
