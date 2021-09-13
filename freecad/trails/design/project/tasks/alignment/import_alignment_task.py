@@ -118,8 +118,8 @@ class ImportAlignmentTask:
         Open the file picker dialog and open the file
         that the user chooses
         """
-
-        open_path = resources.__path__[0] + '/data/alignment/'
+        parameter = App.ParamGet("User parameter:BaseApp/Preferences/General")
+        path = parameter.GetString("FileOpenSavePath")
 
         filters = self.form.tr(
             'All files (*.*);; CSV files (*.csv);; LandXML files (*.xml)'
@@ -128,7 +128,7 @@ class ImportAlignmentTask:
         selected_filter = self.form.tr('LandXML files (*.xml)')
 
         file_name = QtGui.QFileDialog.getOpenFileName(
-            self.form, 'Select File', open_path, filters, selected_filter
+            self.form, 'Select File', path, filters, selected_filter
         )
 
         if not file_name[0]:
