@@ -109,9 +109,11 @@ class ImportPointFile:
         Add point files to importer
         """
         # Get selected point file(s) and add them to QListWidget
+        parameter = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/General")
+        path = parameter.GetString("FileOpenSavePath")
         file_name = QtWidgets.QFileDialog.getOpenFileNames(
                         None, "Select one or more files to open",
-                        os.getenv("HOME"), 'All Files (*.*)')
+                        path, 'All Files (*.*)')
         self.ui.SelectedFilesLW.addItems(file_name[0])
 
     def remove_file(self):
