@@ -96,8 +96,10 @@ class ExportPoints:
         Get file destination.
         """
         # Select file
+        parameter = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/General")
+        path = parameter.GetString("FileOpenSavePath")
         file_name = QtWidgets.QFileDialog.getSaveFileName(
-            None, 'Save File', os.getenv("HOME"), Filter='*.txt')
+            None, 'Save File', path, Filter='*.txt')
 
         # Add ".txt" if needed
         if file_name[0][-4:] == ".txt":
