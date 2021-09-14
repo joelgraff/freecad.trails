@@ -67,18 +67,15 @@ class CreatePad:
 
         polyline = FreeCADGui.Selection.getSelection()[-2]
         target = FreeCADGui.Selection.getSelection()[-1]
-        points = polyline.Shape.discretize(Distance=5000)
 
-        shp = polyline.Shape.copy()
-        shp.Placement.move(FreeCAD.Vector(0,0, slope*lenght))
-        offpoints = shp.makeOffset2D(lenght).discretize(Angular=1,Curvature=100,Minimum=2)
-
-        result =[]
-        for pt in offpoints+points:
-            result.append(pt.add(origin.Origin))
+        copy_shape = polyline.Shape.copy()
+        copy_shape.Placement.move(origin.Origin)
+        points = copy_shape.discretize(Distance=5000)
+        copy_shape.Placement.move(FreeCAD.Vector(0,0, slope*lenght))
+        offpoints = copy_shape.makeOffset2D(lenght).discretize(Angular=1,Curvature=100,Minimum=2)
 
         pg = point_group.create()
-        pg.Vectors = result
+        pg.Vectors = offpoints+points
         surf = surface.create()
         surf.PointGroups = [pg]
 
@@ -90,7 +87,7 @@ class CreatePad:
         border = []
         for candidate in vects_intersec:
             if candidate not in surf_pts+target_pts:
-                border.append(candidate)
+                border.append(candidate.add(origin.Origin))
 
         wire_pts = [border.pop()]
         for i in range(len(border)):
@@ -102,11 +99,7 @@ class CreatePad:
         intsec = Part.makePolygon(wire_pts)
         intpts = intsec.discretize(Distance=5000)
 
-        result =[]
-        for pt in intpts+points:
-            result.append(pt.add(origin.Origin))
-
-        pg.Vectors = result
+        pg.Vectors = intpts+points
         surf.PointGroups = [pg]
 
 FreeCADGui.addCommand('Create Pad', CreatePad())
