@@ -21,7 +21,7 @@
 # ***********************************************************************
 
 import FreeCAD, FreeCADGui
-import Part, copy
+import Part
 from freecad.trails import ICONPATH, geo_origin
 from ..surface import surface
 from ..point import point_group
@@ -61,33 +61,46 @@ class CreatePad:
         """
         Command activation method
         """
-        origin = geo_origin.get()
         slope = 1
         lenght = 30000
+        self.origin = geo_origin.get()
 
         polyline = FreeCADGui.Selection.getSelection()[-2]
-        target = FreeCADGui.Selection.getSelection()[-1]
+        self.target = FreeCADGui.Selection.getSelection()[-1]
 
-        copy_shape = polyline.Shape.copy()
-        copy_shape.Placement.move(origin.Origin)
-        points = copy_shape.discretize(Distance=5000)
-        copy_shape.Placement.move(FreeCAD.Vector(0,0, slope*lenght))
-        offpoints = copy_shape.makeOffset2D(lenght).discretize(Angular=1,Curvature=100,Minimum=2)
+        self.copy_shape = polyline.Shape.copy()
+        self.copy_shape.Placement.move(self.origin.Origin)
+        self.points = self.copy_shape.discretize(Distance=5000)
 
-        pg = point_group.create()
-        pg.Vectors = offpoints+points
-        surf = surface.create()
-        surf.PointGroups = [pg]
+        self.pg = point_group.create()
+        self.surf = surface.create()
 
-        intersec = surf.Mesh.intersect(target.Mesh)
-        surf_pts = tuple((mp.Vector for mp in surf.Mesh.Points))
-        target_pts = tuple((mp.Vector for mp in target.Mesh.Points))
+        maxz = self.target.Mesh.BoundBox.ZMax
+        minz = self.target.Mesh.BoundBox.ZMin
+        fill_points = self.get_secpts(slope, minz)
+        cut_points = self.get_secpts(slope, maxz)
+
+        self.pg.Vectors = self.points + fill_points + cut_points
+        self.surf.PointGroups = [self.pg]
+
+    def get_secpts(self,slope, z):
+        shape = self.copy_shape.copy()
+        lenght = z - shape.Placement.Base.z
+        shape.Placement.move(FreeCAD.Vector(0,0, slope*lenght))
+        offpoints = shape.makeOffset2D(abs(lenght)).discretize(Angular=1,Curvature=100,Minimum=2)
+
+        self.pg.Vectors = offpoints + self.points
+        self.surf.PointGroups = [self.pg]
+
+        intersec = self.surf.Mesh.intersect(self.target.Mesh)
+        surf_pts = tuple((mp.Vector for mp in self.surf.Mesh.Points))
+        target_pts = tuple((mp.Vector for mp in self.target.Mesh.Points))
         vects_intersec = tuple((mp.Vector for mp in intersec.Points))
 
         border = []
         for candidate in vects_intersec:
             if candidate not in surf_pts+target_pts:
-                border.append(candidate.add(origin.Origin))
+                border.append(candidate.add(self.origin.Origin))
 
         wire_pts = [border.pop()]
         for i in range(len(border)):
@@ -99,7 +112,7 @@ class CreatePad:
         intsec = Part.makePolygon(wire_pts)
         intpts = intsec.discretize(Distance=5000)
 
-        pg.Vectors = intpts+points
-        surf.PointGroups = [pg]
+        return intpts
+
 
 FreeCADGui.addCommand('Create Pad', CreatePad())
