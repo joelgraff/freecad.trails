@@ -96,6 +96,34 @@ class KeyMaps(Const):
             ['name'],
             ['desc', 'manufacturer', 'version', 'manufacturerURL', 'timeStamp']
         ],
+        'Surfaces': [
+            [],
+            ['desc', 'name', 'state']
+        ],
+        'Surface': [
+            ['name'],
+            ['desc', 'oID', 'state']
+        ],
+        'Definition': [
+            ['surfType'],
+            ['area2DSurf', 'area3DSurf', 'elevMax', 'elevMin']
+        ],
+        'Pnts': [
+            [],
+            []
+        ],
+        'P': [
+            ['id'],
+            []
+        ],
+        'Faces': [
+            [],
+            ['desc', 'name', 'state']
+        ],
+        'F': [
+            [],
+            ['i', 'n', 'b']
+        ],
         'Alignments': [
             [],
             ['desc', 'name', 'state']
