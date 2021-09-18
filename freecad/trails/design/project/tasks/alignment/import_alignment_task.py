@@ -37,6 +37,7 @@ from . import import_xml_subtask #, ImportCsvSubtask
 from ...support import utils
 from freecad.trails import resources
 from ....alignment import alignment_group, horizontal_alignment
+from freecad.trails.geomatics.surface import surface
 
 class ImportAlignmentTask:
     """
@@ -74,6 +75,10 @@ class ImportAlignmentTask:
 
         parent = alignment_group.get()
 
+        for _v in data['Surfaces'].values():
+            # surf = surface.create()
+            pass
+
         for _v in data['Alignments'].values():
 
             result = horizontal_alignment.create(
@@ -83,20 +88,13 @@ class ImportAlignmentTask:
                 errors += result.errors
                 result.errors = []
 
-            App.ActiveDocument.recompute()
-
         if errors:
             print('Errors encountered during alignment creation:\n')
 
             for _e in errors:
                 print(_e)
 
-        if result.errors:
-            errors += result.errors
-            result.errors = []
-
-            App.ActiveDocument.recompute()
-
+        App.ActiveDocument.recompute()
         Gui.SendMsgToActiveView("ViewFit")
 
         return True
