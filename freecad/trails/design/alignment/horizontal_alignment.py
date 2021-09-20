@@ -24,72 +24,59 @@
 """
 Class for managing 2D Horizontal Alignments
 """
-from copy import deepcopy
 
-import FreeCAD as App
+import FreeCAD
 from FreeCAD import Vector
 import Part
 
 from freecad.trails import ICONPATH, geo_origin
-from ...geomatics.region import regions
-from ..project.support import properties, units
 from .alignment_functions import DataFunctions, ViewFunctions
+from ..project.support import properties, units
+from ...geomatics.region import regions
+from . import alignment_group
 
 from pivy import coin
-from math import inf
-import math
-
-__title__ = 'horizontal_alignment.py'
-__author__ = 'Joel Graff'
-__url__ = "https://www.freecadweb.org"
+from copy import deepcopy
+from math import inf, pi
 
 
-def create(geometry, object_name='', parent=None, no_visual=False, zero_reference=False):
+
+def create(geometry, label="Alignment", zero_reference=False):
     """
     Class construction method
-    object_name - Optional. Name of new object.  Defaults to class name.
-    no_visual - If true, generates the object without a ViewProvider.
+    label - Optional. Name of new object.
     """
 
     if not geometry:
         print('No curve geometry supplied')
         return
 
-    _name = "Alignment FeaturePython Object"
+    group = alignment_group.get()
+    obj=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython", "Alignment")
+    obj.Label = label
+    HorizontalAlignment(obj, label)
+    ViewProviderHorizontalAlignment(obj.ViewObject)
 
-    if object_name:
-        _name = object_name
-
-    _obj = None
-
-    if not parent:
-        _obj = App.ActiveDocument.addObject("App::DocumentObjectGroupPython", _name)
-
-    else:
-        _obj = parent.newObject("App::DocumentObjectGroupPython", _name)
-
-    HorizontalAlignment(_obj, _name)
-    _obj.Label = _name
-    _obj.ModelKeeper = str(geometry)
-    _obj.Proxy.set_geometry(geometry, zero_reference)
-    ViewProviderHorizontalAlignment(_obj.ViewObject)
+    # Set geometry.
+    obj.ModelKeeper = str(geometry)
+    obj.Proxy.set_geometry(geometry, zero_reference)
 
     regs = regions.create()
-    _obj.addObject(regs)
+    obj.addObject(regs)
+    group.addObject(obj)
 
-    App.ActiveDocument.recompute()
-
-    return _obj
+    FreeCAD.ActiveDocument.recompute()
+    return obj
 
 class HorizontalAlignment(DataFunctions):
     """
     This class is about Alignment Object data features.
     """
 
-    def __init__(self, obj, label=''):
-        '''
+    def __init__(self, obj, label=""):
+        """
         Set data properties.
-        '''
+        """
         # Metadata properties.
         properties.add(obj, 'String', 'ID', 'ID of alignment', label)
         properties.add(obj, 'String', 'oID', 'Object ID', '')
@@ -116,7 +103,7 @@ class HorizontalAlignment(DataFunctions):
 
         properties.add(
             obj, 'Vector', 'Datum', 'Datum value as Northing / Easting',
-            App.Vector(0.0, 0.0, 0.0)
+            FreeCAD.Vector(0.0, 0.0, 0.0)
         )
 
         properties.add(
@@ -136,10 +123,10 @@ class HorizontalAlignment(DataFunctions):
         )
 
         subdivision_desc = """
-            Method of Curve Subdivision\n
-            \nTolerance - ensure error between segments and curve is (n)
-            \nInterval - Subdivide curve into segments of fixed length
-            \nSegment - Subdivide curve into equal-length segments
+            Method of Curve Subdivision\n\n
+            Tolerance - ensure error between segments and curve is (n)\n
+            Interval - Subdivide curve into segments of fixed length\n
+            Segment - Subdivide curve into equal-length segments
             """
 
         obj.addProperty(
@@ -322,9 +309,9 @@ class ViewProviderHorizontalAlignment(ViewFunctions):
                     end = deepcopy(tick[-1]).sub(origin.Origin)
 
                     if start.y>end.y:
-                        angle = start.sub(end).getAngle(App.Vector(1,0,0))-math.pi
+                        angle = start.sub(end).getAngle(FreeCAD.Vector(1,0,0))-pi
                     else:
-                        angle = end.sub(start).getAngle(App.Vector(1,0,0))
+                        angle = end.sub(start).getAngle(FreeCAD.Vector(1,0,0))
 
                     location.translation = end
                     location.rotation.setValue(coin.SbVec3f(0, 0, 1), angle)

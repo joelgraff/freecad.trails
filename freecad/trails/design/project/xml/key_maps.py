@@ -88,21 +88,57 @@ class KeyMaps(Const):
     #The first list is required attributes, the second is optional
     #Used for validating imported data sets
     XML_ATTRIBS = {
-        'Alignment': [
-            ['name', 'length', 'staStart'],
-            ['desc', 'oID', 'state']
-        ],
-        'Alignments': [
-            [],
-            ['desc', 'name', 'state']
+        'Project': [
+            ['name'],
+            ['desc', 'state']
         ],
         'Application': [
             ['name'],
             ['desc', 'manufacturer', 'version', 'manufacturerURL', 'timeStamp']
         ],
+        'Surfaces': [
+            [],
+            ['desc', 'name', 'state']
+        ],
+        'Surface': [
+            ['name'],
+            ['desc', 'oID', 'state']
+        ],
+        'Definition': [
+            ['surfType'],
+            ['area2DSurf', 'area3DSurf', 'elevMax', 'elevMin']
+        ],
+        'Pnts': [
+            [],
+            []
+        ],
+        'P': [
+            ['id'],
+            []
+        ],
+        'Faces': [
+            [],
+            ['desc', 'name', 'state']
+        ],
+        'F': [
+            [],
+            ['i', 'n', 'b']
+        ],
+        'Alignments': [
+            [],
+            ['desc', 'name', 'state']
+        ],
+        'Alignment': [
+            ['name', 'length', 'staStart'],
+            ['desc', 'oID', 'state']
+        ],
         'CoordGeom': [
             [],
             ['desc', 'name', 'state', 'oID']
+        ],
+        'StaEquation': [
+            ['staAhead', 'staInternal'],
+            ['desc', 'staBack', 'staIncrement']
         ],
         'Curve': [
             ['rot'],
@@ -115,18 +151,10 @@ class KeyMaps(Const):
             ['desc', 'dir', 'length', 'name', 'staStart', 'state', 'oID',
              'note']
         ],
-        'Project': [
-            ['name'],
-            ['desc', 'state']
-        ],
         'Spiral': [
             ['length', 'radiusEnd', 'radiusStart', 'rot', 'spiType'],
             ['chord', 'constant', 'desc', 'dirEnd', 'dirStart', 'external',
              'length', 'midOrd', 'name', 'note', 'oID', 'staStart', 'state',
              'tanLong', 'tanShort', 'theta', 'totalX', 'totalY']
-        ],
-        'StaEquation': [
-            ['staAhead', 'staInternal'],
-            ['desc', 'staBack', 'staIncrement']
         ]
     }

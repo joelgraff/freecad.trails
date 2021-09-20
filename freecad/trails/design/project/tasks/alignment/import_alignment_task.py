@@ -23,20 +23,18 @@
 """
 Task to import alignments from various file formats
 """
+import FreeCAD, FreeCADGui
+from PySide import QtGui, QtCore
+
+from freecad.trails import resources
+from . import import_xml_subtask
+from ...support import utils
+from ....alignment import horizontal_alignment
+from .....geomatics.surface import surface
 
 import os
 
-import PySide.QtGui as QtGui
-import PySide.QtCore as QtCore
 
-import FreeCAD as App
-import FreeCADGui as Gui
-
-from . import import_xml_subtask #, ImportCsvSubtask
-
-from ...support import utils
-from freecad.trails import resources
-from ....alignment import alignment_group, horizontal_alignment
 
 class ImportAlignmentTask:
     """
@@ -59,8 +57,8 @@ class ImportAlignmentTask:
         if self.subtask.errors:
 
             print('Errors encountered during import:\n')
-            for _e in self.subtask.errors:
-                print(_e)
+            for err in self.subtask.errors:
+                print(err)
 
         if not data:
             return None
@@ -68,36 +66,31 @@ class ImportAlignmentTask:
         errors = []
 
         #create a new document if one does not exist
-        if not App.ActiveDocument:
-            App.newDocument()
-            Gui.activeDocument().activeView().viewDefaultOrientation()
+        if not FreeCAD.ActiveDocument:
+            FreeCAD.newDocument()
+            FreeCADGui.activeDocument().activeView().viewDefaultOrientation()
 
-        parent = alignment_group.get()
+        for surf in data['Surfaces'].values():
+            # surf = surface.create()
+            pass
 
-        for _v in data['Alignments'].values():
+        for align in data['Alignments'].values():
 
             result = horizontal_alignment.create(
-                _v, _v['meta']['ID'] + ' Horiz', parent=parent).Proxy
+                align, align['meta']['ID']).Proxy
 
             if result.errors:
                 errors += result.errors
                 result.errors = []
 
-            App.ActiveDocument.recompute()
-
         if errors:
             print('Errors encountered during alignment creation:\n')
 
-            for _e in errors:
-                print(_e)
+            for err in errors:
+                print(err)
 
-        if result.errors:
-            errors += result.errors
-            result.errors = []
-
-            App.ActiveDocument.recompute()
-
-        Gui.SendMsgToActiveView("ViewFit")
+        FreeCAD.ActiveDocument.recompute()
+        FreeCADGui.SendMsgToActiveView("ViewFit")
 
         return True
 
@@ -118,7 +111,7 @@ class ImportAlignmentTask:
         Open the file picker dialog and open the file
         that the user chooses
         """
-        parameter = App.ParamGet("User parameter:BaseApp/Preferences/General")
+        parameter = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/General")
         path = parameter.GetString("FileOpenSavePath")
 
         filters = self.form.tr(
@@ -163,7 +156,7 @@ class ImportAlignmentTask:
         if 'csv' in extension:
             filename = 'import_alignment_task_csv_subpanel.ui'
 
-        subpanel = Gui.PySideUic.loadUi(self.ui_path + filename, None)
+        subpanel = FreeCADGui.PySideUic.loadUi(self.ui_path + filename, None)
 
         #ensure any existing subpanels are removed
         itm_count = self.form.layout().count()
@@ -203,7 +196,7 @@ class ImportAlignmentTask:
         """
 
         filename = 'import_alignment_task_xml_subpanel.ui'
-        subpanel = Gui.PySideUic.loadUi(self.ui_path + filename, None)
+        subpanel = FreeCADGui.PySideUic.loadUi(self.ui_path + filename, None)
 
         self.subtask = import_xml_subtask.create(subpanel, file_path)
 

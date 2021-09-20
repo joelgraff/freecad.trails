@@ -23,7 +23,7 @@
 """
 Importer for Alignments in landxml files
 """
-
+import FreeCAD
 import math
 
 from xml.etree import ElementTree as etree
@@ -100,27 +100,24 @@ class AlignmentImporter(object):
         return result
 
     @staticmethod
-    def _get_alignment_name(alignment, alignment_keys):
+    def get_name(alignment, obj_keys, obj_type):
         """
         Return valid alignment name if not defined, otherwise duplicate
         """
 
-        align_name = alignment.attrib.get('name')
+        obj_name = alignment.attrib.get('name')
 
         #alignment name is requiredand must be unique
-        if align_name is None:
-            align_name = 'Unkown Alignment '
-
-        counter = 0
+        if obj_name is None:
+            obj_name = 'Unkown ' + obj_type
 
         #test for key uniqueness
-        while align_name + str(counter) in alignment_keys:
-            counter += 1
+        counter = 0
+        while obj_name in obj_keys:
+            counter+=1
+            obj_name += str(counter)
 
-        if counter:
-            align_name += str(counter)
-
-        return align_name
+        return obj_name
 
     def _parse_data(self, align_name, tags, attrib):
         """
@@ -145,7 +142,6 @@ class AlignmentImporter(object):
 
         #merge the required / optional tag lists and iterate them
         for _tag in tags[0] + tags[1]:
-
             attr_val = landxml.convert_token(_tag, attrib.get(_tag))
 
             if attr_val is None:
@@ -232,6 +228,27 @@ class AlignmentImporter(object):
             result.append(_dict)
 
         return result
+
+    def parse_surface(self, surface):
+        definition = landxml.get_child(surface, 'Definition')
+        pts = landxml.get_child(definition, 'Pnts')
+        fcs = landxml.get_child(definition, 'Faces')
+
+        points = []
+        for p in pts:
+            pt = p.text.strip().split(' ')
+            pt = [float(v) for v in pt]
+            vec = FreeCAD.Vector(pt[1], pt[0], pt[2])
+            points.append(vec)
+
+        faces = []
+        for f in fcs:
+            fc = f.text.strip().split(' ')
+            fc = [int(v) for v in fc]
+            faces.append(fc)
+
+        print(points,faces)
+        return points, faces
 
     def _parse_coord_geo_data(self, align_name, alignment):
         """
@@ -335,6 +352,7 @@ class AlignmentImporter(object):
         project = landxml.get_child(root, 'Project')
         units_ = landxml.get_child(root, 'Units')
         alignments = landxml.get_child(root, 'Alignments')
+        surfaces = landxml.get_child(root, 'Surfaces')
 
         #aport if key nodes are missing
         if not units_:
@@ -358,23 +376,31 @@ class AlignmentImporter(object):
         result['Project'] = {}
         result['Project'][maps.XML_MAP['name']] = project_name
         result['Alignments'] = {}
+        result['Surfaces'] = {}
 
-        for alignment in alignments:
+        if surfaces:
+            for surface in surfaces:
+                surf_name = self.get_name(
+                    surface, result.keys(), "Surface")
 
-            align_name = self._get_alignment_name(
-                alignment, list(result.keys())
-                )
+                surf_dict = {}
+                result['Surfaces'][surf_name] = surf_dict
+                surf_dict['Points'], surf_dict['Faces'] = self.parse_surface(surface)
 
-            align_dict = {}
-            result['Alignments'][align_name] = align_dict
+        if alignments:
+            for alignment in alignments:
+                align_name = self.get_name(
+                    alignment, result.keys(), "Alignment")
 
-            align_dict['meta'] = self._parse_meta_data(align_name, alignment)
+                align_dict = {}
+                result['Alignments'][align_name] = align_dict
+                align_dict['meta'] = self._parse_meta_data(align_name, alignment)
 
-            align_dict['station'] \
-                = self._parse_station_data(align_name, alignment)
+                align_dict['station'] \
+                    = self._parse_station_data(align_name, alignment)
 
-            align_dict['geometry'] = self._parse_coord_geo_data(
-                align_name, alignment
-                )
+                align_dict['geometry'] = self._parse_coord_geo_data(
+                    align_name, alignment
+                    )
 
         return result

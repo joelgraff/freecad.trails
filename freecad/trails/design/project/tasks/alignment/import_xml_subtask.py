@@ -71,6 +71,7 @@ class ImportXmlSubtask:
         self._update_alignment(self.panel.alignmentsComboBox.currentText())
 
     def _update_alignment(self, value):
+        if not value: return
 
         subset = self.data['Alignments'][value]
 
