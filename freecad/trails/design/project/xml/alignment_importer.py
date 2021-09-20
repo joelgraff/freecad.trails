@@ -146,7 +146,6 @@ class AlignmentImporter(object):
         #merge the required / optional tag lists and iterate them
         for _tag in tags[0] + tags[1]:
 
-            print (_tag)
             attr_val = landxml.convert_token(_tag, attrib.get(_tag))
 
             if attr_val is None:
