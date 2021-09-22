@@ -24,9 +24,10 @@
 Task to import alignments from various file formats
 """
 import FreeCAD, FreeCADGui
+import Mesh
 from PySide import QtGui, QtCore
 
-from freecad.trails import resources
+from freecad.trails import resources, geo_origin
 from . import import_xml_subtask
 from ...support import utils
 from ....alignment import horizontal_alignment
@@ -70,9 +71,18 @@ class ImportAlignmentTask:
             FreeCAD.newDocument()
             FreeCADGui.activeDocument().activeView().viewDefaultOrientation()
 
-        for surf in data['Surfaces'].values():
-            # surf = surface.create()
-            pass
+        for s in data['Surfaces'].values():
+            surf = surface.create()
+
+            points = []
+            for i in s['Faces']:
+                c1 = s['Points'][i[0]]
+                c2 = s['Points'][i[1]]
+                c3 = s['Points'][i[2]]
+                points.extend([c1, c2, c3])
+
+            geo_origin.get(points[0])
+            surf.Mesh = Mesh.Mesh(points)
 
         for align in data['Alignments'].values():
 
