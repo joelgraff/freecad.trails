@@ -34,10 +34,15 @@ import random
 
 
 
-def create(name='Surface'):
+def create(label="Surface"):
+    """
+    Class construction method
+    label - Optional. Name of new object.
+    """
+
     group = surfaces.get()
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "Surface")
-    obj.Label = name
+    obj.Label = label
     Surface(obj)
     ViewProviderSurface(obj.ViewObject)
     group.addObject(obj)
