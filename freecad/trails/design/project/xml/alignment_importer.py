@@ -240,7 +240,7 @@ class AlignmentImporter(object):
             pt = p.text.strip().split(' ')
             pt = [float(v) for v in pt]
             vec = FreeCAD.Vector(pt[1], pt[0], pt[2])
-            points[id] = vec
+            points[id] = vec.multiply(1000)
 
         faces = []
         for f in fcs:
@@ -248,7 +248,6 @@ class AlignmentImporter(object):
             fc = [int(v) for v in fc]
             faces.append(fc)
 
-        print(points,faces)
         return points, faces
 
     def _parse_coord_geo_data(self, align_name, alignment):
