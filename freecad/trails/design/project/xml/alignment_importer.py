@@ -46,7 +46,7 @@ class AlignmentImporter(object):
         self.errors = []
         self.bearing_reference = 0
 
-    def _validate_units(self, _units):
+    def validate_units(self, _units):
         """
         Validate the alignment units, ensuring they match the document
         """
@@ -234,12 +234,13 @@ class AlignmentImporter(object):
         pts = landxml.get_child(definition, 'Pnts')
         fcs = landxml.get_child(definition, 'Faces')
 
-        points = []
+        points = {}
         for p in pts:
+            id = int(p.get("id"))
             pt = p.text.strip().split(' ')
             pt = [float(v) for v in pt]
             vec = FreeCAD.Vector(pt[1], pt[0], pt[2])
-            points.append(vec)
+            points[id] = vec
 
         faces = []
         for f in fcs:
@@ -313,36 +314,6 @@ class AlignmentImporter(object):
         """
         Import a landxml and build the Python dictionary fronm the
         appropriate elements
-
-        Returns a dictionary of the following structure:
-
-        {
-            Project: {
-                ID: <name>
-            },
-
-            Alignments: {
-
-                <alignment name>: {
-
-                    meta: {
-                        <tag/attribute>: value
-                    },
-
-                    station: [
-                        {
-                            <tag/attribute>: value
-                        }
-                    ],
-
-                    geometry: [
-                        {
-                            <tag/attribute>: value
-                        }
-                    ]
-                }
-            }
-        }
         """
 
         #get element tree and key nodes for parsing
@@ -350,16 +321,16 @@ class AlignmentImporter(object):
         root = doc.getroot()
 
         project = landxml.get_child(root, 'Project')
-        units_ = landxml.get_child(root, 'Units')
+        units = landxml.get_child(root, 'Units')
         alignments = landxml.get_child(root, 'Alignments')
         surfaces = landxml.get_child(root, 'Surfaces')
 
         #aport if key nodes are missing
-        if not units_:
+        if not units:
             self.errors.append('Missing project units')
             return None
 
-        unit_name = self._validate_units(units_)
+        unit_name = self.validate_units(units)
 
         if not unit_name:
             self.errors.append('Invalid project units')
