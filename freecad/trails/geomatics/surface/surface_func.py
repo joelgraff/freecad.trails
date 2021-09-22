@@ -215,6 +215,8 @@ class ViewFunctions:
             points.extend(vectors)
             vertices.append(len(vectors))
 
+        del copy_shape
+
         return points, vertices
 
     def elevation_analysis(self, mesh, ranges):
