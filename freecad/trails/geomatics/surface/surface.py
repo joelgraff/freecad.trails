@@ -34,18 +34,22 @@ import random
 
 
 
-def create(label="Surface"):
+def create(points=[], label="Surface"):
     """
     Class construction method
     label - Optional. Name of new object.
     """
 
-    group = surfaces.get()
     obj=FreeCAD.ActiveDocument.addObject("App::FeaturePython", "Surface")
-    obj.Label = label
+
     Surface(obj)
     ViewProviderSurface(obj.ViewObject)
+
+    group = surfaces.get()
     group.addObject(obj)
+
+    obj.Label = label
+    obj.Vectors = points
 
     return obj
 
@@ -69,6 +73,10 @@ class Surface(DataFunctions):
         obj.addProperty(
             'App::PropertyLinkList', "PointGroups", "Triangulation",
             "List of Point Groups").PointGroups = []
+
+        obj.addProperty(
+            "App::PropertyVectorList", "Vectors", "Triangulation",
+            "List of surface points").Vectors = []
 
         obj.addProperty(
             "App::PropertyIntegerList", "Delaunay", "Triangulation",
@@ -116,41 +124,51 @@ class Surface(DataFunctions):
         '''
         Do something when a data property has changed.
         '''
-        points = []
-        pgs = obj.getPropertyByName("PointGroups")
-        for pg in pgs:
-            points.extend(pg.Points.Points)
-
-        if prop == "MinorInterval":
-            min_int = obj.getPropertyByName(prop)
-            obj.MajorInterval = min_int*5
-
-        if prop =="PointGroups":
-            pgs = obj.getPropertyByName(prop)
-
-            points = []
-            for pg in pgs:
-                points.extend(pg.Points.Points)
-
-            if len(points) > 2:
-                obj.Delaunay = self.triangulate(points)
-            else:
-                obj.Mesh = Mesh.Mesh()
-
-        if prop == "Delaunay" or prop == "MaxLength" or prop == "MaxAngle":
-            delaunay = obj.getPropertyByName("Delaunay")
-            lmax = obj.getPropertyByName("MaxLength")
-            amax = obj.getPropertyByName("MaxAngle")
-
-            if delaunay:
-                obj.Mesh = self.test_delaunay(
-                    points, delaunay, lmax, amax)
-
         if prop == "Placement":
             placement = obj.getPropertyByName(prop)
             copy_mesh = obj.Mesh.copy()
             copy_mesh.Placement = placement
             obj.Mesh = copy_mesh
+
+        if prop =="PointGroups":
+            pgs = obj.getPropertyByName(prop)
+            points = []
+            for pg in pgs:
+                points.extend(pg.Vectors)
+
+            obj.Vectors = points
+
+        if prop =="Vectors":
+            vectors = obj.getPropertyByName(prop)
+            base = geo_origin.get(vectors[0]).Origin
+
+            if len(vectors) > 2:
+                pts = []
+                for i in vectors:
+                    pts.append(i.sub(base))
+
+                obj.Delaunay = self.triangulate(vectors)
+            else:
+                obj.Mesh = Mesh.Mesh()
+
+        if prop == "Delaunay" or prop == "MaxLength" or prop == "MaxAngle":
+            delaunay = obj.getPropertyByName("Delaunay")
+            vectors = obj.getPropertyByName("Vectors")
+            lmax = obj.getPropertyByName("MaxLength")
+            amax = obj.getPropertyByName("MaxAngle")
+            base = geo_origin.get(vectors[0]).Origin
+
+            pts = []
+            for i in vectors:
+                pts.append(i.sub(base))
+
+            if delaunay:
+                obj.Mesh = self.test_delaunay(
+                    pts, delaunay, lmax, amax)
+
+        if prop == "MinorInterval":
+            min_int = obj.getPropertyByName(prop)
+            obj.MajorInterval = min_int*5
 
     def execute(self, obj):
         '''
@@ -467,6 +485,8 @@ class ViewProviderSurface(ViewFunctions):
 
             self.geo_coords.point.values = copy_mesh.Topology[0]
             self.triangles.coordIndex.values = triangles
+
+            del copy_mesh
 
         if prop == "ContourShapes":
             contour_shape = obj.getPropertyByName(prop)
