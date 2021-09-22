@@ -71,18 +71,19 @@ class ImportAlignmentTask:
             FreeCAD.newDocument()
             FreeCADGui.activeDocument().activeView().viewDefaultOrientation()
 
-        for s in data['Surfaces'].values():
-            surf = surface.create()
+        for name, s in data['Surfaces'].items():
+            points = list(s['Points'].values())
+            surf = surface.create(points, name)
 
-            points = []
+            indexes = []
             for i in s['Faces']:
-                c1 = s['Points'][i[0]]
-                c2 = s['Points'][i[1]]
-                c3 = s['Points'][i[2]]
-                points.extend([c1, c2, c3])
+                key_list = list(s['Points'].keys())
+                c1 = key_list.index(i[0])
+                c2 = key_list.index(i[1])
+                c3 = key_list.index(i[2])
+                indexes.extend([c1, c2, c3])
 
-            geo_origin.get(points[0])
-            surf.Mesh = Mesh.Mesh(points)
+            surf.Delaunay = indexes
 
         for align in data['Alignments'].values():
 
