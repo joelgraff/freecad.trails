@@ -140,23 +140,24 @@ class Surface(DataFunctions):
 
         if prop =="Vectors":
             vectors = obj.getPropertyByName(prop)
-            base = geo_origin.get(vectors[0]).Origin
+            if vectors:
+                base = geo_origin.get(vectors[0]).Origin
 
-            if len(vectors) > 2:
-                pts = []
-                for i in vectors:
-                    pts.append(i.sub(base))
+                if len(vectors) > 2:
+                    pts = []
+                    for i in vectors:
+                        pts.append(i.sub(base))
 
-                obj.Delaunay = self.triangulate(vectors)
-            else:
-                obj.Mesh = Mesh.Mesh()
+                    obj.Delaunay = self.triangulate(vectors)
+                else:
+                    obj.Mesh = Mesh.Mesh()
 
         if prop == "Delaunay" or prop == "MaxLength" or prop == "MaxAngle":
             delaunay = obj.getPropertyByName("Delaunay")
             vectors = obj.getPropertyByName("Vectors")
             lmax = obj.getPropertyByName("MaxLength")
             amax = obj.getPropertyByName("MaxAngle")
-            base = geo_origin.get(vectors[0]).Origin
+            base = geo_origin.get().Origin
 
             pts = []
             for i in vectors:
