@@ -32,6 +32,7 @@ from . import import_xml_subtask
 from ...support import utils
 from ....alignment import horizontal_alignment
 from .....geomatics.surface import surface
+from .....geomatics.point import point_group
 
 import os
 
@@ -70,6 +71,18 @@ class ImportAlignmentTask:
         if not FreeCAD.ActiveDocument:
             FreeCAD.newDocument()
             FreeCADGui.activeDocument().activeView().viewDefaultOrientation()
+
+        for name, s in data['PointClusters'].items():
+            points = list(s[0].values())
+
+            if not points:
+                source = list(data['PointClusters'].values())[0]
+                print(source)
+                for i in  s[1]:
+                    points.append(source[0][i])
+
+            print(points)
+            point_group.create(points, name)
 
         for name, s in data['Surfaces'].items():
             points = list(s['Points'].values())
