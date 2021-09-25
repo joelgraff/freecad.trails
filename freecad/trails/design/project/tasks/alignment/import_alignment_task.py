@@ -77,11 +77,9 @@ class ImportAlignmentTask:
 
             if not points:
                 source = list(data['PointClusters'].values())[0]
-                print(source)
                 for i in  s[1]:
                     points.append(source[0][i])
 
-            print(points)
             point_group.create(points, name)
 
         for name, s in data['Surfaces'].items():
