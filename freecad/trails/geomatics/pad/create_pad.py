@@ -87,32 +87,23 @@ class CreatePad:
         shape = self.copy_shape.copy()
         lenght = z - shape.Placement.Base.z
         shape.Placement.move(FreeCAD.Vector(0,0, slope*lenght))
-        offpoints = shape.makeOffset2D(abs(lenght)).discretize(Angular=1,Curvature=100,Minimum=2)
+        offpoints = shape.makeOffset2D(
+            abs(lenght)).discretize(Angular=1,Curvature=100,Minimum=2)
 
         self.pg.Vectors = offpoints + self.points
         self.surf.PointGroups = [self.pg]
 
-        intersec = self.surf.Mesh.intersect(self.target.Mesh)
-        surf_pts = tuple((mp.Vector for mp in self.surf.Mesh.Points))
-        target_pts = tuple((mp.Vector for mp in self.target.Mesh.Points))
-        vects_intersec = tuple((mp.Vector for mp in intersec.Points))
+        intersec = self.surf.Mesh.section(
+            self.target.Mesh, MinDist=0.01)
 
         border = []
-        for candidate in vects_intersec:
-            if candidate not in surf_pts+target_pts:
-                border.append(candidate.add(self.origin.Origin))
+        for point in intersec[0]:
+            if point.z == self.copy_shape.Placement.Base.z: continue
+            border.append(point.add(self.origin.Origin))
 
-        wire_pts = [border.pop()]
-        for i in range(len(border)):
-            ref_pt = wire_pts[-1]
-            dist = tuple((pt.distanceToPoint(ref_pt) for pt in border))
-            idx = dist.index(min(dist))
-            wire_pts.append(border.pop(idx))
-
-        intsec = Part.makePolygon(wire_pts)
+        intsec = Part.makePolygon(border)
         intpts = intsec.discretize(Distance=5000)
 
         return intpts
-
 
 FreeCADGui.addCommand('Create Pad', CreatePad())
