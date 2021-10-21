@@ -23,7 +23,8 @@
 """
 Task to import alignments from various file formats
 """
-import FreeCAD, FreeCADGui
+import FreeCAD as App
+import FreeCADGui as Gui
 from PySide import QtGui, QtCore
 
 from freecad.trails import resources
@@ -33,8 +34,6 @@ from ....alignment import horizontal_alignment
 from .....geomatics.surface import surface
 
 import os
-
-
 
 class ImportAlignmentTask:
     """
@@ -66,9 +65,9 @@ class ImportAlignmentTask:
         errors = []
 
         #create a new document if one does not exist
-        if not FreeCAD.ActiveDocument:
-            FreeCAD.newDocument()
-            FreeCADGui.activeDocument().activeView().viewDefaultOrientation()
+        if not App.ActiveDocument:
+            App.newDocument()
+            Gui.activeDocument().activeView().viewDefaultOrientation()
 
         for surf in data['Surfaces'].values():
             # surf = surface.create()
@@ -89,8 +88,8 @@ class ImportAlignmentTask:
             for err in errors:
                 print(err)
 
-        FreeCAD.ActiveDocument.recompute()
-        FreeCADGui.SendMsgToActiveView("ViewFit")
+        App.ActiveDocument.recompute()
+        Gui.SendMsgToActiveView("ViewFit")
 
         return True
 
@@ -111,7 +110,7 @@ class ImportAlignmentTask:
         Open the file picker dialog and open the file
         that the user chooses
         """
-        parameter = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/General")
+        parameter = App.ParamGet("User parameter:BaseApp/Preferences/General")
         path = parameter.GetString("FileOpenSavePath")
 
         filters = self.form.tr(
@@ -156,7 +155,7 @@ class ImportAlignmentTask:
         if 'csv' in extension:
             filename = 'import_alignment_task_csv_subpanel.ui'
 
-        subpanel = FreeCADGui.PySideUic.loadUi(self.ui_path + filename, None)
+        subpanel = Gui.PySideUic.loadUi(self.ui_path + filename, None)
 
         #ensure any existing subpanels are removed
         itm_count = self.form.layout().count()
@@ -196,7 +195,7 @@ class ImportAlignmentTask:
         """
 
         filename = 'import_alignment_task_xml_subpanel.ui'
-        subpanel = FreeCADGui.PySideUic.loadUi(self.ui_path + filename, None)
+        subpanel = Gui.PySideUic.loadUi(self.ui_path + filename, None)
 
         self.subtask = import_xml_subtask.create(subpanel, file_path)
 

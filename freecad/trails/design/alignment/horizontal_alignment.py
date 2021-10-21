@@ -25,7 +25,7 @@
 Class for managing 2D Horizontal Alignments
 """
 
-import FreeCAD
+import FreeCAD as App
 from FreeCAD import Vector
 import Part
 
@@ -39,8 +39,6 @@ from pivy import coin
 from copy import deepcopy
 from math import inf, pi
 
-
-
 def create(geometry, label="Alignment", zero_reference=False):
     """
     Class construction method
@@ -52,21 +50,45 @@ def create(geometry, label="Alignment", zero_reference=False):
         return
 
     group = alignment_group.get()
-    obj=FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython", "Alignment")
+
+    obj=App.ActiveDocument.addObject("App::DocumentObjectGroupPython", "Alignment")
+
     obj.Label = label
+
     HorizontalAlignment(obj, label)
     ViewProviderHorizontalAlignment(obj.ViewObject)
 
     # Set geometry.
     obj.ModelKeeper = str(geometry)
     obj.Proxy.set_geometry(geometry, zero_reference)
-
     regs = regions.create()
     obj.addObject(regs)
     group.addObject(obj)
 
-    FreeCAD.ActiveDocument.recompute()
+    App.ActiveDocument.recompute()
     return obj
+
+def udpate(source, target):
+    """
+    Update a horiztonal alignment
+    """
+
+    #retrieve the FPO if only the FreeCAD object is provided 
+    if not 'ID' in dir(source):
+        source = source.Object
+    
+    if not 'ID' in dir(target):
+        target = target.Object
+
+    target.ID = source.ID
+    target.ModelKeeper = source.ModelKeeper
+
+    target.Proxy.set_geometry(source.ModelKeeper, False)
+
+    target.removeObject(target.getSubObjectList(target.Name)[0])
+    target.addObject(regions.create())
+
+    App.ActiveDocument.recompute()
 
 class HorizontalAlignment(DataFunctions):
     """
@@ -103,7 +125,7 @@ class HorizontalAlignment(DataFunctions):
 
         properties.add(
             obj, 'Vector', 'Datum', 'Datum value as Northing / Easting',
-            FreeCAD.Vector(0.0, 0.0, 0.0)
+            Vector(0.0, 0.0, 0.0)
         )
 
         properties.add(
@@ -309,9 +331,9 @@ class ViewProviderHorizontalAlignment(ViewFunctions):
                     end = deepcopy(tick[-1]).sub(origin.Origin)
 
                     if start.y>end.y:
-                        angle = start.sub(end).getAngle(FreeCAD.Vector(1,0,0))-pi
+                        angle = start.sub(end).getAngle(Vector(1,0,0)) - pi
                     else:
-                        angle = end.sub(start).getAngle(FreeCAD.Vector(1,0,0))
+                        angle = end.sub(start).getAngle(Vector(1,0,0))
 
                     location.translation = end
                     location.rotation.setValue(coin.SbVec3f(0, 0, 1), angle)

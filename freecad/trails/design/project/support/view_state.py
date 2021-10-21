@@ -78,7 +78,7 @@ class ViewState(metaclass=Singleton):
         _search.apply(parent)
 
         #get the matrix for the transformation
-        _matrix = coin.SoGetMatrixAction(ViewState().viewport)
+        _matrix = coin.SoGetMatrixAction(ViewState().viewport())
         _matrix.apply(_search.getPath())
 
         self._matrix = coin.SbMatrix(_matrix.getMatrix().getValue())
@@ -120,7 +120,7 @@ class ViewState(metaclass=Singleton):
         #subsequent calls with null node will re-use the last valid node matrix
         refresh = refresh and node is not None
 
-        _martix = matrix
+        _matrix = matrix
 
         if not _matrix:
             _matrix = self.get_matrix(node, refresh=refresh)

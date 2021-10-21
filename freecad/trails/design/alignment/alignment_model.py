@@ -24,6 +24,7 @@
 """
 Class for managing 2D Horizontal Alignment data
 """
+import ast
 
 from FreeCAD import Vector
 
@@ -83,6 +84,11 @@ class AlignmentModel:
         """
         Assign geometry to the alignment object
         """
+
+        #if the geometry is a dictionary in string form, convert to
+        #a dictionary object
+        if isinstance(geometry, str):
+            geometry = ast.literal_eval(geometry)
 
         self.data = geometry
         _geometry = []

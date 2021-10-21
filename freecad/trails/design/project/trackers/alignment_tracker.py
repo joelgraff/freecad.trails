@@ -33,6 +33,7 @@ import FreeCADGui as Gui
 from types import SimpleNamespace
 
 from freecad.trails.design import ContextTracker, PolyLineTracker, Drag
+from pivy_trackers.coin.coin_utils import *
 from .curve_tracker import CurveTracker
 
 from freecad_python_support.tuple_math import TupleMath
@@ -127,13 +128,11 @@ class AlignmentTracker(ContextTracker):
             for _n in self.pi_nodes[_i:_i+3]:
 
                 _n.before_drag_callbacks.append(_c.before_drag)
-                #_n.on_drag_callbacks.append(_c.on_drag)
                 _n.after_drag_callbacks.append(_c.after_drag)
 
             for _l in _lines[max(_i-2,0):min(_i+3, len(_lines)+1)]:
 
                 _l.before_drag_callbacks.append(_c.before_drag)
-                #_n.on_drag_callbacks.append(_c.on_drag)
                 _l.after_drag_callbacks.append(_c.after_drag)
 
             _c.before_drag_callbacks.append(self.before_drag_tracker)
@@ -153,6 +152,9 @@ class AlignmentTracker(ContextTracker):
             _m.after_drag_callbacks.append(self.after_drag_tracker)
 
         self.set_visibility()
+
+        Drag.drag_tracker.drag.full.set_translation((0.0, 0.0, 0.0))
+        Drag.drag_tracker.drag.full.set_rotation(0.0, (0.0, 0.0, 0.0))
 
     def validate_curve_drag(self, user_data):
         """
@@ -295,6 +297,7 @@ class AlignmentTracker(ContextTracker):
 
             self.alignment_tracker.invalidate()
 
+        #destroy drag references for this dragging operation
         self.drag_refs = SimpleNamespace(
             pi_list = (),
             curve_list = (),
@@ -348,6 +351,25 @@ class AlignmentTracker(ContextTracker):
 
         self.drag_refs.points = _points
 
+    def finish(self):
+        """
+        Cleanup the tracker
+        """
+
+        for _t in self.curve_trackers:
+            _t.finish()
+
+        remove_child(self.curve_group, self.base.root)
+        remove_child(self.alignment_group, self.base.root)
+
+        if self.callbacks:
+            for _k, _v in self.callbacks.items():
+                ViewState().view.removeEventCallback(_k, _v)
+
+            self.callbacks.clear()
+
+        super().finish()
+
     #------------
     # LEGACY
     #------------
@@ -360,46 +382,3 @@ class AlignmentTracker(ContextTracker):
         self.status_bar.showMessage(
             MouseState().component + ' ' + str(tuple(MouseState().coordinates))
         )
-
-    def build_trackers(self):
-        """
-        Build the node and wire trackers that represent the selectable
-        portions of the alignment geometry
-        """
-
-        _names = self.names[:2]
-        _model = self.alignment.model.data
-
-        #build a list of coordinates from curves in the geometry
-        _nodes = [Vector()]
-        _nodes += [_v.get('PI')\
-            for _v in _model.get('geometry') if _v.get('Type') != 'Line']
-
-        _nodes += [_model.get('meta').get('End')]
-
-
-        #build the trackers
-        self.trackers['Nodes'] = self._build_node_trackers(_nodes, _names)
-        self.trackers['Tangents'] = self._build_wire_trackers(_names)
-        self.trackers['Curves'] = self._build_curve_trackers(_names)
-
-        #self._signalize_trackers()
-
-    def finalize(self):
-        """
-        Cleanup the tracker
-        """
-
-        for _t in self.curve_trackers:
-            _t.finalize()
-
-        self.remove_node(self.groups['EDIT'], self.get_node())
-        self.remove_node(self.groups['DRAG'], self.get_node())
-
-        if self.callbacks:
-            for _k, _v in self.callbacks.items():
-                ViewState().view.removeEventCallback(_k, _v)
-
-            self.callbacks.clear()
-
-        super().finalize()

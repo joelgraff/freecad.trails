@@ -29,7 +29,6 @@ import math
 import FreeCAD as App
 import FreeCADGui as Gui
 import Draft
-import numpy
 
 from Project.Support import Properties, Units, Utils, DocumentProperties
 

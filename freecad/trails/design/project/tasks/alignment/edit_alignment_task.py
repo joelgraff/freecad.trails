@@ -46,6 +46,7 @@ from ...support.publisher import PublisherEvents as Events
 from ...support.subscriber import Subscriber
 
 from ...trackers.alignment_tracker import AlignmentTracker
+from pivy_trackers.coin.coin_utils import *
 
 def create(doc, alignment_data, obj):
     """
@@ -85,15 +86,14 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         #self.alignment = self.alignment.Proxy
 
         self.alignment_tracker = None
-        self.terminator_tracker = None
         self.callbacks = {}
         self.mouse = MouseState()
         self.form = None
         self.ui_path = resources.__path__[0] + '/ui/'
         self.ui = self.ui_path + 'edit_alignment_task.ui'
         self.unit_scale = units.scale_factor()
-
         self.status_bar = Gui.getMainWindow().statusBar()
+        self.selected = Gui.Selection.getSelection()[0]
 
         self.masks = {
             'float': '#90000.99',
@@ -156,12 +156,6 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         self.alignment_tracker = AlignmentTracker(
             self.Object.Name, self.alignment
         )
-
-        #subscribe the alignment tracker to all events from the task
-        #and subscribe the task to task events from the tracker
-        #self.alignment_tracker.register(self, Events.ALIGNMENT.UPDATED)
-        #self.register(self.alignment_tracker, Events.ALIGNMENT.UPDATE)
-        #self.terminator_tracker.register(self, Events.TASK.EVENTS)
 
         self.alignment_tracker.insert_into_scenegraph(verbose=True)
 
@@ -331,6 +325,8 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
         """
         Accept the task parameters
         """
+
+        horizontal_alignment.udpate(self.alignment, self.selected)
 
         self.finish()
 
@@ -519,7 +515,7 @@ class EditAlignmentTask(Publisher, Subscriber): #lgtm [py/missing-call-to-init]
 
         #shut down the tracker and re-select the object
         if self.alignment_tracker:
-            self.alignment_tracker.finalize()
+            self.alignment_tracker.finish()
             self.alignment_tracker = None
 
         if self.camera_state:
