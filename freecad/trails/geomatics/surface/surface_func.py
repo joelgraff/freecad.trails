@@ -140,14 +140,15 @@ class DataFunctions:
             cross_sections = mesh.crossSections([((0, 0, delta*1000), (0, 0, 1))], 0.000001)
 
             for point_list in cross_sections[0]:
-                wire = Part.makePolygon(point_list)
+                if len(point_list) > 3:
+                    wire = Part.makePolygon(point_list)
 
-                if delta % major == 0:
-                    major_contours.append(wire)
-                else:
-                    minor_contours.append(wire)
+                    if delta % major == 0:
+                        major_contours.append(wire)
+                    else:
+                        minor_contours.append(wire)
 
-                del point_list
+                    del point_list
 
             del cross_sections
             delta += minor
@@ -214,6 +215,8 @@ class ViewFunctions:
                 vectors.append(i.OrderedVertexes[0].Point)
             points.extend(vectors)
             vertices.append(len(vectors))
+
+        del copy_shape
 
         return points, vertices
 

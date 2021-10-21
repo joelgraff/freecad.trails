@@ -46,7 +46,7 @@ class AlignmentImporter(object):
         self.errors = []
         self.bearing_reference = 0
 
-    def _validate_units(self, _units):
+    def validate_units(self, _units):
         """
         Validate the alignment units, ensuring they match the document
         """
@@ -229,27 +229,6 @@ class AlignmentImporter(object):
 
         return result
 
-    def parse_surface(self, surface):
-        definition = landxml.get_child(surface, 'Definition')
-        pts = landxml.get_child(definition, 'Pnts')
-        fcs = landxml.get_child(definition, 'Faces')
-
-        points = []
-        for p in pts:
-            pt = p.text.strip().split(' ')
-            pt = [float(v) for v in pt]
-            vec = FreeCAD.Vector(pt[1], pt[0], pt[2])
-            points.append(vec)
-
-        faces = []
-        for f in fcs:
-            fc = f.text.strip().split(' ')
-            fc = [int(v) for v in fc]
-            faces.append(fc)
-
-        print(points,faces)
-        return points, faces
-
     def _parse_coord_geo_data(self, align_name, alignment):
         """
         Parse the alignment coordinate geometry data to get curve
@@ -309,40 +288,48 @@ class AlignmentImporter(object):
 
         return result
 
+    def parse_pc(self, point_cluster):
+        points = {}
+        refs = []
+        for p in point_cluster:
+            if p.text:
+                name = int(p.get("name"))
+                pt = p.text.strip().split(' ')
+                pt = [float(v) for v in pt]
+                vec = FreeCAD.Vector(pt[1], pt[0], pt[2])
+                points[name] = vec.multiply(1000)
+
+            else:
+                ref = int(p.get("pntRef"))
+                refs.append(ref)
+
+        return [points, refs]
+
+    def parse_surface(self, surface):
+        definition = landxml.get_child(surface, 'Definition')
+        pts = landxml.get_child(definition, 'Pnts')
+        fcs = landxml.get_child(definition, 'Faces')
+
+        points = {}
+        for p in pts:
+            id = int(p.get("id"))
+            pt = p.text.strip().split(' ')
+            pt = [float(v) for v in pt]
+            vec = FreeCAD.Vector(pt[1], pt[0], pt[2])
+            points[id] = vec.multiply(1000)
+
+        faces = []
+        for f in fcs:
+            fc = f.text.strip().split(' ')
+            fc = [int(v) for v in fc]
+            faces.append(fc)
+
+        return points, faces
+
     def import_file(self, filepath):
         """
         Import a landxml and build the Python dictionary fronm the
         appropriate elements
-
-        Returns a dictionary of the following structure:
-
-        {
-            Project: {
-                ID: <name>
-            },
-
-            Alignments: {
-
-                <alignment name>: {
-
-                    meta: {
-                        <tag/attribute>: value
-                    },
-
-                    station: [
-                        {
-                            <tag/attribute>: value
-                        }
-                    ],
-
-                    geometry: [
-                        {
-                            <tag/attribute>: value
-                        }
-                    ]
-                }
-            }
-        }
         """
 
         #get element tree and key nodes for parsing
@@ -350,16 +337,17 @@ class AlignmentImporter(object):
         root = doc.getroot()
 
         project = landxml.get_child(root, 'Project')
-        units_ = landxml.get_child(root, 'Units')
-        alignments = landxml.get_child(root, 'Alignments')
+        units = landxml.get_child(root, 'Units')
+        cg_points = landxml.get_children(root, 'CgPoints')
         surfaces = landxml.get_child(root, 'Surfaces')
+        alignments = landxml.get_child(root, 'Alignments')
 
         #aport if key nodes are missing
-        if not units_:
+        if not units:
             self.errors.append('Missing project units')
             return None
 
-        unit_name = self._validate_units(units_)
+        unit_name = self.validate_units(units)
 
         if not unit_name:
             self.errors.append('Invalid project units')
@@ -375,8 +363,16 @@ class AlignmentImporter(object):
         result = {}
         result['Project'] = {}
         result['Project'][maps.XML_MAP['name']] = project_name
-        result['Alignments'] = {}
+        result['PointClusters'] = {}
         result['Surfaces'] = {}
+        result['Alignments'] = {}
+
+        if cg_points:
+            for pc in cg_points:
+                pc_name = self.get_name(
+                    pc, result.keys(), "PointCluster")
+
+                result['PointClusters'][pc_name] =  self.parse_pc(pc)
 
         if surfaces:
             for surface in surfaces:

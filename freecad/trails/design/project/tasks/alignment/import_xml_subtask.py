@@ -31,13 +31,6 @@ from ...support import widget_model, units
 from ...support.utils import Constants as C
 from ....geometry import support
 
-def create(panel, filepath):
-    """
-    Class factory method
-    """
-    return ImportXmlSubtask(panel, filepath)
-
-
 class ImportXmlSubtask:
     """
     Subtask to manage importing LandXML files

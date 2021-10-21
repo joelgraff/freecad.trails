@@ -120,7 +120,6 @@ class ExportPoints:
         easting = self.ui.EastingLE.text()
         elevation = self.ui.ElevationLE.text()
         description = self.ui.DescriptionLE.text()
-        format = ["", "", "", "", ""]
 
         if line_edit.text().strip() == "" or self.ui.PointGroupsLW.count() < 1:
             return
@@ -143,27 +142,23 @@ class ExportPoints:
             group = self.group_dict[selection.data()]
 
             # Print points to the file
-            for point in group.Points:
-                xx = str(round(float(point.x) / 1000, 3))
-                yy = str(round(float(point.y) / 1000, 3))
-                zz = str(round(float(point.z) / 1000, 3))
-                index = group.Points.index(point)
+            for p in group.Vectors:
+                index = group.Vectors.index(p)
+                x = str(round(p.x/1000, 3))
+                y = str(round(p.y/1000, 3))
+                z = str(round(p.z/1000, 3))
+
                 if group.PointNames:
                     pn = group.PointNames[index]
                 else:
                     pn = counter
                     counter += 1
 
+                des = ''
                 if group.Descriptions:
                     des = group.Descriptions[index]
-                else: des = ''
 
-                format[int(point_name)-1] = pn
-                format[int(easting)-1] = xx
-                format[int(northing)-1] = yy
-                format[int(elevation)-1] = zz
-                format[int(description)-1] = des
-
+                format = [pn, x, y, z, des]
                 file.write(delimiter.join(format) +"\n")
         file.close()
 

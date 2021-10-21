@@ -252,9 +252,8 @@ class ImportPointFile:
 
                 names.append(name)
                 descriptions.append(des)
-                vectors.append((float(row[e]) * 1000,
-                                float(row[n]) * 1000,
-                                float(row[z]) * 1000))
+                vector = FreeCAD.Vector(float(row[e]), float(row[n]), float(row[z]))
+                vectors.append(vector.multiply(1000))
 
         return names, vectors, descriptions
 
