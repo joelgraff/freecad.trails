@@ -217,7 +217,7 @@ class import_wfs:
 
     def GetResources(self):
         return {
-            'Pixmap': ICONPATH + '/icons/ImportWMS.svg',
+            'Pixmap': ICONPATH + '/icons/ImportWFS.svg',
             'MenuText': 'Import WFS',
             'ToolTip': 'Import WFS(Web Feature Service)'
         }
